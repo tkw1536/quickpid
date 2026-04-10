@@ -32,7 +32,7 @@ func testFlow(t *testing.T, factory ResolverFactory, name string, flow func(t *t
 	})
 }
 
-// MountPath is the URL prefix used when mounting the handler (matches cmd/quickpid).
+// MountPath is the URL prefix used when mounting the handler (matches cmd/quickpid and cmd/quickpid-mem).
 const MountPath = "/api/v2"
 
 // newServer creates a new server for testing.

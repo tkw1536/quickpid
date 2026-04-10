@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/tkw1536/quickpid/mem"
+	"github.com/glebarez/sqlite"
+	"github.com/tkw1536/quickpid/gormstore"
 	"github.com/tkw1536/quickpid/server"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -16,17 +18,32 @@ func main() {
 	}
 	addr := ":" + port
 
-	const mountPath = "/api/v2"
+	dsn := os.Getenv("QUICKPID_DSN")
+	if dsn == "" {
+		dsn = os.Getenv("DATABASE_URL")
+	}
+	if dsn == "" {
+		dsn = "quickpid.db?_pragma=foreign_keys(1)"
+	}
 
-	store := mem.NewStore()
-	apiHandler := server.NewHandler(mountPath, store)
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := gormstore.Migrate(db); err != nil {
+		log.Fatal(err)
+	}
+	resolver := gormstore.NewResolver(db)
+
+	const mountPath = "/api/v2"
+	apiHandler := server.NewHandler(mountPath, resolver)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))
 	mux.Handle("GET "+mountPath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, mountPath+"/", http.StatusMovedPermanently)
 	}))
 
-	log.Printf("listening on %s (API and Swagger UI at %s/)", addr, mountPath)
+	log.Printf("listening on %s (SQLite API and Swagger UI at %s/) dsn=%q", addr, mountPath, dsn)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal(err)
 	}
