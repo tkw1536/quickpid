@@ -1,0 +1,336 @@
+openapi: 3.0.3
+info:
+  title: PID Resolver API
+  description: API for managing persistent identifiers (PIDs) across namespaces and target systems
+  version: 2.0.0
+servers:
+  - url: /api/v2
+    description: Production server
+paths:
+  /resolver/namespaces:
+    get:
+      operationId: listNamespaces
+      summary: List all existing namespaces
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NamespaceResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      operationId: createNamespace
+      summary: Create a new namespace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NamespaceCreateRequest'
+      responses:
+        '201':
+          description: Namespace created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamespaceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /resolver/namespaces/{namespace}/resources:
+    get:
+      operationId: listResources
+      summary: List all resources within a namespace
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      operationId: createResource
+      summary: Create a new resource; a new PID is assigned within the specified namespace
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceCreateRequest'
+      responses:
+        '201':
+          description: Resource created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /resolver/namespaces/{namespace}/resources:batch:
+    post:
+      operationId: batchCreateResources
+      summary: Create a batch of resources within a namespace; a new PID is generated for each
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ResourceCreateRequest'
+      responses:
+        '201':
+          description: Resources created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /resolver/namespaces/{namespace}/resources/{pid}:
+    get:
+      operationId: getResource
+      summary: Retrieve a stored resource for a specific PID in a specific namespace
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      operationId: updateResource
+      summary: Update an existing resource in a namespace; can be flagged as deleted
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceUpdateRequest'
+      responses:
+        '200':
+          description: Resource updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  responses:
+    BadRequest:
+      description: |
+        Invalid request body (empty body, malformed JSON, unknown fields, or trailing JSON).
+        Example messages: "empty request body", "invalid JSON", "trailing JSON".
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalidJson:
+              value:
+                error: invalid JSON
+            emptyBody:
+              value:
+                error: empty request body
+    NotFound:
+      description: |
+        Referenced namespace or resource does not exist.
+        Example messages: "namespace not found", "resource not found".
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            namespace:
+              value:
+                error: namespace not found
+            resource:
+              value:
+                error: resource not found
+    Conflict:
+      description: Resource already exists (duplicate namespace name).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: namespace already exists
+    InternalServerError:
+      description: Unexpected error while processing the request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: internal server error
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+    NamespaceCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+    NamespaceResponse:
+      type: object
+      required:
+        - name
+        - date_created
+      properties:
+        name:
+          type: string
+        date_created:
+          type: string
+          format: date-time
+    ResourceCreateRequest:
+      type: object
+      required:
+        - url
+        - IdInTarget
+        - targetSystem
+      properties:
+        url:
+          type: string
+          format: uri
+        IdInTarget:
+          type: string
+        targetSystem:
+          type: string
+        tag:
+          type: string
+    ResourceResponse:
+      type: object
+      required:
+        - pid
+        - url
+        - IdInTarget
+        - date_created
+        - date_updated
+        - targetSystem
+        - tag
+        - deleted
+      properties:
+        pid:
+          type: string
+        url:
+          type: string
+          format: uri
+        IdInTarget:
+          type: string
+        date_created:
+          type: string
+          format: date-time
+        date_updated:
+          type: string
+          format: date-time
+        targetSystem:
+          type: string
+        tag:
+          type: string
+        deleted:
+          type: boolean
+    ResourceUpdateRequest:
+      type: object
+      required:
+        - url
+        - IdInTarget
+        - targetSystem
+        - tag
+        - deleted
+      properties:
+        url:
+          type: string
+          format: uri
+        IdInTarget:
+          type: string
+        targetSystem:
+          type: string
+        tag:
+          type: string
+        deleted:
+          type: boolean
