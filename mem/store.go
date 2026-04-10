@@ -2,8 +2,8 @@ package mem
 
 import (
 	"context"
+	"errors"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -12,18 +12,21 @@ import (
 
 // Store is an in-memory Resolver implementation protected by a single RWMutex.
 type Store struct {
-	mu         sync.RWMutex
-	namespaces map[string]api.NamespaceResponse
-	resources  map[string]map[string]api.ResourceResponse
-	nextPID    map[string]int
+	mu             sync.RWMutex
+	namespaces     map[string]api.NamespaceResponse
+	resources      map[string]map[string]api.ResourceResponse
+	pidGen         func() (string, error)
+	maxPIDAttempts int
 }
 
-// NewStore returns an empty Store.
-func NewStore() *Store {
+// NewStore returns an empty Store. pidGen is used when an initial PID collides with an existing
+// resource; allocation is retried at most maxPIDAttempts times per create (including the first try).
+func NewStore(pidGen func() (string, error), maxPIDAttempts int) *Store {
 	return &Store{
-		namespaces: make(map[string]api.NamespaceResponse),
-		resources:  make(map[string]map[string]api.ResourceResponse),
-		nextPID:    make(map[string]int),
+		namespaces:     make(map[string]api.NamespaceResponse),
+		resources:      make(map[string]map[string]api.ResourceResponse),
+		pidGen:         pidGen,
+		maxPIDAttempts: maxPIDAttempts,
 	}
 }
 
@@ -50,7 +53,6 @@ func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateReques
 	ns := api.NamespaceResponse{Name: req.Name, DateCreated: now}
 	s.namespaces[req.Name] = ns
 	s.resources[req.Name] = make(map[string]api.ResourceResponse)
-	s.nextPID[req.Name] = 0
 	return &ns, nil
 }
 
@@ -72,42 +74,28 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 	return out, nil
 }
 
-func (s *Store) CreateResource(_ context.Context, namespace string, req api.ResourceCreateRequest) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(_ context.Context, namespace string, req api.ResourceCreateRequest, pid string) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.namespaces[namespace]; !ok {
 		return nil, api.ErrNamespaceNotFound
 	}
-	s.nextPID[namespace]++
-	pid := strconv.Itoa(s.nextPID[namespace])
-	now := time.Now().UTC().Format(time.RFC3339)
-	res := api.ResourceResponse{
-		PID:          pid,
-		URL:          req.URL,
-		IdInTarget:   req.IdInTarget,
-		DateCreated:  now,
-		DateUpdated:  now,
-		TargetSystem: req.TargetSystem,
-		Tag:          req.Tag,
-		Deleted:      false,
-	}
-	s.resources[namespace][pid] = res
-	return &res, nil
-}
-
-func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs []api.ResourceCreateRequest) ([]api.ResourceResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if _, ok := s.namespaces[namespace]; !ok {
-		return nil, api.ErrNamespaceNotFound
-	}
-	out := make([]api.ResourceResponse, 0, len(reqs))
-	for _, req := range reqs {
-		s.nextPID[namespace]++
-		pid := strconv.Itoa(s.nextPID[namespace])
+	byPID := s.resources[namespace]
+	candidate := pid
+	for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
+		if attempt > 0 {
+			var err error
+			candidate, err = s.pidGen()
+			if err != nil {
+				return nil, err
+			}
+		}
+		if _, exists := byPID[candidate]; exists {
+			continue
+		}
 		now := time.Now().UTC().Format(time.RFC3339)
 		res := api.ResourceResponse{
-			PID:          pid,
+			PID:          candidate,
 			URL:          req.URL,
 			IdInTarget:   req.IdInTarget,
 			DateCreated:  now,
@@ -116,8 +104,56 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs [
 			Tag:          req.Tag,
 			Deleted:      false,
 		}
-		s.resources[namespace][pid] = res
-		out = append(out, res)
+		byPID[candidate] = res
+		return &res, nil
+	}
+	return nil, api.ErrPIDAllocationFailed
+}
+
+func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs []api.ResourceCreateRequest, pids []string) ([]api.ResourceResponse, error) {
+	if len(pids) != len(reqs) {
+		return nil, errors.New("mem: len(pids) must equal len(reqs)")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.namespaces[namespace]; !ok {
+		return nil, api.ErrNamespaceNotFound
+	}
+	byPID := s.resources[namespace]
+	out := make([]api.ResourceResponse, 0, len(reqs))
+	for i, req := range reqs {
+		candidate := pids[i]
+		var inserted bool
+		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
+			if attempt > 0 {
+				var err error
+				candidate, err = s.pidGen()
+				if err != nil {
+					return nil, err
+				}
+			}
+			if _, exists := byPID[candidate]; exists {
+				continue
+			}
+			now := time.Now().UTC().Format(time.RFC3339)
+			res := api.ResourceResponse{
+				PID:          candidate,
+				URL:          req.URL,
+				IdInTarget:   req.IdInTarget,
+				DateCreated:  now,
+				DateUpdated:  now,
+				TargetSystem: req.TargetSystem,
+				Tag:          req.Tag,
+				Deleted:      false,
+			}
+			byPID[candidate] = res
+			out = append(out, res)
+			inserted = true
+			break
+		}
+		if !inserted {
+			return nil, api.ErrPIDAllocationFailed
+		}
 	}
 	return out, nil
 }

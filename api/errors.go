@@ -11,4 +11,6 @@ var (
 	ErrNamespaceNotFound      = errors.New("namespace not found")
 	ErrResourceNotFound       = errors.New("resource not found")
 	ErrNamespaceAlreadyExists = errors.New("namespace already exists")
+	// ErrPIDAllocationFailed is returned when a unique PID could not be allocated after retries.
+	ErrPIDAllocationFailed = errors.New("could not allocate unique pid")
 )

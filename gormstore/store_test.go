@@ -7,6 +7,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/gormstore"
 	"github.com/tkw1536/quickpid/internal/apitest"
+	"github.com/tkw1536/quickpid/server"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -23,6 +24,6 @@ func TestHTTP_ResolverFlow(t *testing.T) {
 		if err := gormstore.Migrate(db); err != nil {
 			t.Fatal(err)
 		}
-		return gormstore.NewResolver(db)
-	})
+		return gormstore.NewResolver(db, server.RandomAlphanumericPID, server.DefaultPIDMaxAttempts)
+	}, server.RandomAlphanumericPID)
 }

@@ -33,10 +33,10 @@ func main() {
 	if err := gormstore.Migrate(db); err != nil {
 		log.Fatal(err)
 	}
-	resolver := gormstore.NewResolver(db)
+	resolver := gormstore.NewResolver(db, server.RandomAlphanumericPID, server.DefaultPIDMaxAttempts)
 
 	const mountPath = "/api/v2"
-	apiHandler := server.NewHandler(mountPath, resolver)
+	apiHandler := server.NewHandler(mountPath, resolver, server.RandomAlphanumericPID)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))
 	mux.Handle("GET "+mountPath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

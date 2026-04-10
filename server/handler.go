@@ -23,15 +23,19 @@ const maxBodyBytes = 1 << 20
 // mountPath is the URL prefix where the caller will mount this handler (e.g. "/api/v2"); it must
 // not have a trailing slash.
 //
+// pidGen generates a new PID string for POST /resources and batch creates. It must not use
+// client request fields; pass the same function the Resolver uses for collision retries (e.g.
+// server.RandomAlphanumericPID).
+//
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
-// mount with http.StripPrefix(mountPath, NewHandler(mountPath, ...)) at mountPath+"/".
-func NewHandler(mountPath string, res api.Resolver) http.Handler {
+// mount with http.StripPrefix(mountPath, NewHandler(mountPath, res, pidGen)) at mountPath+"/".
+func NewHandler(mountPath string, res api.Resolver, pidGen func() (string, error)) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /resolver/namespaces", handleListNamespaces(res))
 	mux.Handle("POST /resolver/namespaces", handleCreateNamespace(res))
 	mux.Handle("GET /resolver/namespaces/{namespace}/resources", handleListResources(res))
-	mux.Handle("POST /resolver/namespaces/{namespace}/resources", handleCreateResource(res))
-	mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", handleBatchCreateResources(res))
+	mux.Handle("POST /resolver/namespaces/{namespace}/resources", handleCreateResource(res, pidGen))
+	mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", handleBatchCreateResources(res, pidGen))
 	mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", handleGetResource(res))
 	mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", handleUpdateResource(res))
 	mux.Handle("GET /openapi.yaml", handleOpenAPISpec())
@@ -95,15 +99,20 @@ func handleListResources(res api.Resolver) http.HandlerFunc {
 	}
 }
 
-func handleCreateResource(res api.Resolver) http.HandlerFunc {
+func handleCreateResource(res api.Resolver, pidGen func() (string, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req api.ResourceCreateRequest
 		if err := decodeJSON(r, &req); err != nil {
 			writeError(w, err)
 			return
 		}
+		pid, err := pidGen()
+		if err != nil {
+			writeError(w, err)
+			return
+		}
 		ns := r.PathValue("namespace")
-		out, err := res.CreateResource(r.Context(), ns, req)
+		out, err := res.CreateResource(r.Context(), ns, req, pid)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -112,15 +121,24 @@ func handleCreateResource(res api.Resolver) http.HandlerFunc {
 	}
 }
 
-func handleBatchCreateResources(res api.Resolver) http.HandlerFunc {
+func handleBatchCreateResources(res api.Resolver, pidGen func() (string, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var reqs []api.ResourceCreateRequest
 		if err := decodeJSON(r, &reqs); err != nil {
 			writeError(w, err)
 			return
 		}
+		pids := make([]string, len(reqs))
+		for i := range reqs {
+			pid, err := pidGen()
+			if err != nil {
+				writeError(w, err)
+				return
+			}
+			pids[i] = pid
+		}
 		ns := r.PathValue("namespace")
-		out, err := res.BatchCreateResources(r.Context(), ns, reqs)
+		out, err := res.BatchCreateResources(r.Context(), ns, reqs, pids)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -199,6 +217,7 @@ var apiClientErrors = []struct {
 	{api.ErrNamespaceNotFound, http.StatusNotFound},
 	{api.ErrResourceNotFound, http.StatusNotFound},
 	{api.ErrNamespaceAlreadyExists, http.StatusConflict},
+	{api.ErrPIDAllocationFailed, http.StatusInternalServerError},
 }
 
 func writeError(w http.ResponseWriter, err error) {

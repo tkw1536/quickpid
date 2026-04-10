@@ -6,8 +6,11 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/internal/apitest"
 	"github.com/tkw1536/quickpid/mem"
+	"github.com/tkw1536/quickpid/server"
 )
 
 func TestHTTP_ResolverFlow(t *testing.T) {
-	apitest.RunResolverHTTPTests(t, func(t *testing.T) api.Resolver { return mem.NewStore() })
+	apitest.RunResolverHTTPTests(t, func(t *testing.T) api.Resolver {
+		return mem.NewStore(server.RandomAlphanumericPID, server.DefaultPIDMaxAttempts)
+	}, server.RandomAlphanumericPID)
 }

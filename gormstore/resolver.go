@@ -3,7 +3,7 @@ package gormstore
 import (
 	"context"
 	"errors"
-	"strconv"
+	"strings"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
@@ -13,12 +13,16 @@ import (
 // Store implements api.Resolver using GORM. It is safe for concurrent use when backed by a
 // database that serializes transactions appropriately (e.g. SQLite) or supports row locking.
 type Store struct {
-	db *gorm.DB
+	db             *gorm.DB
+	pidGen         func() (string, error)
+	maxPIDAttempts int
 }
 
 // NewResolver returns an api.Resolver backed by db. The caller must open db with any GORM dialector.
-func NewResolver(db *gorm.DB) api.Resolver {
-	return &Store{db: db}
+// pidGen is used when an initial PID collides (unique index); allocation is retried at most
+// maxPIDAttempts times per row (including the first try).
+func NewResolver(db *gorm.DB, pidGen func() (string, error), maxPIDAttempts int) api.Resolver {
+	return &Store{db: db, pidGen: pidGen, maxPIDAttempts: maxPIDAttempts}
 }
 
 var _ api.Resolver = (*Store)(nil)
@@ -48,7 +52,6 @@ func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateReques
 	ns := Namespace{
 		Name:        req.Name,
 		DateCreated: now,
-		NextPID:     0,
 	}
 	if err := s.db.Create(&ns).Error; err != nil {
 		return nil, err
@@ -80,25 +83,28 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 	return out, nil
 }
 
-func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest) (*api.ResourceResponse, error) {
-	var out api.ResourceResponse
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var ns Namespace
-		if err := tx.Where("name = ?", namespace).First(&ns).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return api.ErrNamespaceNotFound
-			}
-			return err
+func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest, pid string) (*api.ResourceResponse, error) {
+	var ns Namespace
+	if err := s.db.WithContext(ctx).Where("name = ?", namespace).First(&ns).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, api.ErrNamespaceNotFound
 		}
-		ns.NextPID++
-		pid := strconv.FormatInt(ns.NextPID, 10)
-		if err := tx.Model(&Namespace{}).Where("id = ?", ns.ID).Update("next_pid", ns.NextPID).Error; err != nil {
-			return err
+		return nil, err
+	}
+
+	candidate := pid
+	for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
+		if attempt > 0 {
+			var err error
+			candidate, err = s.pidGen()
+			if err != nil {
+				return nil, err
+			}
 		}
 		now := time.Now().UTC()
 		row := Resource{
 			NamespaceID:  ns.ID,
-			PID:          pid,
+			PID:          candidate,
 			URL:          req.URL,
 			IdInTarget:   req.IdInTarget,
 			DateCreated:  now,
@@ -107,23 +113,27 @@ func (s *Store) CreateResource(ctx context.Context, namespace string, req api.Re
 			Tag:          req.Tag,
 			Deleted:      false,
 		}
-		if err := tx.Create(&row).Error; err != nil {
-			return err
+		if err := s.db.WithContext(ctx).Create(&row).Error; err != nil {
+			if isDuplicateKey(err) {
+				continue
+			}
+			return nil, err
 		}
-		out = resourceToAPI(&row)
-		return nil
-	})
-	if err != nil {
-		return nil, err
+		r := resourceToAPI(&row)
+		return &r, nil
 	}
-	return &out, nil
+	return nil, api.ErrPIDAllocationFailed
 }
 
-func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs []api.ResourceCreateRequest) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs []api.ResourceCreateRequest, pids []string) ([]api.ResourceResponse, error) {
+	if len(pids) != len(reqs) {
+		return nil, errors.New("gormstore: len(pids) must equal len(reqs)")
+	}
 	if len(reqs) == 0 {
 		return nil, nil
 	}
-	out := make([]api.ResourceResponse, 0, len(reqs))
+
+	var out []api.ResourceResponse
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var ns Namespace
 		if err := tx.Where("name = ?", namespace).First(&ns).Error; err != nil {
@@ -132,32 +142,61 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs
 			}
 			return err
 		}
-		for _, req := range reqs {
-			ns.NextPID++
-			pid := strconv.FormatInt(ns.NextPID, 10)
-			now := time.Now().UTC()
-			row := Resource{
-				NamespaceID:  ns.ID,
-				PID:          pid,
-				URL:          req.URL,
-				IdInTarget:   req.IdInTarget,
-				DateCreated:  now,
-				DateUpdated:  now,
-				TargetSystem: req.TargetSystem,
-				Tag:          req.Tag,
-				Deleted:      false,
+		out = make([]api.ResourceResponse, 0, len(reqs))
+		for i, req := range reqs {
+			candidate := pids[i]
+			var inserted bool
+			for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
+				if attempt > 0 {
+					var err error
+					candidate, err = s.pidGen()
+					if err != nil {
+						return err
+					}
+				}
+				now := time.Now().UTC()
+				row := Resource{
+					NamespaceID:  ns.ID,
+					PID:          candidate,
+					URL:          req.URL,
+					IdInTarget:   req.IdInTarget,
+					DateCreated:  now,
+					DateUpdated:  now,
+					TargetSystem: req.TargetSystem,
+					Tag:          req.Tag,
+					Deleted:      false,
+				}
+				if err := tx.Create(&row).Error; err != nil {
+					if isDuplicateKey(err) {
+						continue
+					}
+					return err
+				}
+				out = append(out, resourceToAPI(&row))
+				inserted = true
+				break
 			}
-			if err := tx.Create(&row).Error; err != nil {
-				return err
+			if !inserted {
+				return api.ErrPIDAllocationFailed
 			}
-			out = append(out, resourceToAPI(&row))
 		}
-		return tx.Model(&Namespace{}).Where("id = ?", ns.ID).Update("next_pid", ns.NextPID).Error
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
+}
+
+func isDuplicateKey(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return true
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "UNIQUE constraint failed") || strings.Contains(msg, "duplicate key")
 }
 
 func (s *Store) GetResource(_ context.Context, namespace, pid string) (*api.ResourceResponse, error) {
