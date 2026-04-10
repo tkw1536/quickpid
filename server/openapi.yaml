@@ -59,6 +59,7 @@ paths:
           required: false
           schema:
             type: string
+          allowEmptyValue: true
       responses:
         '200':
           description: Successful response

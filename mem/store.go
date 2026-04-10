@@ -11,14 +11,19 @@ import (
 
 // Store is an in-memory Resolver implementation protected by a single RWMutex.
 type Store struct {
-	mu             sync.RWMutex
-	namespaces     map[string]api.NamespaceResponse
-	resources      map[string]map[string]api.ResourceResponse
+	// protects the namespace and resource maps.
+	mu sync.RWMutex
+
+	// holds the namespaces and actual resources
+	namespaces map[string]api.NamespaceResponse
+	resources  map[string]map[string]api.ResourceResponse
+
+	// maximum number of attempts to allocate a PID.
+	// must be > 0.
 	maxPIDAttempts int
 }
 
 // NewStore returns an empty Store. PID allocation is supplied per CreateResource / BatchCreateResources
-// via pidGen; on collision the store calls pidGen again at most maxPIDAttempts times per row.
 func NewStore(maxPIDAttempts int) *Store {
 	return &Store{
 		namespaces:     make(map[string]api.NamespaceResponse),
@@ -32,6 +37,7 @@ var _ api.Resolver = (*Store)(nil)
 func (s *Store) ListNamespaces(_ context.Context) ([]api.NamespaceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	out := make([]api.NamespaceResponse, 0, len(s.namespaces))
 	for _, ns := range s.namespaces {
 		out = append(out, ns)
@@ -43,9 +49,11 @@ func (s *Store) ListNamespaces(_ context.Context) ([]api.NamespaceResponse, erro
 func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateRequest) (*api.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if _, exists := s.namespaces[req.Name]; exists {
 		return nil, api.ErrNamespaceAlreadyExists
 	}
+
 	now := time.Now().UTC().Format(time.RFC3339)
 	ns := api.NamespaceResponse{Name: req.Name, DateCreated: now}
 	s.namespaces[req.Name] = ns
@@ -56,13 +64,15 @@ func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateReques
 func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams) ([]api.ResourceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	if _, ok := s.namespaces[params.Namespace]; !ok {
 		return nil, api.ErrNamespaceNotFound
 	}
+
 	byPID := s.resources[params.Namespace]
 	out := make([]api.ResourceResponse, 0, len(byPID))
 	for _, r := range byPID {
-		if params.Tag != "" && r.Tag != params.Tag {
+		if params.Tag != nil && r.Tag != *params.Tag {
 			continue
 		}
 		out = append(out, r)
@@ -74,6 +84,7 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 func (s *Store) CreateResource(_ context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error)) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if _, ok := s.namespaces[namespace]; !ok {
 		return nil, api.ErrNamespaceNotFound
 	}

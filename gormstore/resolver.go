@@ -68,8 +68,8 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 		return nil, err
 	}
 	q := s.db.Where("namespace_id = ?", ns.ID)
-	if params.Tag != "" {
-		q = q.Where("tag = ?", params.Tag)
+	if params.Tag != nil {
+		q = q.Where("tag = ?", *params.Tag)
 	}
 	var rows []Resource
 	if err := q.Order("pid").Find(&rows).Error; err != nil {

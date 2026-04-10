@@ -142,6 +142,47 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		}
 	})
 
+	t.Run("listResources_tagOmitted", func(t *testing.T) {
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", base, ns)
+		resp := mustGET(t, u)
+		defer resp.Body.Close()
+		assertStatus(t, resp, http.StatusOK)
+		var list []api.ResourceResponse
+		decodeJSON(t, resp.Body, &list)
+		if len(list) != 1 || list[0].PID != pid1 {
+			t.Fatalf("without tag query: want one resource, got %+v", list)
+		}
+	})
+
+	t.Run("createResource_emptyTag", func(t *testing.T) {
+		reqBody := mustMarshal(t, api.ResourceCreateRequest{
+			URL:          "https://example.com/empty-tag",
+			IdInTarget:   "empty-tag-1",
+			TargetSystem: "sys-empty",
+		})
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", base, ns)
+		resp := mustPOST(t, u, reqBody)
+		defer resp.Body.Close()
+		assertStatus(t, resp, http.StatusCreated)
+		var got api.ResourceResponse
+		decodeJSON(t, resp.Body, &got)
+		if got.Tag != "" {
+			t.Fatalf("want empty tag, got %+v", got)
+		}
+	})
+
+	t.Run("listResources_tagEmpty", func(t *testing.T) {
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?tag=", base, ns)
+		resp := mustGET(t, u)
+		defer resp.Body.Close()
+		assertStatus(t, resp, http.StatusOK)
+		var list []api.ResourceResponse
+		decodeJSON(t, resp.Body, &list)
+		if len(list) != 1 || list[0].Tag != "" || list[0].URL != "https://example.com/empty-tag" {
+			t.Fatalf("empty tag filter: %+v", list)
+		}
+	})
+
 	t.Run("getResource", func(t *testing.T) {
 		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", base, ns, pid1)
 		resp := mustGET(t, u)
@@ -214,14 +255,15 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		}
 	})
 
-	t.Run("listResources_three", func(t *testing.T) {
+	t.Run("listResources_allAfterBatch", func(t *testing.T) {
 		resp := mustGET(t, fmt.Sprintf("%s/resolver/namespaces/%s/resources", base, ns))
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
 		var list []api.ResourceResponse
 		decodeJSON(t, resp.Body, &list)
-		if len(list) != 3 {
-			t.Fatalf("resources: got %d, want 3", len(list))
+		// pid1 (updated), empty-tag create, batch b1 + b2
+		if len(list) != 4 {
+			t.Fatalf("resources: got %d, want 4", len(list))
 		}
 	})
 

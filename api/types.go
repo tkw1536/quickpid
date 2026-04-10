@@ -43,5 +43,7 @@ type ResourceUpdateRequest struct {
 // ListResourcesParams carries path and query parameters for listResources.
 type ListResourcesParams struct {
 	Namespace string
-	Tag       string
+
+	// optionally filter by tag
+	Tag *string
 }

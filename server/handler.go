@@ -88,7 +88,13 @@ func handleCreateNamespace(res api.Resolver) http.HandlerFunc {
 func handleListResources(res api.Resolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ns := r.PathValue("namespace")
-		tag := r.URL.Query().Get("tag")
+		query := r.URL.Query()
+
+		var tag *string
+		if query.Has("tag") {
+			v := query.Get("tag")
+			tag = &v
+		}
 		out, err := res.ListResources(r.Context(), api.ListResourcesParams{Namespace: ns, Tag: tag})
 		if err != nil {
 			writeError(w, err)
