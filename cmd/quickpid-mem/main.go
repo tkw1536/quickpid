@@ -18,7 +18,7 @@ func main() {
 
 	const mountPath = "/api/v2"
 
-	store := mem.NewStore(server.RandomAlphanumericPID, server.DefaultPIDMaxAttempts)
+	store := mem.NewStore(server.DefaultPIDMaxAttempts)
 	apiHandler := server.NewHandler(mountPath, store, server.RandomAlphanumericPID)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))

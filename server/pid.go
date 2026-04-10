@@ -35,3 +35,24 @@ func RandomAlphanumericPID() (string, error) {
 	}
 	return string(b[:16]), nil
 }
+
+const alphanumeric62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+// SixCharPIDWithDashes returns a PID of the form "abc-def" (three random alphanumeric characters,
+// a hyphen, then three more). It does not use any client-supplied request data.
+func SixCharPIDWithDashes() (string, error) {
+	buf := make([]byte, 6)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	const n = len(alphanumeric62)
+	out := make([]byte, 7)
+	for i := 0; i < 3; i++ {
+		out[i] = alphanumeric62[buf[i]%byte(n)]
+	}
+	out[3] = '-'
+	for i := 0; i < 3; i++ {
+		out[4+i] = alphanumeric62[buf[3+i]%byte(n)]
+	}
+	return string(out), nil
+}

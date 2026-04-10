@@ -11,6 +11,6 @@ import (
 
 func TestHTTP_ResolverFlow(t *testing.T) {
 	apitest.RunResolverHTTPTests(t, func(t *testing.T) api.Resolver {
-		return mem.NewStore(server.RandomAlphanumericPID, server.DefaultPIDMaxAttempts)
+		return mem.NewStore(server.DefaultPIDMaxAttempts)
 	}, server.RandomAlphanumericPID)
 }

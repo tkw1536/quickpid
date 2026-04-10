@@ -14,15 +14,14 @@ import (
 // database that serializes transactions appropriately (e.g. SQLite) or supports row locking.
 type Store struct {
 	db             *gorm.DB
-	pidGen         func() (string, error)
 	maxPIDAttempts int
 }
 
 // NewResolver returns an api.Resolver backed by db. The caller must open db with any GORM dialector.
-// pidGen is used when an initial PID collides (unique index); allocation is retried at most
-// maxPIDAttempts times per row (including the first try).
-func NewResolver(db *gorm.DB, pidGen func() (string, error), maxPIDAttempts int) api.Resolver {
-	return &Store{db: db, pidGen: pidGen, maxPIDAttempts: maxPIDAttempts}
+// PID allocation is supplied per CreateResource / BatchCreateResources via pidGen; on duplicate key,
+// the store calls pidGen again at most maxPIDAttempts times per row.
+func NewResolver(db *gorm.DB, maxPIDAttempts int) api.Resolver {
+	return &Store{db: db, maxPIDAttempts: maxPIDAttempts}
 }
 
 var _ api.Resolver = (*Store)(nil)
@@ -83,7 +82,7 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 	return out, nil
 }
 
-func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest, pid string) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error)) (*api.ResourceResponse, error) {
 	var ns Namespace
 	if err := s.db.WithContext(ctx).Where("name = ?", namespace).First(&ns).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -92,14 +91,10 @@ func (s *Store) CreateResource(ctx context.Context, namespace string, req api.Re
 		return nil, err
 	}
 
-	candidate := pid
 	for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-		if attempt > 0 {
-			var err error
-			candidate, err = s.pidGen()
-			if err != nil {
-				return nil, err
-			}
+		candidate, err := pidGen()
+		if err != nil {
+			return nil, err
 		}
 		now := time.Now().UTC()
 		row := Resource{
@@ -125,10 +120,7 @@ func (s *Store) CreateResource(ctx context.Context, namespace string, req api.Re
 	return nil, api.ErrPIDAllocationFailed
 }
 
-func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs []api.ResourceCreateRequest, pids []string) ([]api.ResourceResponse, error) {
-	if len(pids) != len(reqs) {
-		return nil, errors.New("gormstore: len(pids) must equal len(reqs)")
-	}
+func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs []api.ResourceCreateRequest, pidGen func() (string, error)) ([]api.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
@@ -143,16 +135,12 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs
 			return err
 		}
 		out = make([]api.ResourceResponse, 0, len(reqs))
-		for i, req := range reqs {
-			candidate := pids[i]
+		for _, req := range reqs {
 			var inserted bool
 			for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-				if attempt > 0 {
-					var err error
-					candidate, err = s.pidGen()
-					if err != nil {
-						return err
-					}
+				candidate, err := pidGen()
+				if err != nil {
+					return err
 				}
 				now := time.Now().UTC()
 				row := Resource{

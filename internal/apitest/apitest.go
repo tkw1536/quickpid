@@ -17,7 +17,7 @@ type ResolverFactory = func(t *testing.T) api.Resolver
 // RunResolverHTTPTests starts an httptest server for res and runs a sequential suite of
 // subtests against every resolver HTTP route (namespaces, resources, batch, errors).
 // Resolver implementations can call this from their tests with their concrete implementation.
-// pidGen must match the PID generator passed to the store (e.g. server.RandomAlphanumericPID).
+// pidGen is only passed to the HTTP handler; CreateResource/BatchCreateResources receive it per request.
 func RunResolverHTTPTests(t *testing.T, factory ResolverFactory, pidGen func() (string, error)) {
 	t.Helper()
 

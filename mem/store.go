@@ -2,7 +2,6 @@ package mem
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"sync"
 	"time"
@@ -15,17 +14,15 @@ type Store struct {
 	mu             sync.RWMutex
 	namespaces     map[string]api.NamespaceResponse
 	resources      map[string]map[string]api.ResourceResponse
-	pidGen         func() (string, error)
 	maxPIDAttempts int
 }
 
-// NewStore returns an empty Store. pidGen is used when an initial PID collides with an existing
-// resource; allocation is retried at most maxPIDAttempts times per create (including the first try).
-func NewStore(pidGen func() (string, error), maxPIDAttempts int) *Store {
+// NewStore returns an empty Store. PID allocation is supplied per CreateResource / BatchCreateResources
+// via pidGen; on collision the store calls pidGen again at most maxPIDAttempts times per row.
+func NewStore(maxPIDAttempts int) *Store {
 	return &Store{
 		namespaces:     make(map[string]api.NamespaceResponse),
 		resources:      make(map[string]map[string]api.ResourceResponse),
-		pidGen:         pidGen,
 		maxPIDAttempts: maxPIDAttempts,
 	}
 }
@@ -74,21 +71,17 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 	return out, nil
 }
 
-func (s *Store) CreateResource(_ context.Context, namespace string, req api.ResourceCreateRequest, pid string) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(_ context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error)) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.namespaces[namespace]; !ok {
 		return nil, api.ErrNamespaceNotFound
 	}
 	byPID := s.resources[namespace]
-	candidate := pid
 	for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-		if attempt > 0 {
-			var err error
-			candidate, err = s.pidGen()
-			if err != nil {
-				return nil, err
-			}
+		candidate, err := pidGen()
+		if err != nil {
+			return nil, err
 		}
 		if _, exists := byPID[candidate]; exists {
 			continue
@@ -110,10 +103,7 @@ func (s *Store) CreateResource(_ context.Context, namespace string, req api.Reso
 	return nil, api.ErrPIDAllocationFailed
 }
 
-func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs []api.ResourceCreateRequest, pids []string) ([]api.ResourceResponse, error) {
-	if len(pids) != len(reqs) {
-		return nil, errors.New("mem: len(pids) must equal len(reqs)")
-	}
+func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs []api.ResourceCreateRequest, pidGen func() (string, error)) ([]api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.namespaces[namespace]; !ok {
@@ -121,16 +111,12 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs [
 	}
 	byPID := s.resources[namespace]
 	out := make([]api.ResourceResponse, 0, len(reqs))
-	for i, req := range reqs {
-		candidate := pids[i]
+	for _, req := range reqs {
 		var inserted bool
 		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-			if attempt > 0 {
-				var err error
-				candidate, err = s.pidGen()
-				if err != nil {
-					return nil, err
-				}
+			candidate, err := pidGen()
+			if err != nil {
+				return nil, err
 			}
 			if _, exists := byPID[candidate]; exists {
 				continue

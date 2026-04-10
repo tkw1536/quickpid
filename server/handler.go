@@ -23,9 +23,8 @@ const maxBodyBytes = 1 << 20
 // mountPath is the URL prefix where the caller will mount this handler (e.g. "/api/v2"); it must
 // not have a trailing slash.
 //
-// pidGen generates a new PID string for POST /resources and batch creates. It must not use
-// client request fields; pass the same function the Resolver uses for collision retries (e.g.
-// server.RandomAlphanumericPID).
+// pidGen generates new PID strings for POST /resources and batch creates. It must not use client
+// request fields. The handler passes it to CreateResource / BatchCreateResources on each request.
 //
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
 // mount with http.StripPrefix(mountPath, NewHandler(mountPath, res, pidGen)) at mountPath+"/".
@@ -106,13 +105,8 @@ func handleCreateResource(res api.Resolver, pidGen func() (string, error)) http.
 			writeError(w, err)
 			return
 		}
-		pid, err := pidGen()
-		if err != nil {
-			writeError(w, err)
-			return
-		}
 		ns := r.PathValue("namespace")
-		out, err := res.CreateResource(r.Context(), ns, req, pid)
+		out, err := res.CreateResource(r.Context(), ns, req, pidGen)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -128,17 +122,8 @@ func handleBatchCreateResources(res api.Resolver, pidGen func() (string, error))
 			writeError(w, err)
 			return
 		}
-		pids := make([]string, len(reqs))
-		for i := range reqs {
-			pid, err := pidGen()
-			if err != nil {
-				writeError(w, err)
-				return
-			}
-			pids[i] = pid
-		}
 		ns := r.PathValue("namespace")
-		out, err := res.BatchCreateResources(r.Context(), ns, reqs, pids)
+		out, err := res.BatchCreateResources(r.Context(), ns, reqs, pidGen)
 		if err != nil {
 			writeError(w, err)
 			return
