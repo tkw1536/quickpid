@@ -117,9 +117,11 @@ func (s *Store) CreateResource(_ context.Context, namespace string, req api.Reso
 func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs []api.ResourceCreateRequest, pidGen func() (string, error)) ([]api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if _, ok := s.namespaces[namespace]; !ok {
 		return nil, api.ErrNamespaceNotFound
 	}
+
 	byPID := s.resources[namespace]
 	out := make([]api.ResourceResponse, 0, len(reqs))
 	for _, req := range reqs {
@@ -171,6 +173,7 @@ func (s *Store) GetResource(_ context.Context, namespace, pid string) (*api.Reso
 func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if _, ok := s.namespaces[namespace]; !ok {
 		return nil, api.ErrNamespaceNotFound
 	}

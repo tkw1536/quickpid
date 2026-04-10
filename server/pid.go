@@ -9,7 +9,7 @@ const randomPIDEntropyBytes = 16
 
 // DefaultPIDMaxAttempts is the suggested maximum tries (including the first) when allocating a PID
 // after a collision in the backing store.
-const DefaultPIDMaxAttempts = 8
+const DefaultPIDMaxAttempts = 100
 
 // RandomAlphanumericPID returns a random alphanumeric string for use as a PID.
 // It does not use any client-supplied request data.
