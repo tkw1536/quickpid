@@ -56,7 +56,7 @@ func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParam
 	return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateRequest) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -64,8 +64,8 @@ func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateReques
 		return nil, api.ErrNamespaceAlreadyExists
 	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
-	ns := api.NamespaceResponse{Name: req.Name, DateCreated: now}
+	created := now().UTC().Format(time.RFC3339)
+	ns := api.NamespaceResponse{Name: req.Name, DateCreated: created}
 	s.namespaces[req.Name] = ns
 	s.resources[req.Name] = make(map[string]api.ResourceResponse)
 	return &ns, nil
@@ -104,7 +104,7 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 	return &api.PaginatedResourcesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateResource(_ context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error)) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(_ context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -120,13 +120,13 @@ func (s *Store) CreateResource(_ context.Context, namespace string, req api.Reso
 		if _, exists := byPID[candidate]; exists {
 			continue
 		}
-		now := time.Now().UTC().Format(time.RFC3339)
+		ts := now().UTC().Format(time.RFC3339)
 		res := api.ResourceResponse{
 			PID:          candidate,
 			URL:          req.URL,
 			IdInTarget:   req.IdInTarget,
-			DateCreated:  now,
-			DateUpdated:  now,
+			DateCreated:  ts,
+			DateUpdated:  ts,
 			TargetSystem: req.TargetSystem,
 			Tag:          req.Tag,
 			Deleted:      false,
@@ -137,7 +137,7 @@ func (s *Store) CreateResource(_ context.Context, namespace string, req api.Reso
 	return nil, api.ErrPIDAllocationFailed
 }
 
-func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs []api.ResourceCreateRequest, pidGen func() (string, error)) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs []api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) ([]api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -157,13 +157,13 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs [
 			if _, exists := byPID[candidate]; exists {
 				continue
 			}
-			now := time.Now().UTC().Format(time.RFC3339)
+			ts := now().UTC().Format(time.RFC3339)
 			res := api.ResourceResponse{
 				PID:          candidate,
 				URL:          req.URL,
 				IdInTarget:   req.IdInTarget,
-				DateCreated:  now,
-				DateUpdated:  now,
+				DateCreated:  ts,
+				DateUpdated:  ts,
 				TargetSystem: req.TargetSystem,
 				Tag:          req.Tag,
 				Deleted:      false,
@@ -193,7 +193,7 @@ func (s *Store) GetResource(_ context.Context, namespace, pid string) (*api.Reso
 	return &res, nil
 }
 
-func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -204,13 +204,13 @@ func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api
 	if !ok {
 		return nil, api.ErrResourceNotFound
 	}
-	now := time.Now().UTC().Format(time.RFC3339)
+	updated := now().UTC().Format(time.RFC3339)
 	res := api.ResourceResponse{
 		PID:          prev.PID,
 		URL:          req.URL,
 		IdInTarget:   req.IdInTarget,
 		DateCreated:  prev.DateCreated,
-		DateUpdated:  now,
+		DateUpdated:  updated,
 		TargetSystem: req.TargetSystem,
 		Tag:          req.Tag,
 		Deleted:      req.Deleted,

@@ -25,5 +25,5 @@ func TestHTTP_ResolverFlow(t *testing.T) {
 			t.Fatal(err)
 		}
 		return gormstore.NewResolver(db, server.DefaultPIDMaxAttempts)
-	}, server.RandomAlphanumericPID)
+	})
 }

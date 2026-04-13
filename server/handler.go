@@ -20,28 +20,22 @@ import (
 var openapiYAML []byte
 
 type Handler struct {
-	ops    Options
-	res    api.Resolver
-	pidGen func() (string, error)
-	mux    *http.ServeMux
+	ops Options
+	res api.Resolver
+	mux *http.ServeMux
 }
 
 // NewHandler returns an http.Handler for the PID Resolver API and Swagger UI.
 //
-// pidGen generates new PID strings for POST /resources and batch creates. It must not use client
-// request fields. The handler passes it to CreateResource / BatchCreateResources on each request.
-//
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
-// mount with http.StripPrefix(mountPath, NewHandler(mountPath, res, pidGen)) at mountPath+"/".
-func NewHandler(options Options, resolver api.Resolver, pidGen func() (string, error)) *Handler {
-	// apply defaults for the limits
-	options.Limits = options.Limits.withDefaults()
+// mount with http.StripPrefix(mountPath, NewHandler(Options{MountPath: mountPath}, res)) at mountPath+"/".
+func NewHandler(options Options, resolver api.Resolver) *Handler {
+	options = options.withDefaults()
 
 	h := &Handler{
-		res:    resolver,
-		pidGen: pidGen,
-		ops:    options,
-		mux:    http.NewServeMux(),
+		res: resolver,
+		ops: options,
+		mux: http.NewServeMux(),
 	}
 
 	h.mux.Handle("GET /resolver/namespaces", h.handleListNamespaces())
@@ -108,7 +102,7 @@ func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 			writeError(w, api.ErrInvalidNamespace)
 			return
 		}
-		out, err := h.res.CreateNamespace(r.Context(), req)
+		out, err := h.res.CreateNamespace(r.Context(), req, h.ops.Now)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -177,7 +171,7 @@ func (h *Handler) handleCreateResource() http.HandlerFunc {
 			return
 		}
 
-		out, err := h.res.CreateResource(r.Context(), ns, req, h.pidGen)
+		out, err := h.res.CreateResource(r.Context(), ns, req, h.ops.GeneratePID, h.ops.Now)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -203,7 +197,7 @@ func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
 			writeError(w, api.ErrInvalidNamespace)
 			return
 		}
-		out, err := h.res.BatchCreateResources(r.Context(), ns, reqs, h.pidGen)
+		out, err := h.res.BatchCreateResources(r.Context(), ns, reqs, h.ops.GeneratePID, h.ops.Now)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -253,7 +247,7 @@ func (h *Handler) handleUpdateResource() http.HandlerFunc {
 			writeError(w, api.ErrInvalidPID)
 			return
 		}
-		out, err := h.res.UpdateResource(r.Context(), ns, pid, req)
+		out, err := h.res.UpdateResource(r.Context(), ns, pid, req, h.ops.Now)
 		if err != nil {
 			writeError(w, err)
 			return

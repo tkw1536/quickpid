@@ -64,7 +64,7 @@ func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParam
 	}, nil
 }
 
-func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateRequest) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
 	var existing Namespace
 	err := s.db.Where("name = ?", req.Name).First(&existing).Error
 	if err == nil {
@@ -73,10 +73,10 @@ func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateReques
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
-	now := time.Now().UTC()
+	ts := now().UTC()
 	ns := Namespace{
 		Name:        req.Name,
-		DateCreated: now,
+		DateCreated: ts,
 	}
 	if err := s.db.Create(&ns).Error; err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 	}, nil
 }
 
-func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error)) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) (*api.ResourceResponse, error) {
 	var ns Namespace
 	if err := s.db.WithContext(ctx).Where("name = ?", namespace).First(&ns).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -153,14 +153,14 @@ func (s *Store) CreateResource(ctx context.Context, namespace string, req api.Re
 		if err != nil {
 			return nil, err
 		}
-		now := time.Now().UTC()
+		ts := now().UTC()
 		row := Resource{
 			NamespaceID:  ns.ID,
 			PID:          candidate,
 			URL:          req.URL,
 			IdInTarget:   req.IdInTarget,
-			DateCreated:  now,
-			DateUpdated:  now,
+			DateCreated:  ts,
+			DateUpdated:  ts,
 			TargetSystem: req.TargetSystem,
 			Tag:          req.Tag,
 			Deleted:      false,
@@ -177,7 +177,7 @@ func (s *Store) CreateResource(ctx context.Context, namespace string, req api.Re
 	return nil, api.ErrPIDAllocationFailed
 }
 
-func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs []api.ResourceCreateRequest, pidGen func() (string, error)) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs []api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) ([]api.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
@@ -199,14 +199,14 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs
 				if err != nil {
 					return err
 				}
-				now := time.Now().UTC()
+				ts := now().UTC()
 				row := Resource{
 					NamespaceID:  ns.ID,
 					PID:          candidate,
 					URL:          req.URL,
 					IdInTarget:   req.IdInTarget,
-					DateCreated:  now,
-					DateUpdated:  now,
+					DateCreated:  ts,
+					DateUpdated:  ts,
 					TargetSystem: req.TargetSystem,
 					Tag:          req.Tag,
 					Deleted:      false,
@@ -263,7 +263,7 @@ func (s *Store) GetResource(_ context.Context, namespace, pid string) (*api.Reso
 	return &r, nil
 }
 
-func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	var ns Namespace
 	if err := s.db.Where("name = ?", namespace).First(&ns).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -278,13 +278,13 @@ func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api
 		}
 		return nil, err
 	}
-	now := time.Now().UTC()
+	ts := now().UTC()
 	row.URL = req.URL
 	row.IdInTarget = req.IdInTarget
 	row.TargetSystem = req.TargetSystem
 	row.Tag = req.Tag
 	row.Deleted = req.Deleted
-	row.DateUpdated = now
+	row.DateUpdated = ts
 	if err := s.db.Save(&row).Error; err != nil {
 		return nil, err
 	}
