@@ -44,9 +44,6 @@ func main() {
 	}, resolver)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))
-	mux.Handle("GET "+mountPath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, mountPath+"/", http.StatusMovedPermanently)
-	}))
 
 	log.Printf("listening on %s (SQLite API and Swagger UI at %s/) dsn=%q", addr, mountPath, dsn)
 	if err := http.ListenAndServe(addr, mux); err != nil {
