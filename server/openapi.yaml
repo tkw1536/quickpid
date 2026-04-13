@@ -1,127 +1,233 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: PID Resolver API
-  description: API for managing persistent identifiers (PIDs) across namespaces and target systems
+  description: API for managing PIDs across namespaces.
   version: 2.0.0
+
+tags:
+  - name: namespaces
+    description: Operations related to namespaces.
+  - name: resources
+    description: Operations related to resources.
+
 servers:
   - url: /api/v2
-    description: Production server
+
 paths:
   /resolver/namespaces:
     get:
       operationId: listNamespaces
-      summary: List all existing namespaces
+      summary: List namespaces.
+      tags:
+        - namespaces
+
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Maximum number of items to return.
+            If omitted, a default value is applied.
+            The maximum possible value MAY be clamped.
+            If the value is invalid, a '400' response is returned.
+          schema:
+            type: integer
+            minimum: 1
+        - name: offset
+          in: query
+          required: false
+          description: |
+            Number of items to skip before starting to collect the result set.
+            If omitted, the value is treated as 0.
+            If the value is invalid, a '400' response is returned.
+          schema:
+            type: integer
+            minimum: 0
+
       responses:
         '200':
-          description: Successful response
+          description: A paginated list of namespaces.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NamespaceResponse'
+                $ref: '#/components/schemas/PaginatedNamespacesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
     post:
       operationId: createNamespace
-      summary: Create a new namespace
+      summary: Create a new namespace.
+      tags:
+        - namespaces
+
       requestBody:
         required: true
+        description: |
+          A namespace to create.
+          A limit on the maximum request body size MAY be enforced.
+          If such a limit is exceeded, a '413' response is returned.
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/NamespaceCreateRequest'
+
       responses:
         '201':
-          description: Namespace created
+          description: Namespace created successfully.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NamespaceResponse'
+                $ref: '#/components/schemas/Namespace'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
           $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
   /resolver/namespaces/{namespace}/resources:
     get:
       operationId: listResources
-      summary: List all resources within a namespace
+      summary: List resources within a namespace.
+      tags:
+        - resources
+
       parameters:
         - name: namespace
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/NamespaceName'
         - name: tag
+          description: |
+            Filter resources by tag.
+            If omitted, resources of all tags are included.
+            If provided with an empty value, the value is treated as the empty string.
           in: query
           required: false
           schema:
             type: string
           allowEmptyValue: true
+        - name: deleted
+          description: |
+            Filter resources by their deletion status.
+            If true, return only deleted resources.
+            If false, return only non-deleted resources.
+            If omitted, resources of both deletion states are included.
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Maximum number of items to return.
+            If omitted, a default value is applied.
+            The maximum possible value MAY be clamped.
+            If the value is invalid, a '400' response is returned.
+          schema:
+            type: integer
+            minimum: 1
+        - name: offset
+          in: query
+          required: false
+          description: |
+            Number of items to skip before starting to collect the result set.
+            If omitted, the value is treated as 0.
+            If the value is invalid, a '400' response is returned.
+          schema:
+            type: integer
+            minimum: 0
+
       responses:
         '200':
-          description: Successful response
+          description: A paginated list of resources within the namespace.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ResourceResponse'
+                $ref: '#/components/schemas/PaginatedResourcesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
     post:
       operationId: createResource
-      summary: Create a new resource; a new PID is assigned within the specified namespace
+      summary: Create a resource within a namespace.
+      description: |
+        A new PID is generated, unique within the namespace, and returned with the response.
+      tags:
+        - resources
+
       parameters:
         - name: namespace
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/NamespaceName'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ResourceCreateRequest'
+
       responses:
         '201':
-          description: Resource created
+          description: Resource created successfully.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResourceResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
   /resolver/namespaces/{namespace}/resources:batch:
     post:
       operationId: batchCreateResources
-      summary: Create a batch of resources within a namespace; a new PID is generated for each
+      summary: |
+        Create several resources within a namespace.
+        This is equivalent to calling the 'createResource' operation repeatedly.
+        If a single resource fails to be created, the entire batch operation fails.
+      tags:
+        - resources
+
       parameters:
         - name: namespace
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/NamespaceName'
       requestBody:
         required: true
+        description: |
+          A list of resources to create.
+          Limits on how many resources can be created in a single request MAY be enforced.
+          Such limits can take the form of a maximum number of resources, a maximum body size, or both.
+          If the maximum number of resources is exceeded, a '400' response is returned.
+          If the maximum body size is exceeded, a '413' response is returned.
         content:
           application/json:
             schema:
               type: array
+
               items:
                 $ref: '#/components/schemas/ResourceCreateRequest'
+
       responses:
         '201':
-          description: Resources created
+          description: Resources created successfully.
           content:
             application/json:
               schema:
@@ -130,51 +236,70 @@ paths:
                   $ref: '#/components/schemas/ResourceResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
   /resolver/namespaces/{namespace}/resources/{pid}:
     get:
       operationId: getResource
-      summary: Retrieve a stored resource for a specific PID in a specific namespace
+      summary: |
+        Retrieve a resource by PID within a namespace.
+      tags:
+        - resources
+
       parameters:
         - name: namespace
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/NamespaceName'
         - name: pid
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/PID'
+
       responses:
         '200':
-          description: Successful response
+          description: Resource retrieved successfully.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResourceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
     patch:
       operationId: updateResource
-      summary: Update an existing resource in a namespace; can be flagged as deleted
+      summary: |
+        Updates a specific resource identified by a PID in a namespace.
+      tags:
+        - resources
+
       parameters:
         - name: namespace
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/NamespaceName'
         - name: pid
           in: path
           required: true
           schema:
             type: string
       requestBody:
+        description: |
+          The resource to update.
+          A limit on the maximum request body size MAY be enforced.
+          If such a limit is exceeded, a '413' response is returned.
         required: true
         content:
           application/json:
@@ -191,14 +316,16 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
         '500':
           $ref: '#/components/responses/InternalServerError'
 components:
   responses:
     BadRequest:
       description: |
-        Invalid request body (empty body, malformed JSON, unknown fields, or trailing JSON).
-        Example messages: "empty request body", "invalid JSON", "trailing JSON".
+        An error that indicates that an invalid request was received.
+        Reasons for this may include invalid parameters, or an invalid request body, such as an empty body or otherwise malformed body.
       content:
         application/json:
           schema:
@@ -212,8 +339,7 @@ components:
                 error: empty request body
     NotFound:
       description: |
-        Referenced namespace or resource does not exist.
-        Example messages: "namespace not found", "resource not found".
+        An error that indicates the referenced namespace or resource does not exist.
       content:
         application/json:
           schema:
@@ -226,21 +352,32 @@ components:
               value:
                 error: resource not found
     Conflict:
-      description: Resource already exists (duplicate namespace name).
+      description: |
+        An error that indicates the specified namespace or resource already exists and cannot be re-created.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             error: namespace already exists
-    InternalServerError:
-      description: Unexpected error while processing the request.
+    PayloadTooLarge:
+      description: |
+        An error that indicates the body of the request has exceeded a configured limit.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
           example:
-            error: internal server error
+            error: request payload too large
+    InternalServerError:
+      description:
+        An error that does not fit into any other category.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: internal error
   schemas:
     ErrorResponse:
       type: object
@@ -249,25 +386,92 @@ components:
       properties:
         error:
           type: string
-          description: Human-readable error message
+          description: |
+            Human-readable error message that contains more details about the reason for the error.
+            The precise content of this field is not defined by this specification.
     NamespaceCreateRequest:
+      description: |
+        Namespace to be created.
       type: object
       required:
         - name
       properties:
         name:
-          type: string
-    NamespaceResponse:
+          $ref: '#/components/schemas/NamespaceName'
+    Namespace:
+      description: Represents a namespace.
       type: object
       required:
         - name
         - date_created
       properties:
         name:
-          type: string
+          description: The name of this namespace.
+          $ref: '#/components/schemas/NamespaceName'
         date_created:
+          description: The date and time the namespace was created.
           type: string
           format: date-time
+    NamespaceName:
+      description: The name of a namespace.
+      type: string
+      pattern: '^[A-Za-z0-9_-]+$'
+    PaginatedNamespacesResponse:
+      description: |
+        A paginated response.
+        The 'total' field is the total number of items available for the request (ignoring 'limit' and 'offset').
+        The 'offset' field is the effective offset used to produce this response.
+        If the effective offset is greater than or equal to 'total', 'items' is empty.
+      type: object
+      required:
+        - total
+        - offset
+        - items
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          examples:
+            - 1
+          description: Total number of items available.
+        offset:
+          type: integer
+          minimum: 0
+          examples:
+            - 0
+          description: Offset of the current response.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Namespace'
+    PaginatedResourcesResponse:
+      description: |
+        A paginated response.
+        The 'total' field is the total number of items available for the request after applying any filters (ignoring 'limit' and 'offset').
+        The 'offset' field is the effective offset used to produce this response.
+        If the effective offset is greater than or equal to 'total', 'items' is empty.
+      type: object
+      required:
+        - total
+        - offset
+        - items
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          examples:
+            - 1
+          description: Total number of items available.
+        offset:
+          type: integer
+          minimum: 0
+          examples:
+            - 0
+          description: Offset of the current response.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceResponse'
     ResourceCreateRequest:
       type: object
       required:
@@ -276,14 +480,33 @@ components:
         - targetSystem
       properties:
         url:
+          description: |
+            The URL of this resource.
           type: string
           format: uri
         IdInTarget:
+          description: |
+            The identifier of this resource in the target.
           type: string
         targetSystem:
+          description: |
+            The target that this resource is associated with.
           type: string
         tag:
+          description: |
+            A tag for this resource.
+            Tags can be used inside the API for filtering.
           type: string
+    PID:
+      description: |
+        A persistent identifier for a resource.
+        The identifier uniquely identifies the resource within the namespace.
+        Identifiers are kept as short as possible to allow for inclusion in print media.
+        A typical pattern is two chunks of alphanumeric characters separated by a hyphen.
+      type: string
+      pattern: '^[A-Za-z0-9_-]+$'
+      examples:
+        - 'abc-def'
     ResourceResponse:
       type: object
       required:
@@ -297,23 +520,38 @@ components:
         - deleted
       properties:
         pid:
-          type: string
+          $ref: '#/components/schemas/PID'
         url:
+          description: |
+            The URL of this resource.
           type: string
           format: uri
         IdInTarget:
+          description: |
+            The identifier of this resource in the target.
           type: string
         date_created:
+          description: |
+            The date and time the resource was created.
           type: string
           format: date-time
         date_updated:
+          description: |
+            The date and time the resource was last updated.
           type: string
           format: date-time
         targetSystem:
+          description: |
+            The target that this resource is associated with.
           type: string
         tag:
+          description: |
+            A tag for this resource.
+            Tags can be used inside the API for filtering.
           type: string
         deleted:
+          description: |
+            Whether this resource has been deleted.
           type: boolean
     ResourceUpdateRequest:
       type: object
@@ -325,13 +563,22 @@ components:
         - deleted
       properties:
         url:
+          description: |
+            The URL of this resource.
           type: string
           format: uri
         IdInTarget:
+          description: |
+            The identifier of this resource in the target.
           type: string
         targetSystem:
+          description: |
+            The target that this resource is associated with.
           type: string
         tag:
+          description: |
+            A tag for this resource.
+            Tags can be used inside the API for filtering.
           type: string
         deleted:
           type: boolean
