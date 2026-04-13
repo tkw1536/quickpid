@@ -5,7 +5,7 @@ import (
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/internal/apitest"
-	"github.com/tkw1536/quickpid/mem"
+	"github.com/tkw1536/quickpid/resolvers/mem"
 	"github.com/tkw1536/quickpid/server"
 )
 

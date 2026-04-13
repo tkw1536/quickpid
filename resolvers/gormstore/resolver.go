@@ -26,16 +26,42 @@ func NewResolver(db *gorm.DB, maxPIDAttempts int) api.Resolver {
 
 var _ api.Resolver = (*Store)(nil)
 
-func (s *Store) ListNamespaces(_ context.Context) ([]api.NamespaceResponse, error) {
-	var rows []Namespace
-	if err := s.db.Order("name").Find(&rows).Error; err != nil {
+func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+	var total int64
+	if err := s.db.Model(&Namespace{}).Count(&total).Error; err != nil {
 		return nil, err
 	}
-	out := make([]api.NamespaceResponse, len(rows))
-	for i := range rows {
-		out[i] = namespaceToAPI(&rows[i])
+
+	limit := params.Limit
+	offset := params.Offset
+
+	if int64(offset) >= total {
+		return &api.PaginatedNamespacesResponse{
+			Total:  int(total),
+			Offset: offset,
+			Items:  []api.NamespaceResponse{},
+		}, nil
 	}
-	return out, nil
+
+	q := s.db.Order("name")
+	if limit >= 0 {
+		q = q.Limit(limit)
+	}
+	q = q.Offset(offset)
+
+	var rows []Namespace
+	if err := q.Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	items := make([]api.NamespaceResponse, len(rows))
+	for i := range rows {
+		items[i] = namespaceToAPI(&rows[i])
+	}
+	return &api.PaginatedNamespacesResponse{
+		Total:  int(total),
+		Offset: offset,
+		Items:  items,
+	}, nil
 }
 
 func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateRequest) (*api.NamespaceResponse, error) {
@@ -59,7 +85,7 @@ func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateReques
 	return &resp, nil
 }
 
-func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams) ([]api.ResourceResponse, error) {
+func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
 	var ns Namespace
 	if err := s.db.Where("name = ?", params.Namespace).First(&ns).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -67,19 +93,50 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 		}
 		return nil, err
 	}
-	q := s.db.Where("namespace_id = ?", ns.ID)
+
+	q := s.db.Model(&Resource{}).Where("namespace_id = ?", ns.ID)
 	if params.Tag != nil {
 		q = q.Where("tag = ?", *params.Tag)
 	}
-	var rows []Resource
-	if err := q.Order("pid").Find(&rows).Error; err != nil {
+	if params.Deleted != nil {
+		q = q.Where("deleted = ?", *params.Deleted)
+	}
+
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
 		return nil, err
 	}
-	out := make([]api.ResourceResponse, len(rows))
-	for i := range rows {
-		out[i] = resourceToAPI(&rows[i])
+
+	limit := params.Limit
+	offset := params.Offset
+
+	if int64(offset) >= total {
+		return &api.PaginatedResourcesResponse{
+			Total:  int(total),
+			Offset: offset,
+			Items:  []api.ResourceResponse{},
+		}, nil
 	}
-	return out, nil
+
+	q = q.Order("pid")
+	if limit >= 0 {
+		q = q.Limit(limit)
+	}
+	q = q.Offset(offset)
+
+	var rows []Resource
+	if err := q.Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	items := make([]api.ResourceResponse, len(rows))
+	for i := range rows {
+		items[i] = resourceToAPI(&rows[i])
+	}
+	return &api.PaginatedResourcesResponse{
+		Total:  int(total),
+		Offset: offset,
+		Items:  items,
+	}, nil
 }
 
 func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error)) (*api.ResourceResponse, error) {

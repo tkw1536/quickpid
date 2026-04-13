@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/tkw1536/quickpid/mem"
+	"github.com/tkw1536/quickpid/resolvers/mem"
 	"github.com/tkw1536/quickpid/server"
 )
 
@@ -19,7 +19,7 @@ func main() {
 	const mountPath = "/api/v2"
 
 	store := mem.NewStore(server.DefaultPIDMaxAttempts)
-	apiHandler := server.NewHandler(mountPath, store, server.RandomAlphanumericPID)
+	apiHandler := server.NewHandler(server.Options{MountPath: mountPath, Limits: server.Limits{}}, store, server.RandomAlphanumericPID)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))
 	mux.Handle("GET "+mountPath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

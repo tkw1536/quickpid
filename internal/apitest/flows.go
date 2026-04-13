@@ -20,10 +20,10 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		resp := mustGET(t, base+"/resolver/namespaces")
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
-		var list []api.NamespaceResponse
-		decodeJSON(t, resp.Body, &list)
-		if len(list) != 0 {
-			t.Fatalf("namespaces: got %d, want 0", len(list))
+		var got api.PaginatedNamespacesResponse
+		decodeJSON(t, resp.Body, &got)
+		if got.Total != 0 || got.Offset != 0 || len(got.Items) != 0 {
+			t.Fatalf("namespaces: %+v", got)
 		}
 	})
 
@@ -51,10 +51,10 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		resp := mustGET(t, base+"/resolver/namespaces")
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
-		var list []api.NamespaceResponse
-		decodeJSON(t, resp.Body, &list)
-		if len(list) != 1 || list[0].Name != ns {
-			t.Fatalf("namespaces: %+v", list)
+		var got api.PaginatedNamespacesResponse
+		decodeJSON(t, resp.Body, &got)
+		if got.Total != 1 || got.Offset != 0 || len(got.Items) != 1 || got.Items[0].Name != ns {
+			t.Fatalf("namespaces: %+v", got)
 		}
 	})
 
@@ -69,10 +69,10 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		resp := mustGET(t, fmt.Sprintf("%s/resolver/namespaces/%s/resources", base, ns))
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
-		var list []api.ResourceResponse
-		decodeJSON(t, resp.Body, &list)
-		if len(list) != 0 {
-			t.Fatalf("resources: got %d, want 0", len(list))
+		var got api.PaginatedResourcesResponse
+		decodeJSON(t, resp.Body, &got)
+		if got.Total != 0 || got.Offset != 0 || len(got.Items) != 0 {
+			t.Fatalf("resources: %+v", got)
 		}
 	})
 
@@ -111,10 +111,10 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		resp := mustGET(t, fmt.Sprintf("%s/resolver/namespaces/%s/resources", base, ns))
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
-		var list []api.ResourceResponse
-		decodeJSON(t, resp.Body, &list)
-		if len(list) != 1 || list[0].PID != pid1 {
-			t.Fatalf("resources: %+v", list)
+		var got api.PaginatedResourcesResponse
+		decodeJSON(t, resp.Body, &got)
+		if got.Total != 1 || got.Offset != 0 || len(got.Items) != 1 || got.Items[0].PID != pid1 {
+			t.Fatalf("resources: %+v", got)
 		}
 	})
 
@@ -123,10 +123,10 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
-		var list []api.ResourceResponse
-		decodeJSON(t, resp.Body, &list)
-		if len(list) != 1 || list[0].Tag != "alpha" {
-			t.Fatalf("filtered: %+v", list)
+		var got api.PaginatedResourcesResponse
+		decodeJSON(t, resp.Body, &got)
+		if got.Total != 1 || got.Offset != 0 || len(got.Items) != 1 || got.Items[0].Tag != "alpha" {
+			t.Fatalf("filtered: %+v", got)
 		}
 	})
 
@@ -135,10 +135,10 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
-		var list []api.ResourceResponse
-		decodeJSON(t, resp.Body, &list)
-		if len(list) != 0 {
-			t.Fatalf("filtered: got %d, want 0", len(list))
+		var got api.PaginatedResourcesResponse
+		decodeJSON(t, resp.Body, &got)
+		if got.Total != 0 || got.Offset != 0 || len(got.Items) != 0 {
+			t.Fatalf("filtered: %+v", got)
 		}
 	})
 
@@ -147,10 +147,10 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
-		var list []api.ResourceResponse
-		decodeJSON(t, resp.Body, &list)
-		if len(list) != 1 || list[0].PID != pid1 {
-			t.Fatalf("without tag query: want one resource, got %+v", list)
+		var got api.PaginatedResourcesResponse
+		decodeJSON(t, resp.Body, &got)
+		if got.Total != 1 || got.Offset != 0 || len(got.Items) != 1 || got.Items[0].PID != pid1 {
+			t.Fatalf("without tag query: want one resource, got %+v", got)
 		}
 	})
 
@@ -176,10 +176,10 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
-		var list []api.ResourceResponse
-		decodeJSON(t, resp.Body, &list)
-		if len(list) != 1 || list[0].Tag != "" || list[0].URL != "https://example.com/empty-tag" {
-			t.Fatalf("empty tag filter: %+v", list)
+		var got api.PaginatedResourcesResponse
+		decodeJSON(t, resp.Body, &got)
+		if got.Total != 1 || got.Offset != 0 || len(got.Items) != 1 || got.Items[0].Tag != "" || got.Items[0].URL != "https://example.com/empty-tag" {
+			t.Fatalf("empty tag filter: %+v", got)
 		}
 	})
 
@@ -259,11 +259,11 @@ func resolverFlow(t *testing.T, srv *httptest.Server) {
 		resp := mustGET(t, fmt.Sprintf("%s/resolver/namespaces/%s/resources", base, ns))
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
-		var list []api.ResourceResponse
-		decodeJSON(t, resp.Body, &list)
+		var got api.PaginatedResourcesResponse
+		decodeJSON(t, resp.Body, &got)
 		// pid1 (updated), empty-tag create, batch b1 + b2
-		if len(list) != 4 {
-			t.Fatalf("resources: got %d, want 4", len(list))
+		if got.Total != 4 || got.Offset != 0 || len(got.Items) != 4 {
+			t.Fatalf("resources: %+v", got)
 		}
 	})
 

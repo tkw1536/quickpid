@@ -5,8 +5,8 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/gormstore"
 	"github.com/tkw1536/quickpid/internal/apitest"
+	"github.com/tkw1536/quickpid/resolvers/gormstore"
 	"github.com/tkw1536/quickpid/server"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

@@ -3,8 +3,11 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"regexp"
+	"strconv"
 
 	"github.com/swaggest/swgui"
 	"github.com/swaggest/swgui/v5emb"
@@ -16,40 +19,57 @@ import (
 //go:embed openapi.yaml
 var openapiYAML []byte
 
-const maxBodyBytes = 1 << 20
+type Handler struct {
+	ops    Options
+	res    api.Resolver
+	pidGen func() (string, error)
+	mux    *http.ServeMux
+}
 
 // NewHandler returns an http.Handler for the PID Resolver API and Swagger UI.
-//
-// mountPath is the URL prefix where the caller will mount this handler (e.g. "/api/v2"); it must
-// not have a trailing slash.
 //
 // pidGen generates new PID strings for POST /resources and batch creates. It must not use client
 // request fields. The handler passes it to CreateResource / BatchCreateResources on each request.
 //
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
 // mount with http.StripPrefix(mountPath, NewHandler(mountPath, res, pidGen)) at mountPath+"/".
-func NewHandler(mountPath string, res api.Resolver, pidGen func() (string, error)) http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("GET /resolver/namespaces", handleListNamespaces(res))
-	mux.Handle("POST /resolver/namespaces", handleCreateNamespace(res))
-	mux.Handle("GET /resolver/namespaces/{namespace}/resources", handleListResources(res))
-	mux.Handle("POST /resolver/namespaces/{namespace}/resources", handleCreateResource(res, pidGen))
-	mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", handleBatchCreateResources(res, pidGen))
-	mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", handleGetResource(res))
-	mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", handleUpdateResource(res))
-	mux.Handle("GET /openapi.yaml", handleOpenAPISpec())
-	// BasePath is the public URL for Swagger; InternalBasePath is the path this handler sees
-	// after the caller mounts with http.StripPrefix(mountPath, ...).
-	mux.Handle("/", v5emb.NewHandlerWithConfig(swgui.Config{
-		Title:            "PID Resolver API",
-		SwaggerJSON:      mountPath + "/openapi.yaml",
-		BasePath:         mountPath + "/",
-		InternalBasePath: "/",
-	}))
-	return mux
+func NewHandler(options Options, resolver api.Resolver, pidGen func() (string, error)) *Handler {
+	// apply defaults for the limits
+	options.Limits = options.Limits.withDefaults()
+
+	h := &Handler{
+		res:    resolver,
+		pidGen: pidGen,
+		ops:    options,
+		mux:    http.NewServeMux(),
+	}
+
+	h.mux.Handle("GET /resolver/namespaces", h.handleListNamespaces())
+	h.mux.Handle("POST /resolver/namespaces", h.handleCreateNamespace())
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", h.handleListResources())
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", h.handleCreateResource())
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", h.handleBatchCreateResources())
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", h.handleGetResource())
+	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", h.handleUpdateResource())
+
+	if !options.DisableSwaggerUI {
+		h.mux.Handle("GET /openapi.yaml", h.handleOpenAPISpec())
+		h.mux.Handle("/", v5emb.NewHandlerWithConfig(swgui.Config{
+			Title:            "PID Resolver API",
+			SwaggerJSON:      h.ops.MountPath + "/openapi.yaml",
+			BasePath:         h.ops.MountPath + "/",
+			InternalBasePath: "/",
+		}))
+	}
+
+	return h
 }
 
-func handleOpenAPISpec() http.HandlerFunc {
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.mux.ServeHTTP(w, r)
+}
+
+func (h *Handler) handleOpenAPISpec() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/yaml")
 		w.WriteHeader(http.StatusOK)
@@ -57,37 +77,53 @@ func handleOpenAPISpec() http.HandlerFunc {
 	}
 }
 
-func handleListNamespaces(res api.Resolver) http.HandlerFunc {
+func (h *Handler) handleListNamespaces() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		out, err := res.ListNamespaces(ctx)
+		limit, offset, err := h.parsePagination(r)
 		if err != nil {
 			writeError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, out)
+
+		out, err := h.res.ListNamespaces(r.Context(), api.ListNamespacesParams{
+			Limit:  limit,
+			Offset: offset,
+		})
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSONResponse(w, http.StatusOK, out)
 	}
 }
 
-func handleCreateNamespace(res api.Resolver) http.HandlerFunc {
+func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req api.NamespaceCreateRequest
-		if err := decodeJSON(r, &req); err != nil {
+		if err := h.decodeJSON(w, r, &req); err != nil {
 			writeError(w, err)
 			return
 		}
-		out, err := res.CreateNamespace(r.Context(), req)
+		if !isValidNamespaceName(req.Name) {
+			writeError(w, api.ErrInvalidNamespace)
+			return
+		}
+		out, err := h.res.CreateNamespace(r.Context(), req)
 		if err != nil {
 			writeError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusCreated, out)
+		writeJSONResponse(w, http.StatusCreated, out)
 	}
 }
 
-func handleListResources(res api.Resolver) http.HandlerFunc {
+func (h *Handler) handleListResources() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ns := r.PathValue("namespace")
+		if !isValidNamespaceName(ns) {
+			writeError(w, api.ErrInvalidNamespace)
+			return
+		}
 		query := r.URL.Query()
 
 		var tag *string
@@ -95,86 +131,147 @@ func handleListResources(res api.Resolver) http.HandlerFunc {
 			v := query.Get("tag")
 			tag = &v
 		}
-		out, err := res.ListResources(r.Context(), api.ListResourcesParams{Namespace: ns, Tag: tag})
+
+		var deleted *bool
+		if query.Has("deleted") {
+			b, err := strconv.ParseBool(query.Get("deleted"))
+			if err != nil {
+				writeError(w, fmt.Errorf("%w %q", api.ErrInvalidQueryParameter, "deleted"))
+				return
+			}
+			deleted = &b
+		}
+
+		limit, offset, err := h.parsePagination(r)
 		if err != nil {
 			writeError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, out)
+
+		out, err := h.res.ListResources(r.Context(), api.ListResourcesParams{
+			Namespace: ns,
+			Tag:       tag,
+			Deleted:   deleted,
+
+			Limit:  limit,
+			Offset: offset,
+		})
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSONResponse(w, http.StatusOK, out)
 	}
 }
 
-func handleCreateResource(res api.Resolver, pidGen func() (string, error)) http.HandlerFunc {
+func (h *Handler) handleCreateResource() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req api.ResourceCreateRequest
-		if err := decodeJSON(r, &req); err != nil {
+		if err := h.decodeJSON(w, r, &req); err != nil {
 			writeError(w, err)
 			return
 		}
 		ns := r.PathValue("namespace")
-		out, err := res.CreateResource(r.Context(), ns, req, pidGen)
+		if !isValidNamespaceName(ns) {
+			writeError(w, api.ErrInvalidNamespace)
+			return
+		}
+
+		out, err := h.res.CreateResource(r.Context(), ns, req, h.pidGen)
 		if err != nil {
 			writeError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusCreated, out)
+		writeJSONResponse(w, http.StatusCreated, out)
 	}
 }
 
-func handleBatchCreateResources(res api.Resolver, pidGen func() (string, error)) http.HandlerFunc {
+func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var reqs []api.ResourceCreateRequest
-		if err := decodeJSON(r, &reqs); err != nil {
+		if err := h.decodeJSON(w, r, &reqs); err != nil {
 			writeError(w, err)
 			return
 		}
+		if len(reqs) > h.ops.Limits.MaxBatchItems {
+			writeError(w, fmt.Errorf("%w: %d > %d", api.ErrTooManyItems, len(reqs), h.ops.Limits.MaxBatchItems))
+			return
+		}
+
 		ns := r.PathValue("namespace")
-		out, err := res.BatchCreateResources(r.Context(), ns, reqs, pidGen)
+		if !isValidNamespaceName(ns) {
+			writeError(w, api.ErrInvalidNamespace)
+			return
+		}
+		out, err := h.res.BatchCreateResources(r.Context(), ns, reqs, h.pidGen)
 		if err != nil {
 			writeError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusCreated, out)
+		writeJSONResponse(w, http.StatusCreated, out)
 	}
 }
 
-func handleGetResource(res api.Resolver) http.HandlerFunc {
+func (h *Handler) handleGetResource() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ns := r.PathValue("namespace")
+		if !isValidNamespaceName(ns) {
+			writeError(w, api.ErrInvalidNamespace)
+			return
+		}
+
 		pid := r.PathValue("pid")
-		out, err := res.GetResource(r.Context(), ns, pid)
+		if !isValidPID(pid) {
+			writeError(w, api.ErrInvalidPID)
+			return
+		}
+
+		out, err := h.res.GetResource(r.Context(), ns, pid)
 		if err != nil {
 			writeError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, out)
+
+		writeJSONResponse(w, http.StatusOK, out)
 	}
 }
 
-func handleUpdateResource(res api.Resolver) http.HandlerFunc {
+func (h *Handler) handleUpdateResource() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req api.ResourceUpdateRequest
-		if err := decodeJSON(r, &req); err != nil {
+		if err := h.decodeJSON(w, r, &req); err != nil {
 			writeError(w, err)
 			return
 		}
 		ns := r.PathValue("namespace")
+		if !isValidNamespaceName(ns) {
+			writeError(w, api.ErrInvalidNamespace)
+			return
+		}
 		pid := r.PathValue("pid")
-		out, err := res.UpdateResource(r.Context(), ns, pid, req)
+		if !isValidPID(pid) {
+			writeError(w, api.ErrInvalidPID)
+			return
+		}
+		out, err := h.res.UpdateResource(r.Context(), ns, pid, req)
 		if err != nil {
 			writeError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, out)
+		writeJSONResponse(w, http.StatusOK, out)
 	}
 }
 
-func decodeJSON(r *http.Request, v any) error {
-	body := http.MaxBytesReader(nil, r.Body, maxBodyBytes)
+func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) error {
+	body := http.MaxBytesReader(w, r.Body, h.ops.Limits.MaxBodyBytes)
 	defer body.Close()
 	dec := json.NewDecoder(body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
+		var maxErr *http.MaxBytesError
+		if errors.As(err, &maxErr) {
+			return api.ErrRequestBodyTooLarge
+		}
 		if errors.Is(err, io.EOF) {
 			return api.ErrEmptyRequestBody
 		}
@@ -186,43 +283,48 @@ func decodeJSON(r *http.Request, v any) error {
 	return nil
 }
 
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
-}
+// parsePagination parses pagination parameters from the query string
+func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, err error) {
+	query := r.URL.Query()
 
-type errResp struct {
-	Error string `json:"error"`
-}
-
-// Order is fixed: first match wins. Use sentinel.Error() for the JSON body (not err.Error()) so
-// wrapped errors still emit exact OpenAPI messages.
-var apiClientErrors = []struct {
-	sentinel error
-	status   int
-}{
-	{api.ErrEmptyRequestBody, http.StatusBadRequest},
-	{api.ErrInvalidJSON, http.StatusBadRequest},
-	{api.ErrTrailingJSON, http.StatusBadRequest},
-	{api.ErrNamespaceNotFound, http.StatusNotFound},
-	{api.ErrResourceNotFound, http.StatusNotFound},
-	{api.ErrNamespaceAlreadyExists, http.StatusConflict},
-	{api.ErrPIDAllocationFailed, http.StatusInternalServerError},
-}
-
-func writeError(w http.ResponseWriter, err error) {
-	for _, e := range apiClientErrors {
-		if errors.Is(err, e.sentinel) {
-			writeJSONError(w, e.status, e.sentinel.Error())
-			return
+	limit = h.ops.Limits.DefaultPageLimit
+	if query.Has("limit") {
+		limit, err = parseInt(query.Get("limit"))
+		if err != nil || limit < 1 {
+			return 0, 0, fmt.Errorf("%w %q", api.ErrInvalidQueryParameter, "limit")
 		}
 	}
-	writeJSONError(w, http.StatusInternalServerError, "internal server error")
+	if limit > h.ops.Limits.MaxPageLimit {
+		limit = h.ops.Limits.MaxPageLimit
+	}
+
+	offset = 0
+	if query.Has("offset") {
+		offset, err = parseInt(query.Get("offset"))
+		if err != nil || offset < 0 {
+			return 0, 0, fmt.Errorf("%w %q", api.ErrInvalidQueryParameter, "offset")
+		}
+	}
+	return limit, offset, nil
 }
 
-func writeJSONError(w http.ResponseWriter, status int, msg string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(errResp{Error: msg})
+func parseInt(v string) (int, error) {
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+var (
+	namespaceNameRE = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	pidRE           = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+)
+
+func isValidNamespaceName(s string) bool {
+	return namespaceNameRE.MatchString(s)
+}
+
+func isValidPID(s string) bool {
+	return pidRE.MatchString(s)
 }

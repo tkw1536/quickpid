@@ -34,16 +34,26 @@ func NewStore(maxPIDAttempts int) *Store {
 
 var _ api.Resolver = (*Store)(nil)
 
-func (s *Store) ListNamespaces(_ context.Context) ([]api.NamespaceResponse, error) {
+func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	out := make([]api.NamespaceResponse, 0, len(s.namespaces))
+	all := make([]api.NamespaceResponse, 0, len(s.namespaces))
 	for _, ns := range s.namespaces {
-		out = append(out, ns)
+		all = append(all, ns)
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
-	return out, nil
+	sort.Slice(all, func(i, j int) bool { return all[i].Name < all[j].Name })
+
+	total := len(all)
+	limit := params.Limit
+	offset := params.Offset
+
+	if offset >= total {
+		return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: []api.NamespaceResponse{}}, nil
+	}
+	end := min(offset+limit, total)
+	items := append([]api.NamespaceResponse(nil), all[offset:end]...)
+	return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
 func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateRequest) (*api.NamespaceResponse, error) {
@@ -61,7 +71,7 @@ func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateReques
 	return &ns, nil
 }
 
-func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams) ([]api.ResourceResponse, error) {
+func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -70,15 +80,28 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 	}
 
 	byPID := s.resources[params.Namespace]
-	out := make([]api.ResourceResponse, 0, len(byPID))
+	filtered := make([]api.ResourceResponse, 0, len(byPID))
 	for _, r := range byPID {
 		if params.Tag != nil && r.Tag != *params.Tag {
 			continue
 		}
-		out = append(out, r)
+		if params.Deleted != nil && r.Deleted != *params.Deleted {
+			continue
+		}
+		filtered = append(filtered, r)
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].PID < out[j].PID })
-	return out, nil
+	sort.Slice(filtered, func(i, j int) bool { return filtered[i].PID < filtered[j].PID })
+
+	total := len(filtered)
+	limit := params.Limit
+	offset := params.Offset
+
+	if offset >= total {
+		return &api.PaginatedResourcesResponse{Total: total, Offset: offset, Items: []api.ResourceResponse{}}, nil
+	}
+	end := min(offset+limit, total)
+	items := append([]api.ResourceResponse(nil), filtered[offset:end]...)
+	return &api.PaginatedResourcesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
 func (s *Store) CreateResource(_ context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error)) (*api.ResourceResponse, error) {

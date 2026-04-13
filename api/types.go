@@ -11,6 +11,13 @@ type NamespaceResponse struct {
 	DateCreated string `json:"date_created"`
 }
 
+type PaginatedNamespacesResponse struct {
+	Total  int `json:"total"`
+	Offset int `json:"offset"`
+
+	Items []NamespaceResponse `json:"items"`
+}
+
 // ResourceCreateRequest is the JSON body for createResource and batchCreateResources items.
 type ResourceCreateRequest struct {
 	URL          string `json:"url"`
@@ -31,6 +38,13 @@ type ResourceResponse struct {
 	Deleted      bool   `json:"deleted"`
 }
 
+type PaginatedResourcesResponse struct {
+	Total  int `json:"total"`
+	Offset int `json:"offset"`
+
+	Items []ResourceResponse `json:"items"`
+}
+
 // ResourceUpdateRequest is the JSON body for updateResource.
 type ResourceUpdateRequest struct {
 	URL          string `json:"url"`
@@ -44,6 +58,18 @@ type ResourceUpdateRequest struct {
 type ListResourcesParams struct {
 	Namespace string
 
-	// optionally filter by tag
-	Tag *string
+	Tag     *string // optionally filter by tag
+	Deleted *bool   // optionally filter by deletion status
+
+	Limit  int
+	Offset int
+}
+
+type ListNamespacesParams struct {
+	Limit  int
+	Offset int
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
 }

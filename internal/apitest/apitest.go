@@ -40,7 +40,7 @@ const MountPath = "/api/v2"
 func newServer(tb testing.TB, res api.Resolver, pidGen func() (string, error)) *httptest.Server {
 	tb.Helper()
 	mux := http.NewServeMux()
-	apiHandler := server.NewHandler(MountPath, res, pidGen)
+	apiHandler := server.NewHandler(server.Options{MountPath: MountPath}, res, pidGen)
 	mux.Handle(MountPath+"/", http.StripPrefix(MountPath, apiHandler))
 	mux.Handle("GET "+MountPath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, MountPath+"/", http.StatusMovedPermanently)

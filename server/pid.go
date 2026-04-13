@@ -47,11 +47,11 @@ func SixCharPIDWithDashes() (string, error) {
 	}
 	const n = len(alphanumeric62)
 	out := make([]byte, 7)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		out[i] = alphanumeric62[buf[i]%byte(n)]
 	}
 	out[3] = '-'
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		out[4+i] = alphanumeric62[buf[3+i]%byte(n)]
 	}
 	return string(out), nil

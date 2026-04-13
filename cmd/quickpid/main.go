@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/glebarez/sqlite"
-	"github.com/tkw1536/quickpid/gormstore"
+	"github.com/tkw1536/quickpid/resolvers/gormstore"
 	"github.com/tkw1536/quickpid/server"
 	"gorm.io/gorm"
 )
@@ -36,7 +36,7 @@ func main() {
 	resolver := gormstore.NewResolver(db, server.DefaultPIDMaxAttempts)
 
 	const mountPath = "/api/v2"
-	apiHandler := server.NewHandler(mountPath, resolver, server.SixCharPIDWithDashes)
+	apiHandler := server.NewHandler(server.Options{MountPath: mountPath}, resolver, server.SixCharPIDWithDashes)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))
 	mux.Handle("GET "+mountPath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
