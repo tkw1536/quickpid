@@ -7,22 +7,9 @@ import (
 	"github.com/tkw1536/quickpid/internal/apitest"
 )
 
-func checkPID(t *testing.T, format api.PIDFormat, expect []string) {
-	t.Helper()
-
-	r := apitest.NewFakeRandReader()
-	for i, want := range expect {
-		got, err := api.GeneratePID(format, r)
-		if err != nil {
-			t.Fatalf("GeneratePID(%+v) call %d: %v", format, i, err)
-		}
-		if got != want {
-			t.Fatalf("GeneratePID(%+v) call %d: got %q want %q", format, i, got, want)
-		}
-	}
-}
-
 func TestGeneratePID(t *testing.T) {
+	t.Parallel()
+
 	testCases := map[string]struct {
 		format api.PIDFormat
 		expect []string
@@ -61,11 +48,24 @@ func TestGeneratePID(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			checkPID(t, tc.format, tc.expect)
+			t.Parallel()
+
+			r := apitest.NewFakeRandReader()
+			for i, want := range tc.expect {
+				got, err := api.GeneratePID(tc.format, r)
+				if err != nil {
+					t.Fatalf("GeneratePID(%+v) call %d: %v", tc.format, i, err)
+				}
+				if got != want {
+					t.Fatalf("GeneratePID(%+v) call %d: got %q want %q", tc.format, i, got, want)
+				}
+			}
 		})
 	}
 
 	t.Run("invalid", func(t *testing.T) {
+		t.Parallel()
+
 		r := apitest.NewFakeRandReader()
 		_, err := api.GeneratePID(api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharacters("nope")}, r)
 		if err != api.ErrInvalidPIDFormat {
@@ -75,33 +75,50 @@ func TestGeneratePID(t *testing.T) {
 }
 
 func TestValidatePIDFormat(t *testing.T) {
-	t.Run("ok", func(t *testing.T) {
-		if err := api.ValidatePIDFormat(api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}); err != nil {
-			t.Fatalf("ValidatePIDFormat(ok): %v", err)
-		}
-	})
+	t.Parallel()
 
-	t.Run("emptyPattern", func(t *testing.T) {
-		if err := api.ValidatePIDFormat(api.PIDFormat{Pattern: "", Characters: api.PIDCharactersFull}); err != api.ErrInvalidPIDFormat {
-			t.Fatalf("ValidatePIDFormat(empty): got %v want %v", err, api.ErrInvalidPIDFormat)
-		}
-	})
+	type testCase struct {
+		name      string
+		format    api.PIDFormat
+		wantError error
+	}
 
-	t.Run("noStars", func(t *testing.T) {
-		if err := api.ValidatePIDFormat(api.PIDFormat{Pattern: "---___", Characters: api.PIDCharactersFull}); err != api.ErrInvalidPIDFormat {
-			t.Fatalf("ValidatePIDFormat(noStars): got %v want %v", err, api.ErrInvalidPIDFormat)
-		}
-	})
+	cases := []testCase{
+		{
+			name:      "ok",
+			format:    api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull},
+			wantError: nil,
+		},
+		{
+			name:      "emptyPattern",
+			format:    api.PIDFormat{Pattern: "", Characters: api.PIDCharactersFull},
+			wantError: api.ErrInvalidPIDFormat,
+		},
+		{
+			name:      "noStars",
+			format:    api.PIDFormat{Pattern: "---___", Characters: api.PIDCharactersFull},
+			wantError: api.ErrInvalidPIDFormat,
+		},
+		{
+			name:      "invalidPatternCharacters",
+			format:    api.PIDFormat{Pattern: "**a-**", Characters: api.PIDCharactersFull},
+			wantError: api.ErrInvalidPIDFormat,
+		},
+		{
+			name:      "invalidCharacters",
+			format:    api.PIDFormat{Pattern: "***", Characters: api.PIDCharacters("nope")},
+			wantError: api.ErrInvalidPIDFormat,
+		},
+	}
 
-	t.Run("invalidPatternCharacters", func(t *testing.T) {
-		if err := api.ValidatePIDFormat(api.PIDFormat{Pattern: "**a-**", Characters: api.PIDCharactersFull}); err != api.ErrInvalidPIDFormat {
-			t.Fatalf("ValidatePIDFormat(patternChars): got %v want %v", err, api.ErrInvalidPIDFormat)
-		}
-	})
-
-	t.Run("invalidCharacters", func(t *testing.T) {
-		if err := api.ValidatePIDFormat(api.PIDFormat{Pattern: "***", Characters: api.PIDCharacters("nope")}); err != api.ErrInvalidPIDFormat {
-			t.Fatalf("ValidatePIDFormat(chars): got %v want %v", err, api.ErrInvalidPIDFormat)
-		}
-	})
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			gotErr := api.ValidatePIDFormat(tc.format)
+			if gotErr != tc.wantError {
+				t.Fatalf("ValidatePIDFormat(%s): got err %v, want %v", tc.name, gotErr, tc.wantError)
+			}
+		})
+	}
 }
