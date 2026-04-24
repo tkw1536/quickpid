@@ -39,8 +39,8 @@ func flowListNamespaces(t *testing.T, h *harness) {
 			Total:  5,
 			Offset: 0,
 			Items: []api.NamespaceResponse{
-				{Name: "a", PIDGenerator: api.PIDGeneratorLegacy, DateCreated: h.now},
-				{Name: "b", PIDGenerator: api.PIDGeneratorLegacy, DateCreated: h.now},
+				{Name: "a", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now},
+				{Name: "b", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now},
 			},
 		}
 		if !reflect.DeepEqual(got, want) {
@@ -57,9 +57,9 @@ func flowListNamespaces(t *testing.T, h *harness) {
 			Total:  5,
 			Offset: 0,
 			Items: []api.NamespaceResponse{
-				{Name: "a", PIDGenerator: api.PIDGeneratorLegacy, DateCreated: h.now},
-				{Name: "b", PIDGenerator: api.PIDGeneratorLegacy, DateCreated: h.now},
-				{Name: "c", PIDGenerator: api.PIDGeneratorLegacy, DateCreated: h.now},
+				{Name: "a", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now},
+				{Name: "b", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now},
+				{Name: "c", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now},
 			},
 		}
 		if !reflect.DeepEqual(got, want) {
@@ -102,7 +102,7 @@ func flowCreateNamespace(t *testing.T, h *harness) {
 
 	t.Run("success", func(t *testing.T) {
 		got := h.createNamespace(t, "flow-ns")
-		want := api.NamespaceResponse{Name: "flow-ns", PIDGenerator: api.PIDGeneratorLegacy, DateCreated: h.now}
+		want := api.NamespaceResponse{Name: "flow-ns", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("namespace: got %+v want %+v", got, want)
 		}
@@ -110,7 +110,13 @@ func flowCreateNamespace(t *testing.T, h *harness) {
 
 	t.Run("conflict", func(t *testing.T) {
 		_ = h.createNamespace(t, "dup-ns")
-		body := mustMarshal(t, api.NamespaceCreateRequest{Name: "dup-ns", PIDGenerator: api.PIDGeneratorLegacy})
+		body := mustMarshal(t, api.NamespaceCreateRequest{
+			Name: "dup-ns",
+			PIDFormat: api.PIDFormat{
+				Pattern:    "***-***",
+				Characters: api.PIDCharactersFull,
+			},
+		})
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusConflict)
@@ -352,35 +358,50 @@ func flowCreateResource(t *testing.T, h *harness) {
 		}
 	})
 
-	t.Run("uuid4_isRFC4122v4_lowercase", func(t *testing.T) {
-		ns := "uuid4-res-ns"
-		body := mustMarshal(t, api.NamespaceCreateRequest{Name: ns, PIDGenerator: api.PIDGeneratorUUID4})
+	t.Run("hexPattern_isLowercaseHex", func(t *testing.T) {
+		ns := "hex-res-ns"
+		body := mustMarshal(t, api.NamespaceCreateRequest{
+			Name: ns,
+			PIDFormat: api.PIDFormat{
+				Pattern:    "********-****-****-****-************",
+				Characters: api.PIDCharactersHex,
+			},
+		})
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusCreated)
 
 		got := h.createResource(t, ns, api.ResourceCreateRequest{
-			URL:      "https://example.com/uuid4",
+			URL:      "https://example.com/hex",
 			Metadata: nil,
-			Tag:      "uuid",
+			Tag:      "hex",
 		})
-		want := api.ResourceResponse{
-			PID:         "c0110c85-31d0-452d-8d73-e1194e95b5f1",
-			URL:         "https://example.com/uuid4",
-			Metadata:    nil,
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "uuid",
-			Deleted:     false,
+		if len(got.PID) != 36 || got.PID[8] != '-' || got.PID[13] != '-' || got.PID[18] != '-' || got.PID[23] != '-' {
+			t.Fatalf("pid shape: %q", got.PID)
 		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
+		for i := 0; i < len(got.PID); i++ {
+			if got.PID[i] == '-' {
+				continue
+			}
+			c := got.PID[i]
+			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+				t.Fatalf("pid not lowercase hex: %q", got.PID)
+			}
+		}
+		if got.URL != "https://example.com/hex" || got.Metadata != nil || got.DateCreated != h.now || got.DateUpdated != h.now || got.Tag != "hex" || got.Deleted != false {
+			t.Fatalf("resource: %+v", got)
 		}
 	})
 
 	t.Run("readable6_isDeterministic", func(t *testing.T) {
 		ns := "readable6-res-ns"
-		body := mustMarshal(t, api.NamespaceCreateRequest{Name: ns, PIDGenerator: api.PIDGeneratorReadable6})
+		body := mustMarshal(t, api.NamespaceCreateRequest{
+			Name: ns,
+			PIDFormat: api.PIDFormat{
+				Pattern:    "***-***",
+				Characters: api.PIDCharactersReadable,
+			},
+		})
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusCreated)
@@ -391,7 +412,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 			Tag:      "r6",
 		})
 		want := api.ResourceResponse{
-			PID:         "xfx-q04",
+			PID:         "g54-mn5",
 			URL:         "https://example.com/readable6",
 			Metadata:    nil,
 			DateCreated: h.now,
@@ -406,7 +427,13 @@ func flowCreateResource(t *testing.T, h *harness) {
 
 	t.Run("readable9_isDeterministic", func(t *testing.T) {
 		ns := "readable9-res-ns"
-		body := mustMarshal(t, api.NamespaceCreateRequest{Name: ns, PIDGenerator: api.PIDGeneratorReadable9})
+		body := mustMarshal(t, api.NamespaceCreateRequest{
+			Name: ns,
+			PIDFormat: api.PIDFormat{
+				Pattern:    "***-***-***",
+				Characters: api.PIDCharactersReadable,
+			},
+		})
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusCreated)
@@ -417,7 +444,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 			Tag:      "r9",
 		})
 		want := api.ResourceResponse{
-			PID:         "04m-184-2cm",
+			PID:         "r56-wn7-068",
 			URL:         "https://example.com/readable9",
 			Metadata:    nil,
 			DateCreated: h.now,
@@ -432,7 +459,13 @@ func flowCreateResource(t *testing.T, h *harness) {
 
 	t.Run("random64_isDeterministic", func(t *testing.T) {
 		ns := "random64-res-ns"
-		body := mustMarshal(t, api.NamespaceCreateRequest{Name: ns, PIDGenerator: api.PIDGeneratorRandom64})
+		body := mustMarshal(t, api.NamespaceCreateRequest{
+			Name: ns,
+			PIDFormat: api.PIDFormat{
+				Pattern:    "****************************************************************",
+				Characters: api.PIDCharactersFull,
+			},
+		})
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusCreated)
@@ -443,7 +476,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 			Tag:      "r64",
 		})
 		want := api.ResourceResponse{
-			PID:         "bsx0wdt0tm49f8q4c6xgmqk2joj8sz1wfu0vnc14cw8dg9k8otfkh04hahopg09v",
+			PID:         "c6xgmqk2joj8sz1wfu0vnc14cw8dg9k8otfkh04hahopg09vjsxwxyclw5ctqxn0",
 			URL:         "https://example.com/random64",
 			Metadata:    nil,
 			DateCreated: h.now,

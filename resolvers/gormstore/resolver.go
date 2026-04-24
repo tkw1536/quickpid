@@ -93,9 +93,10 @@ func (s *Store) CreateNamespace(ctx context.Context, req api.NamespaceCreateRequ
 
 		ts := now().UTC()
 		ns := Namespace{
-			Name:         req.Name,
-			PIDGenerator: req.PIDGenerator,
-			DateCreated:  ts,
+			Name:        req.Name,
+			PIDPattern:  req.PIDFormat.Pattern,
+			PIDChars:    req.PIDFormat.Characters,
+			DateCreated: ts,
 		}
 		if err := tx.Create(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
@@ -175,7 +176,10 @@ func (s *Store) CreateResource(ctx context.Context, namespace string, req api.Re
 		}
 
 		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-			candidate, err := api.GeneratePID(api.PIDGenerator(ns.PIDGenerator), rand)
+			candidate, err := api.GeneratePID(api.PIDFormat{
+				Pattern:    ns.PIDPattern,
+				Characters: ns.PIDChars,
+			}, rand)
 			if err != nil {
 				return nil, err
 			}
@@ -220,7 +224,10 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs
 		for _, req := range reqs {
 			var inserted bool
 			for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-				candidate, err := api.GeneratePID(api.PIDGenerator(ns.PIDGenerator), rand)
+				candidate, err := api.GeneratePID(api.PIDFormat{
+					Pattern:    ns.PIDPattern,
+					Characters: ns.PIDChars,
+				}, rand)
 				if err != nil {
 					return nil, err
 				}

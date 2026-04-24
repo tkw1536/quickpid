@@ -1,135 +1,114 @@
 package api
 
 import (
-	"encoding/hex"
-	"fmt"
 	"io"
 )
 
-// PIDGenerator selects a PID generation algorithm.
-type PIDGenerator string
+// PIDCharacters selects a character set for PID generation.
+type PIDCharacters string
 
 const (
-	PIDGeneratorLegacy    PIDGenerator = "legacy"
-	PIDGeneratorReadable6 PIDGenerator = "readable6"
-	PIDGeneratorReadable9 PIDGenerator = "readable9"
-	PIDGeneratorRandom64  PIDGenerator = "random64"
-	PIDGeneratorUUID4     PIDGenerator = "uuid4"
+	PIDCharactersFull     PIDCharacters = "full"
+	PIDCharactersReadable PIDCharacters = "readable"
+	PIDCharactersHex      PIDCharacters = "hex"
+	PIDCharactersDecimal  PIDCharacters = "decimal"
 )
 
-type pidGeneratorFunc func(io.Reader) (string, error)
-
-var pidGenerators = map[PIDGenerator]pidGeneratorFunc{
-	PIDGeneratorLegacy:    pidLegacy,
-	PIDGeneratorReadable6: pidReadable6,
-	PIDGeneratorReadable9: pidReadable9,
-	PIDGeneratorRandom64:  pidRandom64,
-	PIDGeneratorUUID4:     pidUUID4,
-}
-
-// Generator returns a PID generator function and whether it exists.
-func Generator(gen PIDGenerator) (func(io.Reader) (string, error), bool) {
-	fn, ok := pidGenerators[gen]
-	return fn, ok
-}
-
-// GeneratePID generates a new PID according to gen, using rand for randomness.
-func GeneratePID(gen PIDGenerator, rand io.Reader) (string, error) {
-	fn := pidGenerators[gen]
-	if fn == nil {
-		return "", ErrInvalidPIDGenerator
-	}
-	return fn(rand)
+// PIDFormat configures PID generation for a namespace.
+type PIDFormat struct {
+	Pattern    string        `json:"pattern"`
+	Characters PIDCharacters `json:"characters"`
 }
 
 const alphanumeric36 = "0123456789abcdefghijklmnopqrstuvwxyz"
 const crockford32NoU = "0123456789abcdefghjkmnpqrstvwxyz"
+const lowercaseHex16 = "0123456789abcdef"
+const decimal10 = "0123456789"
 
 func readFull(rand io.Reader, buf []byte) error {
 	_, err := io.ReadFull(rand, buf)
 	return err
 }
 
-func pidLegacy(rand io.Reader) (string, error) {
-	buf := make([]byte, 6)
+func pidAlphabet(chars PIDCharacters) (string, bool) {
+	switch chars {
+	case PIDCharactersFull:
+		return alphanumeric36, true
+	case PIDCharactersReadable:
+		return crockford32NoU, true
+	case PIDCharactersHex:
+		return lowercaseHex16, true
+	case PIDCharactersDecimal:
+		return decimal10, true
+	default:
+		return "", false
+	}
+}
+
+func isValidPIDPattern(pattern string) bool {
+	if pattern == "" {
+		return false
+	}
+	for i := 0; i < len(pattern); i++ {
+		switch pattern[i] {
+		case '*', '-', '_':
+			// ok
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// ValidatePIDFormat validates format and returns ErrInvalidPIDFormat on failure.
+func ValidatePIDFormat(format PIDFormat) error {
+	if !isValidPIDPattern(format.Pattern) {
+		return ErrInvalidPIDFormat
+	}
+	if _, ok := pidAlphabet(format.Characters); !ok {
+		return ErrInvalidPIDFormat
+	}
+	for i := 0; i < len(format.Pattern); i++ {
+		if format.Pattern[i] == '*' {
+			return nil
+		}
+	}
+	return ErrInvalidPIDFormat
+}
+
+// GeneratePID generates a new PID according to format, using rand for randomness.
+//
+// It replaces each '*' in format.Pattern with a random character from format.Characters,
+// and leaves '-' and '_' unchanged.
+func GeneratePID(format PIDFormat, rand io.Reader) (string, error) {
+	if err := ValidatePIDFormat(format); err != nil {
+		return "", err
+	}
+	alphabet, _ := pidAlphabet(format.Characters)
+
+	starCount := 0
+	for i := 0; i < len(format.Pattern); i++ {
+		if format.Pattern[i] == '*' {
+			starCount++
+		}
+	}
+
+	buf := make([]byte, starCount)
 	if err := readFull(rand, buf); err != nil {
 		return "", err
 	}
-	const n = byte(len(alphanumeric36))
-	out := make([]byte, 7)
-	for i := range 3 {
-		out[i] = alphanumeric36[buf[i]%n]
-	}
-	out[3] = '-'
-	for i := range 3 {
-		out[4+i] = alphanumeric36[buf[3+i]%n]
+
+	out := make([]byte, len(format.Pattern))
+	n := byte(len(alphabet))
+	j := 0
+	for i := 0; i < len(format.Pattern); i++ {
+		switch format.Pattern[i] {
+		case '*':
+			out[i] = alphabet[buf[j]%n]
+			j++
+		case '-', '_':
+			out[i] = format.Pattern[i]
+		}
 	}
 	return string(out), nil
-}
-
-func pidReadable6(rand io.Reader) (string, error) {
-	buf := make([]byte, 6)
-	if err := readFull(rand, buf); err != nil {
-		return "", err
-	}
-	const n = byte(len(crockford32NoU))
-	out := make([]byte, 7)
-	for i := range 3 {
-		out[i] = crockford32NoU[buf[i]%n]
-	}
-	out[3] = '-'
-	for i := range 3 {
-		out[4+i] = crockford32NoU[buf[3+i]%n]
-	}
-	return string(out), nil
-}
-
-func pidReadable9(rand io.Reader) (string, error) {
-	buf := make([]byte, 9)
-	if err := readFull(rand, buf); err != nil {
-		return "", err
-	}
-	const n = byte(len(crockford32NoU))
-	out := make([]byte, 11)
-	for i := range 3 {
-		out[i] = crockford32NoU[buf[i]%n]
-	}
-	out[3] = '-'
-	for i := range 3 {
-		out[4+i] = crockford32NoU[buf[3+i]%n]
-	}
-	out[7] = '-'
-	for i := range 3 {
-		out[8+i] = crockford32NoU[buf[6+i]%n]
-	}
-	return string(out), nil
-}
-
-func pidRandom64(rand io.Reader) (string, error) {
-	buf := make([]byte, 64)
-	if err := readFull(rand, buf); err != nil {
-		return "", err
-	}
-	const n = byte(len(alphanumeric36))
-	out := make([]byte, 64)
-	for i := range out {
-		out[i] = alphanumeric36[buf[i]%n]
-	}
-	return string(out), nil
-}
-
-func pidUUID4(rand io.Reader) (string, error) {
-	var b [16]byte
-	if err := readFull(rand, b[:]); err != nil {
-		return "", err
-	}
-
-	// RFC 4122 variant + version 4.
-	b[6] = (b[6] & 0x0f) | 0x40
-	b[8] = (b[8] & 0x3f) | 0x80
-
-	var hex32 [32]byte
-	hex.Encode(hex32[:], b[:])
-	// xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-	return fmt.Sprintf("%s-%s-%s-%s-%s", hex32[0:8], hex32[8:12], hex32[12:16], hex32[16:20], hex32[20:32]), nil
 }

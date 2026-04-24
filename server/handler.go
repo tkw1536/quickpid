@@ -102,8 +102,8 @@ func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 			writeError(w, api.ErrInvalidNamespace)
 			return
 		}
-		if _, ok := api.Generator(req.PIDGenerator); !ok {
-			writeError(w, api.ErrInvalidPIDGenerator)
+		if err := api.ValidatePIDFormat(req.PIDFormat); err != nil {
+			writeError(w, err)
 			return
 		}
 		out, err := h.res.CreateNamespace(r.Context(), req, h.ops.Now)

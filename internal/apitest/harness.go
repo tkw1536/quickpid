@@ -43,7 +43,13 @@ func newHarness(t *testing.T, factory ResolverFactory) *harness {
 
 func (h *harness) createNamespace(t *testing.T, name string) api.NamespaceResponse {
 	t.Helper()
-	body := mustMarshal(t, api.NamespaceCreateRequest{Name: name, PIDGenerator: api.PIDGeneratorLegacy})
+	body := mustMarshal(t, api.NamespaceCreateRequest{
+		Name: name,
+		PIDFormat: api.PIDFormat{
+			Pattern:    "***-***",
+			Characters: api.PIDCharactersFull,
+		},
+	})
 	resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 	defer resp.Body.Close()
 	assertStatus(t, resp, http.StatusCreated)

@@ -1,103 +1,107 @@
-package api
+package api_test
 
 import (
 	"testing"
-	"io"
+
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/internal/apitest"
 )
 
-type fakeRandReader struct {
-	n   int
-	i   uint64
-	pos int
-}
-
-var _ io.Reader = (*fakeRandReader)(nil)
-
-func (r *fakeRandReader) nextBit() byte {
-	if r.n == 0 {
-		r.n = 1
-		r.i = 0
-		r.pos = 0
-	}
-	shift := r.n - 1 - r.pos
-	bit := byte((r.i >> shift) & 1)
-	r.pos++
-	if r.pos >= r.n {
-		r.pos = 0
-		r.i++
-		if r.i >= (uint64(1) << r.n) {
-			r.n++
-			r.i = 0
-		}
-	}
-	return bit
-}
-
-func (r *fakeRandReader) Read(p []byte) (int, error) {
-	for j := range p {
-		var b byte
-		for range 8 {
-			b = (b << 1) | r.nextBit()
-		}
-		p[j] = b
-	}
-	return len(p), nil
-}
-
-func checkPID(t *testing.T, generator PIDGenerator, expect []string) {
+func checkPID(t *testing.T, format api.PIDFormat, expect []string) {
 	t.Helper()
 
-	r := &fakeRandReader{}
+	r := apitest.NewFakeRandReader()
 	for i, want := range expect {
-		got, err := GeneratePID(generator, r)
+		got, err := api.GeneratePID(format, r)
 		if err != nil {
-			t.Fatalf("GeneratePID(%q) call %d: %v", generator, i, err)
+			t.Fatalf("GeneratePID(%+v) call %d: %v", format, i, err)
 		}
 		if got != want {
-			t.Fatalf("GeneratePID(%q) call %d: got %q want %q", generator, i, got, want)
+			t.Fatalf("GeneratePID(%+v) call %d: got %q want %q", format, i, got, want)
 		}
 	}
 }
 
 func TestGeneratePID(t *testing.T) {
-	testCases := map[PIDGenerator][]string{
-		PIDGeneratorLegacy: {
-			"yd6-lc0",
-			"tha-yrf",
-			"chc-pds",
+	testCases := map[string]struct {
+		format api.PIDFormat
+		expect []string
+	}{
+		"full_legacyShape": {
+			format: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull},
+			expect: []string{
+				"yd6-lc0",
+				"tha-yrf",
+				"chc-pds",
+			},
 		},
-		PIDGeneratorReadable6: {
-			"61e-x08",
-			"hs2-akv",
-			"0hc-5hg",
+		"readable_legacyShape": {
+			format: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersReadable},
+			expect: []string{
+				"61e-x08",
+				"hs2-akv",
+				"0hc-5hg",
+			},
 		},
-		PIDGeneratorReadable9: {
-			"61e-x08-hs2",
-			"akv-0hc-5hg",
-			"ndd-k1s-enn",
+		"readable_threeChunks": {
+			format: api.PIDFormat{Pattern: "***-***-***", Characters: api.PIDCharactersReadable},
+			expect: []string{
+				"61e-x08-hs2",
+				"akv-0hc-5hg",
+				"ndd-k1s-enn",
+			},
 		},
-		PIDGeneratorRandom64: {
-			"yd6lc0thayrfchcpds59x79p651pd3dvc4wgkpk0iogbsx0wdt0tm49f8q4c6xgm",
-		},
-		PIDGeneratorUUID4: {
-			"46c14e5d-c048-4159-a26a-f37bc0110c85",
-			"31d0952d-8d73-4119-8e95-b5f19d6f9df7",
-			"c00420c4-1461-4824-a2cc-34e3d04524d4",
+		"full_random64": {
+			format: api.PIDFormat{Pattern: "****************************************************************", Characters: api.PIDCharactersFull},
+			expect: []string{
+				"yd6lc0thayrfchcpds59x79p651pd3dvc4wgkpk0iogbsx0wdt0tm49f8q4c6xgm",
+			},
 		},
 	}
 
-	for gen, expect := range testCases {
-		t.Run(string(gen), func(t *testing.T) {
-			checkPID(t, gen, expect)
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			checkPID(t, tc.format, tc.expect)
 		})
 	}
 
 	t.Run("invalid", func(t *testing.T) {
-		r := &fakeRandReader{}
-		_, err := GeneratePID(PIDGenerator("nope"), r)
-		if err != ErrInvalidPIDGenerator {
-			t.Fatalf("GeneratePID(invalid): got err %v want %v", err, ErrInvalidPIDGenerator)
+		r := apitest.NewFakeRandReader()
+		_, err := api.GeneratePID(api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharacters("nope")}, r)
+		if err != api.ErrInvalidPIDFormat {
+			t.Fatalf("GeneratePID(invalid): got err %v want %v", err, api.ErrInvalidPIDFormat)
 		}
 	})
 }
 
+func TestValidatePIDFormat(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		if err := api.ValidatePIDFormat(api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}); err != nil {
+			t.Fatalf("ValidatePIDFormat(ok): %v", err)
+		}
+	})
+
+	t.Run("emptyPattern", func(t *testing.T) {
+		if err := api.ValidatePIDFormat(api.PIDFormat{Pattern: "", Characters: api.PIDCharactersFull}); err != api.ErrInvalidPIDFormat {
+			t.Fatalf("ValidatePIDFormat(empty): got %v want %v", err, api.ErrInvalidPIDFormat)
+		}
+	})
+
+	t.Run("noStars", func(t *testing.T) {
+		if err := api.ValidatePIDFormat(api.PIDFormat{Pattern: "---___", Characters: api.PIDCharactersFull}); err != api.ErrInvalidPIDFormat {
+			t.Fatalf("ValidatePIDFormat(noStars): got %v want %v", err, api.ErrInvalidPIDFormat)
+		}
+	})
+
+	t.Run("invalidPatternCharacters", func(t *testing.T) {
+		if err := api.ValidatePIDFormat(api.PIDFormat{Pattern: "**a-**", Characters: api.PIDCharactersFull}); err != api.ErrInvalidPIDFormat {
+			t.Fatalf("ValidatePIDFormat(patternChars): got %v want %v", err, api.ErrInvalidPIDFormat)
+		}
+	})
+
+	t.Run("invalidCharacters", func(t *testing.T) {
+		if err := api.ValidatePIDFormat(api.PIDFormat{Pattern: "***", Characters: api.PIDCharacters("nope")}); err != api.ErrInvalidPIDFormat {
+			t.Fatalf("ValidatePIDFormat(chars): got %v want %v", err, api.ErrInvalidPIDFormat)
+		}
+	})
+}

@@ -66,7 +66,7 @@ func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateReques
 	}
 
 	created := now().UTC().Format(time.RFC3339)
-	ns := api.NamespaceResponse{Name: req.Name, PIDGenerator: req.PIDGenerator, DateCreated: created}
+	ns := api.NamespaceResponse{Name: req.Name, PIDFormat: req.PIDFormat, DateCreated: created}
 	s.namespaces[req.Name] = ns
 	s.resources[req.Name] = make(map[string]api.ResourceResponse)
 	return &ns, nil
@@ -115,7 +115,7 @@ func (s *Store) CreateResource(_ context.Context, namespace string, req api.Reso
 	}
 	byPID := s.resources[namespace]
 	for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-		candidate, err := api.GeneratePID(ns.PIDGenerator, rand)
+		candidate, err := api.GeneratePID(ns.PIDFormat, rand)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +152,7 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs [
 	for _, req := range reqs {
 		var inserted bool
 		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-			candidate, err := api.GeneratePID(ns.PIDGenerator, rand)
+			candidate, err := api.GeneratePID(ns.PIDFormat, rand)
 			if err != nil {
 				return nil, err
 			}
