@@ -23,7 +23,7 @@ type ResourceCreateRequest struct {
 	URL          string `json:"url"`
 	IdInTarget   string `json:"IdInTarget"`
 	TargetSystem string `json:"targetSystem"`
-	Tag          string `json:"tag,omitempty"`
+	Tag          string `json:"tag"`
 }
 
 // ResourceResponse is returned for resource operations.

@@ -478,6 +478,7 @@ components:
         - url
         - IdInTarget
         - targetSystem
+        - tag
       properties:
         url:
           description: |
