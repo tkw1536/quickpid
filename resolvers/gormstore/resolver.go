@@ -3,7 +3,6 @@ package gormstore
 import (
 	"context"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
@@ -26,155 +25,180 @@ func NewResolver(db *gorm.DB, maxPIDAttempts int) api.Resolver {
 
 var _ api.Resolver = (*Store)(nil)
 
-func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
-	var total int64
-	if err := s.db.Model(&Namespace{}).Count(&total).Error; err != nil {
-		return nil, err
+func transaction[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
+	var out V
+	err := db.Transaction(func(tx *gorm.DB) error {
+		var err error
+		out, err = fn(tx)
+		return err
+	})
+	if err != nil {
+		var zero V
+		return zero, err
 	}
+	return out, nil
+}
 
-	limit := params.Limit
-	offset := params.Offset
+func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+	return transaction[*api.PaginatedNamespacesResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
+		var total int64
+		if err := tx.Model(&Namespace{}).Count(&total).Error; err != nil {
+			return nil, err
+		}
 
-	if int64(offset) >= total {
+		limit := params.Limit
+		offset := params.Offset
+
+		if int64(offset) >= total {
+			return &api.PaginatedNamespacesResponse{
+				Total:  int(total),
+				Offset: offset,
+				Items:  []api.NamespaceResponse{},
+			}, nil
+		}
+
+		q := tx.Order("name")
+		if limit >= 0 {
+			q = q.Limit(limit)
+		}
+		q = q.Offset(offset)
+
+		var rows []Namespace
+		if err := q.Find(&rows).Error; err != nil {
+			return nil, err
+		}
+		items := make([]api.NamespaceResponse, len(rows))
+		for i := range rows {
+			items[i] = rows[i].ToApi()
+		}
 		return &api.PaginatedNamespacesResponse{
 			Total:  int(total),
 			Offset: offset,
-			Items:  []api.NamespaceResponse{},
+			Items:  items,
 		}, nil
-	}
-
-	q := s.db.Order("name")
-	if limit >= 0 {
-		q = q.Limit(limit)
-	}
-	q = q.Offset(offset)
-
-	var rows []Namespace
-	if err := q.Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	items := make([]api.NamespaceResponse, len(rows))
-	for i := range rows {
-		items[i] = namespaceToAPI(&rows[i])
-	}
-	return &api.PaginatedNamespacesResponse{
-		Total:  int(total),
-		Offset: offset,
-		Items:  items,
-	}, nil
+	})
 }
 
-func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
-	var existing Namespace
-	err := s.db.Where("name = ?", req.Name).First(&existing).Error
-	if err == nil {
-		return nil, api.ErrNamespaceAlreadyExists
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-	ts := now().UTC()
-	ns := Namespace{
-		Name:        req.Name,
-		DateCreated: ts,
-	}
-	if err := s.db.Create(&ns).Error; err != nil {
-		return nil, err
-	}
-	resp := namespaceToAPI(&ns)
-	return &resp, nil
-}
-
-func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
-	var ns Namespace
-	if err := s.db.Where("name = ?", params.Namespace).First(&ns).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, api.ErrNamespaceNotFound
+func (s *Store) CreateNamespace(ctx context.Context, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
+	return transaction[*api.NamespaceResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
+		var existing Namespace
+		err := tx.Where("name = ?", req.Name).First(&existing).Error
+		if err == nil {
+			return nil, api.ErrNamespaceAlreadyExists
 		}
-		return nil, err
-	}
-
-	q := s.db.Model(&Resource{}).Where("namespace_id = ?", ns.ID)
-	if params.Tag != nil {
-		q = q.Where("tag = ?", *params.Tag)
-	}
-	if params.Deleted != nil {
-		q = q.Where("deleted = ?", *params.Deleted)
-	}
-
-	var total int64
-	if err := q.Count(&total).Error; err != nil {
-		return nil, err
-	}
-
-	limit := params.Limit
-	offset := params.Offset
-
-	if int64(offset) >= total {
-		return &api.PaginatedResourcesResponse{
-			Total:  int(total),
-			Offset: offset,
-			Items:  []api.ResourceResponse{},
-		}, nil
-	}
-
-	q = q.Order("pid")
-	if limit >= 0 {
-		q = q.Limit(limit)
-	}
-	q = q.Offset(offset)
-
-	var rows []Resource
-	if err := q.Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	items := make([]api.ResourceResponse, len(rows))
-	for i := range rows {
-		items[i] = resourceToAPI(&rows[i])
-	}
-	return &api.PaginatedResourcesResponse{
-		Total:  int(total),
-		Offset: offset,
-		Items:  items,
-	}, nil
-}
-
-func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) (*api.ResourceResponse, error) {
-	var ns Namespace
-	if err := s.db.WithContext(ctx).Where("name = ?", namespace).First(&ns).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, api.ErrNamespaceNotFound
-		}
-		return nil, err
-	}
-
-	for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-		candidate, err := pidGen()
-		if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
 		}
 		ts := now().UTC()
-		row := Resource{
-			NamespaceID:  ns.ID,
-			PID:          candidate,
-			URL:          req.URL,
-			IdInTarget:   req.IdInTarget,
-			DateCreated:  ts,
-			DateUpdated:  ts,
-			TargetSystem: req.TargetSystem,
-			Tag:          req.Tag,
-			Deleted:      false,
+		ns := Namespace{
+			Name:        req.Name,
+			DateCreated: ts,
 		}
-		if err := s.db.WithContext(ctx).Create(&row).Error; err != nil {
+		if err := tx.Create(&ns).Error; err != nil {
 			if isDuplicateKey(err) {
-				continue
+				return nil, api.ErrNamespaceAlreadyExists
 			}
 			return nil, err
 		}
-		r := resourceToAPI(&row)
-		return &r, nil
-	}
-	return nil, api.ErrPIDAllocationFailed
+		resp := ns.ToApi()
+		return &resp, nil
+	})
+}
+
+func (s *Store) ListResources(ctx context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+	return transaction[*api.PaginatedResourcesResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedResourcesResponse, error) {
+		var ns Namespace
+		if err := tx.Where("name = ?", params.Namespace).First(&ns).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, api.ErrNamespaceNotFound
+			}
+			return nil, err
+		}
+
+		q := tx.Model(&Resource{}).Where("namespace_id = ?", ns.ID)
+		if params.Tag != nil {
+			q = q.Where("tag = ?", *params.Tag)
+		}
+		if params.Deleted != nil {
+			q = q.Where("deleted = ?", *params.Deleted)
+		}
+
+		var total int64
+		if err := q.Count(&total).Error; err != nil {
+			return nil, err
+		}
+
+		limit := params.Limit
+		offset := params.Offset
+
+		if int64(offset) >= total {
+			return &api.PaginatedResourcesResponse{
+				Total:  int(total),
+				Offset: offset,
+				Items:  []api.ResourceResponse{},
+			}, nil
+		}
+
+		q = q.Order("pid")
+		if limit >= 0 {
+			q = q.Limit(limit)
+		}
+		q = q.Offset(offset)
+
+		var rows []Resource
+		if err := q.Find(&rows).Error; err != nil {
+			return nil, err
+		}
+		items := make([]api.ResourceResponse, len(rows))
+		for i := range rows {
+			items[i] = rows[i].ToApi()
+		}
+		return &api.PaginatedResourcesResponse{
+			Total:  int(total),
+			Offset: offset,
+			Items:  items,
+		}, nil
+	})
+}
+
+func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) (*api.ResourceResponse, error) {
+	return transaction[*api.ResourceResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
+		var ns Namespace
+		if err := tx.Where("name = ?", namespace).First(&ns).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, api.ErrNamespaceNotFound
+			}
+			return nil, err
+		}
+
+		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
+			candidate, err := pidGen()
+			if err != nil {
+				return nil, err
+			}
+			ts := now().UTC()
+			row := Resource{
+				NamespaceID:  ns.ID,
+				PID:          candidate,
+				URL:          req.URL,
+				IdInTarget:   req.IdInTarget,
+				DateCreated:  ts,
+				DateUpdated:  ts,
+				TargetSystem: req.TargetSystem,
+				Tag:          req.Tag,
+				Deleted:      false,
+			}
+			if err := tx.Create(&row).Error; err != nil {
+				if isDuplicateKey(err) {
+					continue
+				}
+				return nil, err
+			}
+			r := row.ToApi()
+			return &r, nil
+		}
+		return nil, api.ErrPIDAllocationFailed
+	})
 }
 
 func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs []api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) ([]api.ResourceResponse, error) {
@@ -182,22 +206,21 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs
 		return nil, nil
 	}
 
-	var out []api.ResourceResponse
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	return transaction[[]api.ResourceResponse](s.db.WithContext(ctx), func(tx *gorm.DB) ([]api.ResourceResponse, error) {
 		var ns Namespace
 		if err := tx.Where("name = ?", namespace).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return api.ErrNamespaceNotFound
+				return nil, api.ErrNamespaceNotFound
 			}
-			return err
+			return nil, err
 		}
-		out = make([]api.ResourceResponse, 0, len(reqs))
+		out := make([]api.ResourceResponse, 0, len(reqs))
 		for _, req := range reqs {
 			var inserted bool
 			for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
 				candidate, err := pidGen()
 				if err != nil {
-					return err
+					return nil, err
 				}
 				ts := now().UTC()
 				row := Resource{
@@ -215,99 +238,73 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs
 					if isDuplicateKey(err) {
 						continue
 					}
-					return err
+					return nil, err
 				}
-				out = append(out, resourceToAPI(&row))
+				out = append(out, row.ToApi())
 				inserted = true
 				break
 			}
 			if !inserted {
-				return api.ErrPIDAllocationFailed
+				return nil, api.ErrPIDAllocationFailed
 			}
 		}
-		return nil
+		return out, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
+//go:fix inline
 func isDuplicateKey(err error) bool {
-	if err == nil {
-		return false
-	}
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
-		return true
-	}
-	msg := err.Error()
-	return strings.Contains(msg, "UNIQUE constraint failed") || strings.Contains(msg, "duplicate key")
+	return errors.Is(err, gorm.ErrDuplicatedKey)
 }
 
-func (s *Store) GetResource(_ context.Context, namespace, pid string) (*api.ResourceResponse, error) {
-	var ns Namespace
-	if err := s.db.Where("name = ?", namespace).First(&ns).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, api.ErrNamespaceNotFound
+func (s *Store) GetResource(ctx context.Context, namespace, pid string) (*api.ResourceResponse, error) {
+	return transaction[*api.ResourceResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
+		var ns Namespace
+		if err := tx.Where("name = ?", namespace).First(&ns).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, api.ErrNamespaceNotFound
+			}
+			return nil, err
 		}
-		return nil, err
-	}
-	var row Resource
-	if err := s.db.Where("namespace_id = ? AND pid = ?", ns.ID, pid).First(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, api.ErrResourceNotFound
+		var row Resource
+		if err := tx.Where("namespace_id = ? AND pid = ?", ns.ID, pid).First(&row).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, api.ErrResourceNotFound
+			}
+			return nil, err
 		}
-		return nil, err
-	}
-	r := resourceToAPI(&row)
-	return &r, nil
+		r := row.ToApi()
+		return &r, nil
+	})
 }
 
-func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
-	var ns Namespace
-	if err := s.db.Where("name = ?", namespace).First(&ns).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, api.ErrNamespaceNotFound
+func (s *Store) UpdateResource(ctx context.Context, namespace, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+	return transaction[*api.ResourceResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
+		var ns Namespace
+		if err := tx.Where("name = ?", namespace).First(&ns).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, api.ErrNamespaceNotFound
+			}
+			return nil, err
 		}
-		return nil, err
-	}
-	var row Resource
-	if err := s.db.Where("namespace_id = ? AND pid = ?", ns.ID, pid).First(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, api.ErrResourceNotFound
+		var row Resource
+		if err := tx.Where("namespace_id = ? AND pid = ?", ns.ID, pid).First(&row).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, api.ErrResourceNotFound
+			}
+			return nil, err
 		}
-		return nil, err
-	}
-	ts := now().UTC()
-	row.URL = req.URL
-	row.IdInTarget = req.IdInTarget
-	row.TargetSystem = req.TargetSystem
-	row.Tag = req.Tag
-	row.Deleted = req.Deleted
-	row.DateUpdated = ts
-	if err := s.db.Save(&row).Error; err != nil {
-		return nil, err
-	}
-	r := resourceToAPI(&row)
-	return &r, nil
-}
-
-func namespaceToAPI(n *Namespace) api.NamespaceResponse {
-	return api.NamespaceResponse{
-		Name:        n.Name,
-		DateCreated: n.DateCreated.UTC().Format(time.RFC3339),
-	}
-}
-
-func resourceToAPI(r *Resource) api.ResourceResponse {
-	return api.ResourceResponse{
-		PID:          r.PID,
-		URL:          r.URL,
-		IdInTarget:   r.IdInTarget,
-		DateCreated:  r.DateCreated.UTC().Format(time.RFC3339),
-		DateUpdated:  r.DateUpdated.UTC().Format(time.RFC3339),
-		TargetSystem: r.TargetSystem,
-		Tag:          r.Tag,
-		Deleted:      r.Deleted,
-	}
+		ts := now().UTC()
+		row.URL = req.URL
+		row.IdInTarget = req.IdInTarget
+		row.TargetSystem = req.TargetSystem
+		row.Tag = req.Tag
+		row.Deleted = req.Deleted
+		row.DateUpdated = ts
+		if err := tx.Save(&row).Error; err != nil {
+			return nil, err
+		}
+		r := row.ToApi()
+		return &r, nil
+	})
 }

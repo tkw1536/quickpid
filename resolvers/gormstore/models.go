@@ -1,12 +1,27 @@
 package gormstore
 
-import "time"
+import (
+	"time"
+
+	"github.com/tkw1536/quickpid/api"
+)
 
 // Namespace maps to the namespaces table.
 type Namespace struct {
 	ID          uint   `gorm:"primaryKey"`
 	Name        string `gorm:"type:text;uniqueIndex;not null"`
 	DateCreated time.Time
+}
+
+func (Namespace) TableName() string {
+	return "namespaces"
+}
+
+func (n Namespace) ToApi() api.NamespaceResponse {
+	return api.NamespaceResponse{
+		Name:        n.Name,
+		DateCreated: n.DateCreated.UTC().Format(time.RFC3339),
+	}
 }
 
 // Resource maps to the resources table.
@@ -23,10 +38,19 @@ type Resource struct {
 	Deleted      bool   `gorm:"not null;default:false"`
 }
 
-func (Namespace) TableName() string {
-	return "namespaces"
-}
-
 func (Resource) TableName() string {
 	return "resources"
+}
+
+func (r Resource) ToApi() api.ResourceResponse {
+	return api.ResourceResponse{
+		PID:          r.PID,
+		URL:          r.URL,
+		IdInTarget:   r.IdInTarget,
+		DateCreated:  r.DateCreated.UTC().Format(time.RFC3339),
+		DateUpdated:  r.DateUpdated.UTC().Format(time.RFC3339),
+		TargetSystem: r.TargetSystem,
+		Tag:          r.Tag,
+		Deleted:      r.Deleted,
+	}
 }

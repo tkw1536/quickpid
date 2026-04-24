@@ -377,7 +377,7 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
           example:
-            error: internal error
+            error: internal server error
   schemas:
     ErrorResponse:
       type: object
