@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"io"
 )
 
@@ -18,6 +19,20 @@ const (
 type PIDFormat struct {
 	Pattern    string        `json:"pattern"`
 	Characters PIDCharacters `json:"characters"`
+}
+
+func (f *PIDFormat) UnmarshalJSON(data []byte) error {
+	if err := requireJSONFields(data, "pattern", "characters"); err != nil {
+		return err
+	}
+
+	type alias PIDFormat
+	var out alias
+	if err := json.Unmarshal(data, &out); err != nil {
+		return err
+	}
+	*f = PIDFormat(out)
+	return nil
 }
 
 const alphanumeric36 = "0123456789abcdefghijklmnopqrstuvwxyz"

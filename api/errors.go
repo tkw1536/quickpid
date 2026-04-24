@@ -1,6 +1,8 @@
 package api
 
-import "errors"
+import (
+	"errors"
+)
 
 // Sentinel errors to be returned by [Resolver] implementations.
 var (

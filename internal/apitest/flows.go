@@ -139,7 +139,7 @@ func flowCreateNamespace(t *testing.T, h *harness) {
 	})
 
 	t.Run("trailingJSON", func(t *testing.T) {
-		resp := mustPOST(t, h.base+"/resolver/namespaces", `{"name":"x"} {"name":"y"}`)
+		resp := mustPOST(t, h.base+"/resolver/namespaces", `{"name":"x","pid_format":{"pattern":"***","characters":"full"}} {"name":"y"}`)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusBadRequest)
 		assertErrorJSON(t, resp, "trailing JSON")

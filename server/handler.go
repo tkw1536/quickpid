@@ -266,14 +266,13 @@ func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) erro
 	dec := json.NewDecoder(body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
-		var maxErr *http.MaxBytesError
-		if errors.As(err, &maxErr) {
+		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
 			return api.ErrRequestBodyTooLarge
 		}
 		if errors.Is(err, io.EOF) {
 			return api.ErrEmptyRequestBody
 		}
-		return api.ErrInvalidJSON
+		return fmt.Errorf("%w: %v", api.ErrInvalidJSON, err)
 	}
 	if err := dec.Decode(&struct{}{}); err != io.EOF {
 		return api.ErrTrailingJSON
