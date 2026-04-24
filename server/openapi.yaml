@@ -476,23 +476,20 @@ components:
       type: object
       required:
         - url
-        - IdInTarget
-        - targetSystem
         - tag
+        - metadata
       properties:
         url:
           description: |
             The URL of this resource.
           type: string
           format: uri
-        IdInTarget:
+        metadata:
           description: |
-            The identifier of this resource in the target.
+            Optional opaque metadata associated with the resource.
+            This may be null.
           type: string
-        targetSystem:
-          description: |
-            The target that this resource is associated with.
-          type: string
+          nullable: true
         tag:
           description: |
             A tag for this resource.
@@ -513,10 +510,9 @@ components:
       required:
         - pid
         - url
-        - IdInTarget
+        - metadata
         - date_created
         - date_updated
-        - targetSystem
         - tag
         - deleted
       properties:
@@ -527,10 +523,12 @@ components:
             The URL of this resource.
           type: string
           format: uri
-        IdInTarget:
+        metadata:
           description: |
-            The identifier of this resource in the target.
+            Optional opaque metadata associated with the resource.
+            This may be null.
           type: string
+          nullable: true
         date_created:
           description: |
             The date and time the resource was created.
@@ -541,10 +539,6 @@ components:
             The date and time the resource was last updated.
           type: string
           format: date-time
-        targetSystem:
-          description: |
-            The target that this resource is associated with.
-          type: string
         tag:
           description: |
             A tag for this resource.
@@ -558,24 +552,21 @@ components:
       type: object
       required:
         - url
-        - IdInTarget
-        - targetSystem
         - tag
         - deleted
+        - metadata
       properties:
         url:
           description: |
             The URL of this resource.
           type: string
           format: uri
-        IdInTarget:
+        metadata:
           description: |
-            The identifier of this resource in the target.
+            Optional opaque metadata associated with the resource.
+            This may be null.
           type: string
-        targetSystem:
-          description: |
-            The target that this resource is associated with.
-          type: string
+          nullable: true
         tag:
           description: |
             A tag for this resource.

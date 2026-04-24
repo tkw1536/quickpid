@@ -30,10 +30,9 @@ type Resource struct {
 	NamespaceID  uint   `gorm:"not null;index:idx_ns_tag,priority:1;uniqueIndex:ux_ns_pid,priority:1"`
 	PID          string `gorm:"column:pid;type:text;not null;uniqueIndex:ux_ns_pid,priority:2"`
 	URL          string `gorm:"type:text"`
-	IdInTarget   string `gorm:"type:text"`
+	Metadata     *string `gorm:"type:text"`
 	DateCreated  time.Time
 	DateUpdated  time.Time
-	TargetSystem string `gorm:"type:text"`
 	Tag          string `gorm:"type:text;index:idx_ns_tag,priority:2"`
 	Deleted      bool   `gorm:"not null;default:false"`
 }
@@ -44,13 +43,12 @@ func (Resource) TableName() string {
 
 func (r Resource) ToApi() api.ResourceResponse {
 	return api.ResourceResponse{
-		PID:          r.PID,
-		URL:          r.URL,
-		IdInTarget:   r.IdInTarget,
-		DateCreated:  r.DateCreated.UTC().Format(time.RFC3339),
-		DateUpdated:  r.DateUpdated.UTC().Format(time.RFC3339),
-		TargetSystem: r.TargetSystem,
-		Tag:          r.Tag,
-		Deleted:      r.Deleted,
+		PID:         r.PID,
+		URL:         r.URL,
+		Metadata:    r.Metadata,
+		DateCreated: r.DateCreated.UTC().Format(time.RFC3339),
+		DateUpdated: r.DateUpdated.UTC().Format(time.RFC3339),
+		Tag:         r.Tag,
+		Deleted:     r.Deleted,
 	}
 }

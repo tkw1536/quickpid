@@ -181,10 +181,9 @@ func (s *Store) CreateResource(ctx context.Context, namespace string, req api.Re
 				NamespaceID:  ns.ID,
 				PID:          candidate,
 				URL:          req.URL,
-				IdInTarget:   req.IdInTarget,
+				Metadata:     req.Metadata,
 				DateCreated:  ts,
 				DateUpdated:  ts,
-				TargetSystem: req.TargetSystem,
 				Tag:          req.Tag,
 				Deleted:      false,
 			}
@@ -227,10 +226,9 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs
 					NamespaceID:  ns.ID,
 					PID:          candidate,
 					URL:          req.URL,
-					IdInTarget:   req.IdInTarget,
+					Metadata:     req.Metadata,
 					DateCreated:  ts,
 					DateUpdated:  ts,
-					TargetSystem: req.TargetSystem,
 					Tag:          req.Tag,
 					Deleted:      false,
 				}
@@ -296,8 +294,7 @@ func (s *Store) UpdateResource(ctx context.Context, namespace, pid string, req a
 		}
 		ts := now().UTC()
 		row.URL = req.URL
-		row.IdInTarget = req.IdInTarget
-		row.TargetSystem = req.TargetSystem
+		row.Metadata = req.Metadata
 		row.Tag = req.Tag
 		row.Deleted = req.Deleted
 		row.DateUpdated = ts

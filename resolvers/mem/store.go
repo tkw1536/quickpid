@@ -122,14 +122,13 @@ func (s *Store) CreateResource(_ context.Context, namespace string, req api.Reso
 		}
 		ts := now().UTC().Format(time.RFC3339)
 		res := api.ResourceResponse{
-			PID:          candidate,
-			URL:          req.URL,
-			IdInTarget:   req.IdInTarget,
-			DateCreated:  ts,
-			DateUpdated:  ts,
-			TargetSystem: req.TargetSystem,
-			Tag:          req.Tag,
-			Deleted:      false,
+			PID:         candidate,
+			URL:         req.URL,
+			Metadata:    req.Metadata,
+			DateCreated: ts,
+			DateUpdated: ts,
+			Tag:         req.Tag,
+			Deleted:     false,
 		}
 		byPID[candidate] = res
 		return &res, nil
@@ -159,14 +158,13 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs [
 			}
 			ts := now().UTC().Format(time.RFC3339)
 			res := api.ResourceResponse{
-				PID:          candidate,
-				URL:          req.URL,
-				IdInTarget:   req.IdInTarget,
-				DateCreated:  ts,
-				DateUpdated:  ts,
-				TargetSystem: req.TargetSystem,
-				Tag:          req.Tag,
-				Deleted:      false,
+				PID:         candidate,
+				URL:         req.URL,
+				Metadata:    req.Metadata,
+				DateCreated: ts,
+				DateUpdated: ts,
+				Tag:         req.Tag,
+				Deleted:     false,
 			}
 			byPID[candidate] = res
 			out = append(out, res)
@@ -206,14 +204,13 @@ func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api
 	}
 	updated := now().UTC().Format(time.RFC3339)
 	res := api.ResourceResponse{
-		PID:          prev.PID,
-		URL:          req.URL,
-		IdInTarget:   req.IdInTarget,
-		DateCreated:  prev.DateCreated,
-		DateUpdated:  updated,
-		TargetSystem: req.TargetSystem,
-		Tag:          req.Tag,
-		Deleted:      req.Deleted,
+		PID:         prev.PID,
+		URL:         req.URL,
+		Metadata:    req.Metadata,
+		DateCreated: prev.DateCreated,
+		DateUpdated: updated,
+		Tag:         req.Tag,
+		Deleted:     req.Deleted,
 	}
 	s.resources[namespace][pid] = res
 	return &res, nil

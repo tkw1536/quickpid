@@ -10,6 +10,8 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
+func strptr(s string) *string { return &s }
+
 func flowListNamespaces(t *testing.T, h *harness) {
 	t.Helper()
 
@@ -179,33 +181,28 @@ func flowListResources(t *testing.T, h *harness) {
 	})
 
 	_ = h.createResource(t, ns, api.ResourceCreateRequest{
-		URL:          "https://example.com/a",
-		IdInTarget:   "ext-1",
-		TargetSystem: "sys-a",
-		Tag:          "alpha",
+		URL:      "https://example.com/a",
+		Metadata: strptr("ext-1@sys-a"),
+		Tag:      "alpha",
 	})
 	_ = h.createResource(t, ns, api.ResourceCreateRequest{
-		URL:          "https://example.com/b",
-		IdInTarget:   "ext-2",
-		TargetSystem: "sys-a",
-		Tag:          "beta",
+		URL:      "https://example.com/b",
+		Metadata: strptr("ext-2@sys-a"),
+		Tag:      "beta",
 	})
 	_ = h.createResource(t, ns, api.ResourceCreateRequest{
-		URL:          "https://example.com/empty-tag",
-		IdInTarget:   "ext-3",
-		TargetSystem: "sys-a",
+		URL:      "https://example.com/empty-tag",
+		Metadata: nil,
 	})
 	_ = h.createResource(t, ns, api.ResourceCreateRequest{
-		URL:          "https://example.com/c",
-		IdInTarget:   "ext-4",
-		TargetSystem: "sys-a",
-		Tag:          "alpha",
+		URL:      "https://example.com/c",
+		Metadata: strptr("ext-4@sys-a"),
+		Tag:      "alpha",
 	})
 	_ = h.createResource(t, ns, api.ResourceCreateRequest{
-		URL:          "https://example.com/d",
-		IdInTarget:   "ext-5",
-		TargetSystem: "sys-a",
-		Tag:          "alpha",
+		URL:      "https://example.com/d",
+		Metadata: strptr("ext-5@sys-a"),
+		Tag:      "alpha",
 	})
 
 	t.Run("pagination_defaultLimit", func(t *testing.T) {
@@ -220,24 +217,22 @@ func flowListResources(t *testing.T, h *harness) {
 			Offset: 0,
 			Items: []api.ResourceResponse{
 				{
-					PID:          "pid0001",
-					URL:          "https://example.com/a",
-					IdInTarget:   "ext-1",
-					DateCreated:  h.now,
-					DateUpdated:  h.now,
-					TargetSystem: "sys-a",
-					Tag:          "alpha",
-					Deleted:      false,
+					PID:         "pid0001",
+					URL:         "https://example.com/a",
+					Metadata:    strptr("ext-1@sys-a"),
+					DateCreated: h.now,
+					DateUpdated: h.now,
+					Tag:         "alpha",
+					Deleted:     false,
 				},
 				{
-					PID:          "pid0002",
-					URL:          "https://example.com/b",
-					IdInTarget:   "ext-2",
-					DateCreated:  h.now,
-					DateUpdated:  h.now,
-					TargetSystem: "sys-a",
-					Tag:          "beta",
-					Deleted:      false,
+					PID:         "pid0002",
+					URL:         "https://example.com/b",
+					Metadata:    strptr("ext-2@sys-a"),
+					DateCreated: h.now,
+					DateUpdated: h.now,
+					Tag:         "beta",
+					Deleted:     false,
 				},
 			},
 		}
@@ -333,20 +328,38 @@ func flowCreateResource(t *testing.T, h *harness) {
 
 	t.Run("success", func(t *testing.T) {
 		got := h.createResource(t, ns, api.ResourceCreateRequest{
-			URL:          "https://example.com/a",
-			IdInTarget:   "ext-1",
-			TargetSystem: "sys-a",
-			Tag:          "alpha",
+			URL:      "https://example.com/a",
+			Metadata: strptr("ext-1@sys-a"),
+			Tag:      "alpha",
 		})
 		want := api.ResourceResponse{
-			PID:          "pid0001",
-			URL:          "https://example.com/a",
-			IdInTarget:   "ext-1",
-			DateCreated:  h.now,
-			DateUpdated:  h.now,
-			TargetSystem: "sys-a",
-			Tag:          "alpha",
-			Deleted:      false,
+			PID:         "pid0001",
+			URL:         "https://example.com/a",
+			Metadata:    strptr("ext-1@sys-a"),
+			DateCreated: h.now,
+			DateUpdated: h.now,
+			Tag:         "alpha",
+			Deleted:     false,
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("resource: got %+v want %+v", got, want)
+		}
+	})
+
+	t.Run("metadataNull_roundTrips", func(t *testing.T) {
+		got := h.createResource(t, ns, api.ResourceCreateRequest{
+			URL:      "https://example.com/metadata-null",
+			Metadata: nil,
+			Tag:      "alpha",
+		})
+		want := api.ResourceResponse{
+			PID:         "pid0002",
+			URL:         "https://example.com/metadata-null",
+			Metadata:    nil,
+			DateCreated: h.now,
+			DateUpdated: h.now,
+			Tag:         "alpha",
+			Deleted:     false,
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("resource: got %+v want %+v", got, want)
@@ -354,7 +367,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("namespaceMissing", func(t *testing.T) {
-		body := mustMarshal(t, api.ResourceCreateRequest{URL: "https://x", IdInTarget: "x", TargetSystem: "y"})
+		body := mustMarshal(t, api.ResourceCreateRequest{URL: "https://x"})
 		resp := mustPOST(t, h.base+"/resolver/namespaces/absent-ns/resources", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusNotFound)
@@ -362,7 +375,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("invalidNamespace", func(t *testing.T) {
-		body := mustMarshal(t, api.ResourceCreateRequest{URL: "https://x", IdInTarget: "x", TargetSystem: "y"})
+		body := mustMarshal(t, api.ResourceCreateRequest{URL: "https://x"})
 		resp := mustPOST(t, h.base+"/resolver/namespaces/bad.ns/resources", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusBadRequest)
@@ -370,7 +383,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("tooLargeBody", func(t *testing.T) {
-		oversize := `{"url":"https://` + strings.Repeat("a", 512) + `","IdInTarget":"x","targetSystem":"y","tag":"z"}`
+		oversize := `{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x","tag":"z"}`
 		resp := mustPOST(t, fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, ns), oversize)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusRequestEntityTooLarge)
@@ -385,8 +398,8 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 
 	t.Run("success", func(t *testing.T) {
 		batch := []api.ResourceCreateRequest{
-			{URL: "https://b1", IdInTarget: "b1", TargetSystem: "batch", Tag: "batch"},
-			{URL: "https://b2", IdInTarget: "b2", TargetSystem: "batch"},
+			{URL: "https://b1", Metadata: strptr("b1@batch"), Tag: "batch"},
+			{URL: "https://b2", Metadata: nil},
 		}
 		body := mustMarshal(t, batch)
 		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, ns)
@@ -397,24 +410,22 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 		decodeJSON(t, resp.Body, &got)
 		want := []api.ResourceResponse{
 			{
-				PID:          "pid0001",
-				URL:          "https://b1",
-				IdInTarget:   "b1",
-				DateCreated:  h.now,
-				DateUpdated:  h.now,
-				TargetSystem: "batch",
-				Tag:          "batch",
-				Deleted:      false,
+				PID:         "pid0001",
+				URL:         "https://b1",
+				Metadata:    strptr("b1@batch"),
+				DateCreated: h.now,
+				DateUpdated: h.now,
+				Tag:         "batch",
+				Deleted:     false,
 			},
 			{
-				PID:          "pid0002",
-				URL:          "https://b2",
-				IdInTarget:   "b2",
-				DateCreated:  h.now,
-				DateUpdated:  h.now,
-				TargetSystem: "batch",
-				Tag:          "",
-				Deleted:      false,
+				PID:         "pid0002",
+				URL:         "https://b2",
+				Metadata:    nil,
+				DateCreated: h.now,
+				DateUpdated: h.now,
+				Tag:         "",
+				Deleted:     false,
 			},
 		}
 		if !reflect.DeepEqual(got, want) {
@@ -424,9 +435,9 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 
 	t.Run("tooManyItems", func(t *testing.T) {
 		batch := []api.ResourceCreateRequest{
-			{URL: "https://b1", IdInTarget: "b1", TargetSystem: "batch"},
-			{URL: "https://b2", IdInTarget: "b2", TargetSystem: "batch"},
-			{URL: "https://b3", IdInTarget: "b3", TargetSystem: "batch"},
+			{URL: "https://b1", Metadata: strptr("b1@batch")},
+			{URL: "https://b2", Metadata: strptr("b2@batch")},
+			{URL: "https://b3", Metadata: strptr("b3@batch")},
 		}
 		body := mustMarshal(t, batch)
 		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, ns)
@@ -438,7 +449,7 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 
 	t.Run("namespaceMissing", func(t *testing.T) {
 		body := mustMarshal(t, []api.ResourceCreateRequest{
-			{URL: "https://x", IdInTarget: "x", TargetSystem: "y"},
+			{URL: "https://x"},
 		})
 		u := h.base + "/resolver/namespaces/missing/resources:batch"
 		resp := mustPOST(t, u, body)
@@ -449,7 +460,7 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 
 	t.Run("tooLargeBody", func(t *testing.T) {
 		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, ns)
-		oversize := `[{"url":"https://` + strings.Repeat("a", 512) + `","IdInTarget":"x","targetSystem":"y"}]`
+		oversize := `[{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x"}]`
 		resp := mustPOST(t, u, oversize)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusRequestEntityTooLarge)
@@ -462,10 +473,9 @@ func flowGetResource(t *testing.T, h *harness) {
 	ns := "get-res-ns"
 	_ = h.createNamespace(t, ns)
 	created := h.createResource(t, ns, api.ResourceCreateRequest{
-		URL:          "https://example.com/a",
-		IdInTarget:   "ext-1",
-		TargetSystem: "sys-a",
-		Tag:          "alpha",
+		URL:      "https://example.com/a",
+		Metadata: strptr("ext-1@sys-a"),
+		Tag:      "alpha",
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -476,14 +486,13 @@ func flowGetResource(t *testing.T, h *harness) {
 		got := api.ResourceResponse{}
 		decodeJSON(t, resp.Body, &got)
 		want := api.ResourceResponse{
-			PID:          "pid0001",
-			URL:          "https://example.com/a",
-			IdInTarget:   "ext-1",
-			DateCreated:  h.now,
-			DateUpdated:  h.now,
-			TargetSystem: "sys-a",
-			Tag:          "alpha",
-			Deleted:      false,
+			PID:         "pid0001",
+			URL:         "https://example.com/a",
+			Metadata:    strptr("ext-1@sys-a"),
+			DateCreated: h.now,
+			DateUpdated: h.now,
+			Tag:         "alpha",
+			Deleted:     false,
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("resource: got %+v want %+v", got, want)
@@ -520,29 +529,47 @@ func flowUpdateResource(t *testing.T, h *harness) {
 	ns := "update-res-ns"
 	_ = h.createNamespace(t, ns)
 	created := h.createResource(t, ns, api.ResourceCreateRequest{
-		URL:          "https://example.com/a",
-		IdInTarget:   "ext-1",
-		TargetSystem: "sys-a",
-		Tag:          "alpha",
+		URL:      "https://example.com/a",
+		Metadata: strptr("ext-1@sys-a"),
+		Tag:      "alpha",
 	})
 
 	t.Run("success", func(t *testing.T) {
 		got := h.updateResource(t, ns, created.PID, api.ResourceUpdateRequest{
-			URL:          "https://example.com/updated",
-			IdInTarget:   "ext-1b",
-			TargetSystem: "sys-b",
-			Tag:          "beta",
-			Deleted:      false,
+			URL:      "https://example.com/updated",
+			Metadata: strptr("ext-1b@sys-b"),
+			Tag:      "beta",
+			Deleted:  false,
 		})
 		want := api.ResourceResponse{
-			PID:          "pid0001",
-			URL:          "https://example.com/updated",
-			IdInTarget:   "ext-1b",
-			DateCreated:  h.now,
-			DateUpdated:  h.now,
-			TargetSystem: "sys-b",
-			Tag:          "beta",
-			Deleted:      false,
+			PID:         "pid0001",
+			URL:         "https://example.com/updated",
+			Metadata:    strptr("ext-1b@sys-b"),
+			DateCreated: h.now,
+			DateUpdated: h.now,
+			Tag:         "beta",
+			Deleted:     false,
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("resource: got %+v want %+v", got, want)
+		}
+	})
+
+	t.Run("setMetadataNull", func(t *testing.T) {
+		got := h.updateResource(t, ns, created.PID, api.ResourceUpdateRequest{
+			URL:      "https://example.com/updated-null",
+			Metadata: nil,
+			Tag:      "beta",
+			Deleted:  false,
+		})
+		want := api.ResourceResponse{
+			PID:         "pid0001",
+			URL:         "https://example.com/updated-null",
+			Metadata:    nil,
+			DateCreated: h.now,
+			DateUpdated: h.now,
+			Tag:         "beta",
+			Deleted:     false,
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("resource: got %+v want %+v", got, want)
@@ -551,11 +578,10 @@ func flowUpdateResource(t *testing.T, h *harness) {
 
 	t.Run("resourceNotFound", func(t *testing.T) {
 		body := mustMarshal(t, api.ResourceUpdateRequest{
-			URL:          "https://example.com/updated",
-			IdInTarget:   "ext-1b",
-			TargetSystem: "sys-b",
-			Tag:          "beta",
-			Deleted:      false,
+			URL:      "https://example.com/updated",
+			Metadata: strptr("ext-1b@sys-b"),
+			Tag:      "beta",
+			Deleted:  false,
 		})
 		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/99999", h.base, ns)
 		resp := mustPATCH(t, u, body)
@@ -566,11 +592,10 @@ func flowUpdateResource(t *testing.T, h *harness) {
 
 	t.Run("invalidPID", func(t *testing.T) {
 		body := mustMarshal(t, api.ResourceUpdateRequest{
-			URL:          "https://example.com/updated",
-			IdInTarget:   "ext-1b",
-			TargetSystem: "sys-b",
-			Tag:          "beta",
-			Deleted:      false,
+			URL:      "https://example.com/updated",
+			Metadata: strptr("ext-1b@sys-b"),
+			Tag:      "beta",
+			Deleted:  false,
 		})
 		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/bad.pid", h.base, ns)
 		resp := mustPATCH(t, u, body)
@@ -581,7 +606,7 @@ func flowUpdateResource(t *testing.T, h *harness) {
 
 	t.Run("tooLargeBody", func(t *testing.T) {
 		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, ns, created.PID)
-		oversize := `{"url":"https://` + strings.Repeat("a", 512) + `","IdInTarget":"x","targetSystem":"y","tag":"z","deleted":false}`
+		oversize := `{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x","tag":"z","deleted":false}`
 		resp := mustPATCH(t, u, oversize)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusRequestEntityTooLarge)
