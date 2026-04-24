@@ -1,6 +1,10 @@
 package server
 
-import "time"
+import (
+	"crypto/rand"
+	"io"
+	"time"
+)
 
 // Options represents options for the handler.
 type Options struct {
@@ -11,9 +15,9 @@ type Options struct {
 	// Disable swagger UI and spec file being served.
 	DisableSwaggerUI bool
 
-	// GeneratePID generates new PID strings for create resource operations.
-	// If nil, a default generator is used.
-	GeneratePID func() (string, error)
+	// Rand provides randomness for PID generation.
+	// If nil, crypto/rand.Reader is used.
+	Rand io.Reader
 
 	// Now returns the current time.
 	// If nil, time.Now is used.
@@ -49,8 +53,8 @@ func (o Limits) withDefaults() Limits {
 
 func (o Options) withDefaults() Options {
 	o.Limits = o.Limits.withDefaults()
-	if o.GeneratePID == nil {
-		o.GeneratePID = RandomAlphanumericPID
+	if o.Rand == nil {
+		o.Rand = rand.Reader
 	}
 	if o.Now == nil {
 		o.Now = time.Now

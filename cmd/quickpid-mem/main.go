@@ -21,10 +21,9 @@ func main() {
 
 	store := mem.NewStore(server.DefaultPIDMaxAttempts)
 	apiHandler := server.NewHandler(server.Options{
-		MountPath:   mountPath,
-		Limits:      server.Limits{},
-		GeneratePID: server.RandomAlphanumericPID,
-		Now:         time.Now,
+		MountPath: mountPath,
+		Limits:    server.Limits{},
+		Now:       time.Now,
 	}, store)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))

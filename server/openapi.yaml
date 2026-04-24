@@ -395,23 +395,53 @@ components:
       type: object
       required:
         - name
+        - pid_generator
       properties:
         name:
           $ref: '#/components/schemas/NamespaceName'
+        pid_generator:
+          $ref: '#/components/schemas/PIDGenerator'
     Namespace:
       description: Represents a namespace.
       type: object
       required:
         - name
+        - pid_generator
         - date_created
       properties:
         name:
           description: The name of this namespace.
           $ref: '#/components/schemas/NamespaceName'
+        pid_generator:
+          $ref: '#/components/schemas/PIDGenerator'
         date_created:
           description: The date and time the namespace was created.
           type: string
           format: date-time
+    PIDGenerator:
+      description: |
+        PID generator algorithm used for new resources in this namespace.
+        Results for each function must comply with the regex for PIDs - the generator merely determines the precise internal format.
+      type: string
+      oneOf:
+        - const: legacy
+          description: |
+            PIDs aligned with the legacy implementation, in the shape abc-def.
+            They are aligned with the legacy format of this API.
+            Two chunks of three alphanumeric characters each, separated by a hyphen.
+        - const: readable6
+          description: |
+            A length 6 PID optimized for hand-readability, in the shape of abc-def.
+            Two chunks of three alphanumeric characters, separated by a hypen. 
+            Characters in each chunk correspond may be numbers or lowercase letters, excluding i, l, o and u to avoid confusion.
+        - const: readable9
+            Like readable6, but with three chunks instead of 2.
+        - const: random64
+          description: |
+            64-character alphanumeric character string.
+        - const: uuid4
+          description: |
+            RFC 4122 UUID version 4, in lowercase hex form (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`).
     NamespaceName:
       description: The name of a namespace.
       type: string
@@ -499,8 +529,7 @@ components:
       description: |
         A persistent identifier for a resource.
         The identifier uniquely identifies the resource within the namespace.
-        Identifiers are kept as short as possible to allow for inclusion in print media.
-        A typical pattern is two chunks of alphanumeric characters separated by a hyphen.
+        The precise format of the identifier is determined by the PID generator algorithm used for the namespace.
       type: string
       pattern: '^[a-z0-9_-]+$'
       examples:

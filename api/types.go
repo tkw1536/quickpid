@@ -2,13 +2,15 @@ package api
 
 // NamespaceCreateRequest is the JSON body for createNamespace.
 type NamespaceCreateRequest struct {
-	Name string `json:"name"`
+	Name         string       `json:"name"`
+	PIDGenerator PIDGenerator `json:"pid_generator"`
 }
 
 // NamespaceResponse is returned for namespace operations.
 type NamespaceResponse struct {
-	Name        string `json:"name"`
-	DateCreated string `json:"date_created"`
+	Name         string       `json:"name"`
+	PIDGenerator PIDGenerator `json:"pid_generator"`
+	DateCreated  string       `json:"date_created"`
 }
 
 type PaginatedNamespacesResponse struct {

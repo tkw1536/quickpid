@@ -38,9 +38,8 @@ func main() {
 
 	const mountPath = "/api/v2"
 	apiHandler := server.NewHandler(server.Options{
-		MountPath:   mountPath,
-		GeneratePID: server.SixCharPIDWithDashes,
-		Now:         time.Now,
+		MountPath: mountPath,
+		Now:       time.Now,
 	}, resolver)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))

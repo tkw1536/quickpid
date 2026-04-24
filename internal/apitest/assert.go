@@ -51,11 +51,13 @@ func assertStatus(t *testing.T, resp *http.Response, want int) {
 	}
 }
 
-func decodeJSON(t *testing.T, r io.Reader, v any) {
+func decodeJSON[T any](t *testing.T, r io.Reader) T {
 	t.Helper()
-	if err := json.NewDecoder(r).Decode(v); err != nil {
+	var v T
+	if err := json.NewDecoder(r).Decode(&v); err != nil {
 		t.Fatal(err)
 	}
+	return v
 }
 
 func mustMarshal(t *testing.T, v any) string {
@@ -73,8 +75,7 @@ type errBody struct {
 
 func assertErrorJSON(t *testing.T, resp *http.Response, wantMsg string) {
 	t.Helper()
-	var eb errBody
-	decodeJSON(t, resp.Body, &eb)
+	eb := decodeJSON[errBody](t, resp.Body)
 	if eb.Error != wantMsg {
 		t.Fatalf("error %q, want %q", eb.Error, wantMsg)
 	}

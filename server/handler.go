@@ -102,6 +102,10 @@ func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 			writeError(w, api.ErrInvalidNamespace)
 			return
 		}
+		if _, ok := api.Generator(req.PIDGenerator); !ok {
+			writeError(w, api.ErrInvalidPIDGenerator)
+			return
+		}
 		out, err := h.res.CreateNamespace(r.Context(), req, h.ops.Now)
 		if err != nil {
 			writeError(w, err)
@@ -171,7 +175,7 @@ func (h *Handler) handleCreateResource() http.HandlerFunc {
 			return
 		}
 
-		out, err := h.res.CreateResource(r.Context(), ns, req, h.ops.GeneratePID, h.ops.Now)
+		out, err := h.res.CreateResource(r.Context(), ns, req, h.ops.Rand, h.ops.Now)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -197,7 +201,7 @@ func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
 			writeError(w, api.ErrInvalidNamespace)
 			return
 		}
-		out, err := h.res.BatchCreateResources(r.Context(), ns, reqs, h.ops.GeneratePID, h.ops.Now)
+		out, err := h.res.BatchCreateResources(r.Context(), ns, reqs, h.ops.Rand, h.ops.Now)
 		if err != nil {
 			writeError(w, err)
 			return

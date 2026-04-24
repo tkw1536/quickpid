@@ -3,6 +3,7 @@ package gormstore
 import (
 	"context"
 	"errors"
+	"io"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
@@ -40,7 +41,7 @@ func transaction[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
 }
 
 func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
-	return transaction[*api.PaginatedNamespacesResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
 		var total int64
 		if err := tx.Model(&Namespace{}).Count(&total).Error; err != nil {
 			return nil, err
@@ -80,7 +81,7 @@ func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesPar
 }
 
 func (s *Store) CreateNamespace(ctx context.Context, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
-	return transaction[*api.NamespaceResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		var existing Namespace
 		err := tx.Where("name = ?", req.Name).First(&existing).Error
 		if err == nil {
@@ -89,13 +90,15 @@ func (s *Store) CreateNamespace(ctx context.Context, req api.NamespaceCreateRequ
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
 		}
+
 		ts := now().UTC()
 		ns := Namespace{
-			Name:        req.Name,
-			DateCreated: ts,
+			Name:         req.Name,
+			PIDGenerator: req.PIDGenerator,
+			DateCreated:  ts,
 		}
 		if err := tx.Create(&ns).Error; err != nil {
-			if isDuplicateKey(err) {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
 				return nil, api.ErrNamespaceAlreadyExists
 			}
 			return nil, err
@@ -106,7 +109,7 @@ func (s *Store) CreateNamespace(ctx context.Context, req api.NamespaceCreateRequ
 }
 
 func (s *Store) ListResources(ctx context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
-	return transaction[*api.PaginatedResourcesResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedResourcesResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedResourcesResponse, error) {
 		var ns Namespace
 		if err := tx.Where("name = ?", params.Namespace).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -161,8 +164,8 @@ func (s *Store) ListResources(ctx context.Context, params api.ListResourcesParam
 	})
 }
 
-func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) (*api.ResourceResponse, error) {
-	return transaction[*api.ResourceResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(ctx context.Context, namespace string, req api.ResourceCreateRequest, rand io.Reader, now func() time.Time) (*api.ResourceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		var ns Namespace
 		if err := tx.Where("name = ?", namespace).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -172,23 +175,23 @@ func (s *Store) CreateResource(ctx context.Context, namespace string, req api.Re
 		}
 
 		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-			candidate, err := pidGen()
+			candidate, err := api.GeneratePID(api.PIDGenerator(ns.PIDGenerator), rand)
 			if err != nil {
 				return nil, err
 			}
 			ts := now().UTC()
 			row := Resource{
-				NamespaceID:  ns.ID,
-				PID:          candidate,
-				URL:          req.URL,
-				Metadata:     req.Metadata,
-				DateCreated:  ts,
-				DateUpdated:  ts,
-				Tag:          req.Tag,
-				Deleted:      false,
+				NamespaceID: ns.ID,
+				PID:         candidate,
+				URL:         req.URL,
+				Metadata:    req.Metadata,
+				DateCreated: ts,
+				DateUpdated: ts,
+				Tag:         req.Tag,
+				Deleted:     false,
 			}
 			if err := tx.Create(&row).Error; err != nil {
-				if isDuplicateKey(err) {
+				if errors.Is(err, gorm.ErrDuplicatedKey) {
 					continue
 				}
 				return nil, err
@@ -200,12 +203,12 @@ func (s *Store) CreateResource(ctx context.Context, namespace string, req api.Re
 	})
 }
 
-func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs []api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs []api.ResourceCreateRequest, rand io.Reader, now func() time.Time) ([]api.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
 
-	return transaction[[]api.ResourceResponse](s.db.WithContext(ctx), func(tx *gorm.DB) ([]api.ResourceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) ([]api.ResourceResponse, error) {
 		var ns Namespace
 		if err := tx.Where("name = ?", namespace).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -217,23 +220,23 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs
 		for _, req := range reqs {
 			var inserted bool
 			for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-				candidate, err := pidGen()
+				candidate, err := api.GeneratePID(api.PIDGenerator(ns.PIDGenerator), rand)
 				if err != nil {
 					return nil, err
 				}
 				ts := now().UTC()
 				row := Resource{
-					NamespaceID:  ns.ID,
-					PID:          candidate,
-					URL:          req.URL,
-					Metadata:     req.Metadata,
-					DateCreated:  ts,
-					DateUpdated:  ts,
-					Tag:          req.Tag,
-					Deleted:      false,
+					NamespaceID: ns.ID,
+					PID:         candidate,
+					URL:         req.URL,
+					Metadata:    req.Metadata,
+					DateCreated: ts,
+					DateUpdated: ts,
+					Tag:         req.Tag,
+					Deleted:     false,
 				}
 				if err := tx.Create(&row).Error; err != nil {
-					if isDuplicateKey(err) {
+					if errors.Is(err, gorm.ErrDuplicatedKey) {
 						continue
 					}
 					return nil, err
@@ -250,13 +253,8 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs
 	})
 }
 
-//go:fix inline
-func isDuplicateKey(err error) bool {
-	return errors.Is(err, gorm.ErrDuplicatedKey)
-}
-
 func (s *Store) GetResource(ctx context.Context, namespace, pid string) (*api.ResourceResponse, error) {
-	return transaction[*api.ResourceResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		var ns Namespace
 		if err := tx.Where("name = ?", namespace).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -277,7 +275,7 @@ func (s *Store) GetResource(ctx context.Context, namespace, pid string) (*api.Re
 }
 
 func (s *Store) UpdateResource(ctx context.Context, namespace, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
-	return transaction[*api.ResourceResponse](s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		var ns Namespace
 		if err := tx.Where("name = ?", namespace).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {

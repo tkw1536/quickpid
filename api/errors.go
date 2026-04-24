@@ -18,6 +18,7 @@ var (
 
 	ErrNamespaceAlreadyExists = errors.New("namespace already exists")
 	ErrInvalidNamespace       = errors.New("invalid namespace")
+	ErrInvalidPIDGenerator    = errors.New("invalid pid generator")
 	ErrInvalidPID             = errors.New("invalid pid")
 
 	ErrPIDAllocationFailed = errors.New("could not allocate unique pid")

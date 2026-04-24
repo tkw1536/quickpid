@@ -2,6 +2,7 @@ package mem
 
 import (
 	"context"
+	"io"
 	"sort"
 	"sync"
 	"time"
@@ -65,7 +66,7 @@ func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateReques
 	}
 
 	created := now().UTC().Format(time.RFC3339)
-	ns := api.NamespaceResponse{Name: req.Name, DateCreated: created}
+	ns := api.NamespaceResponse{Name: req.Name, PIDGenerator: req.PIDGenerator, DateCreated: created}
 	s.namespaces[req.Name] = ns
 	s.resources[req.Name] = make(map[string]api.ResourceResponse)
 	return &ns, nil
@@ -104,16 +105,17 @@ func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams)
 	return &api.PaginatedResourcesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateResource(_ context.Context, namespace string, req api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(_ context.Context, namespace string, req api.ResourceCreateRequest, rand io.Reader, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.namespaces[namespace]; !ok {
+	ns, ok := s.namespaces[namespace]
+	if !ok {
 		return nil, api.ErrNamespaceNotFound
 	}
 	byPID := s.resources[namespace]
 	for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-		candidate, err := pidGen()
+		candidate, err := api.GeneratePID(ns.PIDGenerator, rand)
 		if err != nil {
 			return nil, err
 		}
@@ -136,11 +138,12 @@ func (s *Store) CreateResource(_ context.Context, namespace string, req api.Reso
 	return nil, api.ErrPIDAllocationFailed
 }
 
-func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs []api.ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs []api.ResourceCreateRequest, rand io.Reader, now func() time.Time) ([]api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.namespaces[namespace]; !ok {
+	ns, ok := s.namespaces[namespace]
+	if !ok {
 		return nil, api.ErrNamespaceNotFound
 	}
 
@@ -149,7 +152,7 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs [
 	for _, req := range reqs {
 		var inserted bool
 		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-			candidate, err := pidGen()
+			candidate, err := api.GeneratePID(ns.PIDGenerator, rand)
 			if err != nil {
 				return nil, err
 			}

@@ -8,9 +8,10 @@ import (
 
 // Namespace maps to the namespaces table.
 type Namespace struct {
-	ID          uint   `gorm:"primaryKey"`
-	Name        string `gorm:"type:text;uniqueIndex;not null"`
-	DateCreated time.Time
+	ID           uint             `gorm:"primaryKey"`
+	Name         string           `gorm:"type:text;uniqueIndex;not null"`
+	PIDGenerator api.PIDGenerator `gorm:"type:text;not null"`
+	DateCreated  time.Time
 }
 
 func (Namespace) TableName() string {
@@ -19,22 +20,23 @@ func (Namespace) TableName() string {
 
 func (n Namespace) ToApi() api.NamespaceResponse {
 	return api.NamespaceResponse{
-		Name:        n.Name,
-		DateCreated: n.DateCreated.UTC().Format(time.RFC3339),
+		Name:         n.Name,
+		PIDGenerator: n.PIDGenerator,
+		DateCreated:  n.DateCreated.UTC().Format(time.RFC3339),
 	}
 }
 
 // Resource maps to the resources table.
 type Resource struct {
-	ID           uint   `gorm:"primaryKey"`
-	NamespaceID  uint   `gorm:"not null;index:idx_ns_tag,priority:1;uniqueIndex:ux_ns_pid,priority:1"`
-	PID          string `gorm:"column:pid;type:text;not null;uniqueIndex:ux_ns_pid,priority:2"`
-	URL          string `gorm:"type:text"`
-	Metadata     *string `gorm:"type:text"`
-	DateCreated  time.Time
-	DateUpdated  time.Time
-	Tag          string `gorm:"type:text;index:idx_ns_tag,priority:2"`
-	Deleted      bool   `gorm:"not null;default:false"`
+	ID          uint    `gorm:"primaryKey"`
+	NamespaceID uint    `gorm:"not null;index:idx_ns_tag,priority:1;uniqueIndex:ux_ns_pid,priority:1"`
+	PID         string  `gorm:"column:pid;type:text;not null;uniqueIndex:ux_ns_pid,priority:2"`
+	URL         string  `gorm:"type:text"`
+	Metadata    *string `gorm:"type:text"`
+	DateCreated time.Time
+	DateUpdated time.Time
+	Tag         string `gorm:"type:text;index:idx_ns_tag,priority:2"`
+	Deleted     bool   `gorm:"not null;default:false"`
 }
 
 func (Resource) TableName() string {

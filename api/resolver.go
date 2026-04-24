@@ -1,6 +1,7 @@
 package api
 
 import "context"
+import "io"
 import "time"
 
 // Resolver implements the PID Resolver API.
@@ -12,8 +13,8 @@ type Resolver interface {
 	ListResources(ctx context.Context, params ListResourcesParams) (*PaginatedResourcesResponse, error)
 	GetResource(ctx context.Context, namespace, pid string) (*ResourceResponse, error)
 
-	CreateResource(ctx context.Context, namespace string, req ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) (*ResourceResponse, error)
-	BatchCreateResources(ctx context.Context, namespace string, reqs []ResourceCreateRequest, pidGen func() (string, error), now func() time.Time) ([]ResourceResponse, error)
+	CreateResource(ctx context.Context, namespace string, req ResourceCreateRequest, rand io.Reader, now func() time.Time) (*ResourceResponse, error)
+	BatchCreateResources(ctx context.Context, namespace string, reqs []ResourceCreateRequest, rand io.Reader, now func() time.Time) ([]ResourceResponse, error)
 
 	UpdateResource(ctx context.Context, namespace, pid string, req ResourceUpdateRequest, now func() time.Time) (*ResourceResponse, error)
 }

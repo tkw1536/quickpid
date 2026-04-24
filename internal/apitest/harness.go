@@ -2,9 +2,9 @@ package apitest
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -16,33 +16,15 @@ type harness struct {
 	srv  *httptest.Server
 	base string
 	now  string
+	rand io.Reader
 }
 
 func newHarness(t *testing.T, factory ResolverFactory) *harness {
 	t.Helper()
-	srv := newServer(t, factory(t))
-	return &harness{
-		srv:  srv,
-		base: srv.URL + MountPath,
-		now:  "2020-01-02T03:04:05Z",
-	}
-}
-
-func (h *harness) createNamespace(t *testing.T, name string) api.NamespaceResponse {
-	t.Helper()
-	body := mustMarshal(t, api.NamespaceCreateRequest{Name: name})
-	resp := mustPOST(t, h.base+"/resolver/namespaces", body)
-	defer resp.Body.Close()
-	assertStatus(t, resp, http.StatusCreated)
-	var got api.NamespaceResponse
-	decodeJSON(t, resp.Body, &got)
-	return got
-}
-
-func newServer(tb testing.TB, res api.Resolver) *httptest.Server {
-	tb.Helper()
-	opts := newServerOptions()
+	res := factory(t)
+	opts, r := newServerOptions()
 	opts.MountPath = MountPath
+
 	mux := http.NewServeMux()
 	apiHandler := server.NewHandler(opts, res)
 	mux.Handle(MountPath+"/", http.StripPrefix(MountPath, apiHandler))
@@ -50,11 +32,25 @@ func newServer(tb testing.TB, res api.Resolver) *httptest.Server {
 		http.Redirect(w, r, MountPath+"/", http.StatusMovedPermanently)
 	}))
 	srv := httptest.NewServer(mux)
-	tb.Cleanup(srv.Close)
-	return srv
+	t.Cleanup(srv.Close)
+	return &harness{
+		srv:  srv,
+		base: srv.URL + MountPath,
+		now:  "2020-01-02T03:04:05Z",
+		rand: r,
+	}
 }
 
-func newServerOptions() server.Options {
+func (h *harness) createNamespace(t *testing.T, name string) api.NamespaceResponse {
+	t.Helper()
+	body := mustMarshal(t, api.NamespaceCreateRequest{Name: name, PIDGenerator: api.PIDGeneratorLegacy})
+	resp := mustPOST(t, h.base+"/resolver/namespaces", body)
+	defer resp.Body.Close()
+	assertStatus(t, resp, http.StatusCreated)
+	return decodeJSON[api.NamespaceResponse](t, resp.Body)
+}
+
+func newServerOptions() (server.Options, io.Reader) {
 	var opts server.Options
 	if opts.Limits.DefaultPageLimit == 0 {
 		opts.Limits.DefaultPageLimit = 2
@@ -68,24 +64,13 @@ func newServerOptions() server.Options {
 	if opts.Limits.MaxBodyBytes == 0 {
 		opts.Limits.MaxBodyBytes = 256
 	}
-	if opts.GeneratePID == nil {
-		opts.GeneratePID = newDeterministicPIDGen("pid")
-	}
+	r := NewFakeRandReader()
+	opts.Rand = r
 	if opts.Now == nil {
 		fixed := time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
 		opts.Now = func() time.Time { return fixed }
 	}
-	return opts
-}
-
-// NewDeterministicPIDGen returns a deterministic PID generator suitable for tests.
-// Each call returns prefix + a zero-padded counter starting at 1, e.g. "pid0001".
-func newDeterministicPIDGen(prefix string) func() (string, error) {
-	var n uint64
-	return func() (string, error) {
-		v := atomic.AddUint64(&n, 1)
-		return fmt.Sprintf("%s%04d", prefix, v), nil
-	}
+	return opts, r
 }
 
 func (h *harness) createResource(t *testing.T, namespace string, req api.ResourceCreateRequest) api.ResourceResponse {
@@ -95,9 +80,7 @@ func (h *harness) createResource(t *testing.T, namespace string, req api.Resourc
 	resp := mustPOST(t, u, body)
 	defer resp.Body.Close()
 	assertStatus(t, resp, http.StatusCreated)
-	var got api.ResourceResponse
-	decodeJSON(t, resp.Body, &got)
-	return got
+	return decodeJSON[api.ResourceResponse](t, resp.Body)
 }
 
 func (h *harness) updateResource(t *testing.T, namespace, pid string, req api.ResourceUpdateRequest) api.ResourceResponse {
@@ -107,7 +90,5 @@ func (h *harness) updateResource(t *testing.T, namespace, pid string, req api.Re
 	resp := mustPATCH(t, u, body)
 	defer resp.Body.Close()
 	assertStatus(t, resp, http.StatusOK)
-	var got api.ResourceResponse
-	decodeJSON(t, resp.Body, &got)
-	return got
+	return decodeJSON[api.ResourceResponse](t, resp.Body)
 }
