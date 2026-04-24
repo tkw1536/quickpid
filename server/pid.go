@@ -21,7 +21,7 @@ func RandomAlphanumericPID() (string, error) {
 	s := base64.RawURLEncoding.EncodeToString(buf)
 	out := make([]rune, 0, len(s))
 	for _, r := range s {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
 			out = append(out, r)
 		}
 	}
@@ -36,7 +36,7 @@ func RandomAlphanumericPID() (string, error) {
 	return string(b[:16]), nil
 }
 
-const alphanumeric62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const alphanumeric36 = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 // SixCharPIDWithDashes returns a PID of the form "abc-def" (three random alphanumeric characters,
 // a hyphen, then three more). It does not use any client-supplied request data.
@@ -45,14 +45,14 @@ func SixCharPIDWithDashes() (string, error) {
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
-	const n = len(alphanumeric62)
+	const n = len(alphanumeric36)
 	out := make([]byte, 7)
 	for i := range 3 {
-		out[i] = alphanumeric62[buf[i]%byte(n)]
+		out[i] = alphanumeric36[buf[i]%byte(n)]
 	}
 	out[3] = '-'
 	for i := range 3 {
-		out[4+i] = alphanumeric62[buf[3+i]%byte(n)]
+		out[4+i] = alphanumeric36[buf[3+i]%byte(n)]
 	}
 	return string(out), nil
 }

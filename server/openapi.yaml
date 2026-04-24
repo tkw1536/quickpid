@@ -504,7 +504,7 @@ components:
         Identifiers are kept as short as possible to allow for inclusion in print media.
         A typical pattern is two chunks of alphanumeric characters separated by a hyphen.
       type: string
-      pattern: '^[A-Za-z0-9_-]+$'
+      pattern: '^[a-z0-9_-]+$'
       examples:
         - 'abc-def'
     ResourceResponse:
