@@ -433,8 +433,8 @@ components:
           description: |
             Pattern consisting only of `*`, `-`, and `_`.
             `*` positions are replaced with random characters during PID generation.
-        example:
-          - '***-***'
+          examples:
+            - '***-***'
         characters:
           $ref: '#/components/schemas/PIDCharacters'
     PIDCharacters:
@@ -526,8 +526,9 @@ components:
           description: |
             Optional opaque metadata associated with the resource.
             This may be null.
-          type: string
-          nullable: true
+          type:
+            - string
+            - "null"
         tag:
           description: |
             A tag for this resource.
@@ -564,8 +565,9 @@ components:
           description: |
             Optional opaque metadata associated with the resource.
             This may be null.
-          type: string
-          nullable: true
+          type:
+            - string
+            - "null"
         date_created:
           description: |
             The date and time the resource was created.
@@ -602,8 +604,9 @@ components:
           description: |
             Optional opaque metadata associated with the resource.
             This may be null.
-          type: string
-          nullable: true
+          type:
+            - string
+            - "null"
         tag:
           description: |
             A tag for this resource.
