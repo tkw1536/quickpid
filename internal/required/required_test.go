@@ -6,7 +6,7 @@ import (
 )
 
 func TestRequired_OK(t *testing.T) {
-	data := []byte(`{"a":1,"b":null,"c":{}}`)
+	data := []byte(`{"a":1,"c":{},"b":null}`)
 	if err := Required(data, "a", "b"); err != nil {
 		t.Fatalf("Required returned error: %v", err)
 	}
@@ -43,4 +43,3 @@ func TestRequired_InvalidJSON(t *testing.T) {
 		})
 	}
 }
-
