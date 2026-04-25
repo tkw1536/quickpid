@@ -115,7 +115,7 @@ func (s *Store) CreateResource(_ context.Context, namespace string, req api.Reso
 	}
 	byPID := s.resources[namespace]
 	for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-		candidate, err := api.GeneratePID(ns.PIDFormat, rand)
+		candidate, err := ns.PIDFormat.Generate(rand)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +152,7 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs [
 	for _, req := range reqs {
 		var inserted bool
 		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-			candidate, err := api.GeneratePID(ns.PIDFormat, rand)
+			candidate, err := ns.PIDFormat.Generate(rand)
 			if err != nil {
 				return nil, err
 			}

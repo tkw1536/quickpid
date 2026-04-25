@@ -2,17 +2,19 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
+
+	"github.com/tkw1536/quickpid/api/pid"
+	"github.com/tkw1536/quickpid/internal/required"
 )
 
 // NamespaceCreateRequest is the JSON body for createNamespace.
 type NamespaceCreateRequest struct {
-	Name      string    `json:"name"`
-	PIDFormat PIDFormat `json:"pid_format"`
+	Name      string     `json:"name"`
+	PIDFormat pid.Format `json:"pid_format"`
 }
 
 func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
-	if err := requireJSONFields(data, "name", "pid_format"); err != nil {
+	if err := required.Required(data, "name", "pid_format"); err != nil {
 		return err
 	}
 
@@ -27,9 +29,9 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 
 // NamespaceResponse is returned for namespace operations.
 type NamespaceResponse struct {
-	Name        string    `json:"name"`
-	PIDFormat   PIDFormat `json:"pid_format"`
-	DateCreated string    `json:"date_created"`
+	Name        string     `json:"name"`
+	PIDFormat   pid.Format `json:"pid_format"`
+	DateCreated string     `json:"date_created"`
 }
 
 type PaginatedNamespacesResponse struct {
@@ -47,7 +49,7 @@ type ResourceCreateRequest struct {
 }
 
 func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
-	if err := requireJSONFields(data, "url", "metadata", "tag"); err != nil {
+	if err := required.Required(data, "url", "metadata", "tag"); err != nil {
 		return err
 	}
 
@@ -87,7 +89,7 @@ type ResourceUpdateRequest struct {
 }
 
 func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
-	if err := requireJSONFields(data, "url", "metadata", "tag", "deleted"); err != nil {
+	if err := required.Required(data, "url", "metadata", "tag", "deleted"); err != nil {
 		return err
 	}
 
@@ -118,24 +120,4 @@ type ListNamespacesParams struct {
 
 type ErrorResponse struct {
 	Error string `json:"error"`
-}
-
-// missingFieldError indicates that a required field is missing from a JSON object.
-type missingFieldError string
-
-func (e missingFieldError) Error() string {
-	return fmt.Sprintf("missing required field %q", string(e))
-}
-
-func requireJSONFields(data []byte, fields ...string) error {
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	for _, f := range fields {
-		if _, ok := raw[f]; !ok {
-			return missingFieldError(f)
-		}
-	}
-	return nil
 }

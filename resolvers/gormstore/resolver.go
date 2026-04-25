@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/api/pid"
 	"gorm.io/gorm"
 )
 
@@ -176,10 +177,10 @@ func (s *Store) CreateResource(ctx context.Context, namespace string, req api.Re
 		}
 
 		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-			candidate, err := api.GeneratePID(api.PIDFormat{
+			candidate, err := pid.Format{
 				Pattern:    ns.PIDPattern,
 				Characters: ns.PIDChars,
-			}, rand)
+			}.Generate(rand)
 			if err != nil {
 				return nil, err
 			}
@@ -224,10 +225,10 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace string, reqs
 		for _, req := range reqs {
 			var inserted bool
 			for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-				candidate, err := api.GeneratePID(api.PIDFormat{
+				candidate, err := pid.Format{
 					Pattern:    ns.PIDPattern,
 					Characters: ns.PIDChars,
-				}, rand)
+				}.Generate(rand)
 				if err != nil {
 					return nil, err
 				}

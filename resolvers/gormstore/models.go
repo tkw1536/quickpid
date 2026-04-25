@@ -4,14 +4,15 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/api/pid"
 )
 
 // Namespace maps to the namespaces table.
 type Namespace struct {
-	ID          uint              `gorm:"primaryKey"`
-	Name        string            `gorm:"type:text;uniqueIndex;not null"`
-	PIDPattern  string            `gorm:"type:text;not null"`
-	PIDChars    api.PIDCharacters `gorm:"type:text;not null"`
+	ID          uint             `gorm:"primaryKey"`
+	Name        string           `gorm:"type:text;uniqueIndex;not null"`
+	PIDPattern  pid.Pattern      `gorm:"type:text;not null"`
+	PIDChars    pid.CharacterSet `gorm:"type:text;not null"`
 	DateCreated time.Time
 }
 
@@ -22,7 +23,7 @@ func (Namespace) TableName() string {
 func (n Namespace) ToApi() api.NamespaceResponse {
 	return api.NamespaceResponse{
 		Name: n.Name,
-		PIDFormat: api.PIDFormat{
+		PIDFormat: pid.Format{
 			Pattern:    n.PIDPattern,
 			Characters: n.PIDChars,
 		},

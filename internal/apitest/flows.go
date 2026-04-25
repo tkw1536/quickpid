@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/api/pid"
 )
 
 func flowListNamespaces(t *testing.T, h *harness) {
@@ -39,8 +40,8 @@ func flowListNamespaces(t *testing.T, h *harness) {
 			Total:  5,
 			Offset: 0,
 			Items: []api.NamespaceResponse{
-				{Name: "a", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now},
-				{Name: "b", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now},
+				{Name: "a", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now},
+				{Name: "b", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now},
 			},
 		}
 		if !reflect.DeepEqual(got, want) {
@@ -57,9 +58,9 @@ func flowListNamespaces(t *testing.T, h *harness) {
 			Total:  5,
 			Offset: 0,
 			Items: []api.NamespaceResponse{
-				{Name: "a", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now},
-				{Name: "b", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now},
-				{Name: "c", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now},
+				{Name: "a", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now},
+				{Name: "b", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now},
+				{Name: "c", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now},
 			},
 		}
 		if !reflect.DeepEqual(got, want) {
@@ -102,7 +103,7 @@ func flowCreateNamespace(t *testing.T, h *harness) {
 
 	t.Run("success", func(t *testing.T) {
 		got := h.createNamespace(t, "flow-ns")
-		want := api.NamespaceResponse{Name: "flow-ns", PIDFormat: api.PIDFormat{Pattern: "***-***", Characters: api.PIDCharactersFull}, DateCreated: h.now}
+		want := api.NamespaceResponse{Name: "flow-ns", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("namespace: got %+v want %+v", got, want)
 		}
@@ -112,9 +113,9 @@ func flowCreateNamespace(t *testing.T, h *harness) {
 		_ = h.createNamespace(t, "dup-ns")
 		body := mustMarshal(t, api.NamespaceCreateRequest{
 			Name: "dup-ns",
-			PIDFormat: api.PIDFormat{
+			PIDFormat: pid.Format{
 				Pattern:    "***-***",
-				Characters: api.PIDCharactersFull,
+				Characters: pid.Full,
 			},
 		})
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
@@ -362,9 +363,9 @@ func flowCreateResource(t *testing.T, h *harness) {
 		ns := "hex-res-ns"
 		body := mustMarshal(t, api.NamespaceCreateRequest{
 			Name: ns,
-			PIDFormat: api.PIDFormat{
+			PIDFormat: pid.Format{
 				Pattern:    "********-****-****-****-************",
-				Characters: api.PIDCharactersHex,
+				Characters: pid.Hex,
 			},
 		})
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
@@ -397,9 +398,9 @@ func flowCreateResource(t *testing.T, h *harness) {
 		ns := "readable6-res-ns"
 		body := mustMarshal(t, api.NamespaceCreateRequest{
 			Name: ns,
-			PIDFormat: api.PIDFormat{
+			PIDFormat: pid.Format{
 				Pattern:    "***-***",
-				Characters: api.PIDCharactersReadable,
+				Characters: pid.Readable,
 			},
 		})
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
@@ -429,9 +430,9 @@ func flowCreateResource(t *testing.T, h *harness) {
 		ns := "readable9-res-ns"
 		body := mustMarshal(t, api.NamespaceCreateRequest{
 			Name: ns,
-			PIDFormat: api.PIDFormat{
+			PIDFormat: pid.Format{
 				Pattern:    "***-***-***",
-				Characters: api.PIDCharactersReadable,
+				Characters: pid.Readable,
 			},
 		})
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
@@ -461,9 +462,9 @@ func flowCreateResource(t *testing.T, h *harness) {
 		ns := "random64-res-ns"
 		body := mustMarshal(t, api.NamespaceCreateRequest{
 			Name: ns,
-			PIDFormat: api.PIDFormat{
+			PIDFormat: pid.Format{
 				Pattern:    "****************************************************************",
-				Characters: api.PIDCharactersFull,
+				Characters: pid.Full,
 			},
 		})
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)

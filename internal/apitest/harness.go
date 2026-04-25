@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/api/pid"
+	"github.com/tkw1536/quickpid/internal/bitstring"
 	"github.com/tkw1536/quickpid/server"
 )
 
@@ -45,9 +47,9 @@ func (h *harness) createNamespace(t *testing.T, name string) api.NamespaceRespon
 	t.Helper()
 	body := mustMarshal(t, api.NamespaceCreateRequest{
 		Name: name,
-		PIDFormat: api.PIDFormat{
+		PIDFormat: pid.Format{
 			Pattern:    "***-***",
-			Characters: api.PIDCharactersFull,
+			Characters: pid.Full,
 		},
 	})
 	resp := mustPOST(t, h.base+"/resolver/namespaces", body)
@@ -70,7 +72,7 @@ func newServerOptions() (server.Options, io.Reader) {
 	if opts.Limits.MaxBodyBytes == 0 {
 		opts.Limits.MaxBodyBytes = 256
 	}
-	r := NewFakeRandReader()
+	r := bitstring.NewReader()
 	opts.Rand = r
 	if opts.Now == nil {
 		fixed := time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)

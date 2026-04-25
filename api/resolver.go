@@ -1,8 +1,11 @@
+// Package api provides go implementations for the PID Resolver API.
 package api
 
-import "context"
-import "io"
-import "time"
+import (
+	"context"
+	"io"
+	"time"
+)
 
 // Resolver implements the PID Resolver API.
 // Implementations should return appropriate sentinel errors.

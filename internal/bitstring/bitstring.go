@@ -1,21 +1,19 @@
-package apitest
+package bitstring
 
 import "io"
 
-// NewFakeRandReader returns a deterministic reader suitable for tests.
-//
-// It yields a non-repeating bit stream based on concatenating all binary strings
-// in increasing length order:
+// NewReader returns a reader yielding all binary strings in increasing length order:
 //
 //	0, 1, 00, 01, 10, 11, 000, 001, ...
 //
 // Bits are packed MSB-first into bytes when read.
-func NewFakeRandReader() io.Reader {
-	return &fakeRandReader{}
+//
+// This read is intended to produce a predictable sequence of bytes for use in tests.
+func NewReader() io.Reader {
+	return &reader{}
 }
 
-// fakeRandReader implements [NewFakeRandReader].
-type fakeRandReader struct {
+type reader struct {
 	// current binary string length
 	n int
 	// current index within length n
@@ -24,7 +22,7 @@ type fakeRandReader struct {
 	pos int
 }
 
-func (r *fakeRandReader) nextBit() byte {
+func (r *reader) nextBit() byte {
 	if r.n == 0 {
 		r.n = 1
 		r.i = 0
@@ -47,7 +45,7 @@ func (r *fakeRandReader) nextBit() byte {
 	return bit
 }
 
-func (r *fakeRandReader) Read(p []byte) (int, error) {
+func (r *reader) Read(p []byte) (int, error) {
 	for j := range p {
 		var b byte
 		for range 8 {

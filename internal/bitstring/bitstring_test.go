@@ -1,13 +1,15 @@
-package apitest
+package bitstring_test
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/tkw1536/quickpid/internal/bitstring"
 )
 
-func ExampleNewFakeRandReader() {
+func ExampleNewReader() {
 
-	r := NewFakeRandReader()
+	r := bitstring.NewReader()
 
 	bytes := make([]byte, 1)
 	if _, err := r.Read(bytes); err != nil {

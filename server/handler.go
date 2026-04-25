@@ -102,7 +102,7 @@ func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 			writeError(w, api.ErrInvalidNamespace)
 			return
 		}
-		if err := api.ValidatePIDFormat(req.PIDFormat); err != nil {
+		if err := req.PIDFormat.Valid(); err != nil {
 			writeError(w, err)
 			return
 		}
