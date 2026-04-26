@@ -115,19 +115,19 @@ func TestValidatePIDFormat(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			gotErr := tc.format.Valid()
+			gotErr := tc.format.Validate()
 			if len(tc.wantIs) == 0 {
 				if gotErr != nil {
-					t.Fatalf("Valid(%s): got err %v, want nil", tc.name, gotErr)
+					t.Fatalf("Validate(%s): got err %v, want nil", tc.name, gotErr)
 				}
 				return
 			}
 			if gotErr == nil {
-				t.Fatalf("Valid(%s): got nil, want error", tc.name)
+				t.Fatalf("Validate(%s): got nil, want error", tc.name)
 			}
 			for _, want := range tc.wantIs {
 				if !errors.Is(gotErr, want) {
-					t.Fatalf("Valid(%s): got err %v, want errors.Is(..., %v)", tc.name, gotErr, want)
+					t.Fatalf("Validate(%s): got err %v, want errors.Is(..., %v)", tc.name, gotErr, want)
 				}
 			}
 		})

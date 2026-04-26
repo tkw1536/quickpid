@@ -17,8 +17,8 @@ var (
 	errMissingAsterisk   = errors.New("pattern must contain '*'")
 )
 
-// Valid checks if this is a valid pattern.
-func (p Pattern) Valid() error {
+// Validate checks if this is a valid pattern.
+func (p Pattern) Validate() error {
 	// check that the pattern consists only of '*', '-', and '_'.
 	var hadAsterisk bool
 	for _, c := range p {

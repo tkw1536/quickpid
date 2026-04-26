@@ -1,5 +1,7 @@
 package pid
 
+import "errors"
+
 // A CharacterSet to be used in pid generation.
 // Must be one of the pre-defined character sets.
 type CharacterSet string
@@ -19,10 +21,15 @@ var alphabets = map[CharacterSet]string{
 	Decimal:  "0123456789",
 }
 
-// Valid checks if this is a valid character set.
-func (chars CharacterSet) Valid() bool {
+var errUnknownCharacterSet = errors.New("unknown character set")
+
+// Validate checks if this is a valid character set.
+func (chars CharacterSet) Validate() error {
 	_, ok := alphabets[chars]
-	return ok
+	if !ok {
+		return errUnknownCharacterSet
+	}
+	return nil
 }
 
 // Alphabet returns the alphabet to be used for the given character set.

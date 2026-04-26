@@ -35,13 +35,13 @@ var (
 	errInvalidCharacterSet = errors.New("invalid character set")
 )
 
-// Valid checks if the format is valid, and returns an error if not.
-func (format Format) Valid() error {
-	if !format.Characters.Valid() {
-		return errInvalidCharacterSet
+// Validate checks if the format is valid, and returns an error if not.
+func (format Format) Validate() error {
+	if err := format.Characters.Validate(); err != nil {
+		return fmt.Errorf("%w: %w", errInvalidCharacterSet, err)
 	}
 
-	if err := format.Pattern.Valid(); err != nil {
+	if err := format.Pattern.Validate(); err != nil {
 		return fmt.Errorf("%w: %w", errInvalidPattern, err)
 	}
 	return nil
@@ -58,7 +58,7 @@ func readFull(rand io.Reader, buf []byte) error {
 // It replaces each '*' in format.Pattern with a random character from format.Characters,
 // and leaves '-' and '_' unchanged.
 func (format Format) Generate(rand io.Reader) (string, error) {
-	if err := format.Valid(); err != nil {
+	if err := format.Validate(); err != nil {
 		return "", err
 	}
 	alphabet, _ := format.Characters.Alphabet()
