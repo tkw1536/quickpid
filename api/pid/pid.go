@@ -46,6 +46,8 @@ func (format Format) Validate() error {
 	}
 	return nil
 }
+
+//go:fix inline
 func readFull(rand io.Reader, buf []byte) error {
 	_, err := io.ReadFull(rand, buf)
 	return err
