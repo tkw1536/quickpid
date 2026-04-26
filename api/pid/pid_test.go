@@ -1,21 +1,82 @@
-package pid
+package pid_test
 
 import (
-	"errors"
 	"testing"
+	"strings"
 
+	"github.com/tkw1536/quickpid/api/pid"
 	"github.com/tkw1536/quickpid/internal/bitstring"
 )
 
-func TestGeneratePID(t *testing.T) {
+func TestFormat_Validate(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		name   string
+		format pid.Format
+		wantIn []string
+	}
+
+	cases := []testCase{
+		{
+			name:   "ok",
+			format: pid.Format{Pattern: "***-***", Characters: pid.Full},
+			wantIn: nil,
+		},
+		{
+			name:   "emptyPattern",
+			format: pid.Format{Pattern: "", Characters: pid.Full},
+			wantIn: []string{"invalid pattern", "pattern must contain '*'"},
+		},
+		{
+			name:   "noStars",
+			format: pid.Format{Pattern: "---___", Characters: pid.Full},
+			wantIn: []string{"invalid pattern", "pattern must contain '*'"},
+		},
+		{
+			name:   "invalidPatternCharacters",
+			format: pid.Format{Pattern: "**a-**", Characters: pid.Full},
+			wantIn: []string{"invalid pattern", "pattern contains invalid characters"},
+		},
+		{
+			name:   "invalidCharacters",
+			format: pid.Format{Pattern: "***", Characters: pid.CharacterSet("nope")},
+			wantIn: []string{"invalid character set", "unknown character set"},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			gotErr := tc.format.Validate()
+			if len(tc.wantIn) == 0 {
+				if gotErr != nil {
+					t.Fatalf("Validate(%s): got err %v, want nil", tc.name, gotErr)
+				}
+				return
+			}
+			if gotErr == nil {
+				t.Fatalf("Validate(%s): got nil, want error", tc.name)
+			}
+			errStr := gotErr.Error()
+			for _, want := range tc.wantIn {
+				if !strings.Contains(errStr, want) {
+					t.Fatalf("Validate(%s): got err %q, want substring %q", tc.name, errStr, want)
+				}
+			}
+		})
+	}
+}
+
+func TestFormat_Generate(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		format Format
+		format pid.Format
 		expect []string
 	}{
 		"full_legacyShape": {
-			format: Format{Pattern: "***-***", Characters: Full},
+			format: pid.Format{Pattern: "***-***", Characters: pid.Full},
 			expect: []string{
 				"yd6-lc0",
 				"tha-yrf",
@@ -23,7 +84,7 @@ func TestGeneratePID(t *testing.T) {
 			},
 		},
 		"readable_legacyShape": {
-			format: Format{Pattern: "***-***", Characters: Readable},
+			format: pid.Format{Pattern: "***-***", Characters: pid.Readable},
 			expect: []string{
 				"61e-x08",
 				"hs2-akv",
@@ -31,7 +92,7 @@ func TestGeneratePID(t *testing.T) {
 			},
 		},
 		"readable_threeChunks": {
-			format: Format{Pattern: "***-***-***", Characters: Readable},
+			format: pid.Format{Pattern: "***-***-***", Characters: pid.Readable},
 			expect: []string{
 				"61e-x08-hs2",
 				"akv-0hc-5hg",
@@ -39,7 +100,7 @@ func TestGeneratePID(t *testing.T) {
 			},
 		},
 		"full_random64": {
-			format: Format{Pattern: "****************************************************************", Characters: Full},
+			format: pid.Format{Pattern: "****************************************************************", Characters: pid.Full},
 			expect: []string{
 				"yd6lc0thayrfchcpds59x79p651pd3dvc4wgkpk0iogbsx0wdt0tm49f8q4c6xgm",
 			},
@@ -67,68 +128,12 @@ func TestGeneratePID(t *testing.T) {
 		t.Parallel()
 
 		r := bitstring.NewReader()
-		_, err := Format{Pattern: "***-***", Characters: CharacterSet("nope")}.Generate(r)
-		if !errors.Is(err, errInvalidCharacterSet) {
-			t.Fatalf("GeneratePID(invalid): got err %v want %v", err, errInvalidCharacterSet)
+		_, err := pid.Format{Pattern: "***-***", Characters: pid.CharacterSet("nope")}.Generate(r)
+		if err == nil {
+			t.Fatalf("GeneratePID(invalid): got nil want error")
+		}
+		if !strings.Contains(err.Error(), "invalid character set") {
+			t.Fatalf("GeneratePID(invalid): got err %q want substring %q", err.Error(), "invalid character set")
 		}
 	})
-}
-
-func TestValidatePIDFormat(t *testing.T) {
-	t.Parallel()
-
-	type testCase struct {
-		name   string
-		format Format
-		wantIs []error
-	}
-
-	cases := []testCase{
-		{
-			name:   "ok",
-			format: Format{Pattern: "***-***", Characters: Full},
-			wantIs: nil,
-		},
-		{
-			name:   "emptyPattern",
-			format: Format{Pattern: "", Characters: Full},
-			wantIs: []error{errInvalidPattern, errMissingAsterisk},
-		},
-		{
-			name:   "noStars",
-			format: Format{Pattern: "---___", Characters: Full},
-			wantIs: []error{errInvalidPattern, errMissingAsterisk},
-		},
-		{
-			name:   "invalidPatternCharacters",
-			format: Format{Pattern: "**a-**", Characters: Full},
-			wantIs: []error{errInvalidPattern, errInvalidCharacters},
-		},
-		{
-			name:   "invalidCharacters",
-			format: Format{Pattern: "***", Characters: CharacterSet("nope")},
-			wantIs: []error{errInvalidCharacterSet},
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			gotErr := tc.format.Validate()
-			if len(tc.wantIs) == 0 {
-				if gotErr != nil {
-					t.Fatalf("Validate(%s): got err %v, want nil", tc.name, gotErr)
-				}
-				return
-			}
-			if gotErr == nil {
-				t.Fatalf("Validate(%s): got nil, want error", tc.name)
-			}
-			for _, want := range tc.wantIs {
-				if !errors.Is(gotErr, want) {
-					t.Fatalf("Validate(%s): got err %v, want errors.Is(..., %v)", tc.name, gotErr, want)
-				}
-			}
-		})
-	}
 }

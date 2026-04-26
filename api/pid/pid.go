@@ -47,15 +47,7 @@ func (format Format) Validate() error {
 	return nil
 }
 
-//go:fix inline
-func readFull(rand io.Reader, buf []byte) error {
-	_, err := io.ReadFull(rand, buf)
-	return err
-}
-
 // Generate generates a new PID according to format, using rand for randomness.
-
-// GeneratePID generates a new PID according to format, using rand for randomness.
 //
 // It replaces each '*' in format.Pattern with a random character from format.Characters,
 // and leaves '-' and '_' unchanged.
@@ -73,7 +65,7 @@ func (format Format) Generate(rand io.Reader) (string, error) {
 	}
 
 	buf := make([]byte, starCount)
-	if err := readFull(rand, buf); err != nil {
+	if _, err := io.ReadFull(rand, buf); err != nil {
 		return "", err
 	}
 
