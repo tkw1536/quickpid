@@ -389,7 +389,7 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 		seen := make(map[string]struct{}, n)
 		for i := range n {
 			// Ensure uniqueness within this batch.
-			for tries := 0; tries < maxPIDAttempts; tries++ {
+			for range maxPIDAttempts {
 				candidate, err := format.Generate(h.ops.Rand)
 				if err != nil {
 					return nil, err
