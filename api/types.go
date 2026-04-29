@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 
-	"github.com/tkw1536/quickpid/api/pid"
 	"github.com/tkw1536/quickpid/internal/required"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 // NamespaceCreateRequest is the JSON body for createNamespace.

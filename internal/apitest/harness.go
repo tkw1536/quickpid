@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/api/pid"
 	"github.com/tkw1536/quickpid/internal/bitstring"
+	"github.com/tkw1536/quickpid/pid"
 	"github.com/tkw1536/quickpid/server"
 )
 

@@ -11,7 +11,7 @@ import (
 	"github.com/tkw1536/quickpid/internal/required"
 )
 
-// Format describes a format for a PID.
+// Format describes the format of a PID.
 type Format struct {
 	Pattern    Pattern      `json:"pattern"`
 	Characters CharacterSet `json:"characters"`
@@ -49,9 +49,6 @@ func (format Format) Validate() error {
 }
 
 // Generate generates a new PID according to format, using rand for randomness.
-//
-// It replaces each '*' in format.Pattern with a random character from format.Characters,
-// and leaves '-' and '_' unchanged.
 func (format Format) Generate(rand io.Reader) (string, error) {
 	if err := format.Validate(); err != nil {
 		return "", err

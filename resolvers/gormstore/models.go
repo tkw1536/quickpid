@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/api/pid"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 // Namespace maps to the namespaces table.
