@@ -1,5 +1,5 @@
 // Package api provides go implementations for the PID Resolver API.
-package api
+package backend
 
 import (
 	"context"

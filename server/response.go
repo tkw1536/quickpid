@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
 )
 
 // writeJSONResponse writes a JSON response to the client.
@@ -19,27 +19,27 @@ var apiClientErrors = []struct {
 	sentinel error
 	status   int
 }{
-	{api.ErrEmptyRequestBody, http.StatusBadRequest},
-	{api.ErrInvalidJSON, http.StatusBadRequest},
-	{api.ErrTrailingJSON, http.StatusBadRequest},
-	{api.ErrInvalidQueryParameter, http.StatusBadRequest},
-	{api.ErrInvalidNamespace, http.StatusBadRequest},
-	{api.ErrInvalidPID, http.StatusBadRequest},
-	{api.ErrTooManyItems, http.StatusBadRequest},
-	{api.ErrNamespaceNotFound, http.StatusNotFound},
-	{api.ErrResourceNotFound, http.StatusNotFound},
-	{api.ErrRequestBodyTooLarge, http.StatusRequestEntityTooLarge},
-	{api.ErrPIDAllocationFailed, http.StatusInternalServerError},
-	{api.ErrNamespaceIDAllocationFailed, http.StatusInternalServerError},
+	{backend.ErrEmptyRequestBody, http.StatusBadRequest},
+	{backend.ErrInvalidJSON, http.StatusBadRequest},
+	{backend.ErrTrailingJSON, http.StatusBadRequest},
+	{backend.ErrInvalidQueryParameter, http.StatusBadRequest},
+	{backend.ErrInvalidNamespace, http.StatusBadRequest},
+	{backend.ErrInvalidPID, http.StatusBadRequest},
+	{backend.ErrTooManyItems, http.StatusBadRequest},
+	{backend.ErrNamespaceNotFound, http.StatusNotFound},
+	{backend.ErrResourceNotFound, http.StatusNotFound},
+	{backend.ErrRequestBodyTooLarge, http.StatusRequestEntityTooLarge},
+	{backend.ErrPIDAllocationFailed, http.StatusInternalServerError},
+	{backend.ErrNamespaceIDAllocationFailed, http.StatusInternalServerError},
 }
 
 // writeError writes an error response to the client.
 func writeError(w http.ResponseWriter, err error) {
 	for _, e := range apiClientErrors {
 		if errors.Is(err, e.sentinel) {
-			writeJSONResponse(w, e.status, api.ErrorResponse{Error: err.Error()})
+			writeJSONResponse(w, e.status, backend.ErrorResponse{Error: err.Error()})
 			return
 		}
 	}
-	writeJSONResponse(w, http.StatusInternalServerError, api.ErrorResponse{Error: "internal server error"})
+	writeJSONResponse(w, http.StatusInternalServerError, backend.ErrorResponse{Error: "internal server error"})
 }

@@ -3,7 +3,7 @@ package gormstore
 import (
 	"time"
 
-	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/pid"
 )
 
@@ -21,8 +21,8 @@ func (Namespace) TableName() string {
 	return "namespaces"
 }
 
-func (n Namespace) ToApi() api.NamespaceResponse {
-	return api.NamespaceResponse{
+func (n Namespace) ToApi() backend.NamespaceResponse {
+	return backend.NamespaceResponse{
 		ID:  n.NamespaceUID,
 		Tag: n.Tag,
 		PIDFormat: pid.Format{
@@ -50,8 +50,8 @@ func (Resource) TableName() string {
 	return "resources"
 }
 
-func (r Resource) ToApi() api.ResourceResponse {
-	return api.ResourceResponse{
+func (r Resource) ToApi() backend.ResourceResponse {
+	return backend.ResourceResponse{
 		PID:         r.PID,
 		URL:         r.URL,
 		Metadata:    r.Metadata,

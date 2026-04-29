@@ -1,10 +1,10 @@
-package api_test
+package backend_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/tkw1536/quickpid/api"
+	api "github.com/tkw1536/quickpid/backend"
 )
 
 func TestNamespaceCreateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {

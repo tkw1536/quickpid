@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/swaggest/swgui"
 	"github.com/swaggest/swgui/v5emb"
-	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
 
 	_ "embed"
 )
@@ -22,7 +22,7 @@ var openapiYAML []byte
 
 type Handler struct {
 	ops     Options
-	backend api.ResolverBackend
+	backend backend.ResolverBackend
 	mux     *http.ServeMux
 }
 
@@ -30,7 +30,7 @@ type Handler struct {
 //
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
 // mount with http.StripPrefix(mountPath, NewHandler(Options{MountPath: mountPath}, res)) at mountPath+"/".
-func NewHandler(options Options, backend api.ResolverBackend) *Handler {
+func NewHandler(options Options, backend backend.ResolverBackend) *Handler {
 	options = options.withDefaults()
 
 	h := &Handler{
@@ -87,7 +87,7 @@ func (h *Handler) handleListNamespaces() http.HandlerFunc {
 			tag = &v
 		}
 
-		out, err := h.backend.ListNamespaces(r.Context(), api.ListNamespacesParams{
+		out, err := h.backend.ListNamespaces(r.Context(), backend.ListNamespacesParams{
 			Tag:    tag,
 			Limit:  limit,
 			Offset: offset,
@@ -102,7 +102,7 @@ func (h *Handler) handleListNamespaces() http.HandlerFunc {
 
 func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req api.NamespaceCreateRequest
+		var req backend.NamespaceCreateRequest
 		if err := h.decodeJSON(w, r, &req); err != nil {
 			writeError(w, err)
 			return
@@ -123,12 +123,12 @@ func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 				writeJSONResponse(w, http.StatusCreated, out)
 				return
 			}
-			if !errors.Is(err, api.ErrNamespaceIDAllocationFailed) {
+			if !errors.Is(err, backend.ErrNamespaceIDAllocationFailed) {
 				writeError(w, err)
 				return
 			}
 		}
-		writeError(w, api.ErrNamespaceIDAllocationFailed)
+		writeError(w, backend.ErrNamespaceIDAllocationFailed)
 	}
 }
 
@@ -136,7 +136,7 @@ func (h *Handler) handleListResources() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if !isValidNamespaceID(id) {
-			writeError(w, api.ErrInvalidNamespace)
+			writeError(w, backend.ErrInvalidNamespace)
 			return
 		}
 		query := r.URL.Query()
@@ -151,7 +151,7 @@ func (h *Handler) handleListResources() http.HandlerFunc {
 		if query.Has("deleted") {
 			b, err := strconv.ParseBool(query.Get("deleted"))
 			if err != nil {
-				writeError(w, fmt.Errorf("%w %q", api.ErrInvalidQueryParameter, "deleted"))
+				writeError(w, fmt.Errorf("%w %q", backend.ErrInvalidQueryParameter, "deleted"))
 				return
 			}
 			deleted = &b
@@ -163,7 +163,7 @@ func (h *Handler) handleListResources() http.HandlerFunc {
 			return
 		}
 
-		out, err := h.backend.ListResources(r.Context(), api.ListResourcesParams{
+		out, err := h.backend.ListResources(r.Context(), backend.ListResourcesParams{
 			Namespace: id,
 			Tag:       tag,
 			Deleted:   deleted,
@@ -181,14 +181,14 @@ func (h *Handler) handleListResources() http.HandlerFunc {
 
 func (h *Handler) handleCreateResource() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req api.ResourceCreateRequest
+		var req backend.ResourceCreateRequest
 		if err := h.decodeJSON(w, r, &req); err != nil {
 			writeError(w, err)
 			return
 		}
 		id := r.PathValue("id")
 		if !isValidNamespaceID(id) {
-			writeError(w, api.ErrInvalidNamespace)
+			writeError(w, backend.ErrInvalidNamespace)
 			return
 		}
 
@@ -203,19 +203,19 @@ func (h *Handler) handleCreateResource() http.HandlerFunc {
 
 func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var reqs []api.ResourceCreateRequest
+		var reqs []backend.ResourceCreateRequest
 		if err := h.decodeJSON(w, r, &reqs); err != nil {
 			writeError(w, err)
 			return
 		}
 		if len(reqs) > h.ops.Limits.MaxBatchItems {
-			writeError(w, fmt.Errorf("%w: %d > %d", api.ErrTooManyItems, len(reqs), h.ops.Limits.MaxBatchItems))
+			writeError(w, fmt.Errorf("%w: %d > %d", backend.ErrTooManyItems, len(reqs), h.ops.Limits.MaxBatchItems))
 			return
 		}
 
 		id := r.PathValue("id")
 		if !isValidNamespaceID(id) {
-			writeError(w, api.ErrInvalidNamespace)
+			writeError(w, backend.ErrInvalidNamespace)
 			return
 		}
 		out, err := h.backend.BatchCreateResources(r.Context(), id, reqs, h.ops.Rand, h.ops.Now)
@@ -231,13 +231,13 @@ func (h *Handler) handleGetResource() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if !isValidNamespaceID(id) {
-			writeError(w, api.ErrInvalidNamespace)
+			writeError(w, backend.ErrInvalidNamespace)
 			return
 		}
 
 		pid := r.PathValue("pid")
 		if !isValidPID(pid) {
-			writeError(w, api.ErrInvalidPID)
+			writeError(w, backend.ErrInvalidPID)
 			return
 		}
 
@@ -253,19 +253,19 @@ func (h *Handler) handleGetResource() http.HandlerFunc {
 
 func (h *Handler) handleUpdateResource() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req api.ResourceUpdateRequest
+		var req backend.ResourceUpdateRequest
 		if err := h.decodeJSON(w, r, &req); err != nil {
 			writeError(w, err)
 			return
 		}
 		id := r.PathValue("id")
 		if !isValidNamespaceID(id) {
-			writeError(w, api.ErrInvalidNamespace)
+			writeError(w, backend.ErrInvalidNamespace)
 			return
 		}
 		pid := r.PathValue("pid")
 		if !isValidPID(pid) {
-			writeError(w, api.ErrInvalidPID)
+			writeError(w, backend.ErrInvalidPID)
 			return
 		}
 		out, err := h.backend.UpdateResource(r.Context(), id, pid, req, h.ops.Now)
@@ -284,15 +284,15 @@ func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) erro
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
 		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-			return api.ErrRequestBodyTooLarge
+			return backend.ErrRequestBodyTooLarge
 		}
 		if errors.Is(err, io.EOF) {
-			return api.ErrEmptyRequestBody
+			return backend.ErrEmptyRequestBody
 		}
-		return fmt.Errorf("%w: %v", api.ErrInvalidJSON, err)
+		return fmt.Errorf("%w: %v", backend.ErrInvalidJSON, err)
 	}
 	if err := dec.Decode(&struct{}{}); err != io.EOF {
-		return api.ErrTrailingJSON
+		return backend.ErrTrailingJSON
 	}
 	return nil
 }
@@ -305,7 +305,7 @@ func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, err e
 	if query.Has("limit") {
 		limit, err = parseInt(query.Get("limit"))
 		if err != nil || limit < 1 {
-			return 0, 0, fmt.Errorf("%w %q", api.ErrInvalidQueryParameter, "limit")
+			return 0, 0, fmt.Errorf("%w %q", backend.ErrInvalidQueryParameter, "limit")
 		}
 	}
 	if limit > h.ops.Limits.MaxPageLimit {
@@ -316,7 +316,7 @@ func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, err e
 	if query.Has("offset") {
 		offset, err = parseInt(query.Get("offset"))
 		if err != nil || offset < 0 {
-			return 0, 0, fmt.Errorf("%w %q", api.ErrInvalidQueryParameter, "offset")
+			return 0, 0, fmt.Errorf("%w %q", backend.ErrInvalidQueryParameter, "offset")
 		}
 	}
 	return limit, offset, nil

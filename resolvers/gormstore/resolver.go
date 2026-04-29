@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/pid"
 	"gorm.io/gorm"
 )
@@ -21,11 +21,11 @@ type Store struct {
 // NewResolver returns an api.Resolver backed by db. The caller must open db with any GORM dialector.
 // PID allocation is supplied per CreateResource / BatchCreateResources via pidGen; on duplicate key,
 // the store calls pidGen again at most maxPIDAttempts times per row.
-func NewResolver(db *gorm.DB, maxPIDAttempts int) api.ResolverBackend {
+func NewResolver(db *gorm.DB, maxPIDAttempts int) backend.ResolverBackend {
 	return &Store{db: db, maxPIDAttempts: maxPIDAttempts}
 }
 
-var _ api.ResolverBackend = (*Store)(nil)
+var _ backend.ResolverBackend = (*Store)(nil)
 
 func transaction[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
 	var out V
@@ -41,8 +41,8 @@ func transaction[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
 	return out, nil
 }
 
-func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
+func (s *Store) ListNamespaces(ctx context.Context, params backend.ListNamespacesParams) (*backend.PaginatedNamespacesResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*backend.PaginatedNamespacesResponse, error) {
 		countQ := tx.Model(&Namespace{})
 		if params.Tag != nil {
 			countQ = countQ.Where("tag = ?", *params.Tag)
@@ -56,10 +56,10 @@ func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesPar
 		offset := params.Offset
 
 		if int64(offset) >= total {
-			return &api.PaginatedNamespacesResponse{
+			return &backend.PaginatedNamespacesResponse{
 				Total:  int(total),
 				Offset: offset,
-				Items:  []api.NamespaceResponse{},
+				Items:  []backend.NamespaceResponse{},
 			}, nil
 		}
 
@@ -77,11 +77,11 @@ func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesPar
 		if err := q.Find(&rows).Error; err != nil {
 			return nil, err
 		}
-		items := make([]api.NamespaceResponse, len(rows))
+		items := make([]backend.NamespaceResponse, len(rows))
 		for i := range rows {
 			items[i] = rows[i].ToApi()
 		}
-		return &api.PaginatedNamespacesResponse{
+		return &backend.PaginatedNamespacesResponse{
 			Total:  int(total),
 			Offset: offset,
 			Items:  items,
@@ -89,8 +89,8 @@ func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesPar
 	})
 }
 
-func (s *Store) CreateNamespace(ctx context.Context, namespace string, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(ctx context.Context, namespace string, req backend.NamespaceCreateRequest, now func() time.Time) (*backend.NamespaceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*backend.NamespaceResponse, error) {
 		ts := now().UTC()
 		ns := Namespace{
 			NamespaceUID: namespace,
@@ -101,7 +101,7 @@ func (s *Store) CreateNamespace(ctx context.Context, namespace string, req api.N
 		}
 		if err := tx.Create(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
-				return nil, api.ErrNamespaceIDAllocationFailed
+				return nil, backend.ErrNamespaceIDAllocationFailed
 			}
 			return nil, err
 		}
@@ -110,12 +110,12 @@ func (s *Store) CreateNamespace(ctx context.Context, namespace string, req api.N
 	})
 }
 
-func (s *Store) ListResources(ctx context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedResourcesResponse, error) {
+func (s *Store) ListResources(ctx context.Context, params backend.ListResourcesParams) (*backend.PaginatedResourcesResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*backend.PaginatedResourcesResponse, error) {
 		var ns Namespace
 		if err := tx.Where("namespace_uid = ?", params.Namespace).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, api.ErrNamespaceNotFound
+				return nil, backend.ErrNamespaceNotFound
 			}
 			return nil, err
 		}
@@ -137,10 +137,10 @@ func (s *Store) ListResources(ctx context.Context, params api.ListResourcesParam
 		offset := params.Offset
 
 		if int64(offset) >= total {
-			return &api.PaginatedResourcesResponse{
+			return &backend.PaginatedResourcesResponse{
 				Total:  int(total),
 				Offset: offset,
-				Items:  []api.ResourceResponse{},
+				Items:  []backend.ResourceResponse{},
 			}, nil
 		}
 
@@ -154,11 +154,11 @@ func (s *Store) ListResources(ctx context.Context, params api.ListResourcesParam
 		if err := q.Find(&rows).Error; err != nil {
 			return nil, err
 		}
-		items := make([]api.ResourceResponse, len(rows))
+		items := make([]backend.ResourceResponse, len(rows))
 		for i := range rows {
 			items[i] = rows[i].ToApi()
 		}
-		return &api.PaginatedResourcesResponse{
+		return &backend.PaginatedResourcesResponse{
 			Total:  int(total),
 			Offset: offset,
 			Items:  items,
@@ -166,12 +166,12 @@ func (s *Store) ListResources(ctx context.Context, params api.ListResourcesParam
 	})
 }
 
-func (s *Store) CreateResource(ctx context.Context, id string, req api.ResourceCreateRequest, rand io.Reader, now func() time.Time) (*api.ResourceResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(ctx context.Context, id string, req backend.ResourceCreateRequest, rand io.Reader, now func() time.Time) (*backend.ResourceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*backend.ResourceResponse, error) {
 		var ns Namespace
 		if err := tx.Where("namespace_uid = ?", id).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, api.ErrNamespaceNotFound
+				return nil, backend.ErrNamespaceNotFound
 			}
 			return nil, err
 		}
@@ -204,24 +204,24 @@ func (s *Store) CreateResource(ctx context.Context, id string, req api.ResourceC
 			r := row.ToApi()
 			return &r, nil
 		}
-		return nil, api.ErrPIDAllocationFailed
+		return nil, backend.ErrPIDAllocationFailed
 	})
 }
 
-func (s *Store) BatchCreateResources(ctx context.Context, id string, reqs []api.ResourceCreateRequest, rand io.Reader, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(ctx context.Context, id string, reqs []backend.ResourceCreateRequest, rand io.Reader, now func() time.Time) ([]backend.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
 
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) ([]api.ResourceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) ([]backend.ResourceResponse, error) {
 		var ns Namespace
 		if err := tx.Where("namespace_uid = ?", id).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, api.ErrNamespaceNotFound
+				return nil, backend.ErrNamespaceNotFound
 			}
 			return nil, err
 		}
-		out := make([]api.ResourceResponse, 0, len(reqs))
+		out := make([]backend.ResourceResponse, 0, len(reqs))
 		for _, req := range reqs {
 			var inserted bool
 			for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
@@ -254,26 +254,26 @@ func (s *Store) BatchCreateResources(ctx context.Context, id string, reqs []api.
 				break
 			}
 			if !inserted {
-				return nil, api.ErrPIDAllocationFailed
+				return nil, backend.ErrPIDAllocationFailed
 			}
 		}
 		return out, nil
 	})
 }
 
-func (s *Store) GetResource(ctx context.Context, id, pid string) (*api.ResourceResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
+func (s *Store) GetResource(ctx context.Context, id, pid string) (*backend.ResourceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*backend.ResourceResponse, error) {
 		var ns Namespace
 		if err := tx.Where("namespace_uid = ?", id).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, api.ErrNamespaceNotFound
+				return nil, backend.ErrNamespaceNotFound
 			}
 			return nil, err
 		}
 		var row Resource
 		if err := tx.Where("namespace_id = ? AND pid = ?", ns.ID, pid).First(&row).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, api.ErrResourceNotFound
+				return nil, backend.ErrResourceNotFound
 			}
 			return nil, err
 		}
@@ -282,19 +282,19 @@ func (s *Store) GetResource(ctx context.Context, id, pid string) (*api.ResourceR
 	})
 }
 
-func (s *Store) UpdateResource(ctx context.Context, id, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(ctx context.Context, id, pid string, req backend.ResourceUpdateRequest, now func() time.Time) (*backend.ResourceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*backend.ResourceResponse, error) {
 		var ns Namespace
 		if err := tx.Where("namespace_uid = ?", id).First(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, api.ErrNamespaceNotFound
+				return nil, backend.ErrNamespaceNotFound
 			}
 			return nil, err
 		}
 		var row Resource
 		if err := tx.Where("namespace_id = ? AND pid = ?", ns.ID, pid).First(&row).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, api.ErrResourceNotFound
+				return nil, backend.ErrResourceNotFound
 			}
 			return nil, err
 		}
