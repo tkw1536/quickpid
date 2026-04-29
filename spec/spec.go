@@ -1,4 +1,5 @@
-package backend
+// Package spec holds type definitions for the PID Resolver API.
+package spec
 
 import (
 	"encoding/json"

@@ -9,7 +9,7 @@ import (
 // ResolverFactory is a function that creates a concrete new Resolver.
 // It should call t.Fatal the test if it cannot create a resolver.
 // It should use t.Cleanup if cleanup is needed after the test.
-type ResolverFactory = func(t *testing.T) backend.ResolverBackend
+type ResolverFactory = func(t *testing.T) backend.Backend
 
 // RunResolverHTTPTests starts an httptest server for res and runs a sequential suite of
 // subtests against resolver HTTP routes (namespaces, resources, batch, errors).

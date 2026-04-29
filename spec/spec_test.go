@@ -1,10 +1,10 @@
-package backend_test
+package spec_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	api "github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/spec"
 )
 
 func TestNamespaceCreateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
@@ -40,7 +40,7 @@ func TestNamespaceCreateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			var req api.NamespaceCreateRequest
+			var req spec.NamespaceCreateRequest
 			err := json.Unmarshal([]byte(tt.body), &req)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
@@ -56,7 +56,7 @@ func TestResourceCreateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
 		name    string
 		body    string
 		wantErr bool
-		check   func(t *testing.T, got api.ResourceCreateRequest)
+		check   func(t *testing.T, got spec.ResourceCreateRequest)
 	}{
 		{
 			name:    "missingURL",
@@ -77,7 +77,7 @@ func TestResourceCreateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
 			name:    "ok_metadataNull",
 			body:    `{"url":"https://example.com","metadata":null,"tag":"t"}`,
 			wantErr: false,
-			check: func(t *testing.T, got api.ResourceCreateRequest) {
+			check: func(t *testing.T, got spec.ResourceCreateRequest) {
 				t.Helper()
 				if got.Metadata != nil {
 					t.Fatalf("metadata: got %v want nil", *got.Metadata)
@@ -89,7 +89,7 @@ func TestResourceCreateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			var req api.ResourceCreateRequest
+			var req spec.ResourceCreateRequest
 			err := json.Unmarshal([]byte(tt.body), &req)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
@@ -108,7 +108,7 @@ func TestResourceUpdateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
 		name    string
 		body    string
 		wantErr bool
-		check   func(t *testing.T, got api.ResourceUpdateRequest)
+		check   func(t *testing.T, got spec.ResourceUpdateRequest)
 	}{
 		{
 			name:    "missingDeleted",
@@ -119,7 +119,7 @@ func TestResourceUpdateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
 			name:    "ok_deletedFalseExplicit",
 			body:    `{"url":"https://example.com","metadata":null,"tag":"t","deleted":false}`,
 			wantErr: false,
-			check: func(t *testing.T, got api.ResourceUpdateRequest) {
+			check: func(t *testing.T, got spec.ResourceUpdateRequest) {
 				t.Helper()
 				if got.Deleted {
 					t.Fatalf("deleted: got true want false")
@@ -131,7 +131,7 @@ func TestResourceUpdateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			var req api.ResourceUpdateRequest
+			var req spec.ResourceUpdateRequest
 			err := json.Unmarshal([]byte(tt.body), &req)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)

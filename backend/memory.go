@@ -1,4 +1,4 @@
-package mem
+package backend
 
 import (
 	"context"
@@ -7,38 +7,39 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/spec"
 )
 
-// Store is an in-memory Resolver implementation protected by a single RWMutex.
-type Store struct {
+// NewInMemoryBackend returns a new backend backed by an in-memory map.
+//
+// maxPIDAttempts is an internal limit on the number of attempts to allocate a PID.
+// It should be greater than 0.
+func NewInMemoryBackend(maxPIDAttempts int) Backend {
+	return &inMemoryBackend{
+		namespaces:     make(map[string]spec.NamespaceResponse),
+		resources:      make(map[string]map[string]spec.ResourceResponse),
+		maxPIDAttempts: maxPIDAttempts,
+	}
+}
+
+// inMemoryBackend is an in-memory Resolver implementation protected by a single RWMutex.
+type inMemoryBackend struct {
 	// protects the namespace and resource maps.
 	mu sync.RWMutex
 
-	namespaces map[string]backend.NamespaceResponse
-	resources  map[string]map[string]backend.ResourceResponse
+	namespaces map[string]spec.NamespaceResponse
+	resources  map[string]map[string]spec.ResourceResponse
 
 	// maximum number of attempts to allocate a PID.
 	// must be > 0.
 	maxPIDAttempts int
 }
 
-// NewStore returns an empty Store. PID allocation is supplied per CreateResource / BatchCreateResources
-func NewStore(maxPIDAttempts int) *Store {
-	return &Store{
-		namespaces:     make(map[string]backend.NamespaceResponse),
-		resources:      make(map[string]map[string]backend.ResourceResponse),
-		maxPIDAttempts: maxPIDAttempts,
-	}
-}
-
-var _ backend.ResolverBackend = (*Store)(nil)
-
-func (s *Store) ListNamespaces(_ context.Context, params backend.ListNamespacesParams) (*backend.PaginatedNamespacesResponse, error) {
+func (s *inMemoryBackend) ListNamespaces(_ context.Context, params spec.ListNamespacesParams) (*spec.PaginatedNamespacesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	all := make([]backend.NamespaceResponse, 0, len(s.namespaces))
+	all := make([]spec.NamespaceResponse, 0, len(s.namespaces))
 	for _, ns := range s.namespaces {
 		if params.Tag != nil && ns.Tag != *params.Tag {
 			continue
@@ -52,42 +53,42 @@ func (s *Store) ListNamespaces(_ context.Context, params backend.ListNamespacesP
 	offset := params.Offset
 
 	if offset >= total {
-		return &backend.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: []backend.NamespaceResponse{}}, nil
+		return &spec.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: []spec.NamespaceResponse{}}, nil
 	}
 	end := min(offset+limit, total)
-	items := append([]backend.NamespaceResponse(nil), all[offset:end]...)
-	return &backend.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
+	items := append([]spec.NamespaceResponse(nil), all[offset:end]...)
+	return &spec.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateNamespace(_ context.Context, namespace string, req backend.NamespaceCreateRequest, now func() time.Time) (*backend.NamespaceResponse, error) {
+func (s *inMemoryBackend) CreateNamespace(_ context.Context, namespace string, req spec.NamespaceCreateRequest, now func() time.Time) (*spec.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, exists := s.namespaces[namespace]; exists {
-		return nil, backend.ErrNamespaceIDAllocationFailed
+		return nil, ErrNamespaceIDAllocationFailed
 	}
 	created := now().UTC().Format(time.RFC3339)
-	ns := backend.NamespaceResponse{
+	ns := spec.NamespaceResponse{
 		ID:          namespace,
 		Tag:         req.Tag,
 		PIDFormat:   req.PIDFormat,
 		DateCreated: created,
 	}
 	s.namespaces[namespace] = ns
-	s.resources[namespace] = make(map[string]backend.ResourceResponse)
+	s.resources[namespace] = make(map[string]spec.ResourceResponse)
 	return &ns, nil
 }
 
-func (s *Store) ListResources(_ context.Context, params backend.ListResourcesParams) (*backend.PaginatedResourcesResponse, error) {
+func (s *inMemoryBackend) ListResources(_ context.Context, params spec.ListResourcesParams) (*spec.PaginatedResourcesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if _, ok := s.namespaces[params.Namespace]; !ok {
-		return nil, backend.ErrNamespaceNotFound
+		return nil, ErrNamespaceNotFound
 	}
 
 	byPID := s.resources[params.Namespace]
-	filtered := make([]backend.ResourceResponse, 0, len(byPID))
+	filtered := make([]spec.ResourceResponse, 0, len(byPID))
 	for _, r := range byPID {
 		if params.Tag != nil && r.Tag != *params.Tag {
 			continue
@@ -104,20 +105,20 @@ func (s *Store) ListResources(_ context.Context, params backend.ListResourcesPar
 	offset := params.Offset
 
 	if offset >= total {
-		return &backend.PaginatedResourcesResponse{Total: total, Offset: offset, Items: []backend.ResourceResponse{}}, nil
+		return &spec.PaginatedResourcesResponse{Total: total, Offset: offset, Items: []spec.ResourceResponse{}}, nil
 	}
 	end := min(offset+limit, total)
-	items := append([]backend.ResourceResponse(nil), filtered[offset:end]...)
-	return &backend.PaginatedResourcesResponse{Total: total, Offset: offset, Items: items}, nil
+	items := append([]spec.ResourceResponse(nil), filtered[offset:end]...)
+	return &spec.PaginatedResourcesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateResource(_ context.Context, namespace string, req backend.ResourceCreateRequest, rand io.Reader, now func() time.Time) (*backend.ResourceResponse, error) {
+func (s *inMemoryBackend) CreateResource(_ context.Context, namespace string, req spec.ResourceCreateRequest, rand io.Reader, now func() time.Time) (*spec.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	ns, ok := s.namespaces[namespace]
 	if !ok {
-		return nil, backend.ErrNamespaceNotFound
+		return nil, ErrNamespaceNotFound
 	}
 	byPID := s.resources[namespace]
 	for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
@@ -129,7 +130,7 @@ func (s *Store) CreateResource(_ context.Context, namespace string, req backend.
 			continue
 		}
 		ts := now().UTC().Format(time.RFC3339)
-		res := backend.ResourceResponse{
+		res := spec.ResourceResponse{
 			PID:         candidate,
 			URL:         req.URL,
 			Metadata:    req.Metadata,
@@ -141,20 +142,20 @@ func (s *Store) CreateResource(_ context.Context, namespace string, req backend.
 		byPID[candidate] = res
 		return &res, nil
 	}
-	return nil, backend.ErrPIDAllocationFailed
+	return nil, ErrPIDAllocationFailed
 }
 
-func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs []backend.ResourceCreateRequest, rand io.Reader, now func() time.Time) ([]backend.ResourceResponse, error) {
+func (s *inMemoryBackend) BatchCreateResources(_ context.Context, namespace string, reqs []spec.ResourceCreateRequest, rand io.Reader, now func() time.Time) ([]spec.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	ns, ok := s.namespaces[namespace]
 	if !ok {
-		return nil, backend.ErrNamespaceNotFound
+		return nil, ErrNamespaceNotFound
 	}
 
 	byPID := s.resources[namespace]
-	out := make([]backend.ResourceResponse, 0, len(reqs))
+	out := make([]spec.ResourceResponse, 0, len(reqs))
 	for _, req := range reqs {
 		var inserted bool
 		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
@@ -166,7 +167,7 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs [
 				continue
 			}
 			ts := now().UTC().Format(time.RFC3339)
-			res := backend.ResourceResponse{
+			res := spec.ResourceResponse{
 				PID:         candidate,
 				URL:         req.URL,
 				Metadata:    req.Metadata,
@@ -181,38 +182,38 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace string, reqs [
 			break
 		}
 		if !inserted {
-			return nil, backend.ErrPIDAllocationFailed
+			return nil, ErrPIDAllocationFailed
 		}
 	}
 	return out, nil
 }
 
-func (s *Store) GetResource(_ context.Context, namespace, pid string) (*backend.ResourceResponse, error) {
+func (s *inMemoryBackend) GetResource(_ context.Context, namespace, pid string) (*spec.ResourceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if _, ok := s.namespaces[namespace]; !ok {
-		return nil, backend.ErrNamespaceNotFound
+		return nil, ErrNamespaceNotFound
 	}
 	res, ok := s.resources[namespace][pid]
 	if !ok {
-		return nil, backend.ErrResourceNotFound
+		return nil, ErrResourceNotFound
 	}
 	return &res, nil
 }
 
-func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req backend.ResourceUpdateRequest, now func() time.Time) (*backend.ResourceResponse, error) {
+func (s *inMemoryBackend) UpdateResource(_ context.Context, namespace, pid string, req spec.ResourceUpdateRequest, now func() time.Time) (*spec.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.namespaces[namespace]; !ok {
-		return nil, backend.ErrNamespaceNotFound
+		return nil, ErrNamespaceNotFound
 	}
 	prev, ok := s.resources[namespace][pid]
 	if !ok {
-		return nil, backend.ErrResourceNotFound
+		return nil, ErrResourceNotFound
 	}
 	updated := now().UTC().Format(time.RFC3339)
-	res := backend.ResourceResponse{
+	res := spec.ResourceResponse{
 		PID:         prev.PID,
 		URL:         req.URL,
 		Metadata:    req.Metadata,

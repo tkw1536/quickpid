@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/bitstring"
 	"github.com/tkw1536/quickpid/pid"
 	"github.com/tkw1536/quickpid/server"
+	"github.com/tkw1536/quickpid/spec"
 )
 
 type harness struct {
@@ -43,9 +43,9 @@ func newHarness(t *testing.T, factory ResolverFactory) *harness {
 	}
 }
 
-func (h *harness) createNamespace(t *testing.T, tag string) backend.NamespaceResponse {
+func (h *harness) createNamespace(t *testing.T, tag string) spec.NamespaceResponse {
 	t.Helper()
-	body := mustMarshal(t, backend.NamespaceCreateRequest{
+	body := mustMarshal(t, spec.NamespaceCreateRequest{
 		Tag: tag,
 		PIDFormat: pid.Format{
 			Pattern:    "***-***",
@@ -55,7 +55,7 @@ func (h *harness) createNamespace(t *testing.T, tag string) backend.NamespaceRes
 	resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 	defer resp.Body.Close()
 	assertStatus(t, resp, http.StatusCreated)
-	return decodeJSON[backend.NamespaceResponse](t, resp.Body)
+	return decodeJSON[spec.NamespaceResponse](t, resp.Body)
 }
 
 func newServerOptions() (server.Options, io.Reader) {
@@ -81,22 +81,22 @@ func newServerOptions() (server.Options, io.Reader) {
 	return opts, r
 }
 
-func (h *harness) createResource(t *testing.T, id string, req backend.ResourceCreateRequest) backend.ResourceResponse {
+func (h *harness) createResource(t *testing.T, id string, req spec.ResourceCreateRequest) spec.ResourceResponse {
 	t.Helper()
 	body := mustMarshal(t, req)
 	u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, id)
 	resp := mustPOST(t, u, body)
 	defer resp.Body.Close()
 	assertStatus(t, resp, http.StatusCreated)
-	return decodeJSON[backend.ResourceResponse](t, resp.Body)
+	return decodeJSON[spec.ResourceResponse](t, resp.Body)
 }
 
-func (h *harness) updateResource(t *testing.T, id, pid string, req backend.ResourceUpdateRequest) backend.ResourceResponse {
+func (h *harness) updateResource(t *testing.T, id, pid string, req spec.ResourceUpdateRequest) spec.ResourceResponse {
 	t.Helper()
 	body := mustMarshal(t, req)
 	u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, pid)
 	resp := mustPATCH(t, u, body)
 	defer resp.Body.Close()
 	assertStatus(t, resp, http.StatusOK)
-	return decodeJSON[backend.ResourceResponse](t, resp.Body)
+	return decodeJSON[spec.ResourceResponse](t, resp.Body)
 }

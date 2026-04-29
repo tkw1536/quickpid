@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/spec"
 )
 
 // writeJSONResponse writes a JSON response to the client.
@@ -37,9 +38,9 @@ var apiClientErrors = []struct {
 func writeError(w http.ResponseWriter, err error) {
 	for _, e := range apiClientErrors {
 		if errors.Is(err, e.sentinel) {
-			writeJSONResponse(w, e.status, backend.ErrorResponse{Error: err.Error()})
+			writeJSONResponse(w, e.status, spec.ErrorResponse{Error: err.Error()})
 			return
 		}
 	}
-	writeJSONResponse(w, http.StatusInternalServerError, backend.ErrorResponse{Error: "internal server error"})
+	writeJSONResponse(w, http.StatusInternalServerError, spec.ErrorResponse{Error: "internal server error"})
 }

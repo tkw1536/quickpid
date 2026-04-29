@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/tkw1536/quickpid/resolvers/mem"
+	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/server"
 )
 
@@ -19,12 +19,13 @@ func main() {
 
 	const mountPath = "/api/v2"
 
-	store := mem.NewStore(server.DefaultPIDMaxAttempts)
+	memory := backend.NewInMemoryBackend(server.DefaultPIDMaxAttempts)
+
 	apiHandler := server.NewHandler(server.Options{
 		MountPath: mountPath,
 		Limits:    server.Limits{},
 		Now:       time.Now,
-	}, store)
+	}, memory)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))
 

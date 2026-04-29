@@ -3,7 +3,7 @@ package pid_test
 import (
 	"testing"
 
-	"github.com/tkw1536/quickpid/api/pid"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 func TestPatternValidate(t *testing.T) {

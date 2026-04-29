@@ -13,6 +13,7 @@ import (
 	"github.com/swaggest/swgui"
 	"github.com/swaggest/swgui/v5emb"
 	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/spec"
 
 	_ "embed"
 )
@@ -22,7 +23,7 @@ var openapiYAML []byte
 
 type Handler struct {
 	ops     Options
-	backend backend.ResolverBackend
+	backend backend.Backend
 	mux     *http.ServeMux
 }
 
@@ -30,7 +31,7 @@ type Handler struct {
 //
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
 // mount with http.StripPrefix(mountPath, NewHandler(Options{MountPath: mountPath}, res)) at mountPath+"/".
-func NewHandler(options Options, backend backend.ResolverBackend) *Handler {
+func NewHandler(options Options, backend backend.Backend) *Handler {
 	options = options.withDefaults()
 
 	h := &Handler{
@@ -41,11 +42,11 @@ func NewHandler(options Options, backend backend.ResolverBackend) *Handler {
 
 	h.mux.Handle("GET /resolver/namespaces", h.handleListNamespaces())
 	h.mux.Handle("POST /resolver/namespaces", h.handleCreateNamespace())
-	h.mux.Handle("GET /resolver/namespaces/{id}/resources", h.handleListResources())
-	h.mux.Handle("POST /resolver/namespaces/{id}/resources", h.handleCreateResource())
-	h.mux.Handle("POST /resolver/namespaces/{id}/resources:batch", h.handleBatchCreateResources())
-	h.mux.Handle("GET /resolver/namespaces/{id}/resources/{pid}", h.handleGetResource())
-	h.mux.Handle("PATCH /resolver/namespaces/{id}/resources/{pid}", h.handleUpdateResource())
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", h.handleListResources())
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", h.handleCreateResource())
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", h.handleBatchCreateResources())
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", h.handleGetResource())
+	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", h.handleUpdateResource())
 
 	if !options.DisableSwaggerUI {
 		h.mux.Handle("GET /openapi.yaml", h.handleOpenAPISpec())
@@ -87,7 +88,7 @@ func (h *Handler) handleListNamespaces() http.HandlerFunc {
 			tag = &v
 		}
 
-		out, err := h.backend.ListNamespaces(r.Context(), backend.ListNamespacesParams{
+		out, err := h.backend.ListNamespaces(r.Context(), spec.ListNamespacesParams{
 			Tag:    tag,
 			Limit:  limit,
 			Offset: offset,
@@ -102,7 +103,7 @@ func (h *Handler) handleListNamespaces() http.HandlerFunc {
 
 func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req backend.NamespaceCreateRequest
+		var req spec.NamespaceCreateRequest
 		if err := h.decodeJSON(w, r, &req); err != nil {
 			writeError(w, err)
 			return
@@ -163,7 +164,7 @@ func (h *Handler) handleListResources() http.HandlerFunc {
 			return
 		}
 
-		out, err := h.backend.ListResources(r.Context(), backend.ListResourcesParams{
+		out, err := h.backend.ListResources(r.Context(), spec.ListResourcesParams{
 			Namespace: id,
 			Tag:       tag,
 			Deleted:   deleted,
@@ -181,18 +182,18 @@ func (h *Handler) handleListResources() http.HandlerFunc {
 
 func (h *Handler) handleCreateResource() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req backend.ResourceCreateRequest
+		var req spec.ResourceCreateRequest
 		if err := h.decodeJSON(w, r, &req); err != nil {
 			writeError(w, err)
 			return
 		}
-		id := r.PathValue("id")
-		if !isValidNamespaceID(id) {
+		namespace := r.PathValue("namespace")
+		if !isValidNamespaceID(namespace) {
 			writeError(w, backend.ErrInvalidNamespace)
 			return
 		}
 
-		out, err := h.backend.CreateResource(r.Context(), id, req, h.ops.Rand, h.ops.Now)
+		out, err := h.backend.CreateResource(r.Context(), namespace, req, h.ops.Rand, h.ops.Now)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -203,7 +204,7 @@ func (h *Handler) handleCreateResource() http.HandlerFunc {
 
 func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var reqs []backend.ResourceCreateRequest
+		var reqs []spec.ResourceCreateRequest
 		if err := h.decodeJSON(w, r, &reqs); err != nil {
 			writeError(w, err)
 			return
@@ -213,12 +214,12 @@ func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
 			return
 		}
 
-		id := r.PathValue("id")
-		if !isValidNamespaceID(id) {
+		namespace := r.PathValue("namespace")
+		if !isValidNamespaceID(namespace) {
 			writeError(w, backend.ErrInvalidNamespace)
 			return
 		}
-		out, err := h.backend.BatchCreateResources(r.Context(), id, reqs, h.ops.Rand, h.ops.Now)
+		out, err := h.backend.BatchCreateResources(r.Context(), namespace, reqs, h.ops.Rand, h.ops.Now)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -253,13 +254,13 @@ func (h *Handler) handleGetResource() http.HandlerFunc {
 
 func (h *Handler) handleUpdateResource() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req backend.ResourceUpdateRequest
+		var req spec.ResourceUpdateRequest
 		if err := h.decodeJSON(w, r, &req); err != nil {
 			writeError(w, err)
 			return
 		}
-		id := r.PathValue("id")
-		if !isValidNamespaceID(id) {
+		namespace := r.PathValue("namespace")
+		if !isValidNamespaceID(namespace) {
 			writeError(w, backend.ErrInvalidNamespace)
 			return
 		}
@@ -268,7 +269,7 @@ func (h *Handler) handleUpdateResource() http.HandlerFunc {
 			writeError(w, backend.ErrInvalidPID)
 			return
 		}
-		out, err := h.backend.UpdateResource(r.Context(), id, pid, req, h.ops.Now)
+		out, err := h.backend.UpdateResource(r.Context(), namespace, pid, req, h.ops.Now)
 		if err != nil {
 			writeError(w, err)
 			return

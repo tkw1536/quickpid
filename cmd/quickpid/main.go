@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
-	"github.com/tkw1536/quickpid/resolvers/gormstore"
+	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/server"
 	"gorm.io/gorm"
 )
@@ -31,10 +31,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := gormstore.Migrate(db); err != nil {
+	if err := backend.MigrateGorm(db); err != nil {
 		log.Fatal(err)
 	}
-	resolver := gormstore.NewResolver(db, server.DefaultPIDMaxAttempts)
+	resolver := backend.NewGormBackend(db, server.DefaultPIDMaxAttempts)
 
 	const mountPath = "/api/v2"
 	apiHandler := server.NewHandler(server.Options{
