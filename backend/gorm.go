@@ -3,6 +3,8 @@ package backend
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/tkw1536/quickpid/pid"
@@ -12,48 +14,74 @@ import (
 
 // MigrateGorm automatically migrates the gorm schema used by [].
 func MigrateGorm(db *gorm.DB) error {
-	return db.AutoMigrate(&namespaceModel{}, &resourceModel{})
+	return db.AutoMigrate(&namespaceRow{}, &resourceRow{})
 }
 
+// DefaultGormBatchSize is the default batch size to be used by [NewGormBackend].
+const DefaultGormBatchSize = 100
+
 // NewGormBackend returns [Backend] backed by gorm.
-func NewGormBackend(db *gorm.DB) Backend {
-	return &gormBackend{db: db}
+//
+// batchSize is the batch size to be used during create operations.
+// If <= 0, [DefaultGormBatchSize] is used.
+func NewGormBackend(db *gorm.DB, batchSize int) Backend {
+	if batchSize <= 0 {
+		batchSize = DefaultGormBatchSize
+	}
+	return &gormBackend{db: db, batchSize: batchSize}
 }
 
 // gormBackend implements api.Resolver using GORM. It is safe for concurrent use when backed by a
 // database that serializes transactions appropriately (e.g. SQLite) or supports row locking.
 type gormBackend struct {
 	db *gorm.DB
+
+	batchSize int // batch size to be used during create operations
 }
 
-func transaction[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
+func withTx[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
 	var out V
-	err := db.Transaction(func(tx *gorm.DB) error {
+	if err := db.Transaction(func(tx *gorm.DB) error {
 		var err error
 		out, err = fn(tx)
 		return err
-	})
-	if err != nil {
+	}); err != nil {
 		var zero V
 		return zero, err
 	}
 	return out, nil
 }
 
+func isUniqueConstraintError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return true
+	}
+
+	// some badly behaved drivers return strings ...
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "unique constraint failed") ||
+		strings.Contains(msg, "duplicate") ||
+		strings.Contains(msg, "duplicated") ||
+		strings.Contains(msg, "unique constraint")
+}
+
 func (s *gormBackend) ListNamespaces(ctx context.Context, params spec.ListNamespacesParams) (*spec.PaginatedNamespacesResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.PaginatedNamespacesResponse, error) {
-		countQ := tx.Model(&namespaceModel{})
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.PaginatedNamespacesResponse, error) {
+		q := tx.Model(&namespaceRow{})
 		if params.Tag != nil {
-			countQ = countQ.Where("tag = ?", *params.Tag)
+			q = q.Where("tag = ?", *params.Tag)
 		}
+
 		var total int64
-		if err := countQ.Count(&total).Error; err != nil {
+		if err := q.Count(&total).Error; err != nil {
 			return nil, err
 		}
 
 		limit := params.Limit
 		offset := params.Offset
-
 		if int64(offset) >= total {
 			return &spec.PaginatedNamespacesResponse{
 				Total:  int(total),
@@ -62,23 +90,13 @@ func (s *gormBackend) ListNamespaces(ctx context.Context, params spec.ListNamesp
 			}, nil
 		}
 
-		q := tx.Model(&namespaceModel{})
-		if params.Tag != nil {
-			q = q.Where("tag = ?", *params.Tag)
-		}
-		q = q.Order("namespace_uid")
-		if limit >= 0 {
-			q = q.Limit(limit)
-		}
-		q = q.Offset(offset)
-
-		var rows []namespaceModel
-		if err := q.Find(&rows).Error; err != nil {
+		var rows []namespaceRow
+		if err := q.Order("id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		items := make([]spec.NamespaceResponse, len(rows))
 		for i := range rows {
-			items[i] = rows[i].ToSpec()
+			items[i] = rows[i].toSpec()
 		}
 		return &spec.PaginatedNamespacesResponse{
 			Total:  int(total),
@@ -89,51 +107,47 @@ func (s *gormBackend) ListNamespaces(ctx context.Context, params spec.ListNamesp
 }
 
 func (s *gormBackend) CreateNamespace(ctx context.Context, namespace string, req spec.NamespaceCreateRequest, now func() time.Time) (*spec.NamespaceResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.NamespaceResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.NamespaceResponse, error) {
 		ts := now().UTC()
-		ns := namespaceModel{
-			NamespaceUID: namespace,
-			Tag:          req.Tag,
-			PIDPattern:   req.PIDFormat.Pattern,
-			PIDChars:     req.PIDFormat.Characters,
-			DateCreated:  ts,
+		ns := namespaceRow{
+			ID:          namespace,
+			Tag:         req.Tag,
+			PIDPattern:  req.PIDFormat.Pattern,
+			PIDChars:    req.PIDFormat.Characters,
+			DateCreated: ts,
 		}
 		if err := tx.Create(&ns).Error; err != nil {
-			if errors.Is(err, gorm.ErrDuplicatedKey) {
+			if isUniqueConstraintError(err) {
 				return nil, ErrDuplicateNamespaceID
 			}
 			return nil, err
 		}
-		resp := ns.ToSpec()
+		resp := ns.toSpec()
 		return &resp, nil
 	})
 }
 
 func (s *gormBackend) GetNamespace(ctx context.Context, namespace string) (*spec.NamespaceResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.NamespaceResponse, error) {
-		var ns namespaceModel
-		if err := tx.Where("namespace_uid = ?", namespace).First(&ns).Error; err != nil {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.NamespaceResponse, error) {
+		var ns namespaceRow
+		if err := tx.First(&ns, "id = ?", namespace).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, ErrNamespaceNotFound
 			}
 			return nil, err
 		}
-		out := ns.ToSpec()
+		out := ns.toSpec()
 		return &out, nil
 	})
 }
 
 func (s *gormBackend) ListResources(ctx context.Context, params spec.ListResourcesParams) (*spec.PaginatedResourcesResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.PaginatedResourcesResponse, error) {
-		var ns namespaceModel
-		if err := tx.Where("namespace_uid = ?", params.Namespace).First(&ns).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, ErrNamespaceNotFound
-			}
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.PaginatedResourcesResponse, error) {
+		if err := ensureNamespaceExists(tx, params.Namespace); err != nil {
 			return nil, err
 		}
 
-		q := tx.Model(&resourceModel{}).Where("namespace_id = ?", ns.ID)
+		q := tx.Model(&resourceRow{}).Where("namespace_id = ?", params.Namespace)
 		if params.Tag != nil {
 			q = q.Where("tag = ?", *params.Tag)
 		}
@@ -148,7 +162,6 @@ func (s *gormBackend) ListResources(ctx context.Context, params spec.ListResourc
 
 		limit := params.Limit
 		offset := params.Offset
-
 		if int64(offset) >= total {
 			return &spec.PaginatedResourcesResponse{
 				Total:  int(total),
@@ -157,19 +170,13 @@ func (s *gormBackend) ListResources(ctx context.Context, params spec.ListResourc
 			}, nil
 		}
 
-		q = q.Order("pid")
-		if limit >= 0 {
-			q = q.Limit(limit)
-		}
-		q = q.Offset(offset)
-
-		var rows []resourceModel
-		if err := q.Find(&rows).Error; err != nil {
+		var rows []resourceRow
+		if err := q.Order("pid ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		items := make([]spec.ResourceResponse, len(rows))
 		for i := range rows {
-			items[i] = rows[i].ToSpec()
+			items[i] = rows[i].toSpec()
 		}
 		return &spec.PaginatedResourcesResponse{
 			Total:  int(total),
@@ -179,39 +186,34 @@ func (s *gormBackend) ListResources(ctx context.Context, params spec.ListResourc
 	})
 }
 
-func (s *gormBackend) CreateResource(ctx context.Context, id, pid string, req spec.ResourceCreateRequest, now func() time.Time) (*spec.ResourceResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.ResourceResponse, error) {
-		var ns namespaceModel
-		if err := tx.Where("namespace_uid = ?", id).First(&ns).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, ErrNamespaceNotFound
-			}
+func (s *gormBackend) CreateResource(ctx context.Context, namespace, pid string, req spec.ResourceCreateRequest, now func() time.Time) (*spec.ResourceResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.ResourceResponse, error) {
+		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
 		}
-
 		ts := now().UTC()
-		row := resourceModel{
-			NamespaceID: ns.ID,
+		row := resourceRow{
+			NamespaceID: namespace,
 			PID:         pid,
 			URL:         req.URL,
 			Metadata:    req.Metadata,
-			DateCreated: ts,
-			DateUpdated: ts,
 			Tag:         req.Tag,
 			Deleted:     false,
+			DateCreated: ts,
+			DateUpdated: ts,
 		}
 		if err := tx.Create(&row).Error; err != nil {
-			if errors.Is(err, gorm.ErrDuplicatedKey) {
+			if isUniqueConstraintError(err) {
 				return nil, ErrPIDAllocationFailed
 			}
 			return nil, err
 		}
-		r := row.ToSpec()
+		r := row.toSpec()
 		return &r, nil
 	})
 }
 
-func (s *gormBackend) BatchCreateResources(ctx context.Context, id string, pids []string, reqs []spec.ResourceCreateRequest, now func() time.Time) ([]spec.ResourceResponse, error) {
+func (s *gormBackend) BatchCreateResources(ctx context.Context, namespace string, pids []string, reqs []spec.ResourceCreateRequest, now func() time.Time) ([]spec.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
@@ -219,108 +221,113 @@ func (s *gormBackend) BatchCreateResources(ctx context.Context, id string, pids 
 		return nil, ErrPIDAllocationFailed
 	}
 
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) ([]spec.ResourceResponse, error) {
-		var ns namespaceModel
-		if err := tx.Where("namespace_uid = ?", id).First(&ns).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, ErrNamespaceNotFound
-			}
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) ([]spec.ResourceResponse, error) {
+		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
 		}
-		out := make([]spec.ResourceResponse, 0, len(reqs))
 		ts := now().UTC()
+		rows := make([]resourceRow, len(reqs))
 		for i, req := range reqs {
-			row := resourceModel{
-				NamespaceID: ns.ID,
+			rows[i] = resourceRow{
+				NamespaceID: namespace,
 				PID:         pids[i],
 				URL:         req.URL,
 				Metadata:    req.Metadata,
-				DateCreated: ts,
-				DateUpdated: ts,
 				Tag:         req.Tag,
 				Deleted:     false,
+				DateCreated: ts,
+				DateUpdated: ts,
 			}
-			if err := tx.Create(&row).Error; err != nil {
-				if errors.Is(err, gorm.ErrDuplicatedKey) {
-					return nil, ErrPIDAllocationFailed
-				}
-				return nil, err
+		}
+
+		if err := tx.CreateInBatches(&rows, s.batchSize).Error; err != nil {
+			if isUniqueConstraintError(err) {
+				return nil, ErrPIDAllocationFailed
 			}
-			out = append(out, row.ToSpec())
+			return nil, err
+		}
+
+		out := make([]spec.ResourceResponse, len(rows))
+		for i := range rows {
+			out[i] = rows[i].toSpec()
 		}
 		return out, nil
 	})
 }
 
-func (s *gormBackend) GetResource(ctx context.Context, id, pid string) (*spec.ResourceResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.ResourceResponse, error) {
-		var ns namespaceModel
-		if err := tx.Where("namespace_uid = ?", id).First(&ns).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, ErrNamespaceNotFound
-			}
+func (s *gormBackend) GetResource(ctx context.Context, namespace, pid string) (*spec.ResourceResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.ResourceResponse, error) {
+		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
 		}
-		var row resourceModel
-		if err := tx.Where("namespace_id = ? AND pid = ?", ns.ID, pid).First(&row).Error; err != nil {
+
+		var row resourceRow
+		if err := tx.First(&row, "namespace_id = ? AND pid = ?", namespace, pid).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, ErrResourceNotFound
 			}
 			return nil, err
 		}
-		r := row.ToSpec()
+		r := row.toSpec()
 		return &r, nil
 	})
 }
 
 func (s *gormBackend) UpdateResource(ctx context.Context, id, pid string, req spec.ResourceUpdateRequest, now func() time.Time) (*spec.ResourceResponse, error) {
-	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.ResourceResponse, error) {
-		var ns namespaceModel
-		if err := tx.Where("namespace_uid = ?", id).First(&ns).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, ErrNamespaceNotFound
-			}
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.ResourceResponse, error) {
+		if err := ensureNamespaceExists(tx, id); err != nil {
 			return nil, err
 		}
-		var row resourceModel
-		if err := tx.Where("namespace_id = ? AND pid = ?", ns.ID, pid).First(&row).Error; err != nil {
+
+		var row resourceRow
+		if err := tx.First(&row, "namespace_id = ? AND pid = ?", id, pid).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, ErrResourceNotFound
 			}
 			return nil, err
 		}
-		ts := now().UTC()
+
 		row.URL = req.URL
 		row.Metadata = req.Metadata
 		row.Tag = req.Tag
 		row.Deleted = req.Deleted
-		row.DateUpdated = ts
+		row.DateUpdated = now().UTC()
 		if err := tx.Save(&row).Error; err != nil {
 			return nil, err
 		}
-		r := row.ToSpec()
+		r := row.toSpec()
 		return &r, nil
 	})
 }
 
-// namespaceModel maps to the namespaces table.
-type namespaceModel struct {
-	ID uint `gorm:"primaryKey"`
-
-	NamespaceUID string           `gorm:"column:namespace_id;type:text;not null;uniqueIndex"`
-	Tag          string           `gorm:"type:text;not null;default:'';index"`
-	PIDPattern   pid.Pattern      `gorm:"type:text;not null"`
-	PIDChars     pid.CharacterSet `gorm:"type:text;not null"`
-	DateCreated  time.Time
+func ensureNamespaceExists(tx *gorm.DB, id string) error {
+	var n int64
+	if err := tx.Model(&namespaceRow{}).Where("id = ?", id).Count(&n).Error; err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNamespaceNotFound
+	}
+	return nil
 }
 
-func (namespaceModel) TableName() string {
-	return "namespaces"
+// namespaceRow maps to the namespaces table.
+type namespaceRow struct {
+	ID string `gorm:"column:id;type:text;primaryKey"`
+
+	DateCreated time.Time `gorm:"column:date_created;not null"`
+
+	PIDPattern pid.Pattern      `gorm:"column:pid_pattern;type:text;not null"`
+	PIDChars   pid.CharacterSet `gorm:"column:pid_chars;type:text;not null"`
+
+	Tag string `gorm:"column:tag;type:text;not null;index"`
 }
 
-func (n namespaceModel) ToSpec() spec.NamespaceResponse {
+func (namespaceRow) TableName() string { return "namespaces" }
+
+func (n namespaceRow) toSpec() spec.NamespaceResponse {
 	return spec.NamespaceResponse{
-		ID:  n.NamespaceUID,
+		ID:  n.ID,
 		Tag: n.Tag,
 		PIDFormat: pid.Format{
 			Pattern:    n.PIDPattern,
@@ -330,25 +337,24 @@ func (n namespaceModel) ToSpec() spec.NamespaceResponse {
 	}
 }
 
-// resourceModel maps to the resources table.
-type resourceModel struct {
-	ID uint `gorm:"primaryKey"`
+// resourceRow maps to the resources table.
+type resourceRow struct {
+	NamespaceID string `gorm:"column:namespace_id;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:1;index:idx_resources_ns_tag,priority:1"`
+	PID         string `gorm:"column:pid;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:2"`
 
-	NamespaceID uint    `gorm:"not null;index:idx_ns_tag,priority:1;uniqueIndex:ux_ns_pid,priority:1"`
-	PID         string  `gorm:"column:pid;type:text;not null;uniqueIndex:ux_ns_pid,priority:2"`
-	URL         string  `gorm:"type:text"`
-	Metadata    *string `gorm:"type:text"`
-	DateCreated time.Time
-	DateUpdated time.Time
-	Tag         string `gorm:"type:text;index:idx_ns_tag,priority:2"`
-	Deleted     bool   `gorm:"not null;default:false"`
+	URL      string  `gorm:"column:url;type:text;not null"`
+	Metadata *string `gorm:"column:metadata;type:text"`
+
+	DateCreated time.Time `gorm:"column:date_created;not null"`
+	DateUpdated time.Time `gorm:"column:date_updated;not null"`
+
+	Tag     string `gorm:"column:tag;type:text;not null;index:idx_resources_ns_tag,priority:2"`
+	Deleted bool   `gorm:"column:deleted;not null;default:false;index"`
 }
 
-func (resourceModel) TableName() string {
-	return "resources"
-}
+func (resourceRow) TableName() string { return "resources" }
 
-func (r resourceModel) ToSpec() spec.ResourceResponse {
+func (r resourceRow) toSpec() spec.ResourceResponse {
 	return spec.ResourceResponse{
 		PID:         r.PID,
 		URL:         r.URL,
@@ -358,4 +364,8 @@ func (r resourceModel) ToSpec() spec.ResourceResponse {
 		Tag:         r.Tag,
 		Deleted:     r.Deleted,
 	}
+}
+
+func (s *gormBackend) String() string {
+	return fmt.Sprintf("gormBackend(batchSize=%d)", s.batchSize)
 }

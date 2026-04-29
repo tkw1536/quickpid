@@ -40,7 +40,7 @@ var (
 	errUnableToAllocateNamespaceID = errors.New("unable to allocate a unique namespace id (is the number of namespaces exhausted?)")
 	errUnableToAllocatePID         = errors.New("unable to allocate a unique pid (is the namespace exhausted?)")
 
-	errInvalidNamespaceID = errors.New("invalid namespace id")
+	errInvalidNamespaceID = errors.New("invalid namespace")
 	errInvalidPID         = errors.New("invalid pid")
 )
 
@@ -152,7 +152,7 @@ func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 
 func (h *Handler) handleListResources() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
+		id := r.PathValue("namespace")
 		if !isValidNamespaceID(id) {
 			writeError(w, errInvalidNamespaceID)
 			return
@@ -264,7 +264,7 @@ func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
 
 func (h *Handler) handleGetResource() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
+		id := r.PathValue("namespace")
 		if !isValidNamespaceID(id) {
 			writeError(w, errInvalidNamespaceID)
 			return

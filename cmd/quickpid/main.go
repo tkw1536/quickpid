@@ -34,7 +34,7 @@ func main() {
 	if err := backend.MigrateGorm(db); err != nil {
 		log.Fatal(err)
 	}
-	resolver := backend.NewGormBackend(db)
+	resolver := backend.NewGormBackend(db, 0)
 
 	const mountPath = "/api/v2"
 	apiHandler := server.NewHandler(server.Options{

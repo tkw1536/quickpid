@@ -182,6 +182,7 @@ func (s *inMemoryBackend) BatchCreateResources(_ context.Context, namespace stri
 func (s *inMemoryBackend) GetResource(_ context.Context, namespace, pid string) (*spec.ResourceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	if _, ok := s.namespaces[namespace]; !ok {
 		return nil, ErrNamespaceNotFound
 	}

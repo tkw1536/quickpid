@@ -13,7 +13,7 @@ import (
 //
 // See [NewGormBackend] and [NewInMemoryBackend] for implementations.
 type Backend interface {
-	// Lists all available namespaces.
+	// Lists all available namespaces, ordered ascending by namespace id.
 	// Has no specific error conditions.
 	ListNamespaces(ctx context.Context, params spec.ListNamespacesParams) (*spec.PaginatedNamespacesResponse, error)
 
@@ -25,7 +25,7 @@ type Backend interface {
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	GetNamespace(ctx context.Context, namespace string) (*spec.NamespaceResponse, error)
 
-	// Lists all resources in a namespace.
+	// Lists all resources in a namespace ordered ascending by pid.
 	// Returns [ErrNamespaceNotFound] if the namespace is not found.
 	ListResources(ctx context.Context, params spec.ListResourcesParams) (*spec.PaginatedResourcesResponse, error)
 

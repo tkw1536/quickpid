@@ -22,6 +22,6 @@ func TestGormBackend(t *testing.T) {
 		if err := backend.MigrateGorm(db); err != nil {
 			t.Fatal(err)
 		}
-		return backend.NewGormBackend(db)
+		return backend.NewGormBackend(db, 0)
 	})
 }
