@@ -216,7 +216,7 @@ func flowListResources(t *testing.T, h *harness) {
 			Offset: 0,
 			Items: []api.ResourceResponse{
 				{
-					PID:         "59x-79p",
+					PID:         "5t7-yy3",
 					URL:         "https://example.com/c",
 					Metadata:    new("ext-4@sys-a"),
 					DateCreated: h.now,
@@ -225,7 +225,7 @@ func flowListResources(t *testing.T, h *harness) {
 					Deleted:     false,
 				},
 				{
-					PID:         "651-pd3",
+					PID:         "dzl-7tf",
 					URL:         "https://example.com/d",
 					Metadata:    new("ext-5@sys-a"),
 					DateCreated: h.now,
@@ -326,7 +326,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 			Tag:      "alpha",
 		})
 		want := api.ResourceResponse{
-			PID:         "yd6-lc0",
+			PID:         "x5x-jcc",
 			URL:         "https://example.com/a",
 			Metadata:    new("ext-1@sys-a"),
 			DateCreated: h.now,
@@ -346,7 +346,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 			Tag:      "alpha",
 		})
 		want := api.ResourceResponse{
-			PID:         "tha-yrf",
+			PID:         "jy8-zkp",
 			URL:         "https://example.com/metadata-null",
 			Metadata:    nil,
 			DateCreated: h.now,
@@ -413,7 +413,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 			Tag:      "r6",
 		})
 		want := api.ResourceResponse{
-			PID:         "g54-mn5",
+			PID:         "9bd-fhk",
 			URL:         "https://example.com/readable6",
 			Metadata:    nil,
 			DateCreated: h.now,
@@ -445,7 +445,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 			Tag:      "r9",
 		})
 		want := api.ResourceResponse{
-			PID:         "r56-wn7-068",
+			PID:         "nqs-vxz-3d8",
 			URL:         "https://example.com/readable9",
 			Metadata:    nil,
 			DateCreated: h.now,
@@ -477,7 +477,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 			Tag:      "r64",
 		})
 		want := api.ResourceResponse{
-			PID:         "c6xgmqk2joj8sz1wfu0vnc14cw8dg9k8otfkh04hahopg09vjsxwxyclw5ctqxn0",
+			PID:         "owxnb3nt0s5zrjjjlkxy1vrzfd4173zzfb5pq0537v7x9u977fb3ptz29bnrzhd3",
 			URL:         "https://example.com/random64",
 			Metadata:    nil,
 			DateCreated: h.now,
@@ -534,7 +534,7 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 		got = decodeJSON[[]api.ResourceResponse](t, resp.Body)
 		want := []api.ResourceResponse{
 			{
-				PID:         "yd6-lc0",
+				PID:         "x5x-jcc",
 				URL:         "https://b1",
 				Metadata:    new("b1@batch"),
 				DateCreated: h.now,
@@ -543,7 +543,7 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 				Deleted:     false,
 			},
 			{
-				PID:         "tha-yrf",
+				PID:         "jy8-zkp",
 				URL:         "https://b2",
 				Metadata:    nil,
 				DateCreated: h.now,

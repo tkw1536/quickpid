@@ -1,6 +1,9 @@
 package pid_test
 
 import (
+	"bytes"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/tkw1536/quickpid/api/pid"
@@ -98,4 +101,72 @@ func TestCharacterSetAlphabet(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCharacterSetPick(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		chars    pid.CharacterSet
+		rand     io.Reader
+		wantRune rune
+		wantErrs []string
+	}{
+		"decimal_success": {
+			chars:    pid.Decimal,
+			rand:     bytes.NewReader([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0b}),
+			wantRune: '1',
+		},
+		"unknown_character_set": {
+			chars:    pid.CharacterSet("nope"),
+			rand:     bytes.NewReader(nil),
+			wantErrs: []string{"unknown character set"},
+		},
+		"read_random_error": {
+			chars:    pid.Decimal,
+			rand:     errorReader{err: io.ErrUnexpectedEOF},
+			wantErrs: []string{"failed to read random", "unexpected EOF"},
+		},
+		"all_attempts_failed": {
+			chars:    pid.Decimal,
+			rand:     bytes.NewReader(bytes.Repeat([]byte{0xff}, 100*8 /* 8 * pid.maxPickRetryAttempts*/)),
+			wantErrs: []string{"repeated attempts to pick character fell outside of range"},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := tc.chars.Pick(tc.rand)
+			if len(tc.wantErrs) == 0 {
+				if err != nil {
+					t.Fatalf("Pick(%q): got err %v, want nil", tc.chars, err)
+				}
+				if got != tc.wantRune {
+					t.Fatalf("Pick(%q): got %q, want %q", tc.chars, got, tc.wantRune)
+				}
+				return
+			}
+
+			if err == nil {
+				t.Fatalf("Pick(%q): got nil, want error", tc.chars)
+			}
+			errStr := err.Error()
+			for _, wantErr := range tc.wantErrs {
+				if !strings.Contains(errStr, wantErr) {
+					t.Fatalf("Pick(%q): got err %q, want substring %q", tc.chars, errStr, wantErr)
+				}
+			}
+		})
+	}
+}
+
+// errReader always return the error when being read.
+type errorReader struct {
+	err error
+}
+
+func (r errorReader) Read(_ []byte) (int, error) {
+	return 0, r.err
 }

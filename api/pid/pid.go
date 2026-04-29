@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/tkw1536/quickpid/internal/required"
 )
@@ -55,31 +56,24 @@ func (format Format) Generate(rand io.Reader) (string, error) {
 	if err := format.Validate(); err != nil {
 		return "", err
 	}
-	alphabet, _ := format.Characters.Alphabet()
 
-	starCount := 0
-	for i := 0; i < len(format.Pattern); i++ {
-		if format.Pattern[i] == '*' {
-			starCount++
+	var writer strings.Builder
+	writer.Grow(len(format.Pattern))
+
+	for _, c := range format.Pattern {
+		// copy non-asterisk characters directly
+		if c != '*' {
+			writer.WriteRune(c)
+			continue
 		}
-	}
 
-	buf := make([]byte, starCount)
-	if _, err := io.ReadFull(rand, buf); err != nil {
-		return "", err
-	}
-
-	out := make([]byte, len(format.Pattern))
-	n := byte(len(alphabet))
-	j := 0
-	for i := 0; i < len(format.Pattern); i++ {
-		switch format.Pattern[i] {
-		case '*':
-			out[i] = alphabet[buf[j]%n]
-			j++
-		case '-', '_':
-			out[i] = format.Pattern[i]
+		// otherwise pick a random character from the character set
+		char, err := format.Characters.Pick(rand)
+		if err != nil {
+			return "", err
 		}
+		writer.WriteRune(char)
 	}
-	return string(out), nil
+
+	return writer.String(), nil
 }

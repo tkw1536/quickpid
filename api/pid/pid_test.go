@@ -78,31 +78,31 @@ func TestFormat_Generate(t *testing.T) {
 		"full_legacyShape": {
 			format: pid.Format{Pattern: "***-***", Characters: pid.Full},
 			expect: []string{
-				"yd6-lc0",
-				"tha-yrf",
-				"chc-pds",
+				"x5x-jcc",
+				"jy8-zkp",
+				"wt6-ezs",
 			},
 		},
 		"readable_legacyShape": {
 			format: pid.Format{Pattern: "***-***", Characters: pid.Readable},
 			expect: []string{
-				"61e-x08",
-				"hs2-akv",
-				"0hc-5hg",
+				"s5s-q4m",
+				"76m-f4h",
+				"md2-pf4",
 			},
 		},
 		"readable_threeChunks": {
 			format: pid.Format{Pattern: "***-***-***", Characters: pid.Readable},
 			expect: []string{
-				"61e-x08-hs2",
-				"akv-0hc-5hg",
-				"ndd-k1s-enn",
+				"s5s-q4m-76m",
+				"f4h-md2-pf4",
+				"hnf-6yz-135",
 			},
 		},
 		"full_random64": {
 			format: pid.Format{Pattern: "****************************************************************", Characters: pid.Full},
 			expect: []string{
-				"yd6lc0thayrfchcpds59x79p651pd3dvc4wgkpk0iogbsx0wdt0tm49f8q4c6xgm",
+				"x5xjccjy8zkpwt6ezs5t7yy3dzl7tf1n9vh3pbxj5rdzl7tf1n9vh3pbr1gowxnb",
 			},
 		},
 	}
