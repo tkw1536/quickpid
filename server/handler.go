@@ -13,6 +13,7 @@ import (
 	"github.com/swaggest/swgui"
 	"github.com/swaggest/swgui/v5emb"
 	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/pid"
 	"github.com/tkw1536/quickpid/spec"
 
 	_ "embed"
@@ -193,7 +194,15 @@ func (h *Handler) handleCreateResource() http.HandlerFunc {
 			return
 		}
 
-		out, err := h.backend.CreateResource(r.Context(), namespace, req, h.ops.Rand, h.ops.Now)
+		ns, err := h.backend.GetNamespace(r.Context(), namespace)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+
+		out, err := h.allocatePID(ns.PIDFormat, func(pid string) (*spec.ResourceResponse, error) {
+			return h.backend.CreateResource(r.Context(), namespace, pid, req, h.ops.Now)
+		})
 		if err != nil {
 			writeError(w, err)
 			return
@@ -219,7 +228,16 @@ func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
 			writeError(w, backend.ErrInvalidNamespace)
 			return
 		}
-		out, err := h.backend.BatchCreateResources(r.Context(), namespace, reqs, h.ops.Rand, h.ops.Now)
+
+		ns, err := h.backend.GetNamespace(r.Context(), namespace)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+
+		out, err := h.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []string) ([]spec.ResourceResponse, error) {
+			return h.backend.BatchCreateResources(r.Context(), namespace, pids, reqs, h.ops.Now)
+		})
 		if err != nil {
 			writeError(w, err)
 			return
@@ -333,6 +351,7 @@ func parseInt(v string) (int, error) {
 
 var (
 	maxNamespaceIDAttempts = 32
+	maxPIDAttempts         = DefaultPIDMaxAttempts
 	namespaceIDRE          = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 	pidRE                  = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 )
@@ -343,4 +362,60 @@ func isValidNamespaceID(s string) bool {
 
 func isValidPID(s string) bool {
 	return pidRE.MatchString(s)
+}
+
+func (h *Handler) allocatePID(format pid.Format, insert func(string) (*spec.ResourceResponse, error)) (*spec.ResourceResponse, error) {
+	for range maxPIDAttempts {
+		candidate, err := format.Generate(h.ops.Rand)
+		if err != nil {
+			return nil, err
+		}
+		out, err := insert(candidate)
+		if err == nil {
+			return out, nil
+		}
+		if errors.Is(err, backend.ErrPIDAllocationFailed) {
+			continue
+		}
+		return nil, err
+	}
+	return nil, backend.ErrPIDAllocationFailed
+}
+
+func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) ([]spec.ResourceResponse, error)) ([]spec.ResourceResponse, error) {
+	if n == 0 {
+		return []spec.ResourceResponse{}, nil
+	}
+	for range maxPIDAttempts {
+		pids := make([]string, n)
+		seen := make(map[string]struct{}, n)
+		for i := range n {
+			// Ensure uniqueness within this batch.
+			for tries := 0; tries < maxPIDAttempts; tries++ {
+				candidate, err := format.Generate(h.ops.Rand)
+				if err != nil {
+					return nil, err
+				}
+				if _, exists := seen[candidate]; exists {
+					continue
+				}
+				seen[candidate] = struct{}{}
+				pids[i] = candidate
+				break
+			}
+			if pids[i] == "" {
+				return nil, backend.ErrPIDAllocationFailed
+			}
+		}
+
+		out, err := insert(pids)
+		if err == nil {
+			return out, nil
+		}
+		if errors.Is(err, backend.ErrPIDAllocationFailed) {
+			continue
+		}
+		return nil, err
+	}
+	return nil, backend.ErrPIDAllocationFailed
 }

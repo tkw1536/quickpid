@@ -4,7 +4,6 @@ package backend
 import (
 	"context"
 	"errors"
-	"io"
 	"time"
 
 	"github.com/tkw1536/quickpid/spec"
@@ -16,12 +15,13 @@ import (
 type Backend interface {
 	ListNamespaces(ctx context.Context, params spec.ListNamespacesParams) (*spec.PaginatedNamespacesResponse, error)
 	CreateNamespace(ctx context.Context, namespace string, req spec.NamespaceCreateRequest, now func() time.Time) (*spec.NamespaceResponse, error)
+	GetNamespace(ctx context.Context, namespace string) (*spec.NamespaceResponse, error)
 
 	ListResources(ctx context.Context, params spec.ListResourcesParams) (*spec.PaginatedResourcesResponse, error)
 	GetResource(ctx context.Context, namespace, pid string) (*spec.ResourceResponse, error)
 
-	CreateResource(ctx context.Context, namespace string, req spec.ResourceCreateRequest, rand io.Reader, now func() time.Time) (*spec.ResourceResponse, error)
-	BatchCreateResources(ctx context.Context, namespace string, reqs []spec.ResourceCreateRequest, rand io.Reader, now func() time.Time) ([]spec.ResourceResponse, error)
+	CreateResource(ctx context.Context, namespace, pid string, req spec.ResourceCreateRequest, now func() time.Time) (*spec.ResourceResponse, error)
+	BatchCreateResources(ctx context.Context, namespace string, pids []string, reqs []spec.ResourceCreateRequest, now func() time.Time) ([]spec.ResourceResponse, error)
 
 	UpdateResource(ctx context.Context, namespace, pid string, req spec.ResourceUpdateRequest, now func() time.Time) (*spec.ResourceResponse, error)
 }

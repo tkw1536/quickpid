@@ -6,7 +6,6 @@ import (
 	"github.com/glebarez/sqlite"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/apitest"
-	"github.com/tkw1536/quickpid/server"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -23,6 +22,6 @@ func TestGormBackend(t *testing.T) {
 		if err := backend.MigrateGorm(db); err != nil {
 			t.Fatal(err)
 		}
-		return backend.NewGormBackend(db, server.DefaultPIDMaxAttempts)
+		return backend.NewGormBackend(db)
 	})
 }

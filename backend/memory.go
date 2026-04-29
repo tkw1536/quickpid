@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"io"
 	"sort"
 	"sync"
 	"time"
@@ -11,14 +10,10 @@ import (
 )
 
 // NewInMemoryBackend returns a new backend backed by an in-memory map.
-//
-// maxPIDAttempts is an internal limit on the number of attempts to allocate a PID.
-// It should be greater than 0.
-func NewInMemoryBackend(maxPIDAttempts int) Backend {
+func NewInMemoryBackend() Backend {
 	return &inMemoryBackend{
-		namespaces:     make(map[string]spec.NamespaceResponse),
-		resources:      make(map[string]map[string]spec.ResourceResponse),
-		maxPIDAttempts: maxPIDAttempts,
+		namespaces: make(map[string]spec.NamespaceResponse),
+		resources:  make(map[string]map[string]spec.ResourceResponse),
 	}
 }
 
@@ -29,10 +24,6 @@ type inMemoryBackend struct {
 
 	namespaces map[string]spec.NamespaceResponse
 	resources  map[string]map[string]spec.ResourceResponse
-
-	// maximum number of attempts to allocate a PID.
-	// must be > 0.
-	maxPIDAttempts int
 }
 
 func (s *inMemoryBackend) ListNamespaces(_ context.Context, params spec.ListNamespacesParams) (*spec.PaginatedNamespacesResponse, error) {
@@ -79,6 +70,16 @@ func (s *inMemoryBackend) CreateNamespace(_ context.Context, namespace string, r
 	return &ns, nil
 }
 
+func (s *inMemoryBackend) GetNamespace(_ context.Context, namespace string) (*spec.NamespaceResponse, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	ns, ok := s.namespaces[namespace]
+	if !ok {
+		return nil, ErrNamespaceNotFound
+	}
+	return &ns, nil
+}
+
 func (s *inMemoryBackend) ListResources(_ context.Context, params spec.ListResourcesParams) (*spec.PaginatedResourcesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -112,26 +113,59 @@ func (s *inMemoryBackend) ListResources(_ context.Context, params spec.ListResou
 	return &spec.PaginatedResourcesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *inMemoryBackend) CreateResource(_ context.Context, namespace string, req spec.ResourceCreateRequest, rand io.Reader, now func() time.Time) (*spec.ResourceResponse, error) {
+func (s *inMemoryBackend) CreateResource(_ context.Context, namespace, pid string, req spec.ResourceCreateRequest, now func() time.Time) (*spec.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	ns, ok := s.namespaces[namespace]
-	if !ok {
+	if _, ok := s.namespaces[namespace]; !ok {
 		return nil, ErrNamespaceNotFound
 	}
 	byPID := s.resources[namespace]
-	for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-		candidate, err := ns.PIDFormat.Generate(rand)
-		if err != nil {
-			return nil, err
+	if _, exists := byPID[pid]; exists {
+		return nil, ErrPIDAllocationFailed
+	}
+	ts := now().UTC().Format(time.RFC3339)
+	res := spec.ResourceResponse{
+		PID:         pid,
+		URL:         req.URL,
+		Metadata:    req.Metadata,
+		DateCreated: ts,
+		DateUpdated: ts,
+		Tag:         req.Tag,
+		Deleted:     false,
+	}
+	byPID[pid] = res
+	return &res, nil
+}
+
+func (s *inMemoryBackend) BatchCreateResources(_ context.Context, namespace string, pids []string, reqs []spec.ResourceCreateRequest, now func() time.Time) ([]spec.ResourceResponse, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.namespaces[namespace]; !ok {
+		return nil, ErrNamespaceNotFound
+	}
+	if len(pids) != len(reqs) {
+		return nil, ErrPIDAllocationFailed
+	}
+
+	byPID := s.resources[namespace]
+	seen := make(map[string]struct{}, len(pids))
+	for _, pid := range pids {
+		if _, dup := seen[pid]; dup {
+			return nil, ErrPIDAllocationFailed
 		}
-		if _, exists := byPID[candidate]; exists {
-			continue
+		seen[pid] = struct{}{}
+		if _, exists := byPID[pid]; exists {
+			return nil, ErrPIDAllocationFailed
 		}
-		ts := now().UTC().Format(time.RFC3339)
+	}
+
+	out := make([]spec.ResourceResponse, 0, len(reqs))
+	ts := now().UTC().Format(time.RFC3339)
+	for i, req := range reqs {
 		res := spec.ResourceResponse{
-			PID:         candidate,
+			PID:         pids[i],
 			URL:         req.URL,
 			Metadata:    req.Metadata,
 			DateCreated: ts,
@@ -139,51 +173,8 @@ func (s *inMemoryBackend) CreateResource(_ context.Context, namespace string, re
 			Tag:         req.Tag,
 			Deleted:     false,
 		}
-		byPID[candidate] = res
-		return &res, nil
-	}
-	return nil, ErrPIDAllocationFailed
-}
-
-func (s *inMemoryBackend) BatchCreateResources(_ context.Context, namespace string, reqs []spec.ResourceCreateRequest, rand io.Reader, now func() time.Time) ([]spec.ResourceResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	ns, ok := s.namespaces[namespace]
-	if !ok {
-		return nil, ErrNamespaceNotFound
-	}
-
-	byPID := s.resources[namespace]
-	out := make([]spec.ResourceResponse, 0, len(reqs))
-	for _, req := range reqs {
-		var inserted bool
-		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-			candidate, err := ns.PIDFormat.Generate(rand)
-			if err != nil {
-				return nil, err
-			}
-			if _, exists := byPID[candidate]; exists {
-				continue
-			}
-			ts := now().UTC().Format(time.RFC3339)
-			res := spec.ResourceResponse{
-				PID:         candidate,
-				URL:         req.URL,
-				Metadata:    req.Metadata,
-				DateCreated: ts,
-				DateUpdated: ts,
-				Tag:         req.Tag,
-				Deleted:     false,
-			}
-			byPID[candidate] = res
-			out = append(out, res)
-			inserted = true
-			break
-		}
-		if !inserted {
-			return nil, ErrPIDAllocationFailed
-		}
+		byPID[pids[i]] = res
+		out = append(out, res)
 	}
 	return out, nil
 }

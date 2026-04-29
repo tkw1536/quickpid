@@ -19,7 +19,7 @@ func main() {
 
 	const mountPath = "/api/v2"
 
-	memory := backend.NewInMemoryBackend(server.DefaultPIDMaxAttempts)
+	memory := backend.NewInMemoryBackend()
 
 	apiHandler := server.NewHandler(server.Options{
 		MountPath: mountPath,

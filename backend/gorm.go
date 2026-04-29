@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"errors"
-	"io"
 	"time"
 
 	"github.com/tkw1536/quickpid/pid"
@@ -17,17 +16,14 @@ func MigrateGorm(db *gorm.DB) error {
 }
 
 // NewGormBackend returns [Backend] backed by gorm.
-//
-// maxPIDAttempts is an internal limit on the number of attempts to allocate a PID.
-func NewGormBackend(db *gorm.DB, maxPIDAttempts int) Backend {
-	return &gormBackend{db: db, maxPIDAttempts: maxPIDAttempts}
+func NewGormBackend(db *gorm.DB) Backend {
+	return &gormBackend{db: db}
 }
 
 // gormBackend implements api.Resolver using GORM. It is safe for concurrent use when backed by a
 // database that serializes transactions appropriately (e.g. SQLite) or supports row locking.
 type gormBackend struct {
-	db             *gorm.DB
-	maxPIDAttempts int
+	db *gorm.DB
 }
 
 func transaction[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
@@ -113,6 +109,20 @@ func (s *gormBackend) CreateNamespace(ctx context.Context, namespace string, req
 	})
 }
 
+func (s *gormBackend) GetNamespace(ctx context.Context, namespace string) (*spec.NamespaceResponse, error) {
+	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.NamespaceResponse, error) {
+		var ns namespaceModel
+		if err := tx.Where("namespace_uid = ?", namespace).First(&ns).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, ErrNamespaceNotFound
+			}
+			return nil, err
+		}
+		out := ns.ToApi()
+		return &out, nil
+	})
+}
+
 func (s *gormBackend) ListResources(ctx context.Context, params spec.ListResourcesParams) (*spec.PaginatedResourcesResponse, error) {
 	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.PaginatedResourcesResponse, error) {
 		var ns namespaceModel
@@ -169,7 +179,7 @@ func (s *gormBackend) ListResources(ctx context.Context, params spec.ListResourc
 	})
 }
 
-func (s *gormBackend) CreateResource(ctx context.Context, id string, req spec.ResourceCreateRequest, rand io.Reader, now func() time.Time) (*spec.ResourceResponse, error) {
+func (s *gormBackend) CreateResource(ctx context.Context, id, pid string, req spec.ResourceCreateRequest, now func() time.Time) (*spec.ResourceResponse, error) {
 	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.ResourceResponse, error) {
 		var ns namespaceModel
 		if err := tx.Where("namespace_uid = ?", id).First(&ns).Error; err != nil {
@@ -179,41 +189,34 @@ func (s *gormBackend) CreateResource(ctx context.Context, id string, req spec.Re
 			return nil, err
 		}
 
-		for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-			candidate, err := pid.Format{
-				Pattern:    ns.PIDPattern,
-				Characters: ns.PIDChars,
-			}.Generate(rand)
-			if err != nil {
-				return nil, err
-			}
-			ts := now().UTC()
-			row := resourceModel{
-				NamespaceID: ns.ID,
-				PID:         candidate,
-				URL:         req.URL,
-				Metadata:    req.Metadata,
-				DateCreated: ts,
-				DateUpdated: ts,
-				Tag:         req.Tag,
-				Deleted:     false,
-			}
-			if err := tx.Create(&row).Error; err != nil {
-				if errors.Is(err, gorm.ErrDuplicatedKey) {
-					continue
-				}
-				return nil, err
-			}
-			r := row.ToSpec()
-			return &r, nil
+		ts := now().UTC()
+		row := resourceModel{
+			NamespaceID: ns.ID,
+			PID:         pid,
+			URL:         req.URL,
+			Metadata:    req.Metadata,
+			DateCreated: ts,
+			DateUpdated: ts,
+			Tag:         req.Tag,
+			Deleted:     false,
 		}
-		return nil, ErrPIDAllocationFailed
+		if err := tx.Create(&row).Error; err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
+				return nil, ErrPIDAllocationFailed
+			}
+			return nil, err
+		}
+		r := row.ToSpec()
+		return &r, nil
 	})
 }
 
-func (s *gormBackend) BatchCreateResources(ctx context.Context, id string, reqs []spec.ResourceCreateRequest, rand io.Reader, now func() time.Time) ([]spec.ResourceResponse, error) {
+func (s *gormBackend) BatchCreateResources(ctx context.Context, id string, pids []string, reqs []spec.ResourceCreateRequest, now func() time.Time) ([]spec.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
+	}
+	if len(pids) != len(reqs) {
+		return nil, ErrPIDAllocationFailed
 	}
 
 	return transaction(s.db.WithContext(ctx), func(tx *gorm.DB) ([]spec.ResourceResponse, error) {
@@ -225,40 +228,25 @@ func (s *gormBackend) BatchCreateResources(ctx context.Context, id string, reqs 
 			return nil, err
 		}
 		out := make([]spec.ResourceResponse, 0, len(reqs))
-		for _, req := range reqs {
-			var inserted bool
-			for attempt := 0; attempt < s.maxPIDAttempts; attempt++ {
-				candidate, err := pid.Format{
-					Pattern:    ns.PIDPattern,
-					Characters: ns.PIDChars,
-				}.Generate(rand)
-				if err != nil {
-					return nil, err
-				}
-				ts := now().UTC()
-				row := resourceModel{
-					NamespaceID: ns.ID,
-					PID:         candidate,
-					URL:         req.URL,
-					Metadata:    req.Metadata,
-					DateCreated: ts,
-					DateUpdated: ts,
-					Tag:         req.Tag,
-					Deleted:     false,
-				}
-				if err := tx.Create(&row).Error; err != nil {
-					if errors.Is(err, gorm.ErrDuplicatedKey) {
-						continue
-					}
-					return nil, err
-				}
-				out = append(out, row.ToSpec())
-				inserted = true
-				break
+		ts := now().UTC()
+		for i, req := range reqs {
+			row := resourceModel{
+				NamespaceID: ns.ID,
+				PID:         pids[i],
+				URL:         req.URL,
+				Metadata:    req.Metadata,
+				DateCreated: ts,
+				DateUpdated: ts,
+				Tag:         req.Tag,
+				Deleted:     false,
 			}
-			if !inserted {
-				return nil, ErrPIDAllocationFailed
+			if err := tx.Create(&row).Error; err != nil {
+				if errors.Is(err, gorm.ErrDuplicatedKey) {
+					return nil, ErrPIDAllocationFailed
+				}
+				return nil, err
 			}
+			out = append(out, row.ToSpec())
 		}
 		return out, nil
 	})
