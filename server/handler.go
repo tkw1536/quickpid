@@ -28,6 +28,22 @@ type Handler struct {
 	mux     *http.ServeMux
 }
 
+var (
+	errEmptyRequestBody      = errors.New("empty request body")
+	errInvalidJSON           = errors.New("invalid JSON")
+	errTrailingJSON          = errors.New("trailing JSON")
+	errInvalidQueryParameter = errors.New("invalid query parameter")
+
+	errRequestBodyTooLarge = errors.New("request payload too large")
+	errTooManyItems        = errors.New("too many items")
+
+	errUnableToAllocateNamespaceID = errors.New("unable to allocate a unique namespace id (is the number of namespaces exhausted?)")
+	errUnableToAllocatePID         = errors.New("unable to allocate a unique pid (is the namespace exhausted?)")
+
+	errInvalidNamespaceID = errors.New("invalid namespace id")
+	errInvalidPID         = errors.New("invalid pid")
+)
+
 // NewHandler returns an http.Handler for the PID Resolver API and Swagger UI.
 //
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
@@ -125,12 +141,12 @@ func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 				writeJSONResponse(w, http.StatusCreated, out)
 				return
 			}
-			if !errors.Is(err, backend.ErrNamespaceIDAllocationFailed) {
+			if !errors.Is(err, backend.ErrDuplicateNamespaceID) {
 				writeError(w, err)
 				return
 			}
 		}
-		writeError(w, backend.ErrNamespaceIDAllocationFailed)
+		writeError(w, errUnableToAllocateNamespaceID)
 	}
 }
 
@@ -138,7 +154,7 @@ func (h *Handler) handleListResources() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if !isValidNamespaceID(id) {
-			writeError(w, backend.ErrInvalidNamespace)
+			writeError(w, errInvalidNamespaceID)
 			return
 		}
 		query := r.URL.Query()
@@ -153,7 +169,7 @@ func (h *Handler) handleListResources() http.HandlerFunc {
 		if query.Has("deleted") {
 			b, err := strconv.ParseBool(query.Get("deleted"))
 			if err != nil {
-				writeError(w, fmt.Errorf("%w %q", backend.ErrInvalidQueryParameter, "deleted"))
+				writeError(w, fmt.Errorf("%w %q", errInvalidQueryParameter, "deleted"))
 				return
 			}
 			deleted = &b
@@ -190,7 +206,7 @@ func (h *Handler) handleCreateResource() http.HandlerFunc {
 		}
 		namespace := r.PathValue("namespace")
 		if !isValidNamespaceID(namespace) {
-			writeError(w, backend.ErrInvalidNamespace)
+			writeError(w, errInvalidNamespaceID)
 			return
 		}
 
@@ -219,13 +235,13 @@ func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
 			return
 		}
 		if len(reqs) > h.ops.Limits.MaxBatchItems {
-			writeError(w, fmt.Errorf("%w: %d > %d", backend.ErrTooManyItems, len(reqs), h.ops.Limits.MaxBatchItems))
+			writeError(w, fmt.Errorf("%w: %d > %d", errTooManyItems, len(reqs), h.ops.Limits.MaxBatchItems))
 			return
 		}
 
 		namespace := r.PathValue("namespace")
 		if !isValidNamespaceID(namespace) {
-			writeError(w, backend.ErrInvalidNamespace)
+			writeError(w, errInvalidNamespaceID)
 			return
 		}
 
@@ -250,13 +266,13 @@ func (h *Handler) handleGetResource() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if !isValidNamespaceID(id) {
-			writeError(w, backend.ErrInvalidNamespace)
+			writeError(w, errInvalidNamespaceID)
 			return
 		}
 
 		pid := r.PathValue("pid")
 		if !isValidPID(pid) {
-			writeError(w, backend.ErrInvalidPID)
+			writeError(w, errInvalidPID)
 			return
 		}
 
@@ -279,12 +295,12 @@ func (h *Handler) handleUpdateResource() http.HandlerFunc {
 		}
 		namespace := r.PathValue("namespace")
 		if !isValidNamespaceID(namespace) {
-			writeError(w, backend.ErrInvalidNamespace)
+			writeError(w, errInvalidNamespaceID)
 			return
 		}
 		pid := r.PathValue("pid")
 		if !isValidPID(pid) {
-			writeError(w, backend.ErrInvalidPID)
+			writeError(w, errInvalidPID)
 			return
 		}
 		out, err := h.backend.UpdateResource(r.Context(), namespace, pid, req, h.ops.Now)
@@ -303,15 +319,15 @@ func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) erro
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
 		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-			return backend.ErrRequestBodyTooLarge
+			return errRequestBodyTooLarge
 		}
 		if errors.Is(err, io.EOF) {
-			return backend.ErrEmptyRequestBody
+			return errEmptyRequestBody
 		}
-		return fmt.Errorf("%w: %v", backend.ErrInvalidJSON, err)
+		return fmt.Errorf("%w: %v", errInvalidJSON, err)
 	}
 	if err := dec.Decode(&struct{}{}); err != io.EOF {
-		return backend.ErrTrailingJSON
+		return errTrailingJSON
 	}
 	return nil
 }
@@ -324,7 +340,7 @@ func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, err e
 	if query.Has("limit") {
 		limit, err = parseInt(query.Get("limit"))
 		if err != nil || limit < 1 {
-			return 0, 0, fmt.Errorf("%w %q", backend.ErrInvalidQueryParameter, "limit")
+			return 0, 0, fmt.Errorf("%w %q", errInvalidQueryParameter, "limit")
 		}
 	}
 	if limit > h.ops.Limits.MaxPageLimit {
@@ -335,7 +351,7 @@ func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, err e
 	if query.Has("offset") {
 		offset, err = parseInt(query.Get("offset"))
 		if err != nil || offset < 0 {
-			return 0, 0, fmt.Errorf("%w %q", backend.ErrInvalidQueryParameter, "offset")
+			return 0, 0, fmt.Errorf("%w %q", errInvalidQueryParameter, "offset")
 		}
 	}
 	return limit, offset, nil
@@ -364,24 +380,6 @@ func isValidPID(s string) bool {
 	return pidRE.MatchString(s)
 }
 
-func (h *Handler) allocatePID(format pid.Format, insert func(string) (*spec.ResourceResponse, error)) (*spec.ResourceResponse, error) {
-	for range maxPIDAttempts {
-		candidate, err := format.Generate(h.ops.Rand)
-		if err != nil {
-			return nil, err
-		}
-		out, err := insert(candidate)
-		if err == nil {
-			return out, nil
-		}
-		if errors.Is(err, backend.ErrPIDAllocationFailed) {
-			continue
-		}
-		return nil, err
-	}
-	return nil, backend.ErrPIDAllocationFailed
-}
-
 func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) ([]spec.ResourceResponse, error)) ([]spec.ResourceResponse, error) {
 	if n == 0 {
 		return []spec.ResourceResponse{}, nil
@@ -404,7 +402,7 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 				break
 			}
 			if pids[i] == "" {
-				return nil, backend.ErrPIDAllocationFailed
+				return nil, errUnableToAllocatePID
 			}
 		}
 
@@ -417,5 +415,20 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 		}
 		return nil, err
 	}
-	return nil, backend.ErrPIDAllocationFailed
+	return nil, errUnableToAllocatePID
+}
+
+func (h *Handler) allocatePID(format pid.Format, insert func(string) (*spec.ResourceResponse, error)) (*spec.ResourceResponse, error) {
+	pids, err := h.allocatePIDs(format, 1, func(pids []string) ([]spec.ResourceResponse, error) {
+		res, err := insert(pids[0])
+		if err != nil {
+			return nil, err
+		}
+		return []spec.ResourceResponse{*res}, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	p := pids[0]
+	return &p, nil
 }

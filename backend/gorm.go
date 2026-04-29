@@ -78,7 +78,7 @@ func (s *gormBackend) ListNamespaces(ctx context.Context, params spec.ListNamesp
 		}
 		items := make([]spec.NamespaceResponse, len(rows))
 		for i := range rows {
-			items[i] = rows[i].ToApi()
+			items[i] = rows[i].ToSpec()
 		}
 		return &spec.PaginatedNamespacesResponse{
 			Total:  int(total),
@@ -100,11 +100,11 @@ func (s *gormBackend) CreateNamespace(ctx context.Context, namespace string, req
 		}
 		if err := tx.Create(&ns).Error; err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
-				return nil, ErrNamespaceIDAllocationFailed
+				return nil, ErrDuplicateNamespaceID
 			}
 			return nil, err
 		}
-		resp := ns.ToApi()
+		resp := ns.ToSpec()
 		return &resp, nil
 	})
 }
@@ -118,7 +118,7 @@ func (s *gormBackend) GetNamespace(ctx context.Context, namespace string) (*spec
 			}
 			return nil, err
 		}
-		out := ns.ToApi()
+		out := ns.ToSpec()
 		return &out, nil
 	})
 }
@@ -318,7 +318,7 @@ func (namespaceModel) TableName() string {
 	return "namespaces"
 }
 
-func (n namespaceModel) ToApi() spec.NamespaceResponse {
+func (n namespaceModel) ToSpec() spec.NamespaceResponse {
 	return spec.NamespaceResponse{
 		ID:  n.NamespaceUID,
 		Tag: n.Tag,

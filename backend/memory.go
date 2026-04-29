@@ -56,7 +56,7 @@ func (s *inMemoryBackend) CreateNamespace(_ context.Context, namespace string, r
 	defer s.mu.Unlock()
 
 	if _, exists := s.namespaces[namespace]; exists {
-		return nil, ErrNamespaceIDAllocationFailed
+		return nil, ErrDuplicateNamespaceID
 	}
 	created := now().UTC().Format(time.RFC3339)
 	ns := spec.NamespaceResponse{

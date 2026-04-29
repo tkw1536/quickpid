@@ -20,18 +20,23 @@ var apiClientErrors = []struct {
 	sentinel error
 	status   int
 }{
-	{backend.ErrEmptyRequestBody, http.StatusBadRequest},
-	{backend.ErrInvalidJSON, http.StatusBadRequest},
-	{backend.ErrTrailingJSON, http.StatusBadRequest},
-	{backend.ErrInvalidQueryParameter, http.StatusBadRequest},
-	{backend.ErrInvalidNamespace, http.StatusBadRequest},
-	{backend.ErrInvalidPID, http.StatusBadRequest},
-	{backend.ErrTooManyItems, http.StatusBadRequest},
+	{errEmptyRequestBody, http.StatusBadRequest},
+	{errRequestBodyTooLarge, http.StatusRequestEntityTooLarge},
+
+	{errInvalidJSON, http.StatusBadRequest},
+	{errTrailingJSON, http.StatusBadRequest},
+
+	{errInvalidQueryParameter, http.StatusBadRequest},
+
+	{errInvalidNamespaceID, http.StatusBadRequest},
+	{errInvalidPID, http.StatusBadRequest},
+	{errTooManyItems, http.StatusBadRequest},
+
 	{backend.ErrNamespaceNotFound, http.StatusNotFound},
 	{backend.ErrResourceNotFound, http.StatusNotFound},
-	{backend.ErrRequestBodyTooLarge, http.StatusRequestEntityTooLarge},
-	{backend.ErrPIDAllocationFailed, http.StatusInternalServerError},
-	{backend.ErrNamespaceIDAllocationFailed, http.StatusInternalServerError},
+
+	{errUnableToAllocatePID, http.StatusInternalServerError},
+	{errUnableToAllocateNamespaceID, http.StatusInternalServerError},
 }
 
 // writeError writes an error response to the client.
