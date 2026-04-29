@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.0
 info:
   title: PID Resolver API
   description: API for managing PIDs across namespaces.
@@ -411,7 +411,8 @@ components:
       properties:
         name:
           description: The name of this namespace.
-          $ref: '#/components/schemas/NamespaceName'
+          allOf:
+            - $ref: '#/components/schemas/NamespaceName'
         pid_format:
           $ref: '#/components/schemas/PIDFormat'
         date_created:
@@ -433,23 +434,22 @@ components:
           description: |
             Pattern consisting only of `*`, `-`, and `_`.
             `*` positions are replaced with random characters during PID generation.
-          examples:
-            - '***-***'
+          example: '***-***'
         characters:
           $ref: '#/components/schemas/PIDCharacters'
     PIDCharacters:
       description: Character set used to replace `*` in the PID pattern.
       type: string
-      oneOf:
-        - const: full
-          description: Lowercase alphanumeric (`0-9a-z`).
-        - const: readable
-          description: |
-            Lowercase alphanumeric without ambiguous characters (`0-9a-z` excluding i, l, o, u).
-        - const: hex
-          description: Lowercase hex (`0-9a-f`).
-        - const: decimal
-          description: Decimal digits (`0-9`).
+      enum:
+        - full
+        - readable
+        - hex
+        - decimal
+      x-enumDescriptions:
+        - Lowercase alphanumeric (`0-9a-z`).
+        - Lowercase alphanumeric without ambiguous characters (`0-9a-z` excluding i, l, o, u).
+        - Lowercase hex (`0-9a-f`).
+        - Decimal digits (`0-9`).
     NamespaceName:
       description: The name of a namespace.
       type: string
@@ -469,14 +469,12 @@ components:
         total:
           type: integer
           minimum: 0
-          examples:
-            - 1
+          example: 1
           description: Total number of items available.
         offset:
           type: integer
           minimum: 0
-          examples:
-            - 0
+          example: 0
           description: Offset of the current response.
         items:
           type: array
@@ -497,14 +495,12 @@ components:
         total:
           type: integer
           minimum: 0
-          examples:
-            - 1
+          example: 1
           description: Total number of items available.
         offset:
           type: integer
           minimum: 0
-          examples:
-            - 0
+          example: 0
           description: Offset of the current response.
         items:
           type: array
@@ -526,9 +522,8 @@ components:
           description: |
             Optional opaque metadata associated with the resource.
             This may be null.
-          type:
-            - string
-            - "null"
+          type: string
+          nullable: true
         tag:
           description: |
             A tag for this resource.
@@ -541,8 +536,7 @@ components:
         The precise format of the identifier is determined by the PID generator algorithm used for the namespace.
       type: string
       pattern: '^[a-z0-9_-]+$'
-      examples:
-        - 'abc-def'
+      example: 'abc-def'
     ResourceResponse:
       type: object
       required:
@@ -565,9 +559,8 @@ components:
           description: |
             Optional opaque metadata associated with the resource.
             This may be null.
-          type:
-            - string
-            - "null"
+          type: string
+          nullable: true
         date_created:
           description: |
             The date and time the resource was created.
@@ -604,9 +597,8 @@ components:
           description: |
             Optional opaque metadata associated with the resource.
             This may be null.
-          type:
-            - string
-            - "null"
+          type: string
+          nullable: true
         tag:
           description: |
             A tag for this resource.
