@@ -16,23 +16,23 @@ func TestNamespaceCreateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "missingName",
+			name:    "missingTag",
 			body:    `{"pid_format":{"pattern":"***","characters":"full"}}`,
 			wantErr: true,
 		},
 		{
 			name:    "missingPIDFormat",
-			body:    `{"name":"ns"}`,
+			body:    `{"tag":"ns"}`,
 			wantErr: true,
 		},
 		{
 			name:    "missingPIDFormatPattern",
-			body:    `{"name":"ns","pid_format":{"characters":"full"}}`,
+			body:    `{"tag":"ns","pid_format":{"characters":"full"}}`,
 			wantErr: true,
 		},
 		{
 			name:    "missingPIDFormatCharacters",
-			body:    `{"name":"ns","pid_format":{"pattern":"***"}}`,
+			body:    `{"tag":"ns","pid_format":{"pattern":"***"}}`,
 			wantErr: true,
 		},
 	}
@@ -142,4 +142,3 @@ func TestResourceUpdateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
 		})
 	}
 }
-

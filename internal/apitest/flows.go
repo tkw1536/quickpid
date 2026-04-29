@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -25,11 +26,18 @@ func flowListNamespaces(t *testing.T, h *harness) {
 		}
 	})
 
-	h.createNamespace(t, "a")
-	h.createNamespace(t, "b")
-	h.createNamespace(t, "c")
-	h.createNamespace(t, "d")
-	h.createNamespace(t, "e")
+	created := []api.NamespaceResponse{
+		h.createNamespace(t, "a"),
+		h.createNamespace(t, "b"),
+		h.createNamespace(t, "c"),
+		h.createNamespace(t, "d"),
+		h.createNamespace(t, "e"),
+	}
+	createdByTag := make(map[string]api.NamespaceResponse, len(created))
+	for _, ns := range created {
+		createdByTag[ns.Tag] = ns
+	}
+	sort.Slice(created, func(i, j int) bool { return created[i].ID < created[j].ID })
 
 	t.Run("pagination_defaultLimit", func(t *testing.T) {
 		resp := mustGET(t, h.base+"/resolver/namespaces")
@@ -39,10 +47,7 @@ func flowListNamespaces(t *testing.T, h *harness) {
 		want := api.PaginatedNamespacesResponse{
 			Total:  5,
 			Offset: 0,
-			Items: []api.NamespaceResponse{
-				{Name: "a", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now},
-				{Name: "b", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now},
-			},
+			Items:  created[:2],
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("namespaces: got %+v want %+v", got, want)
@@ -57,11 +62,7 @@ func flowListNamespaces(t *testing.T, h *harness) {
 		want := api.PaginatedNamespacesResponse{
 			Total:  5,
 			Offset: 0,
-			Items: []api.NamespaceResponse{
-				{Name: "a", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now},
-				{Name: "b", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now},
-				{Name: "c", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now},
-			},
+			Items:  created[:3],
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("namespaces: got %+v want %+v", got, want)
@@ -96,40 +97,34 @@ func flowListNamespaces(t *testing.T, h *harness) {
 			assertErrorJSON(t, resp, "invalid query parameter \"offset\"")
 		}
 	})
+
+	t.Run("filter_tag", func(t *testing.T) {
+		resp := mustGET(t, h.base+"/resolver/namespaces?tag=c")
+		defer resp.Body.Close()
+		assertStatus(t, resp, http.StatusOK)
+		got := decodeJSON[api.PaginatedNamespacesResponse](t, resp.Body)
+		want := api.PaginatedNamespacesResponse{
+			Total:  1,
+			Offset: 0,
+			Items:  []api.NamespaceResponse{createdByTag["c"]},
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("namespaces: got %+v want %+v", got, want)
+		}
+	})
 }
 
 func flowCreateNamespace(t *testing.T, h *harness) {
 	t.Helper()
 
 	t.Run("success", func(t *testing.T) {
-		got := h.createNamespace(t, "flow-ns")
-		want := api.NamespaceResponse{Name: "flow-ns", PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full}, DateCreated: h.now}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("namespace: got %+v want %+v", got, want)
+		got := h.createNamespace(t, "flow-tag")
+		if got.ID == "" {
+			t.Fatal("namespace id is empty")
 		}
-	})
-
-	t.Run("conflict", func(t *testing.T) {
-		_ = h.createNamespace(t, "dup-ns")
-		body := mustMarshal(t, api.NamespaceCreateRequest{
-			Name: "dup-ns",
-			PIDFormat: pid.Format{
-				Pattern:    "***-***",
-				Characters: pid.Full,
-			},
-		})
-		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusConflict)
-		assertErrorJSON(t, resp, "namespace already exists")
-	})
-
-	t.Run("invalidNamespace", func(t *testing.T) {
-		body := mustMarshal(t, api.NamespaceCreateRequest{Name: "bad/ns"})
-		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusBadRequest)
-		assertErrorJSON(t, resp, "invalid namespace")
+		if got.Tag != "flow-tag" || got.PIDFormat != (pid.Format{Pattern: "***-***", Characters: pid.Full}) || got.DateCreated != h.now {
+			t.Fatalf("namespace: %+v", got)
+		}
 	})
 
 	t.Run("emptyBody", func(t *testing.T) {
@@ -140,14 +135,14 @@ func flowCreateNamespace(t *testing.T, h *harness) {
 	})
 
 	t.Run("trailingJSON", func(t *testing.T) {
-		resp := mustPOST(t, h.base+"/resolver/namespaces", `{"name":"x","pid_format":{"pattern":"***","characters":"full"}} {"name":"y"}`)
+		resp := mustPOST(t, h.base+"/resolver/namespaces", `{"tag":"x","pid_format":{"pattern":"***","characters":"full"}} {"tag":"y"}`)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusBadRequest)
 		assertErrorJSON(t, resp, "trailing JSON")
 	})
 
 	t.Run("tooLargeBody", func(t *testing.T) {
-		body := `{"name":"` + strings.Repeat("a", 512) + `"}`
+		body := `{"tag":"` + strings.Repeat("a", 512) + `","pid_format":{"pattern":"***","characters":"full"}}`
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusRequestEntityTooLarge)
@@ -158,8 +153,7 @@ func flowCreateNamespace(t *testing.T, h *harness) {
 func flowListResources(t *testing.T, h *harness) {
 	t.Helper()
 
-	ns := "list-res-ns"
-	_ = h.createNamespace(t, ns)
+	id := h.createNamespace(t, "list-res").ID
 
 	t.Run("namespaceMissing", func(t *testing.T) {
 		resp := mustGET(t, h.base+"/resolver/namespaces/missing-ns/resources")
@@ -169,7 +163,7 @@ func flowListResources(t *testing.T, h *harness) {
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, id)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
@@ -180,33 +174,33 @@ func flowListResources(t *testing.T, h *harness) {
 		}
 	})
 
-	_ = h.createResource(t, ns, api.ResourceCreateRequest{
+	_ = h.createResource(t, id, api.ResourceCreateRequest{
 		URL:      "https://example.com/a",
 		Metadata: new("ext-1@sys-a"),
 		Tag:      "alpha",
 	})
-	_ = h.createResource(t, ns, api.ResourceCreateRequest{
+	_ = h.createResource(t, id, api.ResourceCreateRequest{
 		URL:      "https://example.com/b",
 		Metadata: new("ext-2@sys-a"),
 		Tag:      "beta",
 	})
-	_ = h.createResource(t, ns, api.ResourceCreateRequest{
+	_ = h.createResource(t, id, api.ResourceCreateRequest{
 		URL:      "https://example.com/empty-tag",
 		Metadata: nil,
 	})
-	_ = h.createResource(t, ns, api.ResourceCreateRequest{
+	_ = h.createResource(t, id, api.ResourceCreateRequest{
 		URL:      "https://example.com/c",
 		Metadata: new("ext-4@sys-a"),
 		Tag:      "alpha",
 	})
-	_ = h.createResource(t, ns, api.ResourceCreateRequest{
+	_ = h.createResource(t, id, api.ResourceCreateRequest{
 		URL:      "https://example.com/d",
 		Metadata: new("ext-5@sys-a"),
 		Tag:      "alpha",
 	})
 
 	t.Run("pagination_defaultLimit", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, id)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
@@ -216,18 +210,18 @@ func flowListResources(t *testing.T, h *harness) {
 			Offset: 0,
 			Items: []api.ResourceResponse{
 				{
-					PID:         "5t7-yy3",
-					URL:         "https://example.com/c",
-					Metadata:    new("ext-4@sys-a"),
+					PID:         "6ez-s5t",
+					URL:         "https://example.com/empty-tag",
+					Metadata:    nil,
 					DateCreated: h.now,
 					DateUpdated: h.now,
-					Tag:         "alpha",
+					Tag:         "",
 					Deleted:     false,
 				},
 				{
-					PID:         "dzl-7tf",
-					URL:         "https://example.com/d",
-					Metadata:    new("ext-5@sys-a"),
+					PID:         "7yy-3dz",
+					URL:         "https://example.com/c",
+					Metadata:    new("ext-4@sys-a"),
 					DateCreated: h.now,
 					DateUpdated: h.now,
 					Tag:         "alpha",
@@ -241,7 +235,7 @@ func flowListResources(t *testing.T, h *harness) {
 	})
 
 	t.Run("pagination_clampMaxLimit", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?limit=999", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?limit=999", h.base, id)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
@@ -252,7 +246,7 @@ func flowListResources(t *testing.T, h *harness) {
 	})
 
 	t.Run("pagination_offsetPastEnd", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?offset=5", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?offset=5", h.base, id)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
@@ -264,7 +258,7 @@ func flowListResources(t *testing.T, h *harness) {
 	})
 
 	t.Run("tagOmitted", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, id)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
@@ -275,7 +269,7 @@ func flowListResources(t *testing.T, h *harness) {
 	})
 
 	t.Run("tagFilter", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?tag=alpha&limit=999", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?tag=alpha&limit=999", h.base, id)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
@@ -291,7 +285,7 @@ func flowListResources(t *testing.T, h *harness) {
 	})
 
 	t.Run("tagNoMatch", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?tag=other", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?tag=other", h.base, id)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
@@ -303,7 +297,7 @@ func flowListResources(t *testing.T, h *harness) {
 	})
 
 	t.Run("tagEmptyMeansEmptyString", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?tag=&limit=999", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?tag=&limit=999", h.base, id)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
@@ -316,8 +310,7 @@ func flowListResources(t *testing.T, h *harness) {
 
 func flowCreateResource(t *testing.T, h *harness) {
 	t.Helper()
-	ns := "create-res-ns"
-	_ = h.createNamespace(t, ns)
+	ns := h.createNamespace(t, "create-res").ID
 
 	t.Run("success", func(t *testing.T) {
 		got := h.createResource(t, ns, api.ResourceCreateRequest{
@@ -326,7 +319,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 			Tag:      "alpha",
 		})
 		want := api.ResourceResponse{
-			PID:         "x5x-jcc",
+			PID:         "xjc-cjy",
 			URL:         "https://example.com/a",
 			Metadata:    new("ext-1@sys-a"),
 			DateCreated: h.now,
@@ -346,7 +339,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 			Tag:      "alpha",
 		})
 		want := api.ResourceResponse{
-			PID:         "jy8-zkp",
+			PID:         "8zk-pwt",
 			URL:         "https://example.com/metadata-null",
 			Metadata:    nil,
 			DateCreated: h.now,
@@ -360,9 +353,9 @@ func flowCreateResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("hexPattern_isLowercaseHex", func(t *testing.T) {
-		ns := "hex-res-ns"
+		tag := "hex-res"
 		body := mustMarshal(t, api.NamespaceCreateRequest{
-			Name: ns,
+			Tag: tag,
 			PIDFormat: pid.Format{
 				Pattern:    "********-****-****-****-************",
 				Characters: pid.Hex,
@@ -371,8 +364,9 @@ func flowCreateResource(t *testing.T, h *harness) {
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusCreated)
+		namespace := decodeJSON[api.NamespaceResponse](t, resp.Body)
 
-		got := h.createResource(t, ns, api.ResourceCreateRequest{
+		got := h.createResource(t, namespace.ID, api.ResourceCreateRequest{
 			URL:      "https://example.com/hex",
 			Metadata: nil,
 			Tag:      "hex",
@@ -395,9 +389,9 @@ func flowCreateResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("readable6_isDeterministic", func(t *testing.T) {
-		ns := "readable6-res-ns"
+		tag := "readable6-res"
 		body := mustMarshal(t, api.NamespaceCreateRequest{
-			Name: ns,
+			Tag: tag,
 			PIDFormat: pid.Format{
 				Pattern:    "***-***",
 				Characters: pid.Readable,
@@ -406,14 +400,15 @@ func flowCreateResource(t *testing.T, h *harness) {
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusCreated)
+		namespace := decodeJSON[api.NamespaceResponse](t, resp.Body)
 
-		got := h.createResource(t, ns, api.ResourceCreateRequest{
+		got := h.createResource(t, namespace.ID, api.ResourceCreateRequest{
 			URL:      "https://example.com/readable6",
 			Metadata: nil,
 			Tag:      "r6",
 		})
 		want := api.ResourceResponse{
-			PID:         "9bd-fhk",
+			PID:         "nqs-vxz",
 			URL:         "https://example.com/readable6",
 			Metadata:    nil,
 			DateCreated: h.now,
@@ -427,9 +422,9 @@ func flowCreateResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("readable9_isDeterministic", func(t *testing.T) {
-		ns := "readable9-res-ns"
+		tag := "readable9-res"
 		body := mustMarshal(t, api.NamespaceCreateRequest{
-			Name: ns,
+			Tag: tag,
 			PIDFormat: pid.Format{
 				Pattern:    "***-***-***",
 				Characters: pid.Readable,
@@ -438,14 +433,15 @@ func flowCreateResource(t *testing.T, h *harness) {
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusCreated)
+		namespace := decodeJSON[api.NamespaceResponse](t, resp.Body)
 
-		got := h.createResource(t, ns, api.ResourceCreateRequest{
+		got := h.createResource(t, namespace.ID, api.ResourceCreateRequest{
 			URL:      "https://example.com/readable9",
 			Metadata: nil,
 			Tag:      "r9",
 		})
 		want := api.ResourceResponse{
-			PID:         "nqs-vxz-3d8",
+			PID:         "8cg-h37-f3d",
 			URL:         "https://example.com/readable9",
 			Metadata:    nil,
 			DateCreated: h.now,
@@ -459,9 +455,9 @@ func flowCreateResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("random64_isDeterministic", func(t *testing.T) {
-		ns := "random64-res-ns"
+		tag := "random64-res"
 		body := mustMarshal(t, api.NamespaceCreateRequest{
-			Name: ns,
+			Tag: tag,
 			PIDFormat: pid.Format{
 				Pattern:    "****************************************************************",
 				Characters: pid.Full,
@@ -470,14 +466,15 @@ func flowCreateResource(t *testing.T, h *harness) {
 		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusCreated)
+		namespace := decodeJSON[api.NamespaceResponse](t, resp.Body)
 
-		got := h.createResource(t, ns, api.ResourceCreateRequest{
+		got := h.createResource(t, namespace.ID, api.ResourceCreateRequest{
 			URL:      "https://example.com/random64",
 			Metadata: nil,
 			Tag:      "r64",
 		})
 		want := api.ResourceResponse{
-			PID:         "owxnb3nt0s5zrjjjlkxy1vrzfd4173zzfb5pq0537v7x9u977fb3ptz29bnrzhd3",
+			PID:         "5zrjjjlkxy1vrzfd4173zzfb5pq0537v7x9u977fb3ptz29bnrzhd3bbfv7c0iov",
 			URL:         "https://example.com/random64",
 			Metadata:    nil,
 			DateCreated: h.now,
@@ -517,8 +514,7 @@ func flowCreateResource(t *testing.T, h *harness) {
 
 func flowBatchCreateResources(t *testing.T, h *harness) {
 	t.Helper()
-	ns := "batch-res-ns"
-	_ = h.createNamespace(t, ns)
+	id := h.createNamespace(t, "batch-res").ID
 
 	t.Run("success", func(t *testing.T) {
 		batch := []api.ResourceCreateRequest{
@@ -526,7 +522,7 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 			{URL: "https://b2", Metadata: nil},
 		}
 		body := mustMarshal(t, batch)
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, id)
 		resp := mustPOST(t, u, body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusCreated)
@@ -534,7 +530,7 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 		got = decodeJSON[[]api.ResourceResponse](t, resp.Body)
 		want := []api.ResourceResponse{
 			{
-				PID:         "x5x-jcc",
+				PID:         "xjc-cjy",
 				URL:         "https://b1",
 				Metadata:    new("b1@batch"),
 				DateCreated: h.now,
@@ -543,7 +539,7 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 				Deleted:     false,
 			},
 			{
-				PID:         "jy8-zkp",
+				PID:         "8zk-pwt",
 				URL:         "https://b2",
 				Metadata:    nil,
 				DateCreated: h.now,
@@ -564,7 +560,7 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 			{URL: "https://b3", Metadata: new("b3@batch")},
 		}
 		body := mustMarshal(t, batch)
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, id)
 		resp := mustPOST(t, u, body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusBadRequest)
@@ -583,7 +579,7 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 	})
 
 	t.Run("tooLargeBody", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, id)
 		oversize := `[{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x"}]`
 		resp := mustPOST(t, u, oversize)
 		defer resp.Body.Close()
@@ -594,16 +590,15 @@ func flowBatchCreateResources(t *testing.T, h *harness) {
 
 func flowGetResource(t *testing.T, h *harness) {
 	t.Helper()
-	ns := "get-res-ns"
-	_ = h.createNamespace(t, ns)
-	created := h.createResource(t, ns, api.ResourceCreateRequest{
+	id := h.createNamespace(t, "get-res").ID
+	created := h.createResource(t, id, api.ResourceCreateRequest{
 		URL:      "https://example.com/a",
 		Metadata: new("ext-1@sys-a"),
 		Tag:      "alpha",
 	})
 
 	t.Run("success", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, ns, created.PID)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusOK)
@@ -623,7 +618,7 @@ func flowGetResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("resourceNotFound", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/99999", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/99999", h.base, id)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusNotFound)
@@ -639,7 +634,7 @@ func flowGetResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("invalidPID", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/bad.pid", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/bad.pid", h.base, id)
 		resp := mustGET(t, u)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusBadRequest)
@@ -649,16 +644,15 @@ func flowGetResource(t *testing.T, h *harness) {
 
 func flowUpdateResource(t *testing.T, h *harness) {
 	t.Helper()
-	ns := "update-res-ns"
-	_ = h.createNamespace(t, ns)
-	created := h.createResource(t, ns, api.ResourceCreateRequest{
+	id := h.createNamespace(t, "update-res").ID
+	created := h.createResource(t, id, api.ResourceCreateRequest{
 		URL:      "https://example.com/a",
 		Metadata: new("ext-1@sys-a"),
 		Tag:      "alpha",
 	})
 
 	t.Run("success", func(t *testing.T) {
-		got := h.updateResource(t, ns, created.PID, api.ResourceUpdateRequest{
+		got := h.updateResource(t, id, created.PID, api.ResourceUpdateRequest{
 			URL:      "https://example.com/updated",
 			Metadata: new("ext-1b@sys-b"),
 			Tag:      "beta",
@@ -679,7 +673,7 @@ func flowUpdateResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("setMetadataNull", func(t *testing.T) {
-		got := h.updateResource(t, ns, created.PID, api.ResourceUpdateRequest{
+		got := h.updateResource(t, id, created.PID, api.ResourceUpdateRequest{
 			URL:      "https://example.com/updated-null",
 			Metadata: nil,
 			Tag:      "beta",
@@ -706,7 +700,7 @@ func flowUpdateResource(t *testing.T, h *harness) {
 			Tag:      "beta",
 			Deleted:  false,
 		})
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/99999", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/99999", h.base, id)
 		resp := mustPATCH(t, u, body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusNotFound)
@@ -720,7 +714,7 @@ func flowUpdateResource(t *testing.T, h *harness) {
 			Tag:      "beta",
 			Deleted:  false,
 		})
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/bad.pid", h.base, ns)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/bad.pid", h.base, id)
 		resp := mustPATCH(t, u, body)
 		defer resp.Body.Close()
 		assertStatus(t, resp, http.StatusBadRequest)
@@ -728,7 +722,7 @@ func flowUpdateResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("tooLargeBody", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, ns, created.PID)
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
 		oversize := `{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x","tag":"z","deleted":false}`
 		resp := mustPATCH(t, u, oversize)
 		defer resp.Body.Close()

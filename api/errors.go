@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-// Sentinel errors to be returned by [Resolver] implementations.
+// Sentinel errors to be returned by [ResolverBackend] implementations.
 var (
 	ErrEmptyRequestBody = errors.New("empty request body")
 	ErrInvalidJSON      = errors.New("invalid JSON")
@@ -18,9 +18,9 @@ var (
 	ErrNamespaceNotFound = errors.New("namespace not found")
 	ErrResourceNotFound  = errors.New("resource not found")
 
-	ErrNamespaceAlreadyExists = errors.New("namespace already exists")
-	ErrInvalidNamespace       = errors.New("invalid namespace")
-	ErrInvalidPID             = errors.New("invalid pid")
+	ErrNamespaceIDAllocationFailed = errors.New("could not allocate unique namespace id")
+	ErrInvalidNamespace            = errors.New("invalid namespace")
+	ErrInvalidPID                  = errors.New("invalid pid")
 
 	ErrPIDAllocationFailed = errors.New("could not allocate unique pid")
 )

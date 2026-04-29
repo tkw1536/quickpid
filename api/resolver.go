@@ -7,11 +7,10 @@ import (
 	"time"
 )
 
-// Resolver implements the PID Resolver API.
-// Implementations should return appropriate sentinel errors.
-type Resolver interface {
+// ResolverBackend represents a resolver backend from go.
+type ResolverBackend interface {
 	ListNamespaces(ctx context.Context, params ListNamespacesParams) (*PaginatedNamespacesResponse, error)
-	CreateNamespace(ctx context.Context, req NamespaceCreateRequest, now func() time.Time) (*NamespaceResponse, error)
+	CreateNamespace(ctx context.Context, namespace string, req NamespaceCreateRequest, now func() time.Time) (*NamespaceResponse, error)
 
 	ListResources(ctx context.Context, params ListResourcesParams) (*PaginatedResourcesResponse, error)
 	GetResource(ctx context.Context, namespace, pid string) (*ResourceResponse, error)

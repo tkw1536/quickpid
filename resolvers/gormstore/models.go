@@ -9,11 +9,12 @@ import (
 
 // Namespace maps to the namespaces table.
 type Namespace struct {
-	ID          uint             `gorm:"primaryKey"`
-	Name        string           `gorm:"type:text;uniqueIndex;not null"`
-	PIDPattern  pid.Pattern      `gorm:"type:text;not null"`
-	PIDChars    pid.CharacterSet `gorm:"type:text;not null"`
-	DateCreated time.Time
+	ID           uint             `gorm:"primaryKey"`
+	NamespaceUID string           `gorm:"column:namespace_uid;type:text;not null;uniqueIndex"`
+	Tag          string           `gorm:"type:text;not null;default:'';index"`
+	PIDPattern   pid.Pattern      `gorm:"type:text;not null"`
+	PIDChars     pid.CharacterSet `gorm:"type:text;not null"`
+	DateCreated  time.Time
 }
 
 func (Namespace) TableName() string {
@@ -22,7 +23,8 @@ func (Namespace) TableName() string {
 
 func (n Namespace) ToApi() api.NamespaceResponse {
 	return api.NamespaceResponse{
-		Name: n.Name,
+		ID:  n.NamespaceUID,
+		Tag: n.Tag,
 		PIDFormat: pid.Format{
 			Pattern:    n.PIDPattern,
 			Characters: n.PIDChars,

@@ -22,6 +22,16 @@ paths:
         - namespaces
 
       parameters:
+        - name: tag
+          description: |
+            Filter namespaces by tag.
+            If omitted, namespaces of all tags are included.
+            If provided with an empty value, the value is treated as the empty string.
+          in: query
+          required: false
+          schema:
+            type: string
+          allowEmptyValue: true
         - name: limit
           in: query
           required: false
@@ -46,7 +56,9 @@ paths:
 
       responses:
         '200':
-          description: A paginated list of namespaces.
+          description: |
+            A paginated list of namespaces.
+            The 'total' field counts namespaces after applying the tag filter (if any).
           content:
             application/json:
               schema:
@@ -82,8 +94,6 @@ paths:
                 $ref: '#/components/schemas/Namespace'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '409':
-          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -98,8 +108,10 @@ paths:
         - name: namespace
           in: path
           required: true
+          description: |
+            Server-assigned namespace id returned from create namespace.
           schema:
-            $ref: '#/components/schemas/NamespaceName'
+            $ref: '#/components/schemas/NamespaceId'
         - name: tag
           description: |
             Filter resources by tag.
@@ -168,8 +180,10 @@ paths:
         - name: namespace
           in: path
           required: true
+          description: |
+            Server-assigned namespace id returned from create namespace.
           schema:
-            $ref: '#/components/schemas/NamespaceName'
+            $ref: '#/components/schemas/NamespaceId'
       requestBody:
         required: true
         content:
@@ -207,8 +221,10 @@ paths:
         - name: namespace
           in: path
           required: true
+          description: |
+            Server-assigned namespace id returned from create namespace.
           schema:
-            $ref: '#/components/schemas/NamespaceName'
+            $ref: '#/components/schemas/NamespaceId'
       requestBody:
         required: true
         description: |
@@ -252,11 +268,13 @@ paths:
         - resources
 
       parameters:
-        - name: namespace
+        - name: namespace 
           in: path
           required: true
+          description: |
+            Server-assigned namespace id returned from create namespace.
           schema:
-            $ref: '#/components/schemas/NamespaceName'
+            $ref: '#/components/schemas/NamespaceId'
         - name: pid
           in: path
           required: true
@@ -288,8 +306,10 @@ paths:
         - name: namespace
           in: path
           required: true
+          description: |
+            Server-assigned namespace id returned from create namespace.
           schema:
-            $ref: '#/components/schemas/NamespaceName'
+            $ref: '#/components/schemas/NamespaceId'
         - name: pid
           in: path
           required: true
@@ -351,15 +371,6 @@ components:
             resource:
               value:
                 error: resource not found
-    Conflict:
-      description: |
-        An error that indicates the specified namespace or resource already exists and cannot be re-created.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error: namespace already exists
     PayloadTooLarge:
       description: |
         An error that indicates the body of the request has exceeded a configured limit.
@@ -391,28 +402,36 @@ components:
             The precise content of this field is not defined by this specification.
     NamespaceCreateRequest:
       description: |
-        Namespace to be created.
+        Namespace to be created. The server assigns an opaque id.
       type: object
       required:
-        - name
+        - tag
         - pid_format
       properties:
-        name:
-          $ref: '#/components/schemas/NamespaceName'
+        tag:
+          description: |
+            A tag for this namespace. Tags can be used for filtering when listing namespaces.
+          type: string
         pid_format:
           $ref: '#/components/schemas/PIDFormat'
     Namespace:
       description: Represents a namespace.
       type: object
       required:
-        - name
+        - id
+        - tag
         - pid_format
         - date_created
       properties:
-        name:
-          description: The name of this namespace.
+        id:
+          description: |
+            Server-assigned opaque namespace id. Use this value in resource URLs.
           allOf:
-            - $ref: '#/components/schemas/NamespaceName'
+            - $ref: '#/components/schemas/NamespaceId'
+        tag:
+          description: |
+            A tag for this namespace. Tags can be used for filtering when listing namespaces.
+          type: string
         pid_format:
           $ref: '#/components/schemas/PIDFormat'
         date_created:
@@ -450,14 +469,16 @@ components:
         - Lowercase alphanumeric without ambiguous characters (`0-9a-z` excluding i, l, o, u).
         - Lowercase hex (`0-9a-f`).
         - Decimal digits (`0-9`).
-    NamespaceName:
-      description: The name of a namespace.
+    NamespaceId:
+      description: |
+        Server-assigned namespace id (opaque string, e.g. a UUID).
+        Allowed characters are letters, digits, hyphen, and underscore.
       type: string
       pattern: '^[A-Za-z0-9_-]+$'
     PaginatedNamespacesResponse:
       description: |
         A paginated response.
-        The 'total' field is the total number of items available for the request (ignoring 'limit' and 'offset').
+        The 'total' field is the total number of namespaces after applying the tag filter (if any), ignoring 'limit' and 'offset'.
         The 'offset' field is the effective offset used to produce this response.
         If the effective offset is greater than or equal to 'total', 'items' is empty.
       type: object

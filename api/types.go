@@ -9,12 +9,12 @@ import (
 
 // NamespaceCreateRequest is the JSON body for createNamespace.
 type NamespaceCreateRequest struct {
-	Name      string     `json:"name"`
+	Tag       string     `json:"tag"`
 	PIDFormat pid.Format `json:"pid_format"`
 }
 
 func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
-	if err := required.Required(data, "name", "pid_format"); err != nil {
+	if err := required.Required(data, "tag", "pid_format"); err != nil {
 		return err
 	}
 
@@ -29,7 +29,8 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 
 // NamespaceResponse is returned for namespace operations.
 type NamespaceResponse struct {
-	Name        string     `json:"name"`
+	ID          string     `json:"id"`
+	Tag         string     `json:"tag"`
 	PIDFormat   pid.Format `json:"pid_format"`
 	DateCreated string     `json:"date_created"`
 }
@@ -104,7 +105,7 @@ func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 
 // ListResourcesParams carries path and query parameters for listResources.
 type ListResourcesParams struct {
-	Namespace string
+	Namespace string // namespace id from path
 
 	Tag     *string // optionally filter by tag
 	Deleted *bool   // optionally filter by deletion status
@@ -114,6 +115,8 @@ type ListResourcesParams struct {
 }
 
 type ListNamespacesParams struct {
+	Tag *string // optionally filter by tag
+
 	Limit  int
 	Offset int
 }

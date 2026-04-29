@@ -13,7 +13,7 @@ import (
 )
 
 func TestHTTP_ResolverFlow(t *testing.T) {
-	apitest.RunResolverHTTPTests(t, func(t *testing.T) api.Resolver {
+	apitest.RunResolverHTTPTests(t, func(t *testing.T) api.ResolverBackend {
 		t.Helper()
 		db, err := gorm.Open(sqlite.Open(":memory:?_pragma=foreign_keys(1)"), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Silent),

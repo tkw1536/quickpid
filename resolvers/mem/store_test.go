@@ -10,7 +10,7 @@ import (
 )
 
 func TestHTTP_ResolverFlow(t *testing.T) {
-	apitest.RunResolverHTTPTests(t, func(t *testing.T) api.Resolver {
+	apitest.RunResolverHTTPTests(t, func(t *testing.T) api.ResolverBackend {
 		return mem.NewStore(server.DefaultPIDMaxAttempts)
 	})
 }

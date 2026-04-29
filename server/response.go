@@ -28,9 +28,9 @@ var apiClientErrors = []struct {
 	{api.ErrTooManyItems, http.StatusBadRequest},
 	{api.ErrNamespaceNotFound, http.StatusNotFound},
 	{api.ErrResourceNotFound, http.StatusNotFound},
-	{api.ErrNamespaceAlreadyExists, http.StatusConflict},
 	{api.ErrRequestBodyTooLarge, http.StatusRequestEntityTooLarge},
 	{api.ErrPIDAllocationFailed, http.StatusInternalServerError},
+	{api.ErrNamespaceIDAllocationFailed, http.StatusInternalServerError},
 }
 
 // writeError writes an error response to the client.

@@ -43,10 +43,10 @@ func newHarness(t *testing.T, factory ResolverFactory) *harness {
 	}
 }
 
-func (h *harness) createNamespace(t *testing.T, name string) api.NamespaceResponse {
+func (h *harness) createNamespace(t *testing.T, tag string) api.NamespaceResponse {
 	t.Helper()
 	body := mustMarshal(t, api.NamespaceCreateRequest{
-		Name: name,
+		Tag: tag,
 		PIDFormat: pid.Format{
 			Pattern:    "***-***",
 			Characters: pid.Full,
@@ -81,20 +81,20 @@ func newServerOptions() (server.Options, io.Reader) {
 	return opts, r
 }
 
-func (h *harness) createResource(t *testing.T, namespace string, req api.ResourceCreateRequest) api.ResourceResponse {
+func (h *harness) createResource(t *testing.T, id string, req api.ResourceCreateRequest) api.ResourceResponse {
 	t.Helper()
 	body := mustMarshal(t, req)
-	u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, namespace)
+	u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, id)
 	resp := mustPOST(t, u, body)
 	defer resp.Body.Close()
 	assertStatus(t, resp, http.StatusCreated)
 	return decodeJSON[api.ResourceResponse](t, resp.Body)
 }
 
-func (h *harness) updateResource(t *testing.T, namespace, pid string, req api.ResourceUpdateRequest) api.ResourceResponse {
+func (h *harness) updateResource(t *testing.T, id, pid string, req api.ResourceUpdateRequest) api.ResourceResponse {
 	t.Helper()
 	body := mustMarshal(t, req)
-	u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, namespace, pid)
+	u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, pid)
 	resp := mustPATCH(t, u, body)
 	defer resp.Body.Close()
 	assertStatus(t, resp, http.StatusOK)

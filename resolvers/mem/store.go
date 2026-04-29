@@ -15,7 +15,6 @@ type Store struct {
 	// protects the namespace and resource maps.
 	mu sync.RWMutex
 
-	// holds the namespaces and actual resources
 	namespaces map[string]api.NamespaceResponse
 	resources  map[string]map[string]api.ResourceResponse
 
@@ -33,7 +32,7 @@ func NewStore(maxPIDAttempts int) *Store {
 	}
 }
 
-var _ api.Resolver = (*Store)(nil)
+var _ api.ResolverBackend = (*Store)(nil)
 
 func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	s.mu.RLock()
@@ -41,9 +40,12 @@ func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParam
 
 	all := make([]api.NamespaceResponse, 0, len(s.namespaces))
 	for _, ns := range s.namespaces {
+		if params.Tag != nil && ns.Tag != *params.Tag {
+			continue
+		}
 		all = append(all, ns)
 	}
-	sort.Slice(all, func(i, j int) bool { return all[i].Name < all[j].Name })
+	sort.Slice(all, func(i, j int) bool { return all[i].ID < all[j].ID })
 
 	total := len(all)
 	limit := params.Limit
@@ -57,18 +59,22 @@ func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParam
 	return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateNamespace(_ context.Context, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(_ context.Context, namespace string, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.namespaces[req.Name]; exists {
-		return nil, api.ErrNamespaceAlreadyExists
+	if _, exists := s.namespaces[namespace]; exists {
+		return nil, api.ErrNamespaceIDAllocationFailed
 	}
-
 	created := now().UTC().Format(time.RFC3339)
-	ns := api.NamespaceResponse{Name: req.Name, PIDFormat: req.PIDFormat, DateCreated: created}
-	s.namespaces[req.Name] = ns
-	s.resources[req.Name] = make(map[string]api.ResourceResponse)
+	ns := api.NamespaceResponse{
+		ID:          namespace,
+		Tag:         req.Tag,
+		PIDFormat:   req.PIDFormat,
+		DateCreated: created,
+	}
+	s.namespaces[namespace] = ns
+	s.resources[namespace] = make(map[string]api.ResourceResponse)
 	return &ns, nil
 }
 
