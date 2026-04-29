@@ -6,6 +6,8 @@ import (
 
 	"github.com/tkw1536/quickpid/internal/required"
 	"github.com/tkw1536/quickpid/pid"
+
+	_ "embed"
 )
 
 // NamespaceCreateRequest is the JSON body for createNamespace.
@@ -124,4 +126,12 @@ type ListNamespacesParams struct {
 
 type ErrorResponse struct {
 	Error string `json:"error"`
+}
+
+//go:embed openapi.yaml
+var apiSpec string
+
+// Spec returns the api specification as a string.
+func Spec() string {
+	return apiSpec
 }

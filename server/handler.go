@@ -15,12 +15,7 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/pid"
 	"github.com/tkw1536/quickpid/spec"
-
-	_ "embed"
 )
-
-//go:embed openapi.yaml
-var openapiYAML []byte
 
 type Handler struct {
 	ops     Options
@@ -81,6 +76,8 @@ func NewHandler(options Options, backend backend.Backend) *Handler {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.mux.ServeHTTP(w, r)
 }
+
+var openapiYAML = []byte(spec.Spec())
 
 func (h *Handler) handleOpenAPISpec() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -367,7 +364,6 @@ func parseInt(v string) (int, error) {
 
 var (
 	maxNamespaceIDAttempts = 32
-	maxPIDAttempts         = DefaultPIDMaxAttempts
 	namespaceIDRE          = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 	pidRE                  = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 )
@@ -384,12 +380,12 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 	if n == 0 {
 		return []spec.ResourceResponse{}, nil
 	}
-	for range maxPIDAttempts {
+	for range h.ops.Limits.MaxPIDAttempts {
 		pids := make([]string, n)
 		seen := make(map[string]struct{}, n)
 		for i := range n {
 			// Ensure uniqueness within this batch.
-			for range maxPIDAttempts {
+			for range h.ops.Limits.MaxPIDAttempts {
 				candidate, err := format.Generate(h.ops.Rand)
 				if err != nil {
 					return nil, err

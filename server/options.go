@@ -23,16 +23,31 @@ type Options struct {
 	// If nil, time.Now is used.
 	Now func() time.Time
 
+	// Limits for various internal server behavior.
 	Limits Limits
+}
+
+func (o Options) withDefaults() Options {
+	o.Limits = o.Limits.withDefaults()
+	if o.Rand == nil {
+		o.Rand = rand.Reader
+	}
+	if o.Now == nil {
+		o.Now = time.Now
+	}
+	return o
 }
 
 // Limits represents limits for the server server.
 type Limits struct {
-	MaxBodyBytes  int64
-	MaxBatchItems int
+	MaxBodyBytes int64 // maximum size of request body
 
-	DefaultPageLimit int
-	MaxPageLimit     int
+	DefaultPageLimit int // default number of items per page
+	MaxPageLimit     int // maximum number of items per page
+
+	MaxBatchItems int // maximum number of items in a batch
+
+	MaxPIDAttempts int // maximum number of attempts to allocate a PID
 }
 
 func (o Limits) withDefaults() Limits {
@@ -48,16 +63,8 @@ func (o Limits) withDefaults() Limits {
 	if o.MaxPageLimit <= 1 {
 		o.MaxPageLimit = 1000
 	}
-	return o
-}
-
-func (o Options) withDefaults() Options {
-	o.Limits = o.Limits.withDefaults()
-	if o.Rand == nil {
-		o.Rand = rand.Reader
-	}
-	if o.Now == nil {
-		o.Now = time.Now
+	if o.MaxPIDAttempts <= 0 {
+		o.MaxPIDAttempts = 100
 	}
 	return o
 }
