@@ -204,16 +204,24 @@ func (s *inMemoryBackend) UpdateResource(_ context.Context, namespace, pid strin
 	if !ok {
 		return nil, ErrResourceNotFound
 	}
-	updated := now().UTC().Format(time.RFC3339)
-	res := spec.ResourceResponse{
-		PID:         prev.PID,
-		URL:         req.URL,
-		Metadata:    req.Metadata,
-		DateCreated: prev.DateCreated,
-		DateUpdated: updated,
-		Tag:         req.Tag,
-		Deleted:     req.Deleted,
+
+	// Apply only the updates that are present.
+	res := prev
+	if req.URL != nil {
+		res.URL = *req.URL
 	}
+	if req.Tag != nil {
+		res.Tag = *req.Tag
+	}
+	if req.Deleted != nil {
+		res.Deleted = *req.Deleted
+	}
+	if req.Metadata != nil {
+		// nil: set to null; non-nil: set to value
+		res.Metadata = *req.Metadata
+	}
+
+	res.DateUpdated = now().UTC().Format(time.RFC3339)
 	s.resources[namespace][pid] = res
 	return &res, nil
 }

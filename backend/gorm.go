@@ -287,10 +287,18 @@ func (s *gormBackend) UpdateResource(ctx context.Context, id, pid string, req sp
 			return nil, err
 		}
 
-		row.URL = req.URL
-		row.Metadata = req.Metadata
-		row.Tag = req.Tag
-		row.Deleted = req.Deleted
+		if req.URL != nil {
+			row.URL = *req.URL
+		}
+		if req.Tag != nil {
+			row.Tag = *req.Tag
+		}
+		if req.Deleted != nil {
+			row.Deleted = *req.Deleted
+		}
+		if req.Metadata != nil {
+			row.Metadata = *req.Metadata
+		}
 		row.DateUpdated = now().UTC()
 		if err := tx.Save(&row).Error; err != nil {
 			return nil, err

@@ -317,7 +317,10 @@ paths:
             type: string
       requestBody:
         description: |
-          The resource to update.
+          The new contents of the resource to update.
+          The update should use patch semantics, that is if a field is omitted, it should not be changed.
+          Regardless of the presence or absence of a field, all fields will always be returned in the response. 
+          Note that empty updates are permitted, and will simply return the current resource contents as is (provided they exist).
           A limit on the maximum request body size MAY be enforced.
           If such a limit is exceeded, a '413' response is returned.
         required: true
@@ -603,11 +606,6 @@ components:
           type: boolean
     ResourceUpdateRequest:
       type: object
-      required:
-        - url
-        - tag
-        - deleted
-        - metadata
       properties:
         url:
           description: |

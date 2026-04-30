@@ -651,13 +651,13 @@ func flowUpdateResource(t *testing.T, h *harness) {
 		Tag:      "alpha",
 	})
 
-	t.Run("success", func(t *testing.T) {
-		got := h.updateResource(t, id, created.PID, spec.ResourceUpdateRequest{
-			URL:      "https://example.com/updated",
-			Metadata: new("ext-1b@sys-b"),
-			Tag:      "beta",
-			Deleted:  false,
-		})
+	t.Run("success_allFields", func(t *testing.T) {
+		body := `{"url":"https://example.com/updated","metadata":"ext-1b@sys-b","tag":"beta","deleted":false}`
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
+		resp := mustPATCH(t, u, body)
+		defer resp.Body.Close()
+		assertStatus(t, resp, http.StatusOK)
+		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
 		want := spec.ResourceResponse{
 			PID:         created.PID,
 			URL:         "https://example.com/updated",
@@ -672,16 +672,37 @@ func flowUpdateResource(t *testing.T, h *harness) {
 		}
 	})
 
-	t.Run("setMetadataNull", func(t *testing.T) {
-		got := h.updateResource(t, id, created.PID, spec.ResourceUpdateRequest{
-			URL:      "https://example.com/updated-null",
-			Metadata: nil,
-			Tag:      "beta",
-			Deleted:  false,
-		})
+	t.Run("partial_urlOnly", func(t *testing.T) {
+		body := `{"url":"https://example.com/url-only"}`
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
+		resp := mustPATCH(t, u, body)
+		defer resp.Body.Close()
+		assertStatus(t, resp, http.StatusOK)
+		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
 		want := spec.ResourceResponse{
 			PID:         created.PID,
-			URL:         "https://example.com/updated-null",
+			URL:         "https://example.com/url-only",
+			Metadata:    new("ext-1b@sys-b"),
+			DateCreated: h.now,
+			DateUpdated: h.now,
+			Tag:         "beta",
+			Deleted:     false,
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("resource: got %+v want %+v", got, want)
+		}
+	})
+
+	t.Run("partial_setMetadataNull", func(t *testing.T) {
+		body := `{"metadata":null}`
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
+		resp := mustPATCH(t, u, body)
+		defer resp.Body.Close()
+		assertStatus(t, resp, http.StatusOK)
+		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
+		want := spec.ResourceResponse{
+			PID:         created.PID,
+			URL:         "https://example.com/url-only",
 			Metadata:    nil,
 			DateCreated: h.now,
 			DateUpdated: h.now,
@@ -693,13 +714,71 @@ func flowUpdateResource(t *testing.T, h *harness) {
 		}
 	})
 
+	t.Run("partial_setMetadataString", func(t *testing.T) {
+		body := `{"metadata":"ext-new@sys-c"}`
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
+		resp := mustPATCH(t, u, body)
+		defer resp.Body.Close()
+		assertStatus(t, resp, http.StatusOK)
+		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
+		want := spec.ResourceResponse{
+			PID:         created.PID,
+			URL:         "https://example.com/url-only",
+			Metadata:    new("ext-new@sys-c"),
+			DateCreated: h.now,
+			DateUpdated: h.now,
+			Tag:         "beta",
+			Deleted:     false,
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("resource: got %+v want %+v", got, want)
+		}
+	})
+
+	t.Run("partial_deletedOnly", func(t *testing.T) {
+		body := `{"deleted":true}`
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
+		resp := mustPATCH(t, u, body)
+		defer resp.Body.Close()
+		assertStatus(t, resp, http.StatusOK)
+		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
+		want := spec.ResourceResponse{
+			PID:         created.PID,
+			URL:         "https://example.com/url-only",
+			Metadata:    new("ext-new@sys-c"),
+			DateCreated: h.now,
+			DateUpdated: h.now,
+			Tag:         "beta",
+			Deleted:     true,
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("resource: got %+v want %+v", got, want)
+		}
+	})
+
+	t.Run("emptyUpdate_noChanges", func(t *testing.T) {
+		body := `{}`
+		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
+		resp := mustPATCH(t, u, body)
+		defer resp.Body.Close()
+		assertStatus(t, resp, http.StatusOK)
+		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
+		want := spec.ResourceResponse{
+			PID:         created.PID,
+			URL:         "https://example.com/url-only",
+			Metadata:    new("ext-new@sys-c"),
+			DateCreated: h.now,
+			DateUpdated: h.now,
+			Tag:         "beta",
+			Deleted:     true,
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("resource: got %+v want %+v", got, want)
+		}
+	})
+
 	t.Run("resourceNotFound", func(t *testing.T) {
-		body := mustMarshal(t, spec.ResourceUpdateRequest{
-			URL:      "https://example.com/updated",
-			Metadata: new("ext-1b@sys-b"),
-			Tag:      "beta",
-			Deleted:  false,
-		})
+		body := `{"url":"https://example.com/updated","metadata":"ext-1b@sys-b","tag":"beta","deleted":false}`
 		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/99999", h.base, id)
 		resp := mustPATCH(t, u, body)
 		defer resp.Body.Close()
@@ -708,12 +787,7 @@ func flowUpdateResource(t *testing.T, h *harness) {
 	})
 
 	t.Run("invalidPID", func(t *testing.T) {
-		body := mustMarshal(t, spec.ResourceUpdateRequest{
-			URL:      "https://example.com/updated",
-			Metadata: new("ext-1b@sys-b"),
-			Tag:      "beta",
-			Deleted:  false,
-		})
+		body := `{"url":"https://example.com/updated","metadata":"ext-1b@sys-b","tag":"beta","deleted":false}`
 		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/bad.pid", h.base, id)
 		resp := mustPATCH(t, u, body)
 		defer resp.Body.Close()

@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/tkw1536/quickpid/internal/optional"
+	"github.com/tkw1536/quickpid/internal/strict"
 )
 
 // Format describes the format of a PID.
@@ -19,8 +19,8 @@ type Format struct {
 
 func (f *Format) UnmarshalJSON(data []byte) error {
 	var internal struct {
-		Pattern    optional.Optional[Pattern]      `json:"pattern"`
-		Characters optional.Optional[CharacterSet] `json:"characters"`
+		Pattern    strict.Optional[Pattern]      `json:"pattern"`
+		Characters strict.Optional[CharacterSet] `json:"characters"`
 	}
 	if err := json.Unmarshal(data, &internal); err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/tkw1536/quickpid/internal/optional"
+	"github.com/tkw1536/quickpid/internal/strict"
 	"github.com/tkw1536/quickpid/pid"
 
 	_ "embed"
@@ -19,8 +19,8 @@ type NamespaceCreateRequest struct {
 
 func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 	var internal struct {
-		Tag       optional.Optional[string]     `json:"tag"`
-		PIDFormat optional.Optional[pid.Format] `json:"pid_format"`
+		Tag       strict.Optional[string]     `json:"tag"`
+		PIDFormat strict.Optional[pid.Format] `json:"pid_format"`
 	}
 	if err := json.Unmarshal(data, &internal); err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
@@ -61,9 +61,9 @@ type ResourceCreateRequest struct {
 
 func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	var internal struct {
-		URL      optional.Optional[string]  `json:"url"`
-		Metadata optional.Optional[*string] `json:"metadata"`
-		Tag      optional.Optional[string]  `json:"tag"`
+		URL      strict.Optional[string]  `json:"url"`
+		Metadata strict.Optional[*string] `json:"metadata"`
+		Tag      strict.Optional[string]  `json:"tag"`
 	}
 	if err := json.Unmarshal(data, &internal); err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
@@ -106,43 +106,29 @@ type PaginatedResourcesResponse struct {
 }
 
 // ResourceUpdateRequest is the JSON body for updateResource.
+//
+// A nil pointer indicates that no update should be performed on that field.
 type ResourceUpdateRequest struct {
-	URL      string  `json:"url"`
-	Metadata *string `json:"metadata"`
-	Tag      string  `json:"tag"`
-	Deleted  bool    `json:"deleted"`
+	URL      *string  `json:"url"`
+	Metadata **string `json:"metadata"`
+	Tag      *string  `json:"tag"`
+	Deleted  *bool    `json:"deleted"`
 }
 
 func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 	var internal struct {
-		URL      optional.Optional[string]  `json:"url"`
-		Metadata optional.Optional[*string] `json:"metadata"`
-		Tag      optional.Optional[string]  `json:"tag"`
-		Deleted  optional.Optional[bool]    `json:"deleted"`
+		URL      strict.Optional[strict.String] `json:"url"`
+		Metadata strict.Optional[*string]       `json:"metadata"`
+		Tag      strict.Optional[strict.String] `json:"tag"`
+		Deleted  strict.Optional[strict.Bool]   `json:"deleted"`
 	}
 	if err := json.Unmarshal(data, &internal); err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
-
-	if !internal.URL.Present {
-		return fmt.Errorf("missing required field: url")
-	}
-	r.URL = internal.URL.Value
-
-	if !internal.Metadata.Present {
-		return fmt.Errorf("missing required field: metadata")
-	}
-	r.Metadata = internal.Metadata.Value
-
-	if !internal.Tag.Present {
-		return fmt.Errorf("missing required field: tag")
-	}
-	r.Tag = internal.Tag.Value
-
-	if !internal.Deleted.Present {
-		return fmt.Errorf("missing required field: deleted")
-	}
-	r.Deleted = internal.Deleted.Value
+	r.URL = strict.OptionalStringToPointer(internal.URL)
+	r.Metadata = internal.Metadata.ToPointer()
+	r.Tag = strict.OptionalStringToPointer(internal.Tag)
+	r.Deleted = strict.OptionalBoolToPointer(internal.Deleted)
 
 	return nil
 }
