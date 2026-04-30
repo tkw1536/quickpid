@@ -1,0 +1,69 @@
+{
+  "name": "create_namespace",
+  "comment": "Create namespace success and error cases.",
+  "steps": [
+    {
+      "namespaceIDs": ["46c14e5d-c048-4159-a26a-f37bc0110c85"],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "success",
+        "request": {
+          "method": "POST",
+          "path": "/resolver/namespaces",
+          "body": "{\"tag\":\"flow-tag\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "json": {
+              "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+              "tag": "flow-tag",
+              "pid_format": { "pattern": "***-***", "characters": "full" },
+              "date_created": "2020-01-02T03:04:05Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "emptyBody",
+        "request": { "method": "POST", "path": "/resolver/namespaces" },
+        "response": { "status": 400, "body": { "json": { "error": "empty request body" } } }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "trailingJSON",
+        "request": {
+          "method": "POST",
+          "path": "/resolver/namespaces",
+          "body": "{\"tag\":\"x\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}} {\"tag\":\"y\"}"
+        },
+        "response": { "status": 400, "body": { "json": { "error": "trailing JSON" } } }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "tooLargeBody",
+        "request": {
+          "method": "POST",
+          "path": "/resolver/namespaces",
+          "body": "{\"tag\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}}"
+        },
+        "response": { "status": 413, "body": { "json": { "error": "request payload too large" } } }
+      }
+    }
+  ]
+}
+

@@ -24,14 +24,14 @@ type Step struct {
 type Request struct {
 	Method  string            `json:"method"`
 	Path    string            `json:"path"`
-	Headers map[string]string `json:"headers,omitempty"`
-	Body    string            `json:"body,omitempty"`
+	Headers map[string]string `json:"headers"`
+	Body    string            `json:"body"`
 }
 
 type Response struct {
 	Status  int               `json:"status"`
-	Headers map[string]string `json:"headers,omitempty"`
-	Body    Body              `json:"body,omitempty"`
+	Headers map[string]string `json:"headers"`
+	Body    Body              `json:"body"`
 }
 
 type Body struct {
@@ -69,6 +69,12 @@ func (r *Runner) Run(t *testing.T, steps []Step) {
 			r.runStep(t, step)
 		})
 	}
+}
+
+// RunStep runs a single step without creating a subtest.
+func (r *Runner) RunStep(t *testing.T, step Step) {
+	t.Helper()
+	r.runStep(t, step)
 }
 
 func (r *Runner) runStep(t *testing.T, step Step) {

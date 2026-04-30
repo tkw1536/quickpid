@@ -1,0 +1,249 @@
+{
+  "name": "update_resource",
+  "comment": "Update resource partial/full updates and error cases.",
+  "steps": [
+    {
+      "namespaceIDs": ["46c14e5d-c048-4159-a26a-f37bc0110c85"],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "create_namespace",
+        "request": {
+          "method": "POST",
+          "path": "/resolver/namespaces",
+          "body": "{\"tag\":\"update-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "json": {
+              "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+              "tag": "update-res",
+              "pid_format": { "pattern": "***-***", "characters": "full" },
+              "date_created": "2020-01-02T03:04:05Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": ["xjc-cjy"],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "create_resource",
+        "request": {
+          "method": "POST",
+          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+          "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
+        },
+        "response": { "status": 201 }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "success_allFields",
+        "request": {
+          "method": "PATCH",
+          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+          "body": "{\"url\":\"https://example.com/updated\",\"metadata\":\"ext-1b@sys-b\",\"tag\":\"beta\",\"deleted\":false}"
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "json": {
+              "pid": "xjc-cjy",
+              "url": "https://example.com/updated",
+              "metadata": "ext-1b@sys-b",
+              "date_created": "2020-01-02T03:04:05Z",
+              "date_updated": "2020-01-02T03:04:05Z",
+              "tag": "beta",
+              "deleted": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "partial_urlOnly",
+        "request": {
+          "method": "PATCH",
+          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+          "body": "{\"url\":\"https://example.com/url-only\"}"
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "json": {
+              "pid": "xjc-cjy",
+              "url": "https://example.com/url-only",
+              "metadata": "ext-1b@sys-b",
+              "date_created": "2020-01-02T03:04:05Z",
+              "date_updated": "2020-01-02T03:04:05Z",
+              "tag": "beta",
+              "deleted": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "partial_setMetadataNull",
+        "request": {
+          "method": "PATCH",
+          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+          "body": "{\"metadata\":null}"
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "json": {
+              "pid": "xjc-cjy",
+              "url": "https://example.com/url-only",
+              "metadata": null,
+              "date_created": "2020-01-02T03:04:05Z",
+              "date_updated": "2020-01-02T03:04:05Z",
+              "tag": "beta",
+              "deleted": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "partial_setMetadataString",
+        "request": {
+          "method": "PATCH",
+          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+          "body": "{\"metadata\":\"ext-new@sys-c\"}"
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "json": {
+              "pid": "xjc-cjy",
+              "url": "https://example.com/url-only",
+              "metadata": "ext-new@sys-c",
+              "date_created": "2020-01-02T03:04:05Z",
+              "date_updated": "2020-01-02T03:04:05Z",
+              "tag": "beta",
+              "deleted": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "partial_deletedOnly",
+        "request": {
+          "method": "PATCH",
+          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+          "body": "{\"deleted\":true}"
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "json": {
+              "pid": "xjc-cjy",
+              "url": "https://example.com/url-only",
+              "metadata": "ext-new@sys-c",
+              "date_created": "2020-01-02T03:04:05Z",
+              "date_updated": "2020-01-02T03:04:05Z",
+              "tag": "beta",
+              "deleted": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "emptyUpdate_noChanges",
+        "request": {
+          "method": "PATCH",
+          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+          "body": "{}"
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "json": {
+              "pid": "xjc-cjy",
+              "url": "https://example.com/url-only",
+              "metadata": "ext-new@sys-c",
+              "date_created": "2020-01-02T03:04:05Z",
+              "date_updated": "2020-01-02T03:04:05Z",
+              "tag": "beta",
+              "deleted": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "resourceNotFound",
+        "request": {
+          "method": "PATCH",
+          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/99999",
+          "body": "{\"url\":\"https://example.com/updated\",\"metadata\":\"ext-1b@sys-b\",\"tag\":\"beta\",\"deleted\":false}"
+        },
+        "response": { "status": 404, "body": { "json": { "error": "resource not found" } } }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "invalidPID",
+        "request": {
+          "method": "PATCH",
+          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/bad.pid",
+          "body": "{\"url\":\"https://example.com/updated\",\"metadata\":\"ext-1b@sys-b\",\"tag\":\"beta\",\"deleted\":false}"
+        },
+        "response": { "status": 400, "body": { "json": { "error": "invalid pid" } } }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "tooLargeBody",
+        "request": {
+          "method": "PATCH",
+          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+          "body": "{\"url\":\"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"metadata\":\"x\",\"tag\":\"z\",\"deleted\":false}"
+        },
+        "response": { "status": 413, "body": { "json": { "error": "request payload too large" } } }
+      }
+    }
+  ]
+}
+

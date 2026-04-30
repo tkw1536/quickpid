@@ -1,0 +1,302 @@
+{
+  "name": "list_namespaces",
+  "comment": "List namespaces pagination and filtering.",
+  "steps": [
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "empty",
+        "request": {
+          "method": "GET",
+          "path": "/resolver/namespaces"
+        },
+        "response": {
+          "status": 200,
+          "body": { "json": { "total": 0, "offset": 0, "items": [] } }
+        }
+      }
+    },
+    {
+      "namespaceIDs": ["46c14e5d-c048-4159-a26a-f37bc0110c85"],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "create_a",
+        "request": {
+          "method": "POST",
+          "path": "/resolver/namespaces",
+          "body": "{\"tag\":\"a\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "json": {
+              "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+              "tag": "a",
+              "pid_format": { "pattern": "***-***", "characters": "full" },
+              "date_created": "2020-01-02T03:04:05Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": ["31d0952d-8d73-4119-8e95-b5f19d6f9df7"],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "create_b",
+        "request": {
+          "method": "POST",
+          "path": "/resolver/namespaces",
+          "body": "{\"tag\":\"b\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "json": {
+              "id": "31d0952d-8d73-4119-8e95-b5f19d6f9df7",
+              "tag": "b",
+              "pid_format": { "pattern": "***-***", "characters": "full" },
+              "date_created": "2020-01-02T03:04:05Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": ["c00420c4-1461-4824-a2cc-34e3d04524d4"],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "create_c",
+        "request": {
+          "method": "POST",
+          "path": "/resolver/namespaces",
+          "body": "{\"tag\":\"c\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "json": {
+              "id": "c00420c4-1461-4824-a2cc-34e3d04524d4",
+              "tag": "c",
+              "pid_format": { "pattern": "***-***", "characters": "full" },
+              "date_created": "2020-01-02T03:04:05Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": ["5565d865-a6dc-45e7-a086-28e49669e8a6"],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "create_d",
+        "request": {
+          "method": "POST",
+          "path": "/resolver/namespaces",
+          "body": "{\"tag\":\"d\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "json": {
+              "id": "5565d865-a6dc-45e7-a086-28e49669e8a6",
+              "tag": "d",
+              "pid_format": { "pattern": "***-***", "characters": "full" },
+              "date_created": "2020-01-02T03:04:05Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": ["aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef"],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "create_e",
+        "request": {
+          "method": "POST",
+          "path": "/resolver/namespaces",
+          "body": "{\"tag\":\"e\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "json": {
+              "id": "aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef",
+              "tag": "e",
+              "pid_format": { "pattern": "***-***", "characters": "full" },
+              "date_created": "2020-01-02T03:04:05Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "pagination_defaultLimit",
+        "request": { "method": "GET", "path": "/resolver/namespaces" },
+        "response": {
+          "status": 200,
+          "body": {
+            "json": {
+              "total": 5,
+              "offset": 0,
+              "items": [
+                {
+                  "id": "31d0952d-8d73-4119-8e95-b5f19d6f9df7",
+                  "tag": "b",
+                  "pid_format": { "pattern": "***-***", "characters": "full" },
+                  "date_created": "2020-01-02T03:04:05Z"
+                },
+                {
+                  "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+                  "tag": "a",
+                  "pid_format": { "pattern": "***-***", "characters": "full" },
+                  "date_created": "2020-01-02T03:04:05Z"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "pagination_clampMaxLimit",
+        "request": { "method": "GET", "path": "/resolver/namespaces?limit=999" },
+        "response": {
+          "status": 200,
+          "body": {
+            "json": {
+              "total": 5,
+              "offset": 0,
+              "items": [
+                {
+                  "id": "31d0952d-8d73-4119-8e95-b5f19d6f9df7",
+                  "tag": "b",
+                  "pid_format": { "pattern": "***-***", "characters": "full" },
+                  "date_created": "2020-01-02T03:04:05Z"
+                },
+                {
+                  "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+                  "tag": "a",
+                  "pid_format": { "pattern": "***-***", "characters": "full" },
+                  "date_created": "2020-01-02T03:04:05Z"
+                },
+                {
+                  "id": "5565d865-a6dc-45e7-a086-28e49669e8a6",
+                  "tag": "d",
+                  "pid_format": { "pattern": "***-***", "characters": "full" },
+                  "date_created": "2020-01-02T03:04:05Z"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "pagination_offsetPastEnd",
+        "request": { "method": "GET", "path": "/resolver/namespaces?offset=5" },
+        "response": {
+          "status": 200,
+          "body": { "json": { "total": 5, "offset": 5, "items": [] } }
+        }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "invalidQuery_limit_0",
+        "request": { "method": "GET", "path": "/resolver/namespaces?limit=0" },
+        "response": { "status": 400, "body": { "json": { "error": "invalid query parameter \"limit\"" } } }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "invalidQuery_limit_-1",
+        "request": { "method": "GET", "path": "/resolver/namespaces?limit=-1" },
+        "response": { "status": 400, "body": { "json": { "error": "invalid query parameter \"limit\"" } } }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "invalidQuery_limit_abc",
+        "request": { "method": "GET", "path": "/resolver/namespaces?limit=abc" },
+        "response": { "status": 400, "body": { "json": { "error": "invalid query parameter \"limit\"" } } }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "invalidQuery_offset_-1",
+        "request": { "method": "GET", "path": "/resolver/namespaces?offset=-1" },
+        "response": { "status": 400, "body": { "json": { "error": "invalid query parameter \"offset\"" } } }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "invalidQuery_offset_abc",
+        "request": { "method": "GET", "path": "/resolver/namespaces?offset=abc" },
+        "response": { "status": 400, "body": { "json": { "error": "invalid query parameter \"offset\"" } } }
+      }
+    },
+    {
+      "namespaceIDs": [],
+      "pids": [],
+      "now": "2020-01-02T03:04:05Z",
+      "step": {
+        "name": "filter_tag",
+        "request": { "method": "GET", "path": "/resolver/namespaces?tag=c" },
+        "response": {
+          "status": 200,
+          "body": {
+            "json": {
+              "total": 1,
+              "offset": 0,
+              "items": [
+                {
+                  "id": "c00420c4-1461-4824-a2cc-34e3d04524d4",
+                  "tag": "c",
+                  "pid_format": { "pattern": "***-***", "characters": "full" },
+                  "date_created": "2020-01-02T03:04:05Z"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+
