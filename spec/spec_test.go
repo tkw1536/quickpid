@@ -26,6 +26,11 @@ func TestNamespaceCreateRequest_UnmarshalJSON_RequiresFields(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name:    "pidNotNullable",
+			body:    `{"tag":null}`,
+			wantErr: true,
+		},
+		{
 			name:    "missingPIDFormatPattern",
 			body:    `{"tag":"ns","pid_format":{"characters":"full"}}`,
 			wantErr: true,

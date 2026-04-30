@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/tkw1536/quickpid/internal/required"
+	"github.com/tkw1536/quickpid/internal/optional"
 )
 
 // Format describes the format of a PID.
@@ -18,16 +18,21 @@ type Format struct {
 }
 
 func (f *Format) UnmarshalJSON(data []byte) error {
-	if err := required.Required(data, "pattern", "characters"); err != nil {
-		return err
+	var internal struct {
+		Pattern    optional.Optional[Pattern]      `json:"pattern"`
+		Characters optional.Optional[CharacterSet] `json:"characters"`
 	}
-
-	type alias Format
-	var out alias
-	if err := json.Unmarshal(data, &out); err != nil {
-		return err
+	if err := json.Unmarshal(data, &internal); err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
-	*f = Format(out)
+	if !internal.Pattern.Present {
+		return fmt.Errorf("missing required field: pattern")
+	}
+	if !internal.Characters.Present {
+		return fmt.Errorf("missing required field: characters")
+	}
+	f.Pattern = internal.Pattern.Value
+	f.Characters = internal.Characters.Value
 	return nil
 }
 

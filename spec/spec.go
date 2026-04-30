@@ -3,8 +3,9 @@ package spec
 
 import (
 	"encoding/json"
+	"fmt"
 
-	"github.com/tkw1536/quickpid/internal/required"
+	"github.com/tkw1536/quickpid/internal/optional"
 	"github.com/tkw1536/quickpid/pid"
 
 	_ "embed"
@@ -17,16 +18,22 @@ type NamespaceCreateRequest struct {
 }
 
 func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
-	if err := required.Required(data, "tag", "pid_format"); err != nil {
-		return err
+	var internal struct {
+		Tag       optional.Optional[string]     `json:"tag"`
+		PIDFormat optional.Optional[pid.Format] `json:"pid_format"`
 	}
+	if err := json.Unmarshal(data, &internal); err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
+	}
+	if !internal.Tag.Present {
+		return fmt.Errorf("missing required field: tag")
+	}
+	r.Tag = internal.Tag.Value
+	if !internal.PIDFormat.Present {
+		return fmt.Errorf("missing required field: pid_format")
+	}
+	r.PIDFormat = internal.PIDFormat.Value
 
-	type alias NamespaceCreateRequest
-	var out alias
-	if err := json.Unmarshal(data, &out); err != nil {
-		return err
-	}
-	*r = NamespaceCreateRequest(out)
 	return nil
 }
 
@@ -53,16 +60,30 @@ type ResourceCreateRequest struct {
 }
 
 func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
-	if err := required.Required(data, "url", "metadata", "tag"); err != nil {
-		return err
+	var internal struct {
+		URL      optional.Optional[string]  `json:"url"`
+		Metadata optional.Optional[*string] `json:"metadata"`
+		Tag      optional.Optional[string]  `json:"tag"`
+	}
+	if err := json.Unmarshal(data, &internal); err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 
-	type alias ResourceCreateRequest
-	var out alias
-	if err := json.Unmarshal(data, &out); err != nil {
-		return err
+	if !internal.URL.Present {
+		return fmt.Errorf("missing required field: url")
 	}
-	*r = ResourceCreateRequest(out)
+	r.URL = internal.URL.Value
+
+	if !internal.Metadata.Present {
+		return fmt.Errorf("missing required field: metadata")
+	}
+	r.Metadata = internal.Metadata.Value
+
+	if !internal.Tag.Present {
+		return fmt.Errorf("missing required field: tag")
+	}
+	r.Tag = internal.Tag.Value
+
 	return nil
 }
 
@@ -93,16 +114,36 @@ type ResourceUpdateRequest struct {
 }
 
 func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
-	if err := required.Required(data, "url", "metadata", "tag", "deleted"); err != nil {
-		return err
+	var internal struct {
+		URL      optional.Optional[string]  `json:"url"`
+		Metadata optional.Optional[*string] `json:"metadata"`
+		Tag      optional.Optional[string]  `json:"tag"`
+		Deleted  optional.Optional[bool]    `json:"deleted"`
+	}
+	if err := json.Unmarshal(data, &internal); err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 
-	type alias ResourceUpdateRequest
-	var out alias
-	if err := json.Unmarshal(data, &out); err != nil {
-		return err
+	if !internal.URL.Present {
+		return fmt.Errorf("missing required field: url")
 	}
-	*r = ResourceUpdateRequest(out)
+	r.URL = internal.URL.Value
+
+	if !internal.Metadata.Present {
+		return fmt.Errorf("missing required field: metadata")
+	}
+	r.Metadata = internal.Metadata.Value
+
+	if !internal.Tag.Present {
+		return fmt.Errorf("missing required field: tag")
+	}
+	r.Tag = internal.Tag.Value
+
+	if !internal.Deleted.Present {
+		return fmt.Errorf("missing required field: deleted")
+	}
+	r.Deleted = internal.Deleted.Value
+
 	return nil
 }
 
