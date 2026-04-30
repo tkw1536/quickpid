@@ -174,6 +174,12 @@ func TestFormat_UnmarshalJSON(t *testing.T) {
 			wantErrIn: []string{"expected JSON object"},
 		},
 		{
+			name:      "unknownField_isError",
+			body:      `{"pattern":"***","characters":"full","unknown":123}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
+		},
+		{
 			name:      "missingPattern",
 			body:      `{"characters":"full"}`,
 			wantErr:   true,

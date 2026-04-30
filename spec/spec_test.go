@@ -44,6 +44,12 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 			wantErrIn: []string{"missing required field", "tag"},
 		},
 		{
+			name:    "fail_unknownField",
+			body:    `{"tag":"ns","pid_format":{"pattern":"***","characters":"full"},"unknown":123}`,
+			wantErr: true,
+			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
+		},
+		{
 			name:    "fail_missinFormat",
 			body:    `{"tag":"ns"}`,
 			wantErr: true,
@@ -135,6 +141,12 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			body:    `{"metadata":"m","tag":"t"}`,
 			wantErr: true,
 			wantErrIn: []string{"missing required field", "url"},
+		},
+		{
+			name:    "fail_unknownField",
+			body:    `{"url":"https://example.com","metadata":null,"tag":"t","unknown":123}`,
+			wantErr: true,
+			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
 		},
 		{
 			name:    "fail_urlNull",
@@ -238,6 +250,7 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			{name: "number_isError", body: `{"url":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "bool_isError", body: `{"url":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "object_isError", body: `{"url":{}}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
+			{name: "unknownField_isError", body: `{"url":"https://example.com","unknown":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"}},
 		}
 
 		for _, tt := range tests {

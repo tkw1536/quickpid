@@ -90,13 +90,3 @@ func (h *harness) createResource(t *testing.T, id string, req spec.ResourceCreat
 	assertStatus(t, resp, http.StatusCreated)
 	return decodeJSON[spec.ResourceResponse](t, resp.Body)
 }
-
-func (h *harness) updateResource(t *testing.T, id, pid string, req spec.ResourceUpdateRequest) spec.ResourceResponse {
-	t.Helper()
-	body := mustMarshal(t, req)
-	u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, pid)
-	resp := mustPATCH(t, u, body)
-	defer resp.Body.Close()
-	assertStatus(t, resp, http.StatusOK)
-	return decodeJSON[spec.ResourceResponse](t, resp.Body)
-}

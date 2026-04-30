@@ -2,8 +2,10 @@
 package spec
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/tkw1536/quickpid/internal/strict"
 	"github.com/tkw1536/quickpid/pid"
@@ -26,7 +28,13 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 		Tag       strict.Optional[strict.String] `json:"tag"`
 		PIDFormat strict.Optional[pid.Format]    `json:"pid_format"`
 	}
-	if err := json.Unmarshal(data, &internal); err != nil {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&internal); err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
+	}
+	if _, err := dec.Token(); err != io.EOF {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 	if !internal.Tag.Present {
@@ -73,7 +81,13 @@ func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 		Metadata strict.Optional[*string]       `json:"metadata"`
 		Tag      strict.Optional[strict.String] `json:"tag"`
 	}
-	if err := json.Unmarshal(data, &internal); err != nil {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&internal); err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
+	}
+	if _, err := dec.Token(); err != io.EOF {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 
@@ -134,7 +148,13 @@ func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 		Tag      strict.Optional[strict.String] `json:"tag"`
 		Deleted  strict.Optional[strict.Bool]   `json:"deleted"`
 	}
-	if err := json.Unmarshal(data, &internal); err != nil {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&internal); err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
+	}
+	if _, err := dec.Token(); err != io.EOF {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 	r.URL = strict.OptionalStringToPointer(internal.URL)

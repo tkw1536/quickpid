@@ -2,6 +2,7 @@
 package pid
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,7 +27,13 @@ func (f *Format) UnmarshalJSON(data []byte) error {
 		Pattern    strict.Optional[strict.String] `json:"pattern"`
 		Characters strict.Optional[strict.String] `json:"characters"`
 	}
-	if err := json.Unmarshal(data, &internal); err != nil {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&internal); err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
+	}
+	if _, err := dec.Token(); err != io.EOF {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 
