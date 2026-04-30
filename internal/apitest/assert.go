@@ -1,7 +1,6 @@
 package apitest
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"strconv"
@@ -48,35 +47,5 @@ func assertStatus(t *testing.T, resp *http.Response, want int) {
 	if resp.StatusCode != want {
 		b, _ := io.ReadAll(resp.Body)
 		t.Fatalf("status %d, want %d; body %s", resp.StatusCode, want, b)
-	}
-}
-
-func decodeJSON[T any](t *testing.T, r io.Reader) T {
-	t.Helper()
-	var v T
-	if err := json.NewDecoder(r).Decode(&v); err != nil {
-		t.Fatal(err)
-	}
-	return v
-}
-
-func mustMarshal(t *testing.T, v any) string {
-	t.Helper()
-	b, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(b)
-}
-
-type errBody struct {
-	Error string `json:"error"`
-}
-
-func assertErrorJSON(t *testing.T, resp *http.Response, wantMsg string) {
-	t.Helper()
-	eb := decodeJSON[errBody](t, resp.Body)
-	if eb.Error != wantMsg {
-		t.Fatalf("error %q, want %q", eb.Error, wantMsg)
 	}
 }

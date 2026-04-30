@@ -1,806 +1,895 @@
 package apitest
 
 import (
-	"fmt"
-	"net/http"
-	"reflect"
-	"sort"
 	"strings"
 	"testing"
 
-	"github.com/tkw1536/quickpid/pid"
-	"github.com/tkw1536/quickpid/spec"
+	"github.com/tkw1536/quickpid/internal/steptest"
 )
 
 func flowListNamespaces(t *testing.T, h *harness) {
 	t.Helper()
 
-	t.Run("empty", func(t *testing.T) {
-		resp := mustGET(t, h.base+"/resolver/namespaces")
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedNamespacesResponse](t, resp.Body)
-		want := spec.PaginatedNamespacesResponse{Total: 0, Offset: 0, Items: []spec.NamespaceResponse{}}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("namespaces: got %+v want %+v", got, want)
-		}
-	})
+	const (
+		nsA = "46c14e5d-c048-4159-a26a-f37bc0110c85"
+		nsB = "31d0952d-8d73-4119-8e95-b5f19d6f9df7"
+		nsC = "c00420c4-1461-4824-a2cc-34e3d04524d4"
+		nsD = "5565d865-a6dc-45e7-a086-28e49669e8a6"
+		nsE = "aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef"
+	)
+	Flow{
+		NamespaceIDs: []string{nsA, nsB, nsC, nsD, nsE},
+		Steps: []steptest.Step{
+			{
+				Name: "empty",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces",
+				},
+				Response: steptest.Response{
+					Status: 200,
+					Body:   steptest.Body{JSON: map[string]any{"total": 0, "offset": 0, "items": []any{}}},
+				},
+			},
 
-	created := []spec.NamespaceResponse{
-		h.createNamespace(t, "a"),
-		h.createNamespace(t, "b"),
-		h.createNamespace(t, "c"),
-		h.createNamespace(t, "d"),
-		h.createNamespace(t, "e"),
-	}
-	createdByTag := make(map[string]spec.NamespaceResponse, len(created))
-	for _, ns := range created {
-		createdByTag[ns.Tag] = ns
-	}
-	sort.Slice(created, func(i, j int) bool { return created[i].ID < created[j].ID })
+			{
+				Name: "create_a",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"a","pid_format":{"pattern":"***-***","characters":"full"}}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           nsA,
+						"tag":          "a",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
+				},
+			},
+			{
+				Name: "create_b",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"b","pid_format":{"pattern":"***-***","characters":"full"}}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           nsB,
+						"tag":          "b",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
+				},
+			},
+			{
+				Name: "create_c",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"c","pid_format":{"pattern":"***-***","characters":"full"}}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           nsC,
+						"tag":          "c",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
+				},
+			},
+			{
+				Name: "create_d",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"d","pid_format":{"pattern":"***-***","characters":"full"}}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           nsD,
+						"tag":          "d",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
+				},
+			},
+			{
+				Name: "create_e",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"e","pid_format":{"pattern":"***-***","characters":"full"}}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           nsE,
+						"tag":          "e",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
+				},
+			},
 
-	t.Run("pagination_defaultLimit", func(t *testing.T) {
-		resp := mustGET(t, h.base+"/resolver/namespaces")
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedNamespacesResponse](t, resp.Body)
-		want := spec.PaginatedNamespacesResponse{
-			Total:  5,
-			Offset: 0,
-			Items:  created[:2],
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("namespaces: got %+v want %+v", got, want)
-		}
-	})
+			{
+				Name: "pagination_defaultLimit",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces",
+				},
+				Response: steptest.Response{
+					Status: 200,
+					Body: steptest.Body{JSON: map[string]any{
+						"total":  5,
+						"offset": 0,
+						"items": []any{
+							map[string]any{"id": nsB, "tag": "b", "pid_format": map[string]any{"pattern": "***-***", "characters": "full"}, "date_created": h.now},
+							map[string]any{"id": nsA, "tag": "a", "pid_format": map[string]any{"pattern": "***-***", "characters": "full"}, "date_created": h.now},
+						},
+					}},
+				},
+			},
+			{
+				Name: "pagination_clampMaxLimit",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces?limit=999",
+				},
+				Response: steptest.Response{
+					Status: 200,
+					Body: steptest.Body{JSON: map[string]any{
+						"total":  5,
+						"offset": 0,
+						"items": []any{
+							map[string]any{"id": nsB, "tag": "b", "pid_format": map[string]any{"pattern": "***-***", "characters": "full"}, "date_created": h.now},
+							map[string]any{"id": nsA, "tag": "a", "pid_format": map[string]any{"pattern": "***-***", "characters": "full"}, "date_created": h.now},
+							map[string]any{"id": nsD, "tag": "d", "pid_format": map[string]any{"pattern": "***-***", "characters": "full"}, "date_created": h.now},
+						},
+					}},
+				},
+			},
+			{
+				Name: "pagination_offsetPastEnd",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces?offset=5",
+				},
+				Response: steptest.Response{
+					Status: 200,
+					Body:   steptest.Body{JSON: map[string]any{"total": 5, "offset": 5, "items": []any{}}},
+				},
+			},
 
-	t.Run("pagination_clampMaxLimit", func(t *testing.T) {
-		resp := mustGET(t, h.base+"/resolver/namespaces?limit=999")
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedNamespacesResponse](t, resp.Body)
-		want := spec.PaginatedNamespacesResponse{
-			Total:  5,
-			Offset: 0,
-			Items:  created[:3],
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("namespaces: got %+v want %+v", got, want)
-		}
-	})
+			{
+				Name:     "invalidQuery_limit_0",
+				Request:  steptest.Request{Method: "GET", Path: "/resolver/namespaces?limit=0"},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": `invalid query parameter "limit"`}}},
+			},
+			{
+				Name:     "invalidQuery_limit_-1",
+				Request:  steptest.Request{Method: "GET", Path: "/resolver/namespaces?limit=-1"},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": `invalid query parameter "limit"`}}},
+			},
+			{
+				Name:     "invalidQuery_limit_abc",
+				Request:  steptest.Request{Method: "GET", Path: "/resolver/namespaces?limit=abc"},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": `invalid query parameter "limit"`}}},
+			},
 
-	t.Run("pagination_offsetPastEnd", func(t *testing.T) {
-		resp := mustGET(t, h.base+"/resolver/namespaces?offset=5")
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedNamespacesResponse](t, resp.Body)
-		want := spec.PaginatedNamespacesResponse{Total: 5, Offset: 5, Items: []spec.NamespaceResponse{}}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("namespaces: got %+v want %+v", got, want)
-		}
-	})
+			{
+				Name:     "invalidQuery_offset_-1",
+				Request:  steptest.Request{Method: "GET", Path: "/resolver/namespaces?offset=-1"},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": `invalid query parameter "offset"`}}},
+			},
+			{
+				Name:     "invalidQuery_offset_abc",
+				Request:  steptest.Request{Method: "GET", Path: "/resolver/namespaces?offset=abc"},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": `invalid query parameter "offset"`}}},
+			},
 
-	t.Run("invalidQuery_limit", func(t *testing.T) {
-		for _, q := range []string{"limit=0", "limit=-1", "limit=abc"} {
-			resp := mustGET(t, h.base+"/resolver/namespaces?"+q)
-			defer resp.Body.Close()
-			assertStatus(t, resp, http.StatusBadRequest)
-			assertErrorJSON(t, resp, "invalid query parameter \"limit\"")
-		}
-	})
-
-	t.Run("invalidQuery_offset", func(t *testing.T) {
-		for _, q := range []string{"offset=-1", "offset=abc"} {
-			resp := mustGET(t, h.base+"/resolver/namespaces?"+q)
-			defer resp.Body.Close()
-			assertStatus(t, resp, http.StatusBadRequest)
-			assertErrorJSON(t, resp, "invalid query parameter \"offset\"")
-		}
-	})
-
-	t.Run("filter_tag", func(t *testing.T) {
-		resp := mustGET(t, h.base+"/resolver/namespaces?tag=c")
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedNamespacesResponse](t, resp.Body)
-		want := spec.PaginatedNamespacesResponse{
-			Total:  1,
-			Offset: 0,
-			Items:  []spec.NamespaceResponse{createdByTag["c"]},
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("namespaces: got %+v want %+v", got, want)
-		}
-	})
+			{
+				Name: "filter_tag",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces?tag=c",
+				},
+				Response: steptest.Response{
+					Status: 200,
+					Body: steptest.Body{JSON: map[string]any{
+						"total":  1,
+						"offset": 0,
+						"items": []any{
+							map[string]any{"id": nsC, "tag": "c", "pid_format": map[string]any{"pattern": "***-***", "characters": "full"}, "date_created": h.now},
+						},
+					}},
+				},
+			},
+		},
+	}.Run(t, h)
 }
 
 func flowCreateNamespace(t *testing.T, h *harness) {
 	t.Helper()
 
-	t.Run("success", func(t *testing.T) {
-		got := h.createNamespace(t, "flow-tag")
-		if got.ID == "" {
-			t.Fatal("namespace id is empty")
-		}
-		if got.Tag != "flow-tag" || got.PIDFormat != (pid.Format{Pattern: "***-***", Characters: pid.Full}) || got.DateCreated != h.now {
-			t.Fatalf("namespace: %+v", got)
-		}
-	})
-
-	t.Run("emptyBody", func(t *testing.T) {
-		resp := mustPOST(t, h.base+"/resolver/namespaces", "")
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusBadRequest)
-		assertErrorJSON(t, resp, "empty request body")
-	})
-
-	t.Run("trailingJSON", func(t *testing.T) {
-		resp := mustPOST(t, h.base+"/resolver/namespaces", `{"tag":"x","pid_format":{"pattern":"***","characters":"full"}} {"tag":"y"}`)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusBadRequest)
-		assertErrorJSON(t, resp, "trailing JSON")
-	})
-
-	t.Run("tooLargeBody", func(t *testing.T) {
-		body := `{"tag":"` + strings.Repeat("a", 512) + `","pid_format":{"pattern":"***","characters":"full"}}`
-		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusRequestEntityTooLarge)
-		assertErrorJSON(t, resp, "request payload too large")
-	})
+	const ns = "46c14e5d-c048-4159-a26a-f37bc0110c85"
+	Flow{
+		NamespaceIDs: []string{ns},
+		Steps: []steptest.Step{
+			{
+				Name: "success",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"flow-tag","pid_format":{"pattern":"***-***","characters":"full"}}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           ns,
+						"tag":          "flow-tag",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
+				},
+			},
+			{
+				Name:     "emptyBody",
+				Request:  steptest.Request{Method: "POST", Path: "/resolver/namespaces"},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": "empty request body"}}},
+			},
+			{
+				Name: "trailingJSON",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"x","pid_format":{"pattern":"***","characters":"full"}} {"tag":"y"}`,
+				},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": "trailing JSON"}}},
+			},
+			{
+				Name: "tooLargeBody",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"` + strings.Repeat("a", 512) + `","pid_format":{"pattern":"***","characters":"full"}}`,
+				},
+				Response: steptest.Response{Status: 413, Body: steptest.Body{JSON: map[string]any{"error": "request payload too large"}}},
+			},
+		},
+	}.Run(t, h)
 }
 
 func flowListResources(t *testing.T, h *harness) {
 	t.Helper()
-
-	id := h.createNamespace(t, "list-res").ID
-
-	t.Run("namespaceMissing", func(t *testing.T) {
-		resp := mustGET(t, h.base+"/resolver/namespaces/missing-ns/resources")
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusNotFound)
-		assertErrorJSON(t, resp, "namespace not found")
-	})
-
-	t.Run("empty", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, id)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedResourcesResponse](t, resp.Body)
-		want := spec.PaginatedResourcesResponse{Total: 0, Offset: 0, Items: []spec.ResourceResponse{}}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resources: got %+v want %+v", got, want)
-		}
-	})
-
-	_ = h.createResource(t, id, spec.ResourceCreateRequest{
-		URL:      "https://example.com/a",
-		Metadata: new("ext-1@sys-a"),
-		Tag:      "alpha",
-	})
-	_ = h.createResource(t, id, spec.ResourceCreateRequest{
-		URL:      "https://example.com/b",
-		Metadata: new("ext-2@sys-a"),
-		Tag:      "beta",
-	})
-	_ = h.createResource(t, id, spec.ResourceCreateRequest{
-		URL:      "https://example.com/empty-tag",
-		Metadata: nil,
-	})
-	_ = h.createResource(t, id, spec.ResourceCreateRequest{
-		URL:      "https://example.com/c",
-		Metadata: new("ext-4@sys-a"),
-		Tag:      "alpha",
-	})
-	_ = h.createResource(t, id, spec.ResourceCreateRequest{
-		URL:      "https://example.com/d",
-		Metadata: new("ext-5@sys-a"),
-		Tag:      "alpha",
-	})
-
-	t.Run("pagination_defaultLimit", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, id)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedResourcesResponse](t, resp.Body)
-		want := spec.PaginatedResourcesResponse{
-			Total:  5,
-			Offset: 0,
-			Items: []spec.ResourceResponse{
-				{
-					PID:         "6ez-s5t",
-					URL:         "https://example.com/empty-tag",
-					Metadata:    nil,
-					DateCreated: h.now,
-					DateUpdated: h.now,
-					Tag:         "",
-					Deleted:     false,
+	const ns = "46c14e5d-c048-4159-a26a-f37bc0110c85"
+	Flow{
+		NamespaceIDs: []string{ns},
+		PIDs: []string{
+			"xjc-cjy", // create_a
+			"8zk-pwt", // create_b
+			"6ez-s5t", // create_emptyTag
+			"7yy-3dz", // create_c
+			"nqs-vxz", // create_d (not asserted directly, but consumed)
+		},
+		Steps: []steptest.Step{
+			{
+				Name:     "namespaceMissing",
+				Request:  steptest.Request{Method: "GET", Path: "/resolver/namespaces/missing-ns/resources"},
+				Response: steptest.Response{Status: 404, Body: steptest.Body{JSON: map[string]any{"error": "namespace not found"}}},
+			},
+			{
+				Name: "create_namespace",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"list-res","pid_format":{"pattern":"***-***","characters":"full"}}`,
 				},
-				{
-					PID:         "7yy-3dz",
-					URL:         "https://example.com/c",
-					Metadata:    new("ext-4@sys-a"),
-					DateCreated: h.now,
-					DateUpdated: h.now,
-					Tag:         "alpha",
-					Deleted:     false,
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           ns,
+						"tag":          "list-res",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
 				},
 			},
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resources: got %+v want %+v", got, want)
-		}
-	})
+			{
+				Name:     "empty",
+				Request:  steptest.Request{Method: "GET", Path: "/resolver/namespaces/" + ns + "/resources"},
+				Response: steptest.Response{Status: 200, Body: steptest.Body{JSON: map[string]any{"total": 0, "offset": 0, "items": []any{}}}},
+			},
 
-	t.Run("pagination_clampMaxLimit", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?limit=999", h.base, id)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedResourcesResponse](t, resp.Body)
-		if got.Total != 5 || got.Offset != 0 || len(got.Items) != 3 {
-			t.Fatalf("resources: %+v", got)
-		}
-	})
+			{
+				Name: "create_a",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+					Body:   `{"url":"https://example.com/a","metadata":"ext-1@sys-a","tag":"alpha"}`,
+				},
+				Response: steptest.Response{Status: 201},
+			},
+			{
+				Name: "create_b",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+					Body:   `{"url":"https://example.com/b","metadata":"ext-2@sys-a","tag":"beta"}`,
+				},
+				Response: steptest.Response{Status: 201},
+			},
+			{
+				Name: "create_emptyTag",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+					Body:   `{"url":"https://example.com/empty-tag","metadata":null,"tag":""}`,
+				},
+				Response: steptest.Response{Status: 201},
+			},
+			{
+				Name: "create_c",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+					Body:   `{"url":"https://example.com/c","metadata":"ext-4@sys-a","tag":"alpha"}`,
+				},
+				Response: steptest.Response{Status: 201},
+			},
+			{
+				Name: "create_d",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+					Body:   `{"url":"https://example.com/d","metadata":"ext-5@sys-a","tag":"alpha"}`,
+				},
+				Response: steptest.Response{Status: 201},
+			},
 
-	t.Run("pagination_offsetPastEnd", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?offset=5", h.base, id)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedResourcesResponse](t, resp.Body)
-		want := spec.PaginatedResourcesResponse{Total: 5, Offset: 5, Items: []spec.ResourceResponse{}}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resources: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("tagOmitted", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, id)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedResourcesResponse](t, resp.Body)
-		if got.Total != 5 {
-			t.Fatalf("resources: %+v", got)
-		}
-	})
-
-	t.Run("tagFilter", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?tag=alpha&limit=999", h.base, id)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedResourcesResponse](t, resp.Body)
-		if got.Total != 3 || len(got.Items) != 3 {
-			t.Fatalf("filtered: %+v", got)
-		}
-		for _, it := range got.Items {
-			if it.Tag != "alpha" {
-				t.Fatalf("want alpha tags, got %+v", got)
-			}
-		}
-	})
-
-	t.Run("tagNoMatch", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?tag=other", h.base, id)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedResourcesResponse](t, resp.Body)
-		want := spec.PaginatedResourcesResponse{Total: 0, Offset: 0, Items: []spec.ResourceResponse{}}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("filtered: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("tagEmptyMeansEmptyString", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources?tag=&limit=999", h.base, id)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.PaginatedResourcesResponse](t, resp.Body)
-		if got.Total != 1 || len(got.Items) != 1 || got.Items[0].Tag != "" || got.Items[0].URL != "https://example.com/empty-tag" {
-			t.Fatalf("empty tag filter: %+v", got)
-		}
-	})
+			{
+				Name:    "pagination_defaultLimit",
+				Request: steptest.Request{Method: "GET", Path: "/resolver/namespaces/" + ns + "/resources"},
+				Response: steptest.Response{
+					Status: 200,
+					Body: steptest.Body{JSON: map[string]any{
+						"total":  5,
+						"offset": 0,
+						"items": []any{
+							map[string]any{
+								"pid":          "6ez-s5t",
+								"url":          "https://example.com/empty-tag",
+								"metadata":     nil,
+								"date_created": h.now,
+								"date_updated": h.now,
+								"tag":          "",
+								"deleted":      false,
+							},
+							map[string]any{
+								"pid":          "7yy-3dz",
+								"url":          "https://example.com/c",
+								"metadata":     "ext-4@sys-a",
+								"date_created": h.now,
+								"date_updated": h.now,
+								"tag":          "alpha",
+								"deleted":      false,
+							},
+						},
+					}},
+				},
+			},
+			{
+				Name: "pagination_clampMaxLimit",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces/" + ns + "/resources?limit=999",
+				},
+				Response: steptest.Response{Status: 200},
+			},
+			{
+				Name: "pagination_offsetPastEnd",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces/" + ns + "/resources?offset=5",
+				},
+				Response: steptest.Response{Status: 200, Body: steptest.Body{JSON: map[string]any{"total": 5, "offset": 5, "items": []any{}}}},
+			},
+			{
+				Name: "tagOmitted",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+				},
+				Response: steptest.Response{Status: 200},
+			},
+			{
+				Name: "tagFilter",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces/" + ns + "/resources?tag=alpha&limit=999",
+				},
+				Response: steptest.Response{Status: 200},
+			},
+			{
+				Name: "tagNoMatch",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces/" + ns + "/resources?tag=other",
+				},
+				Response: steptest.Response{Status: 200, Body: steptest.Body{JSON: map[string]any{"total": 0, "offset": 0, "items": []any{}}}},
+			},
+			{
+				Name: "tagEmptyMeansEmptyString",
+				Request: steptest.Request{
+					Method: "GET",
+					Path:   "/resolver/namespaces/" + ns + "/resources?tag=&limit=999",
+				},
+				Response: steptest.Response{Status: 200},
+			},
+		},
+	}.Run(t, h)
 }
 
 func flowCreateResource(t *testing.T, h *harness) {
 	t.Helper()
-	ns := h.createNamespace(t, "create-res").ID
-
-	t.Run("success", func(t *testing.T) {
-		got := h.createResource(t, ns, spec.ResourceCreateRequest{
-			URL:      "https://example.com/a",
-			Metadata: new("ext-1@sys-a"),
-			Tag:      "alpha",
-		})
-		want := spec.ResourceResponse{
-			PID:         "xjc-cjy",
-			URL:         "https://example.com/a",
-			Metadata:    new("ext-1@sys-a"),
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "alpha",
-			Deleted:     false,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("metadataNull_roundTrips", func(t *testing.T) {
-		got := h.createResource(t, ns, spec.ResourceCreateRequest{
-			URL:      "https://example.com/metadata-null",
-			Metadata: nil,
-			Tag:      "alpha",
-		})
-		want := spec.ResourceResponse{
-			PID:         "8zk-pwt",
-			URL:         "https://example.com/metadata-null",
-			Metadata:    nil,
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "alpha",
-			Deleted:     false,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("hexPattern_isLowercaseHex", func(t *testing.T) {
-		tag := "hex-res"
-		body := mustMarshal(t, spec.NamespaceCreateRequest{
-			Tag: tag,
-			PIDFormat: pid.Format{
-				Pattern:    "********-****-****-****-************",
-				Characters: pid.Hex,
+	const ns = "46c14e5d-c048-4159-a26a-f37bc0110c85"
+	Flow{
+		NamespaceIDs: []string{
+			ns,                                     // create-res
+			"31d0952d-8d73-4119-8e95-b5f19d6f9df7", // hex-res
+			"c00420c4-1461-4824-a2cc-34e3d04524d4", // readable6-res
+			"5565d865-a6dc-45e7-a086-28e49669e8a6", // readable9-res
+			"aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef", // random64-res
+		},
+		PIDs: []string{
+			"xjc-cjy", // success
+			"8zk-pwt", // metadataNull_roundTrips
+		},
+		Steps: []steptest.Step{
+			{
+				Name: "create_namespace",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"create-res","pid_format":{"pattern":"***-***","characters":"full"}}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           ns,
+						"tag":          "create-res",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
+				},
 			},
-		})
-		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusCreated)
-		namespace := decodeJSON[spec.NamespaceResponse](t, resp.Body)
-
-		got := h.createResource(t, namespace.ID, spec.ResourceCreateRequest{
-			URL:      "https://example.com/hex",
-			Metadata: nil,
-			Tag:      "hex",
-		})
-		if len(got.PID) != 36 || got.PID[8] != '-' || got.PID[13] != '-' || got.PID[18] != '-' || got.PID[23] != '-' {
-			t.Fatalf("pid shape: %q", got.PID)
-		}
-		for i := 0; i < len(got.PID); i++ {
-			if got.PID[i] == '-' {
-				continue
-			}
-			c := got.PID[i]
-			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
-				t.Fatalf("pid not lowercase hex: %q", got.PID)
-			}
-		}
-		if got.URL != "https://example.com/hex" || got.Metadata != nil || got.DateCreated != h.now || got.DateUpdated != h.now || got.Tag != "hex" || got.Deleted != false {
-			t.Fatalf("resource: %+v", got)
-		}
-	})
-
-	t.Run("readable6_isDeterministic", func(t *testing.T) {
-		tag := "readable6-res"
-		body := mustMarshal(t, spec.NamespaceCreateRequest{
-			Tag: tag,
-			PIDFormat: pid.Format{
-				Pattern:    "***-***",
-				Characters: pid.Readable,
+			{
+				Name: "success",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+					Body:   `{"url":"https://example.com/a","metadata":"ext-1@sys-a","tag":"alpha"}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"pid":          "xjc-cjy",
+						"url":          "https://example.com/a",
+						"metadata":     "ext-1@sys-a",
+						"date_created": h.now,
+						"date_updated": h.now,
+						"tag":          "alpha",
+						"deleted":      false,
+					}},
+				},
 			},
-		})
-		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusCreated)
-		namespace := decodeJSON[spec.NamespaceResponse](t, resp.Body)
-
-		got := h.createResource(t, namespace.ID, spec.ResourceCreateRequest{
-			URL:      "https://example.com/readable6",
-			Metadata: nil,
-			Tag:      "r6",
-		})
-		want := spec.ResourceResponse{
-			PID:         "nqs-vxz",
-			URL:         "https://example.com/readable6",
-			Metadata:    nil,
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "r6",
-			Deleted:     false,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("readable9_isDeterministic", func(t *testing.T) {
-		tag := "readable9-res"
-		body := mustMarshal(t, spec.NamespaceCreateRequest{
-			Tag: tag,
-			PIDFormat: pid.Format{
-				Pattern:    "***-***-***",
-				Characters: pid.Readable,
+			{
+				Name: "metadataNull_roundTrips",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+					Body:   `{"url":"https://example.com/metadata-null","metadata":null,"tag":"alpha"}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"pid":          "8zk-pwt",
+						"url":          "https://example.com/metadata-null",
+						"metadata":     nil,
+						"date_created": h.now,
+						"date_updated": h.now,
+						"tag":          "alpha",
+						"deleted":      false,
+					}},
+				},
 			},
-		})
-		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusCreated)
-		namespace := decodeJSON[spec.NamespaceResponse](t, resp.Body)
-
-		got := h.createResource(t, namespace.ID, spec.ResourceCreateRequest{
-			URL:      "https://example.com/readable9",
-			Metadata: nil,
-			Tag:      "r9",
-		})
-		want := spec.ResourceResponse{
-			PID:         "8cg-h37-f3d",
-			URL:         "https://example.com/readable9",
-			Metadata:    nil,
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "r9",
-			Deleted:     false,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("random64_isDeterministic", func(t *testing.T) {
-		tag := "random64-res"
-		body := mustMarshal(t, spec.NamespaceCreateRequest{
-			Tag: tag,
-			PIDFormat: pid.Format{
-				Pattern:    "****************************************************************",
-				Characters: pid.Full,
+			{
+				Name: "hexPattern_isLowercaseHex",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"hex-res","pid_format":{"pattern":"********-****-****-****-************","characters":"hex"}}`,
+				},
+				Response: steptest.Response{Status: 201},
 			},
-		})
-		resp := mustPOST(t, h.base+"/resolver/namespaces", body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusCreated)
-		namespace := decodeJSON[spec.NamespaceResponse](t, resp.Body)
-
-		got := h.createResource(t, namespace.ID, spec.ResourceCreateRequest{
-			URL:      "https://example.com/random64",
-			Metadata: nil,
-			Tag:      "r64",
-		})
-		want := spec.ResourceResponse{
-			PID:         "5zrjjjlkxy1vrzfd4173zzfb5pq0537v7x9u977fb3ptz29bnrzhd3bbfv7c0iov",
-			URL:         "https://example.com/random64",
-			Metadata:    nil,
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "r64",
-			Deleted:     false,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("namespaceMissing", func(t *testing.T) {
-		body := mustMarshal(t, spec.ResourceCreateRequest{URL: "https://x"})
-		resp := mustPOST(t, h.base+"/resolver/namespaces/absent-ns/resources", body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusNotFound)
-		assertErrorJSON(t, resp, "namespace not found")
-	})
-
-	t.Run("invalidNamespace", func(t *testing.T) {
-		body := mustMarshal(t, spec.ResourceCreateRequest{URL: "https://x"})
-		resp := mustPOST(t, h.base+"/resolver/namespaces/bad.ns/resources", body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusBadRequest)
-		assertErrorJSON(t, resp, "invalid namespace")
-	})
-
-	t.Run("tooLargeBody", func(t *testing.T) {
-		oversize := `{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x","tag":"z"}`
-		resp := mustPOST(t, fmt.Sprintf("%s/resolver/namespaces/%s/resources", h.base, ns), oversize)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusRequestEntityTooLarge)
-		assertErrorJSON(t, resp, "request payload too large")
-	})
+			{
+				Name: "readable6_isDeterministic",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"readable6-res","pid_format":{"pattern":"***-***","characters":"readable"}}`,
+				},
+				Response: steptest.Response{Status: 201},
+			},
+			{
+				Name: "readable9_isDeterministic",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"readable9-res","pid_format":{"pattern":"***-***-***","characters":"readable"}}`,
+				},
+				Response: steptest.Response{Status: 201},
+			},
+			{
+				Name: "random64_isDeterministic",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"random64-res","pid_format":{"pattern":"****************************************************************","characters":"full"}}`,
+				},
+				Response: steptest.Response{Status: 201},
+			},
+			{
+				Name: "namespaceMissing",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/absent-ns/resources",
+					Body:   `{"url":"https://x","metadata":null,"tag":""}`,
+				},
+				Response: steptest.Response{Status: 404, Body: steptest.Body{JSON: map[string]any{"error": "namespace not found"}}},
+			},
+			{
+				Name: "invalidNamespace",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/bad.ns/resources",
+					Body:   `{"url":"https://x","metadata":null,"tag":""}`,
+				},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": "invalid namespace"}}},
+			},
+			{
+				Name: "tooLargeBody",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+					Body:   `{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x","tag":"z"}`,
+				},
+				Response: steptest.Response{Status: 413, Body: steptest.Body{JSON: map[string]any{"error": "request payload too large"}}},
+			},
+		},
+	}.Run(t, h)
 }
 
 func flowBatchCreateResources(t *testing.T, h *harness) {
 	t.Helper()
-	id := h.createNamespace(t, "batch-res").ID
-
-	t.Run("success", func(t *testing.T) {
-		batch := []spec.ResourceCreateRequest{
-			{URL: "https://b1", Metadata: new("b1@batch"), Tag: "batch"},
-			{URL: "https://b2", Metadata: nil},
-		}
-		body := mustMarshal(t, batch)
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, id)
-		resp := mustPOST(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusCreated)
-		got := []spec.ResourceResponse{}
-		got = decodeJSON[[]spec.ResourceResponse](t, resp.Body)
-		want := []spec.ResourceResponse{
+	const ns = "46c14e5d-c048-4159-a26a-f37bc0110c85"
+	Flow{
+		NamespaceIDs: []string{ns},
+		PIDs: []string{
+			"xjc-cjy", // batch item 1
+			"8zk-pwt", // batch item 2
+		},
+		Steps: []steptest.Step{
 			{
-				PID:         "xjc-cjy",
-				URL:         "https://b1",
-				Metadata:    new("b1@batch"),
-				DateCreated: h.now,
-				DateUpdated: h.now,
-				Tag:         "batch",
-				Deleted:     false,
+				Name: "create_namespace",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"batch-res","pid_format":{"pattern":"***-***","characters":"full"}}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           ns,
+						"tag":          "batch-res",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
+				},
 			},
 			{
-				PID:         "8zk-pwt",
-				URL:         "https://b2",
-				Metadata:    nil,
-				DateCreated: h.now,
-				DateUpdated: h.now,
-				Tag:         "",
-				Deleted:     false,
+				Name: "success",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources:batch",
+					Body:   `[{"url":"https://b1","metadata":"b1@batch","tag":"batch"},{"url":"https://b2","metadata":null,"tag":""}]`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: []any{
+						map[string]any{
+							"pid":          "xjc-cjy",
+							"url":          "https://b1",
+							"metadata":     "b1@batch",
+							"date_created": h.now,
+							"date_updated": h.now,
+							"tag":          "batch",
+							"deleted":      false,
+						},
+						map[string]any{
+							"pid":          "8zk-pwt",
+							"url":          "https://b2",
+							"metadata":     nil,
+							"date_created": h.now,
+							"date_updated": h.now,
+							"tag":          "",
+							"deleted":      false,
+						},
+					}},
+				},
 			},
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("batch: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("tooManyItems", func(t *testing.T) {
-		batch := []spec.ResourceCreateRequest{
-			{URL: "https://b1", Metadata: new("b1@batch")},
-			{URL: "https://b2", Metadata: new("b2@batch")},
-			{URL: "https://b3", Metadata: new("b3@batch")},
-		}
-		body := mustMarshal(t, batch)
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, id)
-		resp := mustPOST(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusBadRequest)
-		assertErrorJSON(t, resp, "too many items: 3 > 2")
-	})
-
-	t.Run("namespaceMissing", func(t *testing.T) {
-		body := mustMarshal(t, []spec.ResourceCreateRequest{
-			{URL: "https://x"},
-		})
-		u := h.base + "/resolver/namespaces/missing/resources:batch"
-		resp := mustPOST(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusNotFound)
-		assertErrorJSON(t, resp, "namespace not found")
-	})
-
-	t.Run("tooLargeBody", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources:batch", h.base, id)
-		oversize := `[{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x"}]`
-		resp := mustPOST(t, u, oversize)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusRequestEntityTooLarge)
-		assertErrorJSON(t, resp, "request payload too large")
-	})
+			{
+				Name: "tooManyItems",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources:batch",
+					Body:   `[{"url":"https://b1","metadata":"b1@batch","tag":""},{"url":"https://b2","metadata":"b2@batch","tag":""},{"url":"https://b3","metadata":"b3@batch","tag":""}]`,
+				},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": "too many items: 3 > 2"}}},
+			},
+			{
+				Name: "namespaceMissing",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/missing/resources:batch",
+					Body:   `[{"url":"https://x","metadata":null,"tag":""}]`,
+				},
+				Response: steptest.Response{Status: 404, Body: steptest.Body{JSON: map[string]any{"error": "namespace not found"}}},
+			},
+			{
+				Name: "tooLargeBody",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources:batch",
+					Body:   `[{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x","tag":""}]`,
+				},
+				Response: steptest.Response{Status: 413, Body: steptest.Body{JSON: map[string]any{"error": "request payload too large"}}},
+			},
+		},
+	}.Run(t, h)
 }
 
 func flowGetResource(t *testing.T, h *harness) {
 	t.Helper()
-	id := h.createNamespace(t, "get-res").ID
-	created := h.createResource(t, id, spec.ResourceCreateRequest{
-		URL:      "https://example.com/a",
-		Metadata: new("ext-1@sys-a"),
-		Tag:      "alpha",
-	})
-
-	t.Run("success", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
-		want := spec.ResourceResponse{
-			PID:         created.PID,
-			URL:         "https://example.com/a",
-			Metadata:    new("ext-1@sys-a"),
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "alpha",
-			Deleted:     false,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("resourceNotFound", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/99999", h.base, id)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusNotFound)
-		assertErrorJSON(t, resp, "resource not found")
-	})
-
-	t.Run("invalidNamespace", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/bad.ns/resources/%s", h.base, created.PID)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusBadRequest)
-		assertErrorJSON(t, resp, "invalid namespace")
-	})
-
-	t.Run("invalidPID", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/bad.pid", h.base, id)
-		resp := mustGET(t, u)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusBadRequest)
-		assertErrorJSON(t, resp, "invalid pid")
-	})
+	const ns = "46c14e5d-c048-4159-a26a-f37bc0110c85"
+	const pid = "xjc-cjy"
+	Flow{
+		NamespaceIDs: []string{ns},
+		PIDs:         []string{pid},
+		Steps: []steptest.Step{
+			{
+				Name: "create_namespace",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"get-res","pid_format":{"pattern":"***-***","characters":"full"}}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           ns,
+						"tag":          "get-res",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
+				},
+			},
+			{
+				Name: "create_resource",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+					Body:   `{"url":"https://example.com/a","metadata":"ext-1@sys-a","tag":"alpha"}`,
+				},
+				Response: steptest.Response{Status: 201},
+			},
+			{
+				Name:    "success",
+				Request: steptest.Request{Method: "GET", Path: "/resolver/namespaces/" + ns + "/resources/" + pid},
+				Response: steptest.Response{Status: 200, Body: steptest.Body{JSON: map[string]any{
+					"pid":          pid,
+					"url":          "https://example.com/a",
+					"metadata":     "ext-1@sys-a",
+					"date_created": h.now,
+					"date_updated": h.now,
+					"tag":          "alpha",
+					"deleted":      false,
+				}}},
+			},
+			{
+				Name:     "resourceNotFound",
+				Request:  steptest.Request{Method: "GET", Path: "/resolver/namespaces/" + ns + "/resources/99999"},
+				Response: steptest.Response{Status: 404, Body: steptest.Body{JSON: map[string]any{"error": "resource not found"}}},
+			},
+			{
+				Name:     "invalidNamespace",
+				Request:  steptest.Request{Method: "GET", Path: "/resolver/namespaces/bad.ns/resources/" + pid},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": "invalid namespace"}}},
+			},
+			{
+				Name:     "invalidPID",
+				Request:  steptest.Request{Method: "GET", Path: "/resolver/namespaces/" + ns + "/resources/bad.pid"},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": "invalid pid"}}},
+			},
+		},
+	}.Run(t, h)
 }
 
 func flowUpdateResource(t *testing.T, h *harness) {
 	t.Helper()
-	id := h.createNamespace(t, "update-res").ID
-	created := h.createResource(t, id, spec.ResourceCreateRequest{
-		URL:      "https://example.com/a",
-		Metadata: new("ext-1@sys-a"),
-		Tag:      "alpha",
-	})
-
-	t.Run("success_allFields", func(t *testing.T) {
-		body := `{"url":"https://example.com/updated","metadata":"ext-1b@sys-b","tag":"beta","deleted":false}`
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
-		resp := mustPATCH(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
-		want := spec.ResourceResponse{
-			PID:         created.PID,
-			URL:         "https://example.com/updated",
-			Metadata:    new("ext-1b@sys-b"),
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "beta",
-			Deleted:     false,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("partial_urlOnly", func(t *testing.T) {
-		body := `{"url":"https://example.com/url-only"}`
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
-		resp := mustPATCH(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
-		want := spec.ResourceResponse{
-			PID:         created.PID,
-			URL:         "https://example.com/url-only",
-			Metadata:    new("ext-1b@sys-b"),
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "beta",
-			Deleted:     false,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("partial_setMetadataNull", func(t *testing.T) {
-		body := `{"metadata":null}`
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
-		resp := mustPATCH(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
-		want := spec.ResourceResponse{
-			PID:         created.PID,
-			URL:         "https://example.com/url-only",
-			Metadata:    nil,
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "beta",
-			Deleted:     false,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("partial_setMetadataString", func(t *testing.T) {
-		body := `{"metadata":"ext-new@sys-c"}`
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
-		resp := mustPATCH(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
-		want := spec.ResourceResponse{
-			PID:         created.PID,
-			URL:         "https://example.com/url-only",
-			Metadata:    new("ext-new@sys-c"),
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "beta",
-			Deleted:     false,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("partial_deletedOnly", func(t *testing.T) {
-		body := `{"deleted":true}`
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
-		resp := mustPATCH(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
-		want := spec.ResourceResponse{
-			PID:         created.PID,
-			URL:         "https://example.com/url-only",
-			Metadata:    new("ext-new@sys-c"),
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "beta",
-			Deleted:     true,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("emptyUpdate_noChanges", func(t *testing.T) {
-		body := `{}`
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
-		resp := mustPATCH(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusOK)
-		got := decodeJSON[spec.ResourceResponse](t, resp.Body)
-		want := spec.ResourceResponse{
-			PID:         created.PID,
-			URL:         "https://example.com/url-only",
-			Metadata:    new("ext-new@sys-c"),
-			DateCreated: h.now,
-			DateUpdated: h.now,
-			Tag:         "beta",
-			Deleted:     true,
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("resource: got %+v want %+v", got, want)
-		}
-	})
-
-	t.Run("resourceNotFound", func(t *testing.T) {
-		body := `{"url":"https://example.com/updated","metadata":"ext-1b@sys-b","tag":"beta","deleted":false}`
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/99999", h.base, id)
-		resp := mustPATCH(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusNotFound)
-		assertErrorJSON(t, resp, "resource not found")
-	})
-
-	t.Run("invalidPID", func(t *testing.T) {
-		body := `{"url":"https://example.com/updated","metadata":"ext-1b@sys-b","tag":"beta","deleted":false}`
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/bad.pid", h.base, id)
-		resp := mustPATCH(t, u, body)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusBadRequest)
-		assertErrorJSON(t, resp, "invalid pid")
-	})
-
-	t.Run("tooLargeBody", func(t *testing.T) {
-		u := fmt.Sprintf("%s/resolver/namespaces/%s/resources/%s", h.base, id, created.PID)
-		oversize := `{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x","tag":"z","deleted":false}`
-		resp := mustPATCH(t, u, oversize)
-		defer resp.Body.Close()
-		assertStatus(t, resp, http.StatusRequestEntityTooLarge)
-		assertErrorJSON(t, resp, "request payload too large")
-	})
+	const ns = "46c14e5d-c048-4159-a26a-f37bc0110c85"
+	const pid = "xjc-cjy"
+	Flow{
+		NamespaceIDs: []string{ns},
+		PIDs:         []string{pid},
+		Steps: []steptest.Step{
+			{
+				Name: "create_namespace",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces",
+					Body:   `{"tag":"update-res","pid_format":{"pattern":"***-***","characters":"full"}}`,
+				},
+				Response: steptest.Response{
+					Status: 201,
+					Body: steptest.Body{JSON: map[string]any{
+						"id":           ns,
+						"tag":          "update-res",
+						"pid_format":   map[string]any{"pattern": "***-***", "characters": "full"},
+						"date_created": h.now,
+					}},
+				},
+			},
+			{
+				Name: "create_resource",
+				Request: steptest.Request{
+					Method: "POST",
+					Path:   "/resolver/namespaces/" + ns + "/resources",
+					Body:   `{"url":"https://example.com/a","metadata":"ext-1@sys-a","tag":"alpha"}`,
+				},
+				Response: steptest.Response{Status: 201},
+			},
+			{
+				Name: "success_allFields",
+				Request: steptest.Request{
+					Method: "PATCH",
+					Path:   "/resolver/namespaces/" + ns + "/resources/" + pid,
+					Body:   `{"url":"https://example.com/updated","metadata":"ext-1b@sys-b","tag":"beta","deleted":false}`,
+				},
+				Response: steptest.Response{Status: 200, Body: steptest.Body{JSON: map[string]any{
+					"pid":          pid,
+					"url":          "https://example.com/updated",
+					"metadata":     "ext-1b@sys-b",
+					"date_created": h.now,
+					"date_updated": h.now,
+					"tag":          "beta",
+					"deleted":      false,
+				}}},
+			},
+			{
+				Name: "partial_urlOnly",
+				Request: steptest.Request{
+					Method: "PATCH",
+					Path:   "/resolver/namespaces/" + ns + "/resources/" + pid,
+					Body:   `{"url":"https://example.com/url-only"}`,
+				},
+				Response: steptest.Response{Status: 200, Body: steptest.Body{JSON: map[string]any{
+					"pid":          pid,
+					"url":          "https://example.com/url-only",
+					"metadata":     "ext-1b@sys-b",
+					"date_created": h.now,
+					"date_updated": h.now,
+					"tag":          "beta",
+					"deleted":      false,
+				}}},
+			},
+			{
+				Name: "partial_setMetadataNull",
+				Request: steptest.Request{
+					Method: "PATCH",
+					Path:   "/resolver/namespaces/" + ns + "/resources/" + pid,
+					Body:   `{"metadata":null}`,
+				},
+				Response: steptest.Response{Status: 200, Body: steptest.Body{JSON: map[string]any{
+					"pid":          pid,
+					"url":          "https://example.com/url-only",
+					"metadata":     nil,
+					"date_created": h.now,
+					"date_updated": h.now,
+					"tag":          "beta",
+					"deleted":      false,
+				}}},
+			},
+			{
+				Name: "partial_setMetadataString",
+				Request: steptest.Request{
+					Method: "PATCH",
+					Path:   "/resolver/namespaces/" + ns + "/resources/" + pid,
+					Body:   `{"metadata":"ext-new@sys-c"}`,
+				},
+				Response: steptest.Response{Status: 200, Body: steptest.Body{JSON: map[string]any{
+					"pid":          pid,
+					"url":          "https://example.com/url-only",
+					"metadata":     "ext-new@sys-c",
+					"date_created": h.now,
+					"date_updated": h.now,
+					"tag":          "beta",
+					"deleted":      false,
+				}}},
+			},
+			{
+				Name: "partial_deletedOnly",
+				Request: steptest.Request{
+					Method: "PATCH",
+					Path:   "/resolver/namespaces/" + ns + "/resources/" + pid,
+					Body:   `{"deleted":true}`,
+				},
+				Response: steptest.Response{Status: 200, Body: steptest.Body{JSON: map[string]any{
+					"pid":          pid,
+					"url":          "https://example.com/url-only",
+					"metadata":     "ext-new@sys-c",
+					"date_created": h.now,
+					"date_updated": h.now,
+					"tag":          "beta",
+					"deleted":      true,
+				}}},
+			},
+			{
+				Name:    "emptyUpdate_noChanges",
+				Request: steptest.Request{Method: "PATCH", Path: "/resolver/namespaces/" + ns + "/resources/" + pid, Body: `{}`},
+				Response: steptest.Response{Status: 200, Body: steptest.Body{JSON: map[string]any{
+					"pid":          pid,
+					"url":          "https://example.com/url-only",
+					"metadata":     "ext-new@sys-c",
+					"date_created": h.now,
+					"date_updated": h.now,
+					"tag":          "beta",
+					"deleted":      true,
+				}}},
+			},
+			{
+				Name: "resourceNotFound",
+				Request: steptest.Request{
+					Method: "PATCH",
+					Path:   "/resolver/namespaces/" + ns + "/resources/99999",
+					Body:   `{"url":"https://example.com/updated","metadata":"ext-1b@sys-b","tag":"beta","deleted":false}`,
+				},
+				Response: steptest.Response{Status: 404, Body: steptest.Body{JSON: map[string]any{"error": "resource not found"}}},
+			},
+			{
+				Name: "invalidPID",
+				Request: steptest.Request{
+					Method: "PATCH",
+					Path:   "/resolver/namespaces/" + ns + "/resources/bad.pid",
+					Body:   `{"url":"https://example.com/updated","metadata":"ext-1b@sys-b","tag":"beta","deleted":false}`,
+				},
+				Response: steptest.Response{Status: 400, Body: steptest.Body{JSON: map[string]any{"error": "invalid pid"}}},
+			},
+			{
+				Name: "tooLargeBody",
+				Request: steptest.Request{
+					Method: "PATCH",
+					Path:   "/resolver/namespaces/" + ns + "/resources/" + pid,
+					Body:   `{"url":"https://` + strings.Repeat("a", 512) + `","metadata":"x","tag":"z","deleted":false}`,
+				},
+				Response: steptest.Response{Status: 413, Body: steptest.Body{JSON: map[string]any{"error": "request payload too large"}}},
+			},
+		},
+	}.Run(t, h)
 }

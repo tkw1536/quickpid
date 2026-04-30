@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/swaggest/swgui"
 	"github.com/swaggest/swgui/v5emb"
 	"github.com/tkw1536/quickpid/backend"
@@ -124,12 +123,12 @@ func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 		}
 
 		for range maxNamespaceIDAttempts {
-			name, err := uuid.NewRandomFromReader(h.ops.Rand)
+			name, err := h.ops.NewNamespaceID()
 			if err != nil {
 				writeError(w, err)
 				return
 			}
-			out, err := h.backend.CreateNamespace(r.Context(), name.String(), req, h.ops.Now)
+			out, err := h.backend.CreateNamespace(r.Context(), name, req, h.ops.Now)
 			if err == nil {
 				writeJSONResponse(w, http.StatusCreated, out)
 				return
@@ -382,7 +381,7 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 		for i := range n {
 			// Ensure uniqueness within this batch.
 			for range h.ops.Limits.MaxPIDAttempts {
-				candidate, err := format.Generate(h.ops.Rand)
+				candidate, err := h.ops.NewPID(format)
 				if err != nil {
 					return nil, err
 				}

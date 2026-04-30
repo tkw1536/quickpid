@@ -2,8 +2,10 @@ package server
 
 import (
 	"crypto/rand"
-	"io"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 // Options represents options for the handler.
@@ -15,9 +17,13 @@ type Options struct {
 	// Disable swagger UI and spec file being served.
 	DisableSwaggerUI bool
 
-	// Rand provides randomness for PID generation.
-	// If nil, crypto/rand.Reader is used.
-	Rand io.Reader
+	// NewNamespaceID returns a new namespace identifier.
+	// If nil, a v4 UUID is generated using [rand.Reader].
+	NewNamespaceID func() (string, error)
+
+	// NewPID returns a new PID for the given PID format.
+	// If nil, this calls [pid.Format.Generate] with [rand.Reader].
+	NewPID func(format pid.Format) (string, error)
 
 	// Now returns the current time.
 	// If nil, time.Now is used.
@@ -29,13 +35,28 @@ type Options struct {
 
 func (o Options) withDefaults() Options {
 	o.Limits = o.Limits.withDefaults()
-	if o.Rand == nil {
-		o.Rand = rand.Reader
+	if o.NewNamespaceID == nil {
+		o.NewNamespaceID = defaultNewNamespaceID
+	}
+	if o.NewPID == nil {
+		o.NewPID = defaultNewPID
 	}
 	if o.Now == nil {
 		o.Now = time.Now
 	}
 	return o
+}
+
+var defaultNewNamespaceID = func() (string, error) {
+	id, err := uuid.NewRandomFromReader(rand.Reader)
+	if err != nil {
+		return "", err
+	}
+	return id.String(), nil
+}
+
+var defaultNewPID = func(format pid.Format) (string, error) {
+	return format.Generate(rand.Reader)
 }
 
 // Limits represents limits for the server server.
