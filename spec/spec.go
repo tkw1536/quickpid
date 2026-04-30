@@ -2,10 +2,7 @@
 package spec
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/tkw1536/quickpid/internal/strict"
 	"github.com/tkw1536/quickpid/pid"
@@ -20,31 +17,22 @@ type NamespaceCreateRequest struct {
 }
 
 func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
-	if err := strict.MustBeStruct(data); err != nil {
-		return err
-	}
-
-	var internal struct {
+	type internal struct {
 		Tag       strict.Optional[strict.String] `json:"tag"`
 		PIDFormat strict.Optional[pid.Format]    `json:"pid_format"`
 	}
-
-	dec := json.NewDecoder(bytes.NewReader(data))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&internal); err != nil {
+	decoded, err := strict.UnmarshalStruct[internal](data)
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
-	if _, err := dec.Token(); err != io.EOF {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
-	}
-	if !internal.Tag.Present {
+	if !decoded.Tag.Present {
 		return fmt.Errorf("missing required field: tag")
 	}
-	r.Tag = string(internal.Tag.Value)
-	if !internal.PIDFormat.Present {
+	r.Tag = string(decoded.Tag.Value)
+	if !decoded.PIDFormat.Present {
 		return fmt.Errorf("missing required field: pid_format")
 	}
-	r.PIDFormat = internal.PIDFormat.Value
+	r.PIDFormat = decoded.PIDFormat.Value
 
 	return nil
 }
@@ -72,39 +60,30 @@ type ResourceCreateRequest struct {
 }
 
 func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
-	if err := strict.MustBeStruct(data); err != nil {
-		return err
-	}
-
-	var internal struct {
+	type internal struct {
 		URL      strict.Optional[strict.String] `json:"url"`
 		Metadata strict.Optional[*string]       `json:"metadata"`
 		Tag      strict.Optional[strict.String] `json:"tag"`
 	}
-
-	dec := json.NewDecoder(bytes.NewReader(data))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&internal); err != nil {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
-	}
-	if _, err := dec.Token(); err != io.EOF {
+	decoded, err := strict.UnmarshalStruct[internal](data)
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 
-	if !internal.URL.Present {
+	if !decoded.URL.Present {
 		return fmt.Errorf("missing required field: url")
 	}
-	r.URL = string(internal.URL.Value)
+	r.URL = string(decoded.URL.Value)
 
-	if !internal.Metadata.Present {
+	if !decoded.Metadata.Present {
 		return fmt.Errorf("missing required field: metadata")
 	}
-	r.Metadata = internal.Metadata.Value
+	r.Metadata = decoded.Metadata.Value
 
-	if !internal.Tag.Present {
+	if !decoded.Tag.Present {
 		return fmt.Errorf("missing required field: tag")
 	}
-	r.Tag = string(internal.Tag.Value)
+	r.Tag = string(decoded.Tag.Value)
 
 	return nil
 }
@@ -138,29 +117,20 @@ type ResourceUpdateRequest struct {
 }
 
 func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
-	if err := strict.MustBeStruct(data); err != nil {
-		return err
-	}
-
-	var internal struct {
+	type internal struct {
 		URL      strict.Optional[strict.String] `json:"url"`
 		Metadata strict.Optional[*string]       `json:"metadata"`
 		Tag      strict.Optional[strict.String] `json:"tag"`
 		Deleted  strict.Optional[strict.Bool]   `json:"deleted"`
 	}
-
-	dec := json.NewDecoder(bytes.NewReader(data))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&internal); err != nil {
+	decoded, err := strict.UnmarshalStruct[internal](data)
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
-	if _, err := dec.Token(); err != io.EOF {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
-	}
-	r.URL = strict.OptionalStringToPointer(internal.URL)
-	r.Metadata = internal.Metadata.ToPointer()
-	r.Tag = strict.OptionalStringToPointer(internal.Tag)
-	r.Deleted = strict.OptionalBoolToPointer(internal.Deleted)
+	r.URL = strict.OptionalStringToPointer(decoded.URL)
+	r.Metadata = decoded.Metadata.ToPointer()
+	r.Tag = strict.OptionalStringToPointer(decoded.Tag)
+	r.Deleted = strict.OptionalBoolToPointer(decoded.Deleted)
 
 	return nil
 }

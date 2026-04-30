@@ -17,3 +17,22 @@ func ExampleMustBeStruct() {
 	// false
 }
 
+func ExampleUnmarshalStruct() {
+	type Payload struct {
+		Name string `json:"name"`
+	}
+
+	ok, err := strict.UnmarshalStruct[Payload]([]byte(`{"name":"alice"}`))
+	fmt.Println(ok.Name, err == nil)
+
+	_, err = strict.UnmarshalStruct[Payload]([]byte(`null`))
+	fmt.Println(err != nil)
+
+	_, err = strict.UnmarshalStruct[Payload]([]byte(`{"name":"alice","extra":1}`))
+	fmt.Println(err != nil)
+
+	// Output:
+	// alice true
+	// true
+	// true
+}

@@ -2,8 +2,6 @@
 package pid
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,33 +17,24 @@ type Format struct {
 }
 
 func (f *Format) UnmarshalJSON(data []byte) error {
-	if err := strict.MustBeStruct(data); err != nil {
-		return err
-	}
-
-	var internal struct {
+	type internal struct {
 		Pattern    strict.Optional[strict.String] `json:"pattern"`
 		Characters strict.Optional[strict.String] `json:"characters"`
 	}
-
-	dec := json.NewDecoder(bytes.NewReader(data))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&internal); err != nil {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
-	}
-	if _, err := dec.Token(); err != io.EOF {
+	decoded, err := strict.UnmarshalStruct[internal](data)
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 
-	if !internal.Pattern.Present {
+	if !decoded.Pattern.Present {
 		return fmt.Errorf("missing required field: pattern")
 	}
-	f.Pattern = Pattern(internal.Pattern.Value)
+	f.Pattern = Pattern(decoded.Pattern.Value)
 
-	if !internal.Characters.Present {
+	if !decoded.Characters.Present {
 		return fmt.Errorf("missing required field: characters")
 	}
-	f.Characters = CharacterSet(internal.Characters.Value)
+	f.Characters = CharacterSet(decoded.Characters.Value)
 
 	if err := f.Validate(); err != nil {
 		return fmt.Errorf("invalid format: %w", err)
