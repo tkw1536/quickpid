@@ -1,6 +1,7 @@
 package pid_test
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -134,6 +135,157 @@ func TestFormat_Generate(t *testing.T) {
 		}
 		if !strings.Contains(err.Error(), "invalid character set") {
 			t.Fatalf("GeneratePID(invalid): got err %q want substring %q", err.Error(), "invalid character set")
+		}
+	})
+}
+
+func TestFormat_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		body      string
+		wantErr   bool
+		want      pid.Format
+		wantErrIn []string
+	}{
+		{
+			name:    "ok",
+			body:    `{"pattern":"***","characters":"full"}`,
+			wantErr: false,
+			want:    pid.Format{Pattern: "***", Characters: pid.Full},
+		},
+		{
+			name:      "nullBody_isError",
+			body:      `null`,
+			wantErr:   true,
+			wantErrIn: []string{"expected JSON object"},
+		},
+		{
+			name:      "arrayBody_isError",
+			body:      `[]`,
+			wantErr:   true,
+			wantErrIn: []string{"expected JSON object"},
+		},
+		{
+			name:      "stringBody_isError",
+			body:      `"x"`,
+			wantErr:   true,
+			wantErrIn: []string{"expected JSON object"},
+		},
+		{
+			name:      "missingPattern",
+			body:      `{"characters":"full"}`,
+			wantErr:   true,
+			wantErrIn: []string{"missing required field", "pattern"},
+		},
+		{
+			name:      "missingCharacters",
+			body:      `{"pattern":"***"}`,
+			wantErr:   true,
+			wantErrIn: []string{"missing required field", "characters"},
+		},
+		{
+			name:      "patternNull_isError",
+			body:      `{"pattern":null,"characters":"full"}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal field"},
+		},
+		{
+			name:      "charactersNull_isError",
+			body:      `{"pattern":"***","characters":null}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal field"},
+		},
+		{
+			name:      "patternNumber_isError",
+			body:      `{"pattern":1,"characters":"full"}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal field"},
+		},
+		{
+			name:      "charactersNumber_isError",
+			body:      `{"pattern":"***","characters":1}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal field"},
+		},
+		{
+			name:      "invalidPattern_isError",
+			body:      `{"pattern":"---","characters":"full"}`,
+			wantErr:   true,
+			wantErrIn: []string{"invalid format", "invalid pattern"},
+		},
+		{
+			name:      "invalidCharacterSet_isError",
+			body:      `{"pattern":"***","characters":"nope"}`,
+			wantErr:   true,
+			wantErrIn: []string{"invalid format", "invalid character set"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var got pid.Format
+			err := json.Unmarshal([]byte(tt.body), &got)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
+			}
+			if err != nil {
+				if len(tt.wantErrIn) > 0 {
+					es := err.Error()
+					for _, wantIn := range tt.wantErrIn {
+						if !strings.Contains(es, wantIn) {
+							t.Fatalf("error: got %q want substring %q", es, wantIn)
+						}
+					}
+				}
+				return
+			}
+			if got != tt.want {
+				t.Fatalf("format: got %+v want %+v", got, tt.want)
+			}
+		})
+	}
+
+	t.Run("nonValidatingUnmarshal", func(t *testing.T) {
+		t.Parallel()
+
+		type formatNoValidate struct {
+			Pattern    string `json:"pattern"`
+			Characters string `json:"characters"`
+		}
+
+		nonValidatingTests := []struct {
+			name string
+			body string
+			want formatNoValidate
+		}{
+			{
+				name: "missingFields_becomeZeroValues",
+				body: `{}`,
+				want: formatNoValidate{Pattern: "", Characters: ""},
+			},
+			{
+				name: "nullFields_becomeZeroValues",
+				body: `{"pattern":null,"characters":null}`,
+				want: formatNoValidate{Pattern: "", Characters: ""},
+			},
+		}
+
+		for _, tt := range nonValidatingTests {
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
+
+				var got formatNoValidate
+				if err := json.Unmarshal([]byte(tt.body), &got); err != nil {
+					t.Fatalf("unmarshal: %v", err)
+				}
+				if got != tt.want {
+					t.Fatalf("got %+v want %+v", got, tt.want)
+				}
+			})
 		}
 	})
 }

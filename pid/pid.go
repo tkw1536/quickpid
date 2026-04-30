@@ -18,21 +18,31 @@ type Format struct {
 }
 
 func (f *Format) UnmarshalJSON(data []byte) error {
+	if err := strict.MustBeStruct(data); err != nil {
+		return err
+	}
+
 	var internal struct {
-		Pattern    strict.Optional[Pattern]      `json:"pattern"`
-		Characters strict.Optional[CharacterSet] `json:"characters"`
+		Pattern    strict.Optional[strict.String] `json:"pattern"`
+		Characters strict.Optional[strict.String] `json:"characters"`
 	}
 	if err := json.Unmarshal(data, &internal); err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
+
 	if !internal.Pattern.Present {
 		return fmt.Errorf("missing required field: pattern")
 	}
+	f.Pattern = Pattern(internal.Pattern.Value)
+
 	if !internal.Characters.Present {
 		return fmt.Errorf("missing required field: characters")
 	}
-	f.Pattern = internal.Pattern.Value
-	f.Characters = internal.Characters.Value
+	f.Characters = CharacterSet(internal.Characters.Value)
+
+	if err := f.Validate(); err != nil {
+		return fmt.Errorf("invalid format: %w", err)
+	}
 	return nil
 }
 

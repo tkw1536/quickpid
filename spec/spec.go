@@ -18,9 +18,13 @@ type NamespaceCreateRequest struct {
 }
 
 func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
+	if err := strict.MustBeStruct(data); err != nil {
+		return err
+	}
+
 	var internal struct {
-		Tag       strict.Optional[string]     `json:"tag"`
-		PIDFormat strict.Optional[pid.Format] `json:"pid_format"`
+		Tag       strict.Optional[strict.String] `json:"tag"`
+		PIDFormat strict.Optional[pid.Format]    `json:"pid_format"`
 	}
 	if err := json.Unmarshal(data, &internal); err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
@@ -28,7 +32,7 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 	if !internal.Tag.Present {
 		return fmt.Errorf("missing required field: tag")
 	}
-	r.Tag = internal.Tag.Value
+	r.Tag = string(internal.Tag.Value)
 	if !internal.PIDFormat.Present {
 		return fmt.Errorf("missing required field: pid_format")
 	}
@@ -60,10 +64,14 @@ type ResourceCreateRequest struct {
 }
 
 func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
+	if err := strict.MustBeStruct(data); err != nil {
+		return err
+	}
+
 	var internal struct {
-		URL      strict.Optional[string]  `json:"url"`
-		Metadata strict.Optional[*string] `json:"metadata"`
-		Tag      strict.Optional[string]  `json:"tag"`
+		URL      strict.Optional[strict.String] `json:"url"`
+		Metadata strict.Optional[*string]       `json:"metadata"`
+		Tag      strict.Optional[strict.String] `json:"tag"`
 	}
 	if err := json.Unmarshal(data, &internal); err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
@@ -72,7 +80,7 @@ func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	if !internal.URL.Present {
 		return fmt.Errorf("missing required field: url")
 	}
-	r.URL = internal.URL.Value
+	r.URL = string(internal.URL.Value)
 
 	if !internal.Metadata.Present {
 		return fmt.Errorf("missing required field: metadata")
@@ -82,7 +90,7 @@ func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	if !internal.Tag.Present {
 		return fmt.Errorf("missing required field: tag")
 	}
-	r.Tag = internal.Tag.Value
+	r.Tag = string(internal.Tag.Value)
 
 	return nil
 }
@@ -116,6 +124,10 @@ type ResourceUpdateRequest struct {
 }
 
 func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
+	if err := strict.MustBeStruct(data); err != nil {
+		return err
+	}
+
 	var internal struct {
 		URL      strict.Optional[strict.String] `json:"url"`
 		Metadata strict.Optional[*string]       `json:"metadata"`

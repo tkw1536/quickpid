@@ -122,10 +122,6 @@ func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 			writeError(w, err)
 			return
 		}
-		if err := req.PIDFormat.Validate(); err != nil {
-			writeError(w, err)
-			return
-		}
 
 		for range maxNamespaceIDAttempts {
 			name, err := uuid.NewRandomFromReader(h.ops.Rand)
