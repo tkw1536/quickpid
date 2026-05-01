@@ -3,109 +3,139 @@
   "comment": "Batch create resources and error cases.",
   "steps": [
     {
-      "namespaceIDs": ["46c14e5d-c048-4159-a26a-f37bc0110c85"],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "create_namespace",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces",
-          "body": "{\"tag\":\"batch-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
-        },
-        "response": {
-          "status": 201,
-          "body": {
-            "json": {
-              "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-              "tag": "batch-res",
-              "pid_format": { "pattern": "***-***", "characters": "full" },
-              "date_created": "2020-01-02T03:04:05Z"
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"batch-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "json": {
+            "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+            "tag": "batch-res",
+            "pid_format": {
+              "pattern": "***-***",
+              "characters": "full"
+            },
+            "date_created": "2020-01-02T03:04:05Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "success",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "xjc-cjy",
+          "8zk-pwt"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
+        "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"batch\"},{\"url\":\"https://b2\",\"metadata\":null,\"tag\":\"\"}]"
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "json": [
+            {
+              "pid": "xjc-cjy",
+              "url": "https://b1",
+              "metadata": "b1@batch",
+              "date_created": "2020-01-02T03:04:05Z",
+              "date_updated": "2020-01-02T03:04:05Z",
+              "tag": "batch",
+              "deleted": false
+            },
+            {
+              "pid": "8zk-pwt",
+              "url": "https://b2",
+              "metadata": null,
+              "date_created": "2020-01-02T03:04:05Z",
+              "date_updated": "2020-01-02T03:04:05Z",
+              "tag": "",
+              "deleted": false
             }
+          ]
+        }
+      }
+    },
+    {
+      "name": "tooManyItems",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": { "MaxBatchItems": 2 },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
+        "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"\"},{\"url\":\"https://b2\",\"metadata\":\"b2@batch\",\"tag\":\"\"},{\"url\":\"https://b3\",\"metadata\":\"b3@batch\",\"tag\":\"\"}]"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "too many items: 3 > 2"
           }
         }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": ["xjc-cjy", "8zk-pwt"],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "success",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
-          "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"batch\"},{\"url\":\"https://b2\",\"metadata\":null,\"tag\":\"\"}]"
-        },
-        "response": {
-          "status": 201,
-          "body": {
-            "json": [
-              {
-                "pid": "xjc-cjy",
-                "url": "https://b1",
-                "metadata": "b1@batch",
-                "date_created": "2020-01-02T03:04:05Z",
-                "date_updated": "2020-01-02T03:04:05Z",
-                "tag": "batch",
-                "deleted": false
-              },
-              {
-                "pid": "8zk-pwt",
-                "url": "https://b2",
-                "metadata": null,
-                "date_created": "2020-01-02T03:04:05Z",
-                "date_updated": "2020-01-02T03:04:05Z",
-                "tag": "",
-                "deleted": false
-              }
-            ]
+      "name": "namespaceMissing",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/missing/resources:batch",
+        "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}]"
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "json": {
+            "error": "namespace not found"
           }
         }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "tooManyItems",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
-          "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"\"},{\"url\":\"https://b2\",\"metadata\":\"b2@batch\",\"tag\":\"\"},{\"url\":\"https://b3\",\"metadata\":\"b3@batch\",\"tag\":\"\"}]"
-        },
-        "response": { "status": 400, "body": { "json": { "error": "too many items: 3 > 2" } } }
-      }
-    },
-    {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "namespaceMissing",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/missing/resources:batch",
-          "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}]"
-        },
-        "response": { "status": 404, "body": { "json": { "error": "namespace not found" } } }
-      }
-    },
-    {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "tooLargeBody",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
-          "body": "[{\"url\":\"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"metadata\":\"x\",\"tag\":\"\"}]"
-        },
-        "response": { "status": 413, "body": { "json": { "error": "request payload too large" } } }
+      "name": "tooLargeBody",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": { "MaxBodyBytes": 256 },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
+        "body": "[{\"url\":\"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"metadata\":\"x\",\"tag\":\"\"}]"
+      },
+      "response": {
+        "status": 413,
+        "body": {
+          "json": {
+            "error": "request payload too large"
+          }
+        }
       }
     }
   ]
 }
-

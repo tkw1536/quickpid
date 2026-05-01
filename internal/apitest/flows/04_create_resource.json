@@ -3,181 +3,227 @@
   "comment": "Create resource and validate PID determinism/error cases.",
   "steps": [
     {
-      "namespaceIDs": ["46c14e5d-c048-4159-a26a-f37bc0110c85"],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "create_namespace",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces",
-          "body": "{\"tag\":\"create-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
-        },
-        "response": {
-          "status": 201,
-          "body": {
-            "json": {
-              "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-              "tag": "create-res",
-              "pid_format": { "pattern": "***-***", "characters": "full" },
-              "date_created": "2020-01-02T03:04:05Z"
-            }
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"create-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "json": {
+            "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+            "tag": "create-res",
+            "pid_format": {
+              "pattern": "***-***",
+              "characters": "full"
+            },
+            "date_created": "2020-01-02T03:04:05Z"
           }
         }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": ["xjc-cjy"],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "success",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-          "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
-        },
-        "response": {
-          "status": 201,
-          "body": {
-            "json": {
-              "pid": "xjc-cjy",
-              "url": "https://example.com/a",
-              "metadata": "ext-1@sys-a",
-              "date_created": "2020-01-02T03:04:05Z",
-              "date_updated": "2020-01-02T03:04:05Z",
-              "tag": "alpha",
-              "deleted": false
-            }
+      "name": "success",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "xjc-cjy"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "json": {
+            "pid": "xjc-cjy",
+            "url": "https://example.com/a",
+            "metadata": "ext-1@sys-a",
+            "date_created": "2020-01-02T03:04:05Z",
+            "date_updated": "2020-01-02T03:04:05Z",
+            "tag": "alpha",
+            "deleted": false
           }
         }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": ["8zk-pwt"],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "metadataNull_roundTrips",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-          "body": "{\"url\":\"https://example.com/metadata-null\",\"metadata\":null,\"tag\":\"alpha\"}"
-        },
-        "response": {
-          "status": 201,
-          "body": {
-            "json": {
-              "pid": "8zk-pwt",
-              "url": "https://example.com/metadata-null",
-              "metadata": null,
-              "date_created": "2020-01-02T03:04:05Z",
-              "date_updated": "2020-01-02T03:04:05Z",
-              "tag": "alpha",
-              "deleted": false
-            }
+      "name": "metadataNull_roundTrips",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "8zk-pwt"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/metadata-null\",\"metadata\":null,\"tag\":\"alpha\"}"
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "json": {
+            "pid": "8zk-pwt",
+            "url": "https://example.com/metadata-null",
+            "metadata": null,
+            "date_created": "2020-01-02T03:04:05Z",
+            "date_updated": "2020-01-02T03:04:05Z",
+            "tag": "alpha",
+            "deleted": false
           }
         }
       }
     },
     {
-      "namespaceIDs": ["31d0952d-8d73-4119-8e95-b5f19d6f9df7"],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "hexPattern_isLowercaseHex",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces",
-          "body": "{\"tag\":\"hex-res\",\"pid_format\":{\"pattern\":\"********-****-****-****-************\",\"characters\":\"hex\"}}"
-        },
-        "response": { "status": 201 }
+      "name": "hexPattern_isLowercaseHex",
+      "config": {
+        "namespaceIDs": [
+          "31d0952d-8d73-4119-8e95-b5f19d6f9df7"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"hex-res\",\"pid_format\":{\"pattern\":\"********-****-****-****-************\",\"characters\":\"hex\"}}"
+      },
+      "response": {
+        "status": 201
       }
     },
     {
-      "namespaceIDs": ["c00420c4-1461-4824-a2cc-34e3d04524d4"],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "readable6_isDeterministic",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces",
-          "body": "{\"tag\":\"readable6-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"readable\"}}"
-        },
-        "response": { "status": 201 }
+      "name": "readable6_isDeterministic",
+      "config": {
+        "namespaceIDs": [
+          "c00420c4-1461-4824-a2cc-34e3d04524d4"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"readable6-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"readable\"}}"
+      },
+      "response": {
+        "status": 201
       }
     },
     {
-      "namespaceIDs": ["5565d865-a6dc-45e7-a086-28e49669e8a6"],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "readable9_isDeterministic",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces",
-          "body": "{\"tag\":\"readable9-res\",\"pid_format\":{\"pattern\":\"***-***-***\",\"characters\":\"readable\"}}"
-        },
-        "response": { "status": 201 }
+      "name": "readable9_isDeterministic",
+      "config": {
+        "namespaceIDs": [
+          "5565d865-a6dc-45e7-a086-28e49669e8a6"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"readable9-res\",\"pid_format\":{\"pattern\":\"***-***-***\",\"characters\":\"readable\"}}"
+      },
+      "response": {
+        "status": 201
       }
     },
     {
-      "namespaceIDs": ["aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef"],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "random64_isDeterministic",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces",
-          "body": "{\"tag\":\"random64-res\",\"pid_format\":{\"pattern\":\"****************************************************************\",\"characters\":\"full\"}}"
-        },
-        "response": { "status": 201 }
+      "name": "random64_isDeterministic",
+      "config": {
+        "namespaceIDs": [
+          "aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"random64-res\",\"pid_format\":{\"pattern\":\"****************************************************************\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "status": 201
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "namespaceMissing",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/absent-ns/resources",
-          "body": "{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}"
-        },
-        "response": { "status": 404, "body": { "json": { "error": "namespace not found" } } }
+      "name": "namespaceMissing",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/absent-ns/resources",
+        "body": "{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}"
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "json": {
+            "error": "namespace not found"
+          }
+        }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "invalidNamespace",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/bad.ns/resources",
-          "body": "{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}"
-        },
-        "response": { "status": 400, "body": { "json": { "error": "invalid namespace" } } }
+      "name": "invalidNamespace",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/bad.ns/resources",
+        "body": "{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "invalid namespace"
+          }
+        }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "tooLargeBody",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-          "body": "{\"url\":\"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"metadata\":\"x\",\"tag\":\"z\"}"
-        },
-        "response": { "status": 413, "body": { "json": { "error": "request payload too large" } } }
+      "name": "tooLargeBody",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": { "MaxBodyBytes": 256 },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"metadata\":\"x\",\"tag\":\"z\"}"
+      },
+      "response": {
+        "status": 413,
+        "body": {
+          "json": {
+            "error": "request payload too large"
+          }
+        }
       }
     }
   ]
 }
-

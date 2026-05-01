@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/glebarez/sqlite"
 	"github.com/tkw1536/quickpid/backend"
@@ -37,10 +36,7 @@ func main() {
 	resolver := backend.NewGormBackend(db, 0)
 
 	const mountPath = "/api/v2"
-	apiHandler := server.NewHandler(server.Options{
-		MountPath: mountPath,
-		Now:       time.Now,
-	}, resolver)
+	apiHandler := server.NewHandler(server.Options{MountPath: mountPath}, server.NewRuntime(), resolver)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))
 

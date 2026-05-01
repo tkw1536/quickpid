@@ -3,217 +3,312 @@
   "comment": "List resources pagination and tag filtering.",
   "steps": [
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "namespaceMissing",
-        "request": { "method": "GET", "path": "/resolver/namespaces/missing-ns/resources" },
-        "response": { "status": 404, "body": { "json": { "error": "namespace not found" } } }
-      }
-    },
-    {
-      "namespaceIDs": ["46c14e5d-c048-4159-a26a-f37bc0110c85"],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "create_namespace",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces",
-          "body": "{\"tag\":\"list-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
-        },
-        "response": {
-          "status": 201,
-          "body": {
-            "json": {
-              "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-              "tag": "list-res",
-              "pid_format": { "pattern": "***-***", "characters": "full" },
-              "date_created": "2020-01-02T03:04:05Z"
-            }
+      "name": "namespaceMissing",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/missing-ns/resources"
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "json": {
+            "error": "namespace not found"
           }
         }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "empty",
-        "request": { "method": "GET", "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources" },
-        "response": { "status": 200, "body": { "json": { "total": 0, "offset": 0, "items": [] } } }
-      }
-    },
-    {
-      "namespaceIDs": [],
-      "pids": ["xjc-cjy"],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "create_a",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-          "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
-        },
-        "response": { "status": 201 }
-      }
-    },
-    {
-      "namespaceIDs": [],
-      "pids": ["8zk-pwt"],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "create_b",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-          "body": "{\"url\":\"https://example.com/b\",\"metadata\":\"ext-2@sys-a\",\"tag\":\"beta\"}"
-        },
-        "response": { "status": 201 }
-      }
-    },
-    {
-      "namespaceIDs": [],
-      "pids": ["6ez-s5t"],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "create_emptyTag",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-          "body": "{\"url\":\"https://example.com/empty-tag\",\"metadata\":null,\"tag\":\"\"}"
-        },
-        "response": { "status": 201 }
-      }
-    },
-    {
-      "namespaceIDs": [],
-      "pids": ["7yy-3dz"],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "create_c",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-          "body": "{\"url\":\"https://example.com/c\",\"metadata\":\"ext-4@sys-a\",\"tag\":\"alpha\"}"
-        },
-        "response": { "status": 201 }
-      }
-    },
-    {
-      "namespaceIDs": [],
-      "pids": ["nqs-vxz"],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "create_d",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-          "body": "{\"url\":\"https://example.com/d\",\"metadata\":\"ext-5@sys-a\",\"tag\":\"alpha\"}"
-        },
-        "response": { "status": 201 }
-      }
-    },
-    {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "pagination_defaultLimit",
-        "request": { "method": "GET", "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources" },
-        "response": {
-          "status": 200,
-          "body": {
-            "json": {
-              "total": 5,
-              "offset": 0,
-              "items": [
-                {
-                  "pid": "6ez-s5t",
-                  "url": "https://example.com/empty-tag",
-                  "metadata": null,
-                  "date_created": "2020-01-02T03:04:05Z",
-                  "date_updated": "2020-01-02T03:04:05Z",
-                  "tag": "",
-                  "deleted": false
-                },
-                {
-                  "pid": "7yy-3dz",
-                  "url": "https://example.com/c",
-                  "metadata": "ext-4@sys-a",
-                  "date_created": "2020-01-02T03:04:05Z",
-                  "date_updated": "2020-01-02T03:04:05Z",
-                  "tag": "alpha",
-                  "deleted": false
-                }
-              ]
-            }
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"list-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "json": {
+            "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+            "tag": "list-res",
+            "pid_format": {
+              "pattern": "***-***",
+              "characters": "full"
+            },
+            "date_created": "2020-01-02T03:04:05Z"
           }
         }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "pagination_clampMaxLimit",
-        "request": { "method": "GET", "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?limit=999" },
-        "response": { "status": 200 }
+      "name": "empty",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "json": {
+            "total": 0,
+            "offset": 0,
+            "items": []
+          }
+        }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "pagination_offsetPastEnd",
-        "request": { "method": "GET", "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?offset=5" },
-      "response": { "status": 200, "body": { "json": { "total": 5, "offset": 5, "items": [] } } }
+      "name": "create_a",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "xjc-cjy"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
+      },
+      "response": {
+        "status": 201
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "tagOmitted",
-        "request": { "method": "GET", "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources" },
-        "response": { "status": 200 }
+      "name": "create_b",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "8zk-pwt"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/b\",\"metadata\":\"ext-2@sys-a\",\"tag\":\"beta\"}"
+      },
+      "response": {
+        "status": 201
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "tagFilter",
-        "request": { "method": "GET", "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=alpha&limit=999" },
-        "response": { "status": 200 }
+      "name": "create_emptyTag",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "6ez-s5t"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/empty-tag\",\"metadata\":null,\"tag\":\"\"}"
+      },
+      "response": {
+        "status": 201
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "tagNoMatch",
-        "request": { "method": "GET", "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=other" },
-        "response": { "status": 200, "body": { "json": { "total": 0, "offset": 0, "items": [] } } }
+      "name": "create_c",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "7yy-3dz"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/c\",\"metadata\":\"ext-4@sys-a\",\"tag\":\"alpha\"}"
+      },
+      "response": {
+        "status": 201
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "tagEmptyMeansEmptyString",
-        "request": { "method": "GET", "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=&limit=999" },
-        "response": { "status": 200 }
+      "name": "create_d",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "nqs-vxz"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/d\",\"metadata\":\"ext-5@sys-a\",\"tag\":\"alpha\"}"
+      },
+      "response": {
+        "status": 201
+      }
+    },
+    {
+      "name": "pagination_defaultLimit",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": { "DefaultPageLimit": 2, "MaxPageLimit": 3 },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "json": {
+            "total": 5,
+            "offset": 0,
+            "items": [
+              {
+                "pid": "6ez-s5t",
+                "url": "https://example.com/empty-tag",
+                "metadata": null,
+                "date_created": "2020-01-02T03:04:05Z",
+                "date_updated": "2020-01-02T03:04:05Z",
+                "tag": "",
+                "deleted": false
+              },
+              {
+                "pid": "7yy-3dz",
+                "url": "https://example.com/c",
+                "metadata": "ext-4@sys-a",
+                "date_created": "2020-01-02T03:04:05Z",
+                "date_updated": "2020-01-02T03:04:05Z",
+                "tag": "alpha",
+                "deleted": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "pagination_clampMaxLimit",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": { "DefaultPageLimit": 2, "MaxPageLimit": 3 },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?limit=999"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "name": "pagination_offsetPastEnd",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?offset=5"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "json": {
+            "total": 5,
+            "offset": 5,
+            "items": []
+          }
+        }
+      }
+    },
+    {
+      "name": "tagOmitted",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "name": "tagFilter",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=alpha&limit=999"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "name": "tagNoMatch",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=other"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "json": {
+            "total": 0,
+            "offset": 0,
+            "items": []
+          }
+        }
+      }
+    },
+    {
+      "name": "tagEmptyMeansEmptyString",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=&limit=999"
+      },
+      "response": {
+        "status": 200
       }
     }
   ]
 }
-

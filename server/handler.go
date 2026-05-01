@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"sync"
 
 	"github.com/swaggest/swgui"
 	"github.com/swaggest/swgui/v5emb"
@@ -17,7 +18,11 @@ import (
 )
 
 type Handler struct {
+	// m allows options to be updated without having to stop requests
+	m sync.RWMutex
+
 	ops     Options
+	runtime Runtime
 	backend backend.Backend
 	mux     *http.ServeMux
 }
@@ -42,12 +47,13 @@ var (
 //
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
 // mount with http.StripPrefix(mountPath, NewHandler(Options{MountPath: mountPath}, res)) at mountPath+"/".
-func NewHandler(options Options, backend backend.Backend) *Handler {
+func NewHandler(options Options, runtime Runtime, backend backend.Backend) *Handler {
 	options = options.withDefaults()
 
 	h := &Handler{
 		backend: backend,
 		ops:     options,
+		runtime: runtime,
 		mux:     http.NewServeMux(),
 	}
 
@@ -72,7 +78,20 @@ func NewHandler(options Options, backend backend.Backend) *Handler {
 	return h
 }
 
+// SetOptions updates the options for this handler.
+// It is safe to call this method concurrently with ServeHTTP.
+func (h *Handler) SetOptions(options Options) {
+	h.m.Lock()
+	defer h.m.Unlock()
+
+	h.ops = options.withDefaults()
+}
+
+// ServeHTTP implements [http.Handler].
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.m.RLock()
+	defer h.m.RUnlock()
+
 	h.mux.ServeHTTP(w, r)
 }
 
@@ -123,12 +142,12 @@ func (h *Handler) handleCreateNamespace() http.HandlerFunc {
 		}
 
 		for range maxNamespaceIDAttempts {
-			name, err := h.ops.NewNamespaceID()
+			name, err := h.runtime.NewNamespaceID()
 			if err != nil {
 				writeError(w, err)
 				return
 			}
-			out, err := h.backend.CreateNamespace(r.Context(), name, req, h.ops.Now)
+			out, err := h.backend.CreateNamespace(r.Context(), name, req, h.runtime.Now)
 			if err == nil {
 				writeJSONResponse(w, http.StatusCreated, out)
 				return
@@ -209,7 +228,7 @@ func (h *Handler) handleCreateResource() http.HandlerFunc {
 		}
 
 		out, err := h.allocatePID(ns.PIDFormat, func(pid string) (*spec.ResourceResponse, error) {
-			return h.backend.CreateResource(r.Context(), namespace, pid, req, h.ops.Now)
+			return h.backend.CreateResource(r.Context(), namespace, pid, req, h.runtime.Now)
 		})
 		if err != nil {
 			writeError(w, err)
@@ -244,7 +263,7 @@ func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
 		}
 
 		out, err := h.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []string) ([]spec.ResourceResponse, error) {
-			return h.backend.BatchCreateResources(r.Context(), namespace, pids, reqs, h.ops.Now)
+			return h.backend.BatchCreateResources(r.Context(), namespace, pids, reqs, h.runtime.Now)
 		})
 		if err != nil {
 			writeError(w, err)
@@ -295,7 +314,7 @@ func (h *Handler) handleUpdateResource() http.HandlerFunc {
 			writeError(w, errInvalidPID)
 			return
 		}
-		out, err := h.backend.UpdateResource(r.Context(), namespace, pid, req, h.ops.Now)
+		out, err := h.backend.UpdateResource(r.Context(), namespace, pid, req, h.runtime.Now)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -381,7 +400,7 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 		for i := range n {
 			// Ensure uniqueness within this batch.
 			for range h.ops.Limits.MaxPIDAttempts {
-				candidate, err := h.ops.NewPID(format)
+				candidate, err := h.runtime.NewPID(format)
 				if err != nil {
 					return nil, err
 				}

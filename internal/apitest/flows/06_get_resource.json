@@ -3,102 +3,137 @@
   "comment": "Get resource and validate error conditions.",
   "steps": [
     {
-      "namespaceIDs": ["46c14e5d-c048-4159-a26a-f37bc0110c85"],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "create_namespace",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces",
-          "body": "{\"tag\":\"get-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
-        },
-        "response": {
-          "status": 201,
-          "body": {
-            "json": {
-              "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-              "tag": "get-res",
-              "pid_format": { "pattern": "***-***", "characters": "full" },
-              "date_created": "2020-01-02T03:04:05Z"
-            }
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"get-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "json": {
+            "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+            "tag": "get-res",
+            "pid_format": {
+              "pattern": "***-***",
+              "characters": "full"
+            },
+            "date_created": "2020-01-02T03:04:05Z"
           }
         }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": ["xjc-cjy"],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "create_resource",
-        "request": {
-          "method": "POST",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-          "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
-        },
-        "response": { "status": 201 }
+      "name": "create_resource",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "xjc-cjy"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
+      },
+      "response": {
+        "status": 201
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "success",
-        "request": {
-          "method": "GET",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy"
-        },
-        "response": {
-          "status": 200,
-          "body": {
-            "json": {
-              "pid": "xjc-cjy",
-              "url": "https://example.com/a",
-              "metadata": "ext-1@sys-a",
-              "date_created": "2020-01-02T03:04:05Z",
-              "date_updated": "2020-01-02T03:04:05Z",
-              "tag": "alpha",
-              "deleted": false
-            }
+      "name": "success",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "json": {
+            "pid": "xjc-cjy",
+            "url": "https://example.com/a",
+            "metadata": "ext-1@sys-a",
+            "date_created": "2020-01-02T03:04:05Z",
+            "date_updated": "2020-01-02T03:04:05Z",
+            "tag": "alpha",
+            "deleted": false
           }
         }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "resourceNotFound",
-        "request": {
-          "method": "GET",
-          "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/99999"
-        },
-        "response": { "status": 404, "body": { "json": { "error": "resource not found" } } }
+      "name": "resourceNotFound",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/99999"
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "json": {
+            "error": "resource not found"
+          }
+        }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "invalidNamespace",
-        "request": { "method": "GET", "path": "/resolver/namespaces/bad.ns/resources/xjc-cjy" },
-        "response": { "status": 400, "body": { "json": { "error": "invalid namespace" } } }
+      "name": "invalidNamespace",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/bad.ns/resources/xjc-cjy"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "invalid namespace"
+          }
+        }
       }
     },
     {
-      "namespaceIDs": [],
-      "pids": [],
-      "now": "2020-01-02T03:04:05Z",
-      "step": {
-        "name": "invalidPID",
-        "request": { "method": "GET", "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/bad.pid" },
-        "response": { "status": 400, "body": { "json": { "error": "invalid pid" } } }
+      "name": "invalidPID",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/bad.pid"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "invalid pid"
+          }
+        }
       }
     }
   ]
 }
-

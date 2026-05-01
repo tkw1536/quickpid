@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/internal/steptest"
+	"github.com/tkw1536/quickpid/internal/httptester"
 	"github.com/tkw1536/quickpid/pid"
 	"github.com/tkw1536/quickpid/server"
 )
@@ -21,75 +21,70 @@ type flow struct {
 	Comment string `json:"comment,omitempty"`
 
 	// Steps are the HTTP tests to run against the server.
-	Steps []flowStep `json:"steps"`
-}
+	Steps []struct {
+		Name string `json:"name"`
 
-type flowStep struct {
-	NamespaceIDs []string      `json:"namespaceIDs"`
-	PIDs         []string      `json:"pids"`
-	Now          time.Time     `json:"now"`
-	Step         steptest.Step `json:"step"`
+		Config struct {
+			NamespaceIDs []string  `json:"namespaceIDs"`
+			PIDs         []string  `json:"pids"`
+			Now          time.Time `json:"now"`
+		} `json:"config"`
+
+		Limits server.Limits `json:"limits"`
+
+		httptester.TestCase
+	} `json:"steps"`
 }
 
 func (f flow) Run(t *testing.T, b backend.Backend) {
 	t.Helper()
 
-	opts := newServerOptions()
+	var opts server.Options
+	var runtime testRuntime
 
-	var namespaceIDs []string
-	var pids []string
-	var now time.Time
+	handler := server.NewHandler(opts, &runtime, b)
 
-	opts.NewNamespaceID = func() (string, error) {
-		if len(namespaceIDs) == 0 {
-			return "", fmt.Errorf("no more namespace IDs configured")
-		}
-		id := namespaceIDs[0]
-		namespaceIDs = namespaceIDs[1:]
-		return id, nil
-	}
-	opts.NewPID = func(_ pid.Format) (string, error) {
-		if len(pids) == 0 {
-			return "", fmt.Errorf("no more PIDs configured")
-		}
-		id := pids[0]
-		pids = pids[1:]
-		return id, nil
-	}
-	opts.Now = func() time.Time {
-		return now
-	}
-
-	handler := server.NewHandler(opts, b)
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 
-	runner := steptest.New(srv.URL, http.DefaultClient)
+	runner := httptester.New(srv.URL, http.DefaultClient)
 	for _, s := range f.Steps {
-		namespaceIDs = append([]string(nil), s.NamespaceIDs...)
-		pids = append([]string(nil), s.PIDs...)
-		now = s.Now
-		runner.RunStep(t, s.Step)
+		handler.SetOptions(server.Options{Limits: s.Limits})
+
+		// setup the runtime for this step
+		runtime.now = s.Config.Now
+		runtime.namespaceIDs = append([]string(nil), s.Config.NamespaceIDs...)
+		runtime.pids = append([]string(nil), s.Config.PIDs...)
+
+		runner.Run(t, s.TestCase)
 	}
 }
 
-func newServerOptions() server.Options {
-	var opts server.Options
-	if opts.Limits.DefaultPageLimit == 0 {
-		opts.Limits.DefaultPageLimit = 2
+// testRuntime is a [server.Runtime] used during testing.
+type testRuntime struct {
+	now          time.Time
+	namespaceIDs []string
+	pids         []string
+}
+
+func (r *testRuntime) NewNamespaceID() (string, error) {
+	if len(r.namespaceIDs) == 0 {
+		return "", fmt.Errorf("no more namespace IDs configured")
 	}
-	if opts.Limits.MaxPageLimit == 0 {
-		opts.Limits.MaxPageLimit = 3
+	id := r.namespaceIDs[0]
+	r.namespaceIDs = r.namespaceIDs[1:]
+	return id, nil
+}
+
+func (r *testRuntime) NewPID(format pid.Format) (string, error) {
+	if len(r.pids) == 0 {
+		return "", fmt.Errorf("no more PIDs configured")
 	}
-	if opts.Limits.MaxBatchItems == 0 {
-		opts.Limits.MaxBatchItems = 2
-	}
-	if opts.Limits.MaxBodyBytes == 0 {
-		opts.Limits.MaxBodyBytes = 256
-	}
-	if opts.Now == nil {
-		fixed := time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
-		opts.Now = func() time.Time { return fixed }
-	}
-	return opts
+	id := r.pids[0]
+	r.pids = r.pids[1:]
+	return id, nil
+}
+
+func (r *testRuntime) Now() time.Time {
+	return r.now
 }

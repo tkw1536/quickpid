@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/server"
@@ -21,11 +20,7 @@ func main() {
 
 	memory := backend.NewInMemoryBackend()
 
-	apiHandler := server.NewHandler(server.Options{
-		MountPath: mountPath,
-		Limits:    server.Limits{},
-		Now:       time.Now,
-	}, memory)
+	apiHandler := server.NewHandler(server.Options{MountPath: mountPath}, server.NewRuntime(), memory)
 	mux := http.NewServeMux()
 	mux.Handle(mountPath+"/", http.StripPrefix(mountPath, apiHandler))
 

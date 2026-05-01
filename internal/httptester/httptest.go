@@ -1,9 +1,8 @@
-package steptest
+package httptester
 
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -15,8 +14,7 @@ type Doer interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-type Step struct {
-	Name     string   `json:"name"`
+type TestCase struct {
 	Request  Request  `json:"request"`
 	Response Response `json:"response"`
 }
@@ -41,7 +39,7 @@ type Body struct {
 	Text string `json:"text,omitempty"`
 }
 
-// Runner executes a list of HTTP steps against a base URL.
+// Runner can execute a [TestCase]
 type Runner struct {
 	BaseURL string
 	Client  Doer
@@ -57,27 +55,7 @@ func New(baseURL string, client Doer) *Runner {
 	}
 }
 
-func (r *Runner) Run(t *testing.T, steps []Step) {
-	t.Helper()
-	for i, step := range steps {
-		name := step.Name
-		if name == "" {
-			name = fmt.Sprintf("step_%d", i)
-		}
-		t.Run(name, func(t *testing.T) {
-			t.Helper()
-			r.runStep(t, step)
-		})
-	}
-}
-
-// RunStep runs a single step without creating a subtest.
-func (r *Runner) RunStep(t *testing.T, step Step) {
-	t.Helper()
-	r.runStep(t, step)
-}
-
-func (r *Runner) runStep(t *testing.T, step Step) {
+func (r *Runner) Run(t *testing.T, step TestCase) {
 	t.Helper()
 
 	method := strings.TrimSpace(step.Request.Method)
