@@ -1,9 +1,7 @@
-package apitest
+package servertest
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -39,24 +37,23 @@ type flow struct {
 func (f flow) Run(t *testing.T, b backend.Backend) {
 	t.Helper()
 
-	var opts server.Options
-	var runtime testRuntime
-
+	var (
+		opts    server.Options
+		runtime testRuntime
+	)
 	handler := server.NewHandler(opts, &runtime, b)
 
-	srv := httptest.NewServer(handler)
-	t.Cleanup(srv.Close)
-
-	runner := httptester.New(srv.URL, http.DefaultClient)
 	for _, s := range f.Steps {
+		// update the options for the handler
 		handler.SetOptions(server.Options{Limits: s.Limits})
 
-		// setup the runtime for this step
+		// update the runtime for this handler
 		runtime.now = s.Config.Now
 		runtime.namespaceIDs = append([]string(nil), s.Config.NamespaceIDs...)
 		runtime.pids = append([]string(nil), s.Config.PIDs...)
 
-		runner.Run(t, s.TestCase)
+		// and run the test case!
+		s.TestCase.Run(t, handler)
 	}
 }
 

@@ -5,13 +5,13 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/internal/apitest"
+	"github.com/tkw1536/quickpid/internal/servertest"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 func TestGormBackend(t *testing.T) {
-	apitest.RunResolverHTTPTests(t, func(t *testing.T) backend.Backend {
+	servertest.TestBackend(t, func(t *testing.T) backend.Backend {
 		t.Helper()
 		db, err := gorm.Open(sqlite.Open(":memory:?_pragma=foreign_keys(1)"), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Silent),

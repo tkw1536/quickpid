@@ -5,57 +5,19 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
-// Doer is the minimal interface implemented by http.Client.
-type Doer interface {
-	Do(*http.Request) (*http.Response, error)
-}
-
+// TestCase represents a pair of http request and response.
 type TestCase struct {
 	Request  Request  `json:"request"`
 	Response Response `json:"response"`
 }
 
-type Request struct {
-	Method  string            `json:"method"`
-	Path    string            `json:"path"`
-	Headers map[string]string `json:"headers"`
-	Body    string            `json:"body"`
-}
-
-type Response struct {
-	Status  int               `json:"status"`
-	Headers map[string]string `json:"headers"`
-	Body    Body              `json:"body"`
-}
-
-type Body struct {
-	// JSON is semantically compared (whitespace and key ordering don't matter).
-	JSON any `json:"json,omitempty"`
-	// Text is compared byte-for-byte.
-	Text string `json:"text,omitempty"`
-}
-
-// Runner can execute a [TestCase]
-type Runner struct {
-	BaseURL string
-	Client  Doer
-}
-
-func New(baseURL string, client Doer) *Runner {
-	if client == nil {
-		client = http.DefaultClient
-	}
-	return &Runner{
-		BaseURL: strings.TrimRight(baseURL, "/"),
-		Client:  client,
-	}
-}
-
-func (r *Runner) Run(t *testing.T, step TestCase) {
+// Run runs a test case against the given handler.
+func (step TestCase) Run(t *testing.T, handler http.Handler) {
 	t.Helper()
 
 	method := strings.TrimSpace(step.Request.Method)
@@ -64,16 +26,12 @@ func (r *Runner) Run(t *testing.T, step TestCase) {
 	}
 
 	path := step.Request.Path
-	url := r.BaseURL + path
 
 	var body io.Reader
 	if step.Request.Body != "" {
 		body = strings.NewReader(step.Request.Body)
 	}
-	req, err := http.NewRequest(method, url, body)
-	if err != nil {
-		t.Fatalf("new request: %v", err)
-	}
+	req := httptest.NewRequest(method, path, body)
 
 	for k, v := range step.Request.Headers {
 		req.Header.Set(k, v)
@@ -82,10 +40,10 @@ func (r *Runner) Run(t *testing.T, step TestCase) {
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	resp, err := r.Client.Do(req)
-	if err != nil {
-		t.Fatalf("do request %s %s: %v", method, path, err)
-	}
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	resp := rec.Result()
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
@@ -121,6 +79,26 @@ func (r *Runner) Run(t *testing.T, step TestCase) {
 			t.Fatalf("%s %s: JSON mismatch\n--- got\n%s\n--- want\n%s", method, path, gotCanon, wantCanon)
 		}
 	}
+}
+
+type Request struct {
+	Method  string            `json:"method"`
+	Path    string            `json:"path"`
+	Headers map[string]string `json:"headers"`
+	Body    string            `json:"body"`
+}
+
+type Response struct {
+	Status  int               `json:"status"`
+	Headers map[string]string `json:"headers"`
+	Body    Body              `json:"body"`
+}
+
+type Body struct {
+	// JSON is semantically compared (whitespace and key ordering don't matter).
+	JSON any `json:"json,omitempty"`
+	// Text is compared byte-for-byte.
+	Text string `json:"text,omitempty"`
 }
 
 func canonicalJSON(b []byte) (string, error) {
