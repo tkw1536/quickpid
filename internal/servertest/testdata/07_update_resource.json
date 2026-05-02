@@ -212,6 +212,121 @@
       }
     },
     {
+      "name": "emptyBody",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "body_missing"
+          }
+        }
+      }
+    },
+    {
+      "name": "malformedJSON",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+        "body": "{"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "body_invalid_json"
+          }
+        }
+      }
+    },
+    {
+      "name": "invalidNamespaceID",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/bad.ns/resources/xjc-cjy",
+        "body": "{\"url\":\"https://example.com/updated\"}"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "invalid_namespace_id"
+          }
+        }
+      }
+    },
+    {
+      "name": "namespaceNotFound",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/00000000-0000-0000-0000-000000000001/resources/xjc-cjy",
+        "body": "{\"url\":\"https://example.com/updated\"}"
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "json": {
+            "error": "namespace_not_found"
+          }
+        }
+      }
+    },
+    {
       "name": "resourceNotFound",
       "config": {
         "namespaceIDs": [],
@@ -260,7 +375,14 @@
         "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": { "MaxBodyBytes": 256 },
+      "limits": {
+        "MaxBodyBytes": 256,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
       "request": {
         "method": "PATCH",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",

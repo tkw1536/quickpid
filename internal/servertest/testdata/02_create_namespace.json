@@ -79,7 +79,14 @@
         "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": { "MaxBodyBytes": 256 },
+      "limits": {
+        "MaxBodyBytes": 256,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
@@ -90,6 +97,156 @@
         "body": {
           "json": {
             "error": "body_size_exceeded"
+          }
+        }
+      }
+    },
+    {
+      "name": "malformedJSON",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "body_invalid_json"
+          }
+        }
+      }
+    },
+    {
+      "name": "badIDGeneration_runtimeExhausted",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"t\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "status": 500,
+        "body": {
+          "json": {
+            "error": "bad_id_generation"
+          }
+        }
+      }
+    },
+    {
+      "name": "badIDGeneration_invalidNamespacePattern",
+      "config": {
+        "namespaceIDs": [
+          "bad/slash"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"t\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "status": 500,
+        "body": {
+          "json": {
+            "error": "bad_id_generation"
+          }
+        }
+      }
+    },
+    {
+      "name": "seed_for_insufficientEntropy",
+      "config": {
+        "namespaceIDs": [
+          "entropydup"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"seed-dup\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "status": 201
+      }
+    },
+    {
+      "name": "insufficientEntropy_duplicateNamespaceID",
+      "config": {
+        "namespaceIDs": [
+          "entropydup",
+          "entropydup",
+          "entropydup",
+          "entropydup",
+          "entropydup"
+        ],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 5,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"t2\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "status": 503,
+        "body": {
+          "json": {
+            "error": "insufficient_entropy"
           }
         }
       }

@@ -79,7 +79,14 @@
         "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": { "MaxBatchItems": 2 },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 2,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
@@ -122,7 +129,14 @@
         "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": { "MaxBodyBytes": 256 },
+      "limits": {
+        "MaxBodyBytes": 256,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
@@ -133,6 +147,151 @@
         "body": {
           "json": {
             "error": "body_size_exceeded"
+          }
+        }
+      }
+    },
+    {
+      "name": "emptyBody",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "body_missing"
+          }
+        }
+      }
+    },
+    {
+      "name": "malformedJSON",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
+        "body": "not-json"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "body_invalid_json"
+          }
+        }
+      }
+    },
+    {
+      "name": "invalidNamespaceID",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/bad.ns/resources:batch",
+        "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}]"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "invalid_namespace_id"
+          }
+        }
+      }
+    },
+    {
+      "name": "seed_batchPidCollision",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "bee-eee"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/batch-seed\",\"metadata\":null,\"tag\":\"\"}"
+      },
+      "response": {
+        "status": 201
+      }
+    },
+    {
+      "name": "insufficientEntropy_duplicatePID",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "bee-eee",
+          "bee-eee",
+          "bee-eee"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 3
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
+        "body": "[{\"url\":\"https://example.com/batch-dup\",\"metadata\":null,\"tag\":\"\"}]"
+      },
+      "response": {
+        "status": 503,
+        "body": {
+          "json": {
+            "error": "insufficient_entropy"
           }
         }
       }

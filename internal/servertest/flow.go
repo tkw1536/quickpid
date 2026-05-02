@@ -26,6 +26,8 @@ type flow struct {
 			NamespaceIDs []string  `json:"namespaceIDs"`
 			PIDs         []string  `json:"pids"`
 			Now          time.Time `json:"now"`
+			// InfoEnabled mirrors [server.Options.InfoEnabled]: when true, GET /resolver returns [spec.InfoUnavailable].
+			InfoEnabled bool `json:"infoEnabled"`
 		} `json:"config"`
 
 		Limits server.Limits `json:"limits"`
@@ -45,7 +47,10 @@ func (f flow) Run(t *testing.T, b backend.Backend) {
 
 	for _, s := range f.Steps {
 		// update the options for the handler
-		handler.SetOptions(server.Options{Limits: s.Limits})
+		handler.SetOptions(server.Options{
+			Limits:      s.Limits,
+			InfoEnabled: s.Config.InfoEnabled,
+		})
 
 		// update the runtime for this handler
 		runtime.now = s.Config.Now

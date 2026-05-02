@@ -210,7 +210,14 @@
         "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": { "MaxBodyBytes": 256 },
+      "limits": {
+        "MaxBodyBytes": 256,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
@@ -221,6 +228,151 @@
         "body": {
           "json": {
             "error": "body_size_exceeded"
+          }
+        }
+      }
+    },
+    {
+      "name": "emptyBody",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "body_missing"
+          }
+        }
+      }
+    },
+    {
+      "name": "malformedJSON",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "body_invalid_json"
+          }
+        }
+      }
+    },
+    {
+      "name": "badIDGeneration_runtimeExhausted",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/e\",\"metadata\":null,\"tag\":\"t\"}"
+      },
+      "response": {
+        "status": 500,
+        "body": {
+          "json": {
+            "error": "bad_id_generation"
+          }
+        }
+      }
+    },
+    {
+      "name": "seed_pidCollision",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "ccc-ddd"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/collision-seed\",\"metadata\":null,\"tag\":\"t\"}"
+      },
+      "response": {
+        "status": 201
+      }
+    },
+    {
+      "name": "insufficientEntropy_duplicatePID",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [
+          "ccc-ddd",
+          "ccc-ddd",
+          "ccc-ddd"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 3
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/collision-retry\",\"metadata\":null,\"tag\":\"t\"}"
+      },
+      "response": {
+        "status": 503,
+        "body": {
+          "json": {
+            "error": "insufficient_entropy"
           }
         }
       }

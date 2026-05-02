@@ -165,7 +165,7 @@ var errSpecInfoPrivate = errors.New("info is private")
 //
 // - [spec.InfoUnavailable]
 func (h *Handler) getResolverInfo(w http.ResponseWriter, r *http.Request) (*spec.InfoResponse, spec.Error, error) {
-	if h.ops.InfoEnabled {
+	if !h.ops.InfoEnabled {
 		return nil, spec.InfoUnavailable, errSpecInfoPrivate
 	}
 	return &spec.InfoResponse{

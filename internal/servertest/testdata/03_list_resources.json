@@ -309,6 +309,62 @@
       "response": {
         "status": 200
       }
+    },
+    {
+      "name": "invalidNamespaceID_uppercase",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/BADUPPER/resources"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "invalid_namespace_id"
+          }
+        }
+      }
+    },
+    {
+      "name": "invalidQuery_deleted",
+      "config": {
+        "namespaceIDs": [],
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?deleted=maybe"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "invalid_query_parameter"
+          }
+        }
+      }
     }
   ]
 }
