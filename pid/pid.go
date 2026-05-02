@@ -59,6 +59,45 @@ func (format Format) Validate() error {
 	return nil
 }
 
+// IsValid checks if pid is of this format.
+//
+// If the format is invalid, this function returns false.
+func (format Format) IsValid(pid string) bool {
+	if err := format.Validate(); err != nil {
+		return false
+	}
+
+	alphabet, ok := format.Characters.Alphabet()
+	if !ok {
+		return false
+	}
+
+	pat := []rune(format.Pattern)
+	got := []rune(pid)
+	if len(pat) != len(got) {
+		return false
+	}
+
+	filter := make(map[rune]struct{}, len(alphabet))
+	for _, c := range []rune(alphabet) {
+		filter[c] = struct{}{}
+	}
+
+	for i := range pat {
+		switch pat[i] {
+		case '*':
+			if _, ok := filter[got[i]]; !ok {
+				return false
+			}
+		default:
+			if got[i] != pat[i] {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 // Generate generates a new PID according to format, using rand for randomness.
 func (format Format) Generate(rand io.Reader) (string, error) {
 	if err := format.Validate(); err != nil {

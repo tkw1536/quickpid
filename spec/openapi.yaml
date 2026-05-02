@@ -776,7 +776,7 @@ components:
         Server-assigned namespace id (opaque string, e.g. a UUID).
         Allowed characters are letters, digits, hyphen, and underscore.
       type: string
-      pattern: '^[A-Za-z0-9_-]+$'
+      pattern: '^[a-z0-9_-]+$'
     PaginatedNamespacesResponse:
       description: |
         A paginated response.

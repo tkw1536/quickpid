@@ -601,13 +601,9 @@ func parseInt(v string) (int, error) {
 }
 
 var (
-	namespaceIDRE = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
-	pidRE         = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	namespaceIDRE = regexp.MustCompile(`^[a-z0-9_-]+$`)
+	pidRE         = regexp.MustCompile(`^[a-z0-9_-]+$`)
 )
-
-func isValidPID(s string) bool {
-	return pidRE.MatchString(s)
-}
 
 var (
 	errInsufficientEntropy = errors.New("insufficient entropy")
@@ -643,7 +639,7 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 				pids[i] = candidate
 				break
 			}
-			if !pidRE.MatchString(pids[i]) {
+			if !format.IsValid(pids[i]) {
 				return nil, spec.BadIDGeneration, fmt.Errorf("%w: %q is not a valid pid", errBadPID, pids[i])
 			}
 		}
