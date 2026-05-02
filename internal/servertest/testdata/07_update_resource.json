@@ -8,7 +8,6 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -34,7 +33,6 @@
     {
       "name": "create_resource",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "xjc-cjy"
         ],
@@ -52,8 +50,6 @@
     {
       "name": "success_allFields",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -79,8 +75,6 @@
     {
       "name": "partial_urlOnly",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -106,8 +100,6 @@
     {
       "name": "partial_setMetadataNull",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -133,8 +125,6 @@
     {
       "name": "partial_setMetadataString",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -160,8 +150,6 @@
     {
       "name": "partial_deletedOnly",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -187,8 +175,6 @@
     {
       "name": "emptyUpdate_noChanges",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -214,8 +200,6 @@
     {
       "name": "emptyBody",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -242,8 +226,6 @@
     {
       "name": "malformedJSON",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -271,8 +253,6 @@
     {
       "name": "invalidNamespaceID",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -300,8 +280,6 @@
     {
       "name": "namespaceNotFound",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -329,8 +307,6 @@
     {
       "name": "resourceNotFound",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -350,8 +326,6 @@
     {
       "name": "invalidPID",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -371,8 +345,6 @@
     {
       "name": "tooLargeBody",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {

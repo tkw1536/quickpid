@@ -8,7 +8,6 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -34,7 +33,6 @@
     {
       "name": "create_resource",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "xjc-cjy"
         ],
@@ -52,8 +50,6 @@
     {
       "name": "success",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -78,8 +74,6 @@
     {
       "name": "resourceNotFound",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -98,8 +92,6 @@
     {
       "name": "invalidNamespace",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -118,8 +110,6 @@
     {
       "name": "invalidPID",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -138,8 +128,6 @@
     {
       "name": "namespaceNotFound",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {

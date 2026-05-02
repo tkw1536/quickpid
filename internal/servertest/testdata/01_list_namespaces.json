@@ -4,11 +4,6 @@
   "steps": [
     {
       "name": "empty",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces"
@@ -30,7 +25,6 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -59,7 +53,6 @@
         "namespaceIDs": [
           "31d0952d-8d73-4119-8e95-b5f19d6f9df7"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -88,7 +81,6 @@
         "namespaceIDs": [
           "c00420c4-1461-4824-a2cc-34e3d04524d4"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -117,7 +109,6 @@
         "namespaceIDs": [
           "5565d865-a6dc-45e7-a086-28e49669e8a6"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -146,7 +137,6 @@
         "namespaceIDs": [
           "aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -171,12 +161,7 @@
     },
     {
       "name": "pagination_defaultLimit",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": { "DefaultPageLimit": 2, "MaxPageLimit": 3 },
+      "limits": { "DefaultPageLimit": 2 },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces"
@@ -213,12 +198,7 @@
     },
     {
       "name": "pagination_clampMaxLimit",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": { "DefaultPageLimit": 2, "MaxPageLimit": 3 },
+      "limits": { "MaxPageLimit": 3 },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=999"
@@ -264,11 +244,6 @@
     },
     {
       "name": "pagination_offsetPastEnd",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?offset=5"
@@ -286,11 +261,6 @@
     },
     {
       "name": "invalidQuery_limit_0",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=0"
@@ -306,11 +276,6 @@
     },
     {
       "name": "invalidQuery_limit_-1",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=-1"
@@ -326,11 +291,6 @@
     },
     {
       "name": "invalidQuery_limit_abc",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=abc"
@@ -346,11 +306,6 @@
     },
     {
       "name": "invalidQuery_offset_-1",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?offset=-1"
@@ -366,11 +321,6 @@
     },
     {
       "name": "invalidQuery_offset_abc",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?offset=abc"
@@ -386,11 +336,6 @@
     },
     {
       "name": "filter_tag",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?tag=c"

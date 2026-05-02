@@ -8,7 +8,6 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -34,7 +33,6 @@
     {
       "name": "success",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "xjc-cjy",
           "8zk-pwt"
@@ -75,8 +73,6 @@
     {
       "name": "tooManyItems",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -104,8 +100,6 @@
     {
       "name": "namespaceMissing",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -125,8 +119,6 @@
     {
       "name": "tooLargeBody",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -154,8 +146,6 @@
     {
       "name": "emptyBody",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -182,8 +172,6 @@
     {
       "name": "malformedJSON",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -211,8 +199,6 @@
     {
       "name": "invalidNamespaceID",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -240,7 +226,6 @@
     {
       "name": "seed_batchPidCollision",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "bee-eee"
         ],
@@ -266,7 +251,6 @@
     {
       "name": "insufficientEntropy_duplicatePID",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "bee-eee",
           "bee-eee",

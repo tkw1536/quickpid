@@ -4,11 +4,6 @@
   "steps": [
     {
       "name": "namespaceMissing",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/missing-ns/resources"
@@ -28,7 +23,6 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -53,11 +47,6 @@
     },
     {
       "name": "empty",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources"
@@ -76,7 +65,6 @@
     {
       "name": "create_a",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "xjc-cjy"
         ],
@@ -94,7 +82,6 @@
     {
       "name": "create_b",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "8zk-pwt"
         ],
@@ -112,7 +99,6 @@
     {
       "name": "create_emptyTag",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "6ez-s5t"
         ],
@@ -130,7 +116,6 @@
     {
       "name": "create_c",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "7yy-3dz"
         ],
@@ -148,7 +133,6 @@
     {
       "name": "create_d",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "nqs-vxz"
         ],
@@ -166,11 +150,9 @@
     {
       "name": "pagination_defaultLimit",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": { "DefaultPageLimit": 2, "MaxPageLimit": 3 },
+      "limits": { "DefaultPageLimit": 2 },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources"
@@ -207,12 +189,7 @@
     },
     {
       "name": "pagination_clampMaxLimit",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": { "DefaultPageLimit": 2, "MaxPageLimit": 3 },
+      "limits": { "MaxPageLimit": 3 },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?limit=999"
@@ -224,8 +201,6 @@
     {
       "name": "pagination_offsetPastEnd",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -246,8 +221,6 @@
     {
       "name": "tagOmitted",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -261,8 +234,6 @@
     {
       "name": "tagFilter",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -276,8 +247,6 @@
     {
       "name": "tagNoMatch",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -298,8 +267,6 @@
     {
       "name": "tagEmptyMeansEmptyString",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -313,8 +280,6 @@
     {
       "name": "invalidNamespaceID_uppercase",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -341,8 +306,6 @@
     {
       "name": "invalidQuery_deleted",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {

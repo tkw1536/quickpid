@@ -2,6 +2,7 @@ package servertest
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -54,22 +55,42 @@ func (f flow) Run(t *testing.T, b backend.Backend) {
 
 		// update the runtime for this handler
 		runtime.now = s.Config.Now
-		runtime.namespaceIDs = append([]string(nil), s.Config.NamespaceIDs...)
-		runtime.pids = append([]string(nil), s.Config.PIDs...)
+		runtime.namespaceIDs = slices.Clone(s.Config.NamespaceIDs)
+		runtime.pids = slices.Clone(s.Config.PIDs)
 
-		// and run the test case!
-		s.TestCase.Run(t, handler)
+		t.Run(s.Name, func(t *testing.T) {
+			s.TestCase.Run(t, handler)
+
+			if !runtime.now.IsZero() && !runtime.usedNow {
+				t.Errorf("now: %s was not used", runtime.now)
+			}
+			if runtime.namespaceIDs != nil && !runtime.usedNamespaceIDs {
+				t.Errorf("namespaceIDs: %v was not used", runtime.namespaceIDs)
+			}
+			if runtime.pids != nil && !runtime.usedPIDs {
+				t.Errorf("pids: %v was not used", runtime.pids)
+			}
+		})
 	}
 }
 
 // testRuntime is a [server.Runtime] used during testing.
 type testRuntime struct {
-	now          time.Time
-	namespaceIDs []string
-	pids         []string
+	now     time.Time
+	usedNow bool
+
+	namespaceIDs     []string
+	usedNamespaceIDs bool
+
+	pids     []string
+	usedPIDs bool
 }
 
 func (r *testRuntime) NewNamespaceID() (string, error) {
+	r.usedNamespaceIDs = true
+	if r.namespaceIDs == nil {
+		panic("namespaceIDs: is not set")
+	}
 	if len(r.namespaceIDs) == 0 {
 		return "", fmt.Errorf("no more namespace IDs configured")
 	}
@@ -79,6 +100,10 @@ func (r *testRuntime) NewNamespaceID() (string, error) {
 }
 
 func (r *testRuntime) NewPID(format pid.Format) (string, error) {
+	r.usedPIDs = true
+	if r.pids == nil {
+		panic("pids: is not set")
+	}
 	if len(r.pids) == 0 {
 		return "", fmt.Errorf("no more PIDs configured")
 	}
@@ -88,5 +113,9 @@ func (r *testRuntime) NewPID(format pid.Format) (string, error) {
 }
 
 func (r *testRuntime) Now() time.Time {
+	r.usedNow = true
+	if r.now.IsZero() {
+		panic("now: is not set")
+	}
 	return r.now
 }

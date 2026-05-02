@@ -33,6 +33,9 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("missing required field: pid_format")
 	}
 	r.PIDFormat = decoded.PIDFormat.Value
+	if err := r.PIDFormat.Validate(); err != nil {
+		return fmt.Errorf("invalid pid format: %w", err)
+	}
 
 	return nil
 }

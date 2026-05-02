@@ -5,9 +5,6 @@
     {
       "name": "info_ok",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z",
         "infoEnabled": true
       },
       "limits": {
@@ -37,9 +34,6 @@
     {
       "name": "info_unavailable",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z",
         "infoEnabled": false
       },
       "request": {

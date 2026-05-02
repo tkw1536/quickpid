@@ -8,7 +8,6 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -34,7 +33,6 @@
     {
       "name": "success",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "xjc-cjy"
         ],
@@ -63,7 +61,6 @@
     {
       "name": "metadataNull_roundTrips",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "8zk-pwt"
         ],
@@ -95,7 +92,6 @@
         "namespaceIDs": [
           "31d0952d-8d73-4119-8e95-b5f19d6f9df7"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -113,7 +109,6 @@
         "namespaceIDs": [
           "c00420c4-1461-4824-a2cc-34e3d04524d4"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -131,7 +126,6 @@
         "namespaceIDs": [
           "5565d865-a6dc-45e7-a086-28e49669e8a6"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -149,7 +143,6 @@
         "namespaceIDs": [
           "aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -164,8 +157,6 @@
     {
       "name": "namespaceMissing",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -185,8 +176,6 @@
     {
       "name": "invalidNamespace",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -206,8 +195,6 @@
     {
       "name": "tooLargeBody",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -235,8 +222,6 @@
     {
       "name": "emptyBody",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -263,8 +248,6 @@
     {
       "name": "malformedJSON",
       "config": {
-        "namespaceIDs": [],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
@@ -292,7 +275,6 @@
     {
       "name": "badIDGeneration_runtimeExhausted",
       "config": {
-        "namespaceIDs": [],
         "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
@@ -321,7 +303,6 @@
     {
       "name": "seed_pidCollision",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "ccc-ddd"
         ],
@@ -347,7 +328,6 @@
     {
       "name": "insufficientEntropy_duplicatePID",
       "config": {
-        "namespaceIDs": [],
         "pids": [
           "ccc-ddd",
           "ccc-ddd",

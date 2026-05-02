@@ -6,9 +6,8 @@
       "name": "success",
       "config": {
         "namespaceIDs": [
-          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+          "fake-namespace-id"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "request": {
@@ -20,7 +19,7 @@
         "status": 201,
         "body": {
           "json": {
-            "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+            "id": "fake-namespace-id",
             "tag": "flow-tag",
             "pid_format": {
               "pattern": "***-***",
@@ -33,11 +32,6 @@
     },
     {
       "name": "emptyBody",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces"
@@ -53,11 +47,6 @@
     },
     {
       "name": "trailingJSON",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
@@ -74,18 +63,8 @@
     },
     {
       "name": "tooLargeBody",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
       "limits": {
-        "MaxBodyBytes": 256,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
+        "MaxBodyBytes": 256
       },
       "request": {
         "method": "POST",
@@ -103,19 +82,6 @@
     },
     {
       "name": "malformedJSON",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
-      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
@@ -131,19 +97,25 @@
       }
     },
     {
-      "name": "badIDGeneration_runtimeExhausted",
-      "config": {
-        "namespaceIDs": [],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
+      "name": "invalidPatternInBody",
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"t\",\"pid_format\":{\"pattern\":\"!!not-a-valid-pattern!!\",\"characters\":\"full\"}}"
       },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
+      "response": {
+        "status": 400,
+        "body": {
+          "json": {
+            "error": "body_invalid_json"
+          }
+        }
+      }
+    },
+    {
+      "name": "badIDGeneration_error",
+      "config": {
+        "namespaceIDs": []
       },
       "request": {
         "method": "POST",
@@ -159,53 +131,17 @@
         }
       }
     },
+
     {
-      "name": "badIDGeneration_invalidNamespacePattern",
+      "name": "insufficientEntropy_fail",
       "config": {
         "namespaceIDs": [
-          "bad/slash"
+          "fake-namespace-id"
         ],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05.000Z"
       },
       "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
-      },
-      "request": {
-        "method": "POST",
-        "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"t\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}}"
-      },
-      "response": {
-        "status": 500,
-        "body": {
-          "json": {
-            "error": "bad_id_generation"
-          }
-        }
-      }
-    },
-    {
-      "name": "seed_for_insufficientEntropy",
-      "config": {
-        "namespaceIDs": [
-          "entropydup"
-        ],
-        "pids": [],
-        "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
+        "MaxNamespaceIDAttempts": 1
       },
       "request": {
         "method": "POST",
@@ -213,29 +149,26 @@
         "body": "{\"tag\":\"seed-dup\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201
+        "status": 503,
+        "body": {
+          "json": {
+            "error": "insufficient_entropy"
+          }
+        }
       }
     },
     {
-      "name": "insufficientEntropy_duplicateNamespaceID",
+      "name": "insufficientEntropy_success",
       "config": {
         "namespaceIDs": [
-          "entropydup",
-          "entropydup",
-          "entropydup",
-          "entropydup",
-          "entropydup"
+          "fake-namespace-id",
+          "fake-namespace-id",
+          "another-one"
         ],
-        "pids": [],
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 5,
-        "MaxPIDAttempts": 100
+        "MaxNamespaceIDAttempts": 3
       },
       "request": {
         "method": "POST",
@@ -243,10 +176,16 @@
         "body": "{\"tag\":\"t2\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 503,
+        "status": 201,
         "body": {
           "json": {
-            "error": "insufficient_entropy"
+            "id": "another-one",
+            "tag": "t2",
+            "pid_format": {
+              "pattern": "***-***",
+              "characters": "full"
+            },
+            "date_created": "2020-01-02T03:04:05Z"
           }
         }
       }
