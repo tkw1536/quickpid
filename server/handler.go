@@ -27,22 +27,6 @@ type Handler struct {
 	mux     *http.ServeMux
 }
 
-var (
-	errEmptyRequestBody      = errors.New("empty request body")
-	errInvalidJSON           = errors.New("invalid JSON")
-	errTrailingJSON          = errors.New("trailing JSON")
-	errInvalidQueryParameter = errors.New("invalid query parameter")
-
-	errRequestBodyTooLarge = errors.New("request payload too large")
-	errTooManyItems        = errors.New("too many items")
-
-	errUnableToAllocateNamespaceID = errors.New("unable to allocate a unique namespace id (is the number of namespaces exhausted?)")
-	errUnableToAllocatePID         = errors.New("unable to allocate a unique pid (is the namespace exhausted?)")
-
-	errInvalidNamespaceID = errors.New("invalid namespace")
-	errInvalidPID         = errors.New("invalid pid")
-)
-
 // NewHandler returns an http.Handler for the PID Resolver API and Swagger UI.
 //
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
@@ -57,13 +41,16 @@ func NewHandler(options Options, runtime Runtime, backend backend.Backend) *Hand
 		mux:     http.NewServeMux(),
 	}
 
-	h.mux.Handle("GET /resolver/namespaces", h.handleListNamespaces())
-	h.mux.Handle("POST /resolver/namespaces", h.handleCreateNamespace())
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", h.handleListResources())
-	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", h.handleCreateResource())
-	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", h.handleBatchCreateResources())
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", h.handleGetResource())
-	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", h.handleUpdateResource())
+	h.mux.Handle("GET /resolver/namespaces", handle(h, h.listNamespaces, http.StatusOK))
+	h.mux.Handle("POST /resolver/namespaces", handle(h, h.createNamespace, http.StatusCreated))
+
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", handle(h, h.listResources, http.StatusOK))
+
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", handle(h, h.createResource, http.StatusCreated))
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", handle(h, h.batchCreateResources, http.StatusCreated))
+
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", handle(h, h.getResource, http.StatusOK))
+	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", handle(h, h.updateResource, http.StatusOK))
 
 	if !options.DisableSwaggerUI {
 		h.mux.Handle("GET /openapi.yaml", h.handleOpenAPISpec())
@@ -105,253 +92,350 @@ func (h *Handler) handleOpenAPISpec() http.HandlerFunc {
 	}
 }
 
-func (h *Handler) handleListNamespaces() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		limit, offset, err := h.parsePagination(r)
-		if err != nil {
-			writeError(w, err)
-			return
-		}
-
-		query := r.URL.Query()
-		var tag *string
-		if query.Has("tag") {
-			v := query.Get("tag")
-			tag = &v
-		}
-
-		out, err := h.backend.ListNamespaces(r.Context(), spec.ListNamespacesParams{
-			Tag:    tag,
-			Limit:  limit,
-			Offset: offset,
-		})
-		if err != nil {
-			writeError(w, err)
-			return
-		}
-		writeJSONResponse(w, http.StatusOK, out)
+// listNamespaces lists namespaces.
+//
+// It can return the following errors:
+//
+// - [spec.InvalidLimitParameter]
+// - [spec.InvalidOffsetParameter]
+// - [spec.DatabaseError]
+func (h *Handler) listNamespaces(w http.ResponseWriter, r *http.Request) (*spec.PaginatedNamespacesResponse, spec.Error, error) {
+	limit, offset, specError, err := h.parsePagination(r)
+	if err != nil {
+		return nil, specError, err
 	}
+
+	query := r.URL.Query()
+	var tag *string
+	if query.Has("tag") {
+		v := query.Get("tag")
+		tag = &v
+	}
+
+	out, err := h.backend.ListNamespaces(r.Context(), spec.ListNamespacesParams{
+		Tag:    tag,
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, spec.DatabaseError, err
+	}
+	return out, "", nil
 }
 
-func (h *Handler) handleCreateNamespace() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req spec.NamespaceCreateRequest
-		if err := h.decodeJSON(w, r, &req); err != nil {
-			writeError(w, err)
-			return
-		}
-
-		for range maxNamespaceIDAttempts {
-			name, err := h.runtime.NewNamespaceID()
-			if err != nil {
-				writeError(w, err)
-				return
-			}
-			out, err := h.backend.CreateNamespace(r.Context(), name, req, h.runtime.Now)
-			if err == nil {
-				writeJSONResponse(w, http.StatusCreated, out)
-				return
-			}
-			if !errors.Is(err, backend.ErrDuplicateNamespaceID) {
-				writeError(w, err)
-				return
-			}
-		}
-		writeError(w, errUnableToAllocateNamespaceID)
+// createNamespace creates a new namespace.
+//
+// It can return the following errors:
+//
+// - [spec.BodySizeExceeded]
+// - [spec.BodyIsEmpty]
+// - [spec.BodyInvalidJSON]
+// - [spec.BodyTrailingJSON]
+//
+// - [spec.DatabaseError]
+// - [spec.NamespaceIDGenerationError]
+// - [spec.InsufficientNamespaceIDEntropy]
+func (h *Handler) createNamespace(w http.ResponseWriter, r *http.Request) (*spec.NamespaceResponse, spec.Error, error) {
+	var req spec.NamespaceCreateRequest
+	if specError, err := h.decodeJSON(w, r, &req); err != nil {
+		return nil, specError, err
 	}
+
+	for range h.ops.Limits.MaxNamespaceIDAttempts {
+		name, err := h.runtime.NewNamespaceID()
+		if err != nil {
+			return nil, spec.NamespaceIDGenerationError, err
+		}
+		if !namespaceIDRE.MatchString(name) {
+			return nil, spec.NamespaceIDGenerationError, fmt.Errorf("%w: %q", errBadNamespaceID, name)
+		}
+		out, err := h.backend.CreateNamespace(r.Context(), name, req, h.runtime.Now)
+		if err == nil {
+			return out, "", nil
+		}
+		if !errors.Is(err, backend.ErrDuplicateNamespaceID) {
+			return nil, spec.DatabaseError, err
+		}
+	}
+	return nil, spec.InsufficientNamespaceIDEntropy, errInsufficientEntropy
 }
 
-func (h *Handler) handleListResources() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("namespace")
-		if !isValidNamespaceID(id) {
-			writeError(w, errInvalidNamespaceID)
-			return
-		}
-		query := r.URL.Query()
-
-		var tag *string
-		if query.Has("tag") {
-			v := query.Get("tag")
-			tag = &v
-		}
-
-		var deleted *bool
-		if query.Has("deleted") {
-			b, err := strconv.ParseBool(query.Get("deleted"))
-			if err != nil {
-				writeError(w, fmt.Errorf("%w %q", errInvalidQueryParameter, "deleted"))
-				return
-			}
-			deleted = &b
-		}
-
-		limit, offset, err := h.parsePagination(r)
-		if err != nil {
-			writeError(w, err)
-			return
-		}
-
-		out, err := h.backend.ListResources(r.Context(), spec.ListResourcesParams{
-			Namespace: id,
-			Tag:       tag,
-			Deleted:   deleted,
-
-			Limit:  limit,
-			Offset: offset,
-		})
-		if err != nil {
-			writeError(w, err)
-			return
-		}
-		writeJSONResponse(w, http.StatusOK, out)
+// listResources lists resources in a namespace.
+//
+// It can return the following errors:
+//
+// - [spec.InvalidNamespaceID]
+// - [spec.InvalidDeletedParameter]
+//
+// - [spec.InvalidLimitParameter]
+// - [spec.InvalidOffsetParameter]
+//
+// - [spec.NamespaceNotFound]
+// - [spec.DatabaseError]
+func (h *Handler) listResources(w http.ResponseWriter, r *http.Request) (*spec.PaginatedResourcesResponse, spec.Error, error) {
+	namespace, specError, err := getNamespace(r)
+	if err != nil {
+		return nil, specError, err
 	}
+	query := r.URL.Query()
+
+	var tag *string
+	if query.Has("tag") {
+		v := query.Get("tag")
+		tag = &v
+	}
+
+	var deleted *bool
+	if query.Has("deleted") {
+		b, err := strconv.ParseBool(query.Get("deleted"))
+		if err != nil {
+			return nil, spec.InvalidDeletedParameter, err
+		}
+		deleted = &b
+	}
+
+	limit, offset, specError, err := h.parsePagination(r)
+	if err != nil {
+		return nil, specError, err
+	}
+
+	out, err := h.backend.ListResources(r.Context(), spec.ListResourcesParams{
+		Namespace: namespace,
+		Tag:       tag,
+		Deleted:   deleted,
+
+		Limit:  limit,
+		Offset: offset,
+	})
+	if errors.Is(err, backend.ErrNamespaceNotFound) {
+		return nil, spec.NamespaceNotFound, err
+	}
+	if err != nil {
+		return nil, spec.DatabaseError, err
+	}
+	return out, "", nil
 }
 
-func (h *Handler) handleCreateResource() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req spec.ResourceCreateRequest
-		if err := h.decodeJSON(w, r, &req); err != nil {
-			writeError(w, err)
-			return
-		}
-		namespace := r.PathValue("namespace")
-		if !isValidNamespaceID(namespace) {
-			writeError(w, errInvalidNamespaceID)
-			return
-		}
-
-		ns, err := h.backend.GetNamespace(r.Context(), namespace)
-		if err != nil {
-			writeError(w, err)
-			return
-		}
-
-		out, err := h.allocatePID(ns.PIDFormat, func(pid string) (*spec.ResourceResponse, error) {
-			return h.backend.CreateResource(r.Context(), namespace, pid, req, h.runtime.Now)
-		})
-		if err != nil {
-			writeError(w, err)
-			return
-		}
-		writeJSONResponse(w, http.StatusCreated, out)
+// createResource creates a single resource.
+//
+// It can return the following errors:
+//
+// - [spec.BodySizeExceeded]
+// - [spec.BodyIsEmpty]
+// - [spec.BodyInvalidJSON]
+// - [spec.BodyTrailingJSON]
+//
+// - [spec.InvalidNamespaceID]
+// - [spec.NamespaceNotFound]
+// - [spec.DatabaseError]
+//
+// - [spec.PIDGenerationError]
+// - [spec.DatabaseError]
+// - [spec.InsufficientPIDEntropy]
+func (h *Handler) createResource(w http.ResponseWriter, r *http.Request) (*spec.ResourceResponse, spec.Error, error) {
+	var req spec.ResourceCreateRequest
+	if specError, err := h.decodeJSON(w, r, &req); err != nil {
+		return nil, specError, err
 	}
+
+	namespace, specError, err := getNamespace(r)
+	if err != nil {
+		return nil, specError, err
+	}
+
+	ns, err := h.backend.GetNamespace(r.Context(), namespace)
+	if errors.Is(err, backend.ErrNamespaceNotFound) {
+		return nil, spec.NamespaceNotFound, err
+	}
+	if err != nil {
+		return nil, spec.DatabaseError, err
+	}
+
+	out, specError, err := h.allocatePID(ns.PIDFormat, func(pid string) (*spec.ResourceResponse, error) {
+		return h.backend.CreateResource(r.Context(), namespace, pid, req, h.runtime.Now)
+	})
+	if err != nil {
+		return nil, specError, err
+	}
+	return out, "", nil
 }
 
-func (h *Handler) handleBatchCreateResources() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var reqs []spec.ResourceCreateRequest
-		if err := h.decodeJSON(w, r, &reqs); err != nil {
-			writeError(w, err)
-			return
-		}
-		if len(reqs) > h.ops.Limits.MaxBatchItems {
-			writeError(w, fmt.Errorf("%w: %d > %d", errTooManyItems, len(reqs), h.ops.Limits.MaxBatchItems))
-			return
-		}
-
-		namespace := r.PathValue("namespace")
-		if !isValidNamespaceID(namespace) {
-			writeError(w, errInvalidNamespaceID)
-			return
-		}
-
-		ns, err := h.backend.GetNamespace(r.Context(), namespace)
-		if err != nil {
-			writeError(w, err)
-			return
-		}
-
-		out, err := h.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []string) ([]spec.ResourceResponse, error) {
-			return h.backend.BatchCreateResources(r.Context(), namespace, pids, reqs, h.runtime.Now)
-		})
-		if err != nil {
-			writeError(w, err)
-			return
-		}
-		writeJSONResponse(w, http.StatusCreated, out)
+// createResource implements the POST /resolver/namespaces/{namespace}/resources endpoint.
+//
+// It can return the following errors:
+//
+// - [spec.BodySizeExceeded]
+// - [spec.BodyIsEmpty]
+// - [spec.BodyInvalidJSON]
+// - [spec.BodyTrailingJSON]
+//
+// - [spec.TooManyItems]
+// - [spec.InvalidNamespaceID]
+// - [spec.NamespaceNotFound]
+// - [spec.DatabaseError]
+//
+// - [spec.PIDGenerationError]
+// - [spec.DatabaseError]
+// - [spec.InsufficientPIDEntropy]
+func (h *Handler) batchCreateResources(w http.ResponseWriter, r *http.Request) ([]spec.ResourceResponse, spec.Error, error) {
+	var reqs []spec.ResourceCreateRequest
+	if specError, err := h.decodeJSON(w, r, &reqs); err != nil {
+		return nil, specError, err
 	}
+	if len(reqs) > h.ops.Limits.MaxBatchItems {
+		return nil, spec.TooManyItems, fmt.Errorf("%d > %d", len(reqs), h.ops.Limits.MaxBatchItems)
+	}
+
+	namespace, specError, err := getNamespace(r)
+	if err != nil {
+		return nil, specError, err
+	}
+
+	ns, err := h.backend.GetNamespace(r.Context(), namespace)
+	if errors.Is(err, backend.ErrNamespaceNotFound) {
+		return nil, spec.NamespaceNotFound, err
+	}
+	if err != nil {
+		return nil, spec.DatabaseError, err
+	}
+
+	out, specError, err := h.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []string) ([]spec.ResourceResponse, error) {
+		return h.backend.BatchCreateResources(r.Context(), namespace, pids, reqs, h.runtime.Now)
+	})
+	if err != nil {
+		return nil, "", err
+	}
+	return out, "", nil
 }
 
-func (h *Handler) handleGetResource() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("namespace")
-		if !isValidNamespaceID(id) {
-			writeError(w, errInvalidNamespaceID)
-			return
-		}
-
-		pid := r.PathValue("pid")
-		if !isValidPID(pid) {
-			writeError(w, errInvalidPID)
-			return
-		}
-
-		out, err := h.backend.GetResource(r.Context(), id, pid)
-		if err != nil {
-			writeError(w, err)
-			return
-		}
-
-		writeJSONResponse(w, http.StatusOK, out)
+// getResource gets a resource by namespace and pid.
+//
+// It can return the following errors:
+//
+// - [spec.InvalidNamespaceID]
+// - [spec.InvalidPID]
+// - [spec.NamespaceNotFound]
+// - [spec.ResourceNotFound]
+// - [spec.DatabaseError]
+func (h *Handler) getResource(w http.ResponseWriter, r *http.Request) (*spec.ResourceResponse, spec.Error, error) {
+	namespace, specError, err := getNamespace(r)
+	if err != nil {
+		return nil, specError, err
 	}
+	pid, specError, err := getPID(r)
+	if err != nil {
+		return nil, specError, err
+	}
+
+	out, err := h.backend.GetResource(r.Context(), namespace, pid)
+	if errors.Is(err, backend.ErrNamespaceNotFound) {
+		return nil, spec.NamespaceNotFound, err
+	}
+	if errors.Is(err, backend.ErrResourceNotFound) {
+		return nil, spec.ResourceNotFound, err
+	}
+	if err != nil {
+		return nil, spec.DatabaseError, err
+	}
+	return out, "", nil
 }
 
-func (h *Handler) handleUpdateResource() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req spec.ResourceUpdateRequest
-		if err := h.decodeJSON(w, r, &req); err != nil {
-			writeError(w, err)
-			return
-		}
-		namespace := r.PathValue("namespace")
-		if !isValidNamespaceID(namespace) {
-			writeError(w, errInvalidNamespaceID)
-			return
-		}
-		pid := r.PathValue("pid")
-		if !isValidPID(pid) {
-			writeError(w, errInvalidPID)
-			return
-		}
-		out, err := h.backend.UpdateResource(r.Context(), namespace, pid, req, h.runtime.Now)
-		if err != nil {
-			writeError(w, err)
-			return
-		}
-		writeJSONResponse(w, http.StatusOK, out)
+// updateResource updates a resource by namespace and pid.
+//
+// It can return the following errors:
+//
+// - [spec.BodySizeExceeded]
+// - [spec.BodyIsEmpty]
+// - [spec.BodyInvalidJSON]
+// - [spec.BodyTrailingJSON]
+//
+// - [spec.InvalidNamespaceID
+// - [spec.InvalidPID]
+func (h *Handler) updateResource(w http.ResponseWriter, r *http.Request) (*spec.ResourceResponse, spec.Error, error) {
+	var req spec.ResourceUpdateRequest
+	if specError, err := h.decodeJSON(w, r, &req); err != nil {
+		return nil, specError, err
 	}
+	namespace, specError, err := getNamespace(r)
+	if err != nil {
+		return nil, specError, err
+	}
+
+	pid, specError, err := getPID(r)
+	if err != nil {
+		return nil, specError, err
+	}
+	out, err := h.backend.UpdateResource(r.Context(), namespace, pid, req, h.runtime.Now)
+	if errors.Is(err, backend.ErrNamespaceNotFound) {
+		return nil, spec.NamespaceNotFound, err
+	}
+	if errors.Is(err, backend.ErrResourceNotFound) {
+		return nil, spec.ResourceNotFound, err
+	}
+	if err != nil {
+		return nil, spec.DatabaseError, err
+	}
+	return out, "", nil
 }
 
-func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) error {
+var errTrailingJSON = errors.New("trailing json after value")
+
+// decodeJSON decodes the request body into v.
+//
+// It can return the following errors:
+//
+// - [spec.BodySizeExceeded]
+// - [spec.BodyIsEmpty]
+// - [spec.BodyInvalidJSON]
+// - [spec.BodyTrailingJSON]
+func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (spec.Error, error) {
 	body := http.MaxBytesReader(w, r.Body, h.ops.Limits.MaxBodyBytes)
 	defer body.Close()
+
 	dec := json.NewDecoder(body)
 	dec.DisallowUnknownFields()
+
 	if err := dec.Decode(v); err != nil {
 		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-			return errRequestBodyTooLarge
+			return spec.BodySizeExceeded, err
 		}
 		if errors.Is(err, io.EOF) {
-			return errEmptyRequestBody
+			return spec.BodyIsEmpty, err
 		}
-		return fmt.Errorf("%w: %v", errInvalidJSON, err)
+		return spec.BodyInvalidJSON, err
 	}
-	if err := dec.Decode(&struct{}{}); err != io.EOF {
-		return errTrailingJSON
+	_, err := dec.Token()
+	if !errors.Is(err, io.EOF) {
+		if err == nil {
+			err = errTrailingJSON
+		}
+		return spec.BodyTrailingJSON, err
 	}
-	return nil
+	return "", nil
 }
 
-// parsePagination parses pagination parameters from the query string
-func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, err error) {
+var (
+	errLimitMustBePositive     = errors.New("limit must be positive")
+	errOffsetMustBeNonNegative = errors.New("offset must be non-negative")
+)
+
+// parsePagination parses pagination parameters from the query string.
+//
+// It can return the following errors:
+//
+// - [spec.InvalidLimitParameter]
+// - [spec.InvalidOffsetParameter]
+func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, specError spec.Error, err error) {
 	query := r.URL.Query()
 
 	limit = h.ops.Limits.DefaultPageLimit
 	if query.Has("limit") {
 		limit, err = parseInt(query.Get("limit"))
-		if err != nil || limit < 1 {
-			return 0, 0, fmt.Errorf("%w %q", errInvalidQueryParameter, "limit")
+		if err != nil {
+			return 0, 0, spec.InvalidLimitParameter, err
+		}
+		if limit <= 0 {
+			return 0, 0, spec.InvalidLimitParameter, errLimitMustBePositive
 		}
 	}
 	if limit > h.ops.Limits.MaxPageLimit {
@@ -361,11 +445,44 @@ func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, err e
 	offset = 0
 	if query.Has("offset") {
 		offset, err = parseInt(query.Get("offset"))
-		if err != nil || offset < 0 {
-			return 0, 0, fmt.Errorf("%w %q", errInvalidQueryParameter, "offset")
+		if err != nil {
+			return 0, 0, spec.InvalidOffsetParameter, err
+		}
+		if offset < 0 {
+			return 0, 0, spec.InvalidOffsetParameter, errOffsetMustBeNonNegative
 		}
 	}
-	return limit, offset, nil
+	return limit, offset, "", nil
+}
+
+var errInvalidNamespaceID = errors.New("invalid namespace id")
+
+// getNamespace gets the namespace from the request path.
+//
+// It can return the following errors:
+//
+// - [spec.InvalidNamespaceID]
+func getNamespace(r *http.Request) (namespace string, specError spec.Error, err error) {
+	namespace = r.PathValue("namespace")
+	if !namespaceIDRE.MatchString(namespace) {
+		return "", spec.InvalidNamespaceID, errInvalidNamespaceID
+	}
+	return namespace, "", nil
+}
+
+var errInvalidPID = errors.New("invalid pid")
+
+// getPID gets the pid from the request path.
+//
+// It can return the following errors:
+//
+// - [spec.InvalidPID]
+func getPID(r *http.Request) (pid string, specError spec.Error, err error) {
+	pid = r.PathValue("pid")
+	if !pidRE.MatchString(pid) {
+		return "", spec.InvalidPID, errInvalidPID
+	}
+	return pid, "", nil
 }
 
 func parseInt(v string) (int, error) {
@@ -377,22 +494,30 @@ func parseInt(v string) (int, error) {
 }
 
 var (
-	maxNamespaceIDAttempts = 32
-	namespaceIDRE          = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
-	pidRE                  = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	namespaceIDRE = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	pidRE         = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 )
-
-func isValidNamespaceID(s string) bool {
-	return namespaceIDRE.MatchString(s)
-}
 
 func isValidPID(s string) bool {
 	return pidRE.MatchString(s)
 }
 
-func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) ([]spec.ResourceResponse, error)) ([]spec.ResourceResponse, error) {
+var (
+	errInsufficientEntropy = errors.New("insufficient entropy")
+	errBadPID              = errors.New("bad pid generated")
+	errBadNamespaceID      = errors.New("bad namespace id generated")
+)
+
+// allocatePIDs allocates n unique pids in the given namespace.
+//
+// It can return the following errors:
+//
+// - [spec.PIDGenerationError]
+// - [spec.DatabaseError]
+// - [spec.InsufficientPIDEntropy]
+func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) ([]spec.ResourceResponse, error)) ([]spec.ResourceResponse, spec.Error, error) {
 	if n == 0 {
-		return []spec.ResourceResponse{}, nil
+		return []spec.ResourceResponse{}, "", nil
 	}
 	for range h.ops.Limits.MaxPIDAttempts {
 		pids := make([]string, n)
@@ -402,7 +527,7 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 			for range h.ops.Limits.MaxPIDAttempts {
 				candidate, err := h.runtime.NewPID(format)
 				if err != nil {
-					return nil, err
+					return nil, spec.PIDGenerationError, err
 				}
 				if _, exists := seen[candidate]; exists {
 					continue
@@ -411,25 +536,25 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 				pids[i] = candidate
 				break
 			}
-			if pids[i] == "" {
-				return nil, errUnableToAllocatePID
+			if !pidRE.MatchString(pids[i]) {
+				return nil, spec.PIDGenerationError, fmt.Errorf("%w: %q", errBadPID, pids[i])
 			}
 		}
 
 		out, err := insert(pids)
 		if err == nil {
-			return out, nil
+			return out, "", nil
 		}
-		if errors.Is(err, backend.ErrPIDAllocationFailed) {
-			continue
+		if !errors.Is(err, backend.ErrPIDAllocationFailed) {
+			return nil, spec.DatabaseError, err
 		}
-		return nil, err
 	}
-	return nil, errUnableToAllocatePID
+	return nil, spec.InsufficientPIDEntropy, fmt.Errorf("%w: gave up after %d attempts", errInsufficientEntropy, h.ops.Limits.MaxPIDAttempts)
 }
 
-func (h *Handler) allocatePID(format pid.Format, insert func(string) (*spec.ResourceResponse, error)) (*spec.ResourceResponse, error) {
-	pids, err := h.allocatePIDs(format, 1, func(pids []string) ([]spec.ResourceResponse, error) {
+// allocatePIDs is like [Handler.allocatePIDs] but for a single PID.
+func (h *Handler) allocatePID(format pid.Format, insert func(string) (*spec.ResourceResponse, error)) (*spec.ResourceResponse, spec.Error, error) {
+	pids, specError, err := h.allocatePIDs(format, 1, func(pids []string) ([]spec.ResourceResponse, error) {
 		res, err := insert(pids[0])
 		if err != nil {
 			return nil, err
@@ -437,8 +562,8 @@ func (h *Handler) allocatePID(format pid.Format, insert func(string) (*spec.Reso
 		return []spec.ResourceResponse{*res}, nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, specError, err
 	}
 	p := pids[0]
-	return &p, nil
+	return &p, "", nil
 }

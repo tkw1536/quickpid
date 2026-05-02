@@ -46,7 +46,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "empty request body"
+            "error": "body_missing"
           }
         }
       }
@@ -67,7 +67,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "trailing JSON"
+            "error": "body_trailing_json"
           }
         }
       }
@@ -89,7 +89,7 @@
         "status": 413,
         "body": {
           "json": {
-            "error": "request payload too large"
+            "error": "body_size_exceeded"
           }
         }
       }

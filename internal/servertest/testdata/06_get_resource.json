@@ -90,7 +90,7 @@
         "status": 404,
         "body": {
           "json": {
-            "error": "resource not found"
+            "error": "resource_not_found"
           }
         }
       }
@@ -110,7 +110,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "invalid namespace"
+            "error": "invalid_namespace_id"
           }
         }
       }
@@ -130,7 +130,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "invalid pid"
+            "error": "invalid_pid"
           }
         }
       }

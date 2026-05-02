@@ -177,7 +177,7 @@
         "status": 404,
         "body": {
           "json": {
-            "error": "namespace not found"
+            "error": "namespace_not_found"
           }
         }
       }
@@ -198,7 +198,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "invalid namespace"
+            "error": "invalid_namespace_id"
           }
         }
       }
@@ -220,7 +220,7 @@
         "status": 413,
         "body": {
           "json": {
-            "error": "request payload too large"
+            "error": "body_size_exceeded"
           }
         }
       }

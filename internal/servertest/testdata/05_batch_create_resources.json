@@ -89,7 +89,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "too many items: 3 > 2"
+            "error": "too_many_items"
           }
         }
       }
@@ -110,7 +110,7 @@
         "status": 404,
         "body": {
           "json": {
-            "error": "namespace not found"
+            "error": "namespace_not_found"
           }
         }
       }
@@ -132,7 +132,7 @@
         "status": 413,
         "body": {
           "json": {
-            "error": "request payload too large"
+            "error": "body_size_exceeded"
           }
         }
       }

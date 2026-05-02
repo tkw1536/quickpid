@@ -227,7 +227,7 @@
         "status": 404,
         "body": {
           "json": {
-            "error": "resource not found"
+            "error": "resource_not_found"
           }
         }
       }
@@ -248,7 +248,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "invalid pid"
+            "error": "invalid_pid"
           }
         }
       }
@@ -270,7 +270,7 @@
         "status": 413,
         "body": {
           "json": {
-            "error": "request payload too large"
+            "error": "body_size_exceeded"
           }
         }
       }

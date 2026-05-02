@@ -299,7 +299,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "invalid query parameter \"limit\""
+            "error": "invalid_parameter_limit"
           }
         }
       }
@@ -319,7 +319,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "invalid query parameter \"limit\""
+            "error": "invalid_parameter_limit"
           }
         }
       }
@@ -339,7 +339,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "invalid query parameter \"limit\""
+            "error": "invalid_parameter_limit"
           }
         }
       }
@@ -359,7 +359,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "invalid query parameter \"offset\""
+            "error": "invalid_parameter_offset"
           }
         }
       }
@@ -379,7 +379,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "invalid query parameter \"offset\""
+            "error": "invalid_parameter_offset"
           }
         }
       }

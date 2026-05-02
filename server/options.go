@@ -27,7 +27,8 @@ type Limits struct {
 
 	MaxBatchItems int // maximum number of items in a batch
 
-	MaxPIDAttempts int // maximum number of attempts to allocate a PID
+	MaxNamespaceIDAttempts int // maximum number of attempts to allocate a namespace ID
+	MaxPIDAttempts         int // maximum number of attempts to allocate a PID
 }
 
 func (o Limits) withDefaults() Limits {
@@ -42,6 +43,9 @@ func (o Limits) withDefaults() Limits {
 	}
 	if o.MaxPageLimit <= 1 {
 		o.MaxPageLimit = 1000
+	}
+	if o.MaxNamespaceIDAttempts <= 0 {
+		o.MaxNamespaceIDAttempts = 100
 	}
 	if o.MaxPIDAttempts <= 0 {
 		o.MaxPIDAttempts = 100
