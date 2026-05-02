@@ -164,3 +164,11 @@ var apiSpec string
 func Spec() string {
 	return apiSpec
 }
+
+// InfoResponse provides information about the resolver.
+type InfoResponse struct {
+	MaxBodyBytes     int64 `json:"max_body_bytes"`
+	DefaultPageLimit int64 `json:"default_page_limit"`
+	MaxPageLimit     int64 `json:"max_page_limit"`
+	MaxBatchItems    int64 `json:"max_batch_items"`
+}

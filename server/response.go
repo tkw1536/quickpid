@@ -2,20 +2,29 @@ package server
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/tkw1536/quickpid/spec"
 )
 
-func handle[T any](h *Handler, impl func(w http.ResponseWriter, r *http.Request) (T, spec.Error, error), successCode int) http.HandlerFunc {
+func handle[T any](
+	h *Handler,
+	impl func(w http.ResponseWriter, r *http.Request) (T, spec.Error, error),
+	successCode int,
+	allowedErrors []spec.Error,
+) http.HandlerFunc {
+	errors := make(map[spec.Error]struct{})
+	for _, err := range allowedErrors {
+		errors[err] = struct{}{}
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		value, specError, err := impl(w, r)
 		if err != nil {
-			if specError == "" {
-				panic("never reached: err != nil, but specError == \"\"")
+			if _, ok := errors[specError]; !ok {
+				panic("implementation error: unexpected error returned")
 			}
-			log.Printf("error: %s %d %v", specError, specError.HTTPCode(), err)
+
 			writeJSONResponse(w, specError.HTTPCode(), spec.ErrorResponse{Error: string(specError)})
 			return
 		}

@@ -67,7 +67,7 @@
         "status": 400,
         "body": {
           "json": {
-            "error": "body_trailing_json"
+            "error": "body_invalid_json"
           }
         }
       }

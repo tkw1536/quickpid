@@ -86,10 +86,10 @@
         "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"\"},{\"url\":\"https://b2\",\"metadata\":\"b2@batch\",\"tag\":\"\"},{\"url\":\"https://b3\",\"metadata\":\"b3@batch\",\"tag\":\"\"}]"
       },
       "response": {
-        "status": 400,
+        "status": 422,
         "body": {
           "json": {
-            "error": "too_many_items"
+            "error": "item_limit_exceeded"
           }
         }
       }

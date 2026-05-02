@@ -5,6 +5,8 @@ info:
   version: 2.0.0
 
 tags:
+  - name: resolver
+    description: Resolver configuration and limits.
   - name: namespaces
     description: Operations related to namespaces.
   - name: resources
@@ -14,6 +16,26 @@ servers:
   - url: /api/v2
 
 paths:
+  /resolver:
+    get:
+      operationId: getResolverInfo
+      summary: Return public resolver limits and configuration.
+      tags:
+        - resolver
+      responses:
+        '200':
+          description: Resolver configuration and limits.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        '404':
+          description: Resolver configuration is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInfoUnavailable'
+
   /resolver/namespaces:
     get:
       operationId: listNamespaces
@@ -64,9 +86,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedNamespacesResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid query parameter (e.g. limit or offset).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
 
     post:
       operationId: createNamespace
@@ -93,9 +125,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid request body.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+        '413':
+          description: Request body exceeds the configured maximum size.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Internal server error or ID generation failure.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                  - $ref: '#/components/schemas/ErrorBadIDGeneration'
+        '503':
+          description: Could not allocate a namespace id after repeated attempts.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
   /resolver/namespaces/{namespace}/resources:
     get:
@@ -162,11 +220,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedResourcesResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid namespace id or query parameter.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Namespace does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
 
     post:
       operationId: createResource
@@ -199,13 +273,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResourceResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid request body, JSON, or namespace id in the path.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
         '413':
-          $ref: '#/components/responses/PayloadTooLarge'
+          description: Request body exceeds the configured maximum size.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Namespace does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Internal server error or PID generation failure.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                  - $ref: '#/components/schemas/ErrorBadIDGeneration'
+        '503':
+          description: Could not allocate a PID after repeated attempts.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
   /resolver/namespaces/{namespace}/resources:batch:
     post:
@@ -231,7 +335,7 @@ paths:
           A list of resources to create.
           Limits on how many resources can be created in a single request MAY be enforced.
           Such limits can take the form of a maximum number of resources, a maximum body size, or both.
-          If the maximum number of resources is exceeded, a '400' response is returned.
+          If the maximum number of resources is exceeded, a '422' response is returned.
           If the maximum body size is exceeded, a '413' response is returned.
         content:
           application/json:
@@ -251,13 +355,50 @@ paths:
                 items:
                   $ref: '#/components/schemas/ResourceResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid request body, JSON, or namespace id in the path.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
         '413':
-          $ref: '#/components/responses/PayloadTooLarge'
+          description: Request body exceeds the configured maximum size.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Namespace does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+        '422':
+          description: Number of items in the batch exceeds the configured maximum.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorItemLimitExceeded'
         '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Internal server error or PID generation failure.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                  - $ref: '#/components/schemas/ErrorBadIDGeneration'
+        '503':
+          description: Could not allocate PIDs after repeated attempts.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
   /resolver/namespaces/{namespace}/resources/{pid}:
     get:
@@ -289,11 +430,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResourceResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid namespace id or PID in the path.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorInvalidPID'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Namespace or resource does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                  - $ref: '#/components/schemas/ErrorResourceNotFound'
         '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
 
     patch:
       operationId: updateResource
@@ -336,62 +494,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResourceResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid request body, JSON, namespace id, or PID.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorInvalidPID'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Namespace or resource does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                  - $ref: '#/components/schemas/ErrorResourceNotFound'
         '413':
-          $ref: '#/components/responses/PayloadTooLarge'
+          description: Request body exceeds the configured maximum size.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
 components:
-  responses:
-    BadRequest:
-      description: |
-        An error that indicates that an invalid request was received.
-        Reasons for this may include invalid parameters, or an invalid request body, such as an empty body or otherwise malformed body.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          examples:
-            invalidJson:
-              value:
-                error: invalid JSON
-            emptyBody:
-              value:
-                error: empty request body
-    NotFound:
-      description: |
-        An error that indicates the referenced namespace or resource does not exist.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          examples:
-            namespace:
-              value:
-                error: namespace not found
-            resource:
-              value:
-                error: resource not found
-    PayloadTooLarge:
-      description: |
-        An error that indicates the body of the request has exceeded a configured limit.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error: request payload too large
-    InternalServerError:
-      description:
-        An error that does not fit into any other category.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error: internal server error
   schemas:
     ErrorResponse:
       type: object
@@ -401,8 +535,173 @@ components:
         error:
           type: string
           description: |
-            Human-readable error message that contains more details about the reason for the error.
-            The precise content of this field is not defined by this specification.
+            Machine-readable error code identifying the failure.
+            The precise string values are defined by this specification for each error response schema.
+    ErrorDatabaseError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - database_error
+          description: An internal problem with the database.
+    ErrorBadIDGeneration:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - bad_id_generation
+          description: The server failed to generate a valid namespace id or PID.
+    ErrorInsufficientEntropy:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - insufficient_entropy
+          description: Insufficient entropy for namespace or PID generation after repeated attempts.
+    ErrorBodyMissing:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - body_missing
+          description: The request body was required but missing.
+    ErrorBodySizeExceeded:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - body_size_exceeded
+          description: The request body exceeded the configured maximum size.
+    ErrorBodyInvalidJSON:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - body_invalid_json
+          description: The request body was not valid JSON or did not match the expected shape.
+    ErrorInvalidQueryParameter:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - invalid_query_parameter
+          description: A query parameter was invalid.
+    ErrorItemLimitExceeded:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - item_limit_exceeded
+          description: The number of items in the request exceeded the limit.
+    ErrorInvalidNamespaceID:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - invalid_namespace_id
+          description: The namespace id in the path was invalid.
+    ErrorInvalidPID:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - invalid_pid
+          description: The PID in the path was invalid.
+    ErrorNamespaceNotFound:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - namespace_not_found
+          description: The namespace does not exist.
+    ErrorResourceNotFound:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - resource_not_found
+          description: The resource does not exist.
+    ErrorInfoUnavailable:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - info_unavailable
+          description: Resolver configuration info is private and cannot be accessed.
+    InfoResponse:
+      description:
+        Public resolver limits and configuration.
+        A zero value indicates that no limit is enforced.
+      type: object
+      required:
+        - max_body_bytes
+        - default_page_limit
+        - max_page_limit
+        - max_batch_items
+      properties:
+        max_body_bytes:
+          description: |
+            Maximum size of the request body.
+          type: integer
+          format: int64
+          minimum: 0
+        default_page_limit:
+          description: |
+            Default number of items per page.
+          type: integer
+          format: int64
+          minimum: 0
+        max_page_limit:
+          description: |
+            Maximum number of items per page.
+          type: integer
+          format: int64
+          minimum: 0
+        max_batch_items:
+          description: |
+            Maximum number of items in a batch.
+          type: integer
+          format: int64
+          minimum: 0
     NamespaceCreateRequest:
       description: |
         Namespace to be created. The server assigns an opaque id.
@@ -468,10 +767,10 @@ components:
         - hex
         - decimal
       x-enumDescriptions:
-        - Lowercase alphanumeric (`0-9a-z`).
-        - Lowercase alphanumeric without ambiguous characters (`0-9a-z` excluding i, l, o, u).
-        - Lowercase hex (`0-9a-f`).
-        - Decimal digits (`0-9`).
+        full: Lowercase alphanumeric (`0-9a-z`).
+        readable: Lowercase alphanumeric without ambiguous characters (`0-9a-z` excluding i, l, o, u).
+        hex: Lowercase hex (`0-9a-f`).
+        decimal: Decimal digits (`0-9`).
     NamespaceId:
       description: |
         Server-assigned namespace id (opaque string, e.g. a UUID).

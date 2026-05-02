@@ -6,56 +6,48 @@ import "net/http"
 type Error string
 
 const (
-	InvalidLimitParameter   Error = "invalid_parameter_limit"
-	InvalidOffsetParameter  Error = "invalid_parameter_offset"
-	InvalidDeletedParameter Error = "invalid_parameter_deleted"
+	DatabaseError       Error = "database_error"       // An internal problem with the database
+	BadIDGeneration     Error = "bad_id_generation"    // Server failed to generate a valid namespace id or pid
+	InsufficientEntropy Error = "insufficient_entropy" // Insufficient entropy for namespace or pid generation
 
-	DatabaseError Error = "database_error" // An internal problem occurred while interacting with the database.
+	BodyMissing      Error = "body_missing"       // request body was missing (but it was required)
+	BodySizeExceeded Error = "body_size_exceeded" // request body size limit exceeded
+	BodyInvalidJSON  Error = "body_invalid_json"  // request body did not contain JSON, or it was not in the expected format
 
-	BodySizeExceeded Error = "body_size_exceeded"
-	BodyIsEmpty      Error = "body_missing"
-	BodyTrailingJSON Error = "body_trailing_json"
-	BodyInvalidJSON  Error = "body_invalid_json"
+	InvalidQueryParameter Error = "invalid_query_parameter" // A query parameter that was sent was invalid
 
-	NamespaceIDGenerationError     Error = "namespace_id_generation_error"         // An error occurred while generating a namespace ID
-	InsufficientNamespaceIDEntropy Error = "insufficient_entropy_for_namespace_id" // Insufficient entropy for namespace ID generation
+	ItemLimitExceeded Error = "item_limit_exceeded" // The number of items in the request exceeded the limit
 
-	PIDGenerationError     Error = "pid_generation_error"         // An error occurred while generating a PID
-	InsufficientPIDEntropy Error = "insufficient_entropy_for_pid" // Insufficient entropy for PID generation
+	InvalidNamespaceID Error = "invalid_namespace_id" // An invalid namespace id was sent
+	InvalidPID         Error = "invalid_pid"          // An invalid pid was sent
 
-	InvalidNamespaceID Error = "invalid_namespace_id"
-	InvalidPID         Error = "invalid_pid"
-	NamespaceNotFound  Error = "namespace_not_found"
-	ResourceNotFound   Error = "resource_not_found"
+	NamespaceNotFound Error = "namespace_not_found" // Namespace not found
+	ResourceNotFound  Error = "resource_not_found"  // Resource not found
 
-	TooManyItems Error = "too_many_items"
+	InfoUnavailable Error = "info_unavailable" // Info is unavailable (possibly for security reasons)
 )
 
 // codes maps [Error]s to HTTP status codes.
 var codes = map[Error]int{
-	InvalidLimitParameter:   http.StatusBadRequest,
-	InvalidOffsetParameter:  http.StatusBadRequest,
-	InvalidDeletedParameter: http.StatusBadRequest,
+	DatabaseError:       http.StatusInternalServerError,
+	BadIDGeneration:     http.StatusInternalServerError,
+	InsufficientEntropy: http.StatusServiceUnavailable,
 
-	DatabaseError: http.StatusInternalServerError,
+	InvalidQueryParameter: http.StatusBadRequest,
 
+	BodyMissing:      http.StatusBadRequest,
 	BodySizeExceeded: http.StatusRequestEntityTooLarge,
-	BodyIsEmpty:      http.StatusBadRequest,
-	BodyTrailingJSON: http.StatusBadRequest,
 	BodyInvalidJSON:  http.StatusBadRequest,
 
-	NamespaceIDGenerationError:     http.StatusInternalServerError,
-	InsufficientNamespaceIDEntropy: http.StatusInternalServerError,
-
-	PIDGenerationError:     http.StatusInternalServerError,
-	InsufficientPIDEntropy: http.StatusInternalServerError,
+	ItemLimitExceeded: http.StatusUnprocessableEntity,
 
 	InvalidNamespaceID: http.StatusBadRequest,
 	InvalidPID:         http.StatusBadRequest,
-	NamespaceNotFound:  http.StatusNotFound,
-	ResourceNotFound:   http.StatusNotFound,
 
-	TooManyItems: http.StatusBadRequest,
+	NamespaceNotFound: http.StatusNotFound,
+	ResourceNotFound:  http.StatusNotFound,
+
+	InfoUnavailable: http.StatusNotFound,
 }
 
 // HTTPCode returns the HTTP status code for the error.

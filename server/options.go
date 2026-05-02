@@ -9,6 +9,9 @@ type Options struct {
 	// Disable swagger UI and spec file being served.
 	DisableSwaggerUI bool
 
+	// InfoEnabled disable the generic info endpoint.
+	InfoEnabled bool
+
 	// Limits for various internal server behavior.
 	Limits Limits
 }
