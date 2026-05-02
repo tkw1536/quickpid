@@ -59,23 +59,29 @@ func (f flow) Run(t *testing.T, b backend.Backend) {
 		runtime.pids = slices.Clone(s.Config.PIDs)
 
 		t.Run(s.Name, func(t *testing.T) {
+			runtime.t = t
+
 			s.TestCase.Run(t, handler)
 
 			if !runtime.now.IsZero() && !runtime.usedNow {
-				t.Errorf("now: %s was not used", runtime.now)
+				t.Errorf("now: %s was not used (this is an error in the testcases themselves)", runtime.now)
 			}
 			if runtime.namespaceIDs != nil && !runtime.usedNamespaceIDs {
-				t.Errorf("namespaceIDs: %v was not used", runtime.namespaceIDs)
+				t.Errorf("namespaceIDs: %v was not used (this is an error in the testcases themselves)", runtime.namespaceIDs)
 			}
 			if runtime.pids != nil && !runtime.usedPIDs {
-				t.Errorf("pids: %v was not used", runtime.pids)
+				t.Errorf("pids: %v was not used (this is an error in the testcases themselves)", runtime.pids)
 			}
+
+			runtime.t = nil
 		})
 	}
 }
 
 // testRuntime is a [server.Runtime] used during testing.
 type testRuntime struct {
+	t *testing.T
+
 	now     time.Time
 	usedNow bool
 
@@ -89,7 +95,7 @@ type testRuntime struct {
 func (r *testRuntime) NewNamespaceID() (string, error) {
 	r.usedNamespaceIDs = true
 	if r.namespaceIDs == nil {
-		panic("namespaceIDs: is not set")
+		r.t.Fatalf("namespaceIDs: is not set (this is an error in the testcases themselves)")
 	}
 	if len(r.namespaceIDs) == 0 {
 		return "", fmt.Errorf("no more namespace IDs configured")
@@ -102,7 +108,7 @@ func (r *testRuntime) NewNamespaceID() (string, error) {
 func (r *testRuntime) NewPID(format pid.Format) (string, error) {
 	r.usedPIDs = true
 	if r.pids == nil {
-		panic("pids: is not set")
+		r.t.Fatalf("pids: is not set (this is an error in the testcases themselves)")
 	}
 	if len(r.pids) == 0 {
 		return "", fmt.Errorf("no more PIDs configured")
@@ -115,7 +121,7 @@ func (r *testRuntime) NewPID(format pid.Format) (string, error) {
 func (r *testRuntime) Now() time.Time {
 	r.usedNow = true
 	if r.now.IsZero() {
-		panic("now: is not set")
+		r.t.Fatalf("now: is not set (this is an error in the testcases themselves)")
 	}
 	return r.now
 }
