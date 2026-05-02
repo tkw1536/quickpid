@@ -104,57 +104,6 @@
       }
     },
     {
-      "name": "readable6_isDeterministic",
-      "config": {
-        "namespaceIDs": [
-          "c00420c4-1461-4824-a2cc-34e3d04524d4"
-        ],
-        "now": "2020-01-02T03:04:05Z"
-      },
-      "request": {
-        "method": "POST",
-        "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"readable6-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"readable\"}}"
-      },
-      "response": {
-        "status": 201
-      }
-    },
-    {
-      "name": "readable9_isDeterministic",
-      "config": {
-        "namespaceIDs": [
-          "5565d865-a6dc-45e7-a086-28e49669e8a6"
-        ],
-        "now": "2020-01-02T03:04:05Z"
-      },
-      "request": {
-        "method": "POST",
-        "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"readable9-res\",\"pid_format\":{\"pattern\":\"***-***-***\",\"characters\":\"readable\"}}"
-      },
-      "response": {
-        "status": 201
-      }
-    },
-    {
-      "name": "random64_isDeterministic",
-      "config": {
-        "namespaceIDs": [
-          "aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef"
-        ],
-        "now": "2020-01-02T03:04:05Z"
-      },
-      "request": {
-        "method": "POST",
-        "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"random64-res\",\"pid_format\":{\"pattern\":\"****************************************************************\",\"characters\":\"full\"}}"
-      },
-      "response": {
-        "status": 201
-      }
-    },
-    {
       "name": "namespaceMissing",
       "config": {
         "now": "2020-01-02T03:04:05Z"
@@ -198,12 +147,7 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBodyBytes": 256,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
+        "MaxBodyBytes": 256
       },
       "request": {
         "method": "POST",
@@ -224,14 +168,6 @@
       "config": {
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
-      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources"
@@ -249,14 +185,6 @@
       "name": "malformedJSON",
       "config": {
         "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
       },
       "request": {
         "method": "POST",
@@ -277,14 +205,6 @@
       "config": {
         "pids": [],
         "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
       },
       "request": {
         "method": "POST",
@@ -308,14 +228,6 @@
         ],
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
-      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
@@ -336,11 +248,6 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
         "MaxPIDAttempts": 3
       },
       "request": {

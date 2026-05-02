@@ -76,12 +76,7 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 2,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
+        "MaxBatchItems": 2
       },
       "request": {
         "method": "POST",
@@ -122,12 +117,7 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBodyBytes": 256,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
+        "MaxBodyBytes": 256
       },
       "request": {
         "method": "POST",
@@ -148,14 +138,6 @@
       "config": {
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
-      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch"
@@ -173,14 +155,6 @@
       "name": "malformedJSON",
       "config": {
         "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
       },
       "request": {
         "method": "POST",
@@ -200,14 +174,6 @@
       "name": "invalidNamespaceID",
       "config": {
         "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
       },
       "request": {
         "method": "POST",
@@ -231,14 +197,6 @@
         ],
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
-      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
@@ -259,11 +217,6 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
         "MaxPIDAttempts": 3
       },
       "request": {

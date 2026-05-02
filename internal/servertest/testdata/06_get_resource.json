@@ -130,14 +130,6 @@
       "config": {
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
-      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/00000000-0000-0000-0000-000000000001/resources/xjc-cjy"

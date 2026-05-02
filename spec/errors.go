@@ -51,10 +51,12 @@ var codes = map[Error]int{
 }
 
 // HTTPCode returns the HTTP status code for the error.
+//
+// If an error code is invalid, it panics.
 func (e Error) HTTPCode() int {
 	code, ok := codes[e]
 	if !ok {
-		panic("never reached: invalid error code")
+		panic("invalid error code")
 	}
 	return code
 }

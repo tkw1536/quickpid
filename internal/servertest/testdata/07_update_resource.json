@@ -202,14 +202,6 @@
       "config": {
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
-      },
       "request": {
         "method": "PATCH",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy"
@@ -227,14 +219,6 @@
       "name": "malformedJSON",
       "config": {
         "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
       },
       "request": {
         "method": "PATCH",
@@ -255,14 +239,6 @@
       "config": {
         "now": "2020-01-02T03:04:05Z"
       },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
-      },
       "request": {
         "method": "PATCH",
         "path": "/resolver/namespaces/bad.ns/resources/xjc-cjy",
@@ -281,14 +257,6 @@
       "name": "namespaceNotFound",
       "config": {
         "now": "2020-01-02T03:04:05Z"
-      },
-      "limits": {
-        "MaxBodyBytes": 1048576,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
       },
       "request": {
         "method": "PATCH",
@@ -348,12 +316,7 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBodyBytes": 256,
-        "DefaultPageLimit": 100,
-        "MaxPageLimit": 1000,
-        "MaxBatchItems": 100,
-        "MaxNamespaceIDAttempts": 100,
-        "MaxPIDAttempts": 100
+        "MaxBodyBytes": 256
       },
       "request": {
         "method": "PATCH",
