@@ -1,5 +1,7 @@
 # Quickpid
 
+[![CI](https://github.com/tkw1536/quickpid/actions/workflows/test.yaml/badge.svg)](https://github.com/tkw1536/quickpid/actions/workflows/test.yaml)
+
 > [!WARNING]
 > This README is still a work in progress and incomplete.
 
