@@ -1,5 +1,8 @@
 # PID Resolver Specification
 
+> [!WARNING]
+> This README is still a work in progress and incomplete.
+
 This repository contains the resolver API specification and test case data. 
 
 Content in this directory is available under either of the following two licenses:
