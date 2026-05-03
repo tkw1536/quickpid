@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/pid"
-	"github.com/tkw1536/quickpid/spec"
 	"gorm.io/gorm"
 )
 
@@ -68,8 +68,8 @@ func isUniqueConstraintError(err error) bool {
 		strings.Contains(msg, "unique constraint")
 }
 
-func (s *gormBackend) ListNamespaces(ctx context.Context, params spec.ListNamespacesParams) (*spec.PaginatedNamespacesResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.PaginatedNamespacesResponse, error) {
+func (s *gormBackend) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
 		q := tx.Model(&namespaceRow{})
 		if params.Tag != nil {
 			q = q.Where("tag = ?", *params.Tag)
@@ -83,10 +83,10 @@ func (s *gormBackend) ListNamespaces(ctx context.Context, params spec.ListNamesp
 		limit := params.Limit
 		offset := params.Offset
 		if int64(offset) >= total {
-			return &spec.PaginatedNamespacesResponse{
+			return &api.PaginatedNamespacesResponse{
 				Total:  int(total),
 				Offset: offset,
-				Items:  []spec.NamespaceResponse{},
+				Items:  []api.NamespaceResponse{},
 			}, nil
 		}
 
@@ -94,11 +94,11 @@ func (s *gormBackend) ListNamespaces(ctx context.Context, params spec.ListNamesp
 		if err := q.Order("id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
-		items := make([]spec.NamespaceResponse, len(rows))
+		items := make([]api.NamespaceResponse, len(rows))
 		for i := range rows {
 			items[i] = rows[i].toSpec()
 		}
-		return &spec.PaginatedNamespacesResponse{
+		return &api.PaginatedNamespacesResponse{
 			Total:  int(total),
 			Offset: offset,
 			Items:  items,
@@ -106,8 +106,8 @@ func (s *gormBackend) ListNamespaces(ctx context.Context, params spec.ListNamesp
 	})
 }
 
-func (s *gormBackend) CreateNamespace(ctx context.Context, namespace string, req spec.NamespaceCreateRequest, now func() time.Time) (*spec.NamespaceResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.NamespaceResponse, error) {
+func (s *gormBackend) CreateNamespace(ctx context.Context, namespace string, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		ts := now().UTC()
 		ns := namespaceRow{
 			ID:          namespace,
@@ -127,8 +127,8 @@ func (s *gormBackend) CreateNamespace(ctx context.Context, namespace string, req
 	})
 }
 
-func (s *gormBackend) GetNamespace(ctx context.Context, namespace string) (*spec.NamespaceResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.NamespaceResponse, error) {
+func (s *gormBackend) GetNamespace(ctx context.Context, namespace string) (*api.NamespaceResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		var ns namespaceRow
 		if err := tx.First(&ns, "id = ?", namespace).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -141,8 +141,8 @@ func (s *gormBackend) GetNamespace(ctx context.Context, namespace string) (*spec
 	})
 }
 
-func (s *gormBackend) ListResources(ctx context.Context, params spec.ListResourcesParams) (*spec.PaginatedResourcesResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.PaginatedResourcesResponse, error) {
+func (s *gormBackend) ListResources(ctx context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedResourcesResponse, error) {
 		if err := ensureNamespaceExists(tx, params.Namespace); err != nil {
 			return nil, err
 		}
@@ -163,10 +163,10 @@ func (s *gormBackend) ListResources(ctx context.Context, params spec.ListResourc
 		limit := params.Limit
 		offset := params.Offset
 		if int64(offset) >= total {
-			return &spec.PaginatedResourcesResponse{
+			return &api.PaginatedResourcesResponse{
 				Total:  int(total),
 				Offset: offset,
-				Items:  []spec.ResourceResponse{},
+				Items:  []api.ResourceResponse{},
 			}, nil
 		}
 
@@ -174,11 +174,11 @@ func (s *gormBackend) ListResources(ctx context.Context, params spec.ListResourc
 		if err := q.Order("pid ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
-		items := make([]spec.ResourceResponse, len(rows))
+		items := make([]api.ResourceResponse, len(rows))
 		for i := range rows {
 			items[i] = rows[i].toSpec()
 		}
-		return &spec.PaginatedResourcesResponse{
+		return &api.PaginatedResourcesResponse{
 			Total:  int(total),
 			Offset: offset,
 			Items:  items,
@@ -186,8 +186,8 @@ func (s *gormBackend) ListResources(ctx context.Context, params spec.ListResourc
 	})
 }
 
-func (s *gormBackend) CreateResource(ctx context.Context, namespace, pid string, req spec.ResourceCreateRequest, now func() time.Time) (*spec.ResourceResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.ResourceResponse, error) {
+func (s *gormBackend) CreateResource(ctx context.Context, namespace, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
 		}
@@ -213,7 +213,7 @@ func (s *gormBackend) CreateResource(ctx context.Context, namespace, pid string,
 	})
 }
 
-func (s *gormBackend) BatchCreateResources(ctx context.Context, namespace string, pids []string, reqs []spec.ResourceCreateRequest, now func() time.Time) ([]spec.ResourceResponse, error) {
+func (s *gormBackend) BatchCreateResources(ctx context.Context, namespace string, pids []string, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
@@ -221,7 +221,7 @@ func (s *gormBackend) BatchCreateResources(ctx context.Context, namespace string
 		return nil, ErrPIDAllocationFailed
 	}
 
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) ([]spec.ResourceResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) ([]api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
 		}
@@ -247,7 +247,7 @@ func (s *gormBackend) BatchCreateResources(ctx context.Context, namespace string
 			return nil, err
 		}
 
-		out := make([]spec.ResourceResponse, len(rows))
+		out := make([]api.ResourceResponse, len(rows))
 		for i := range rows {
 			out[i] = rows[i].toSpec()
 		}
@@ -255,8 +255,8 @@ func (s *gormBackend) BatchCreateResources(ctx context.Context, namespace string
 	})
 }
 
-func (s *gormBackend) GetResource(ctx context.Context, namespace, pid string) (*spec.ResourceResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.ResourceResponse, error) {
+func (s *gormBackend) GetResource(ctx context.Context, namespace, pid string) (*api.ResourceResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
 		}
@@ -273,8 +273,8 @@ func (s *gormBackend) GetResource(ctx context.Context, namespace, pid string) (*
 	})
 }
 
-func (s *gormBackend) UpdateResource(ctx context.Context, id, pid string, req spec.ResourceUpdateRequest, now func() time.Time) (*spec.ResourceResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*spec.ResourceResponse, error) {
+func (s *gormBackend) UpdateResource(ctx context.Context, id, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, id); err != nil {
 			return nil, err
 		}
@@ -333,8 +333,8 @@ type namespaceRow struct {
 
 func (namespaceRow) TableName() string { return "namespaces" }
 
-func (n namespaceRow) toSpec() spec.NamespaceResponse {
-	return spec.NamespaceResponse{
+func (n namespaceRow) toSpec() api.NamespaceResponse {
+	return api.NamespaceResponse{
 		ID:  n.ID,
 		Tag: n.Tag,
 		PIDFormat: pid.Format{
@@ -362,8 +362,8 @@ type resourceRow struct {
 
 func (resourceRow) TableName() string { return "resources" }
 
-func (r resourceRow) toSpec() spec.ResourceResponse {
-	return spec.ResourceResponse{
+func (r resourceRow) toSpec() api.ResourceResponse {
+	return api.ResourceResponse{
 		PID:         r.PID,
 		URL:         r.URL,
 		Metadata:    r.Metadata,

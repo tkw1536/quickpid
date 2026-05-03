@@ -1,10 +1,14 @@
 # Quickpid
 
-A quick implementation of the PID Resolver API ([`server/openapi.yaml`](server/openapi.yaml)).
+> [!WARNING]
+> This README is still a work in progress and incomplete.
+
+This repository holds a specification and implementation of the backend of a PID system. 
+PID stands for Persistent Identifier - an identifier for an object that does not change.
 
 ## Commands
 
-**Persistent SQLite (default)** — stores data in a SQLite file using [GORM](https://gorm.io) and a pure-Go driver ([glebarez/sqlite](https://github.com/glebarez/sqlite), no CGO):
+**Persistent SQLite (default)** — stores data in a SQLite file using [GORM](https://gorm.io) and a pure-Go driver ([glebarez/sqlite](https://github.com/glebarez/sqlite):
 
 ```bash
 go run ./cmd/quickpid
@@ -24,9 +28,8 @@ go run ./cmd/quickpid-mem
 
 Both serve the HTTP API and embedded Swagger UI under `/api/v2/`. Port defaults to `8080`; override with `PORT`.
 
-## Layout
+## LICENSE
 
-- [`api/`](api/) — `Resolver` interface and request/response types
-- [`server/`](server/) — HTTP handler and embedded OpenAPI spec
-- [`mem/`](mem/) — in-memory `Resolver`
-- [`gormstore/`](gormstore/) — GORM-backed `Resolver` (any dialector; SQLite used by `cmd/quickpid`)
+The contents of this repository are available under the terms of the [GNU Affero General Public License 3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) license, see [the LICENSE file](./LICENSE).
+
+To enable re-use, the specification and associated test data in the [`spec`](./spec/README.md) directory are *additionally* available under the terms of the [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/), see [The Spec README](./spec/README.md) for details.

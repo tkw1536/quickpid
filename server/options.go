@@ -21,7 +21,7 @@ func (o Options) withDefaults() Options {
 	return o
 }
 
-// Limits represents limits for the server server.
+// Limits represent limits for the server.
 type Limits struct {
 	MaxBodyBytes int64 // maximum size of request body
 

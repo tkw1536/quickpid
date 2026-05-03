@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/tkw1536/quickpid/spec"
+	"github.com/tkw1536/quickpid/api"
 )
 
 func handle[T any](
 	h *Handler,
-	impl func(w http.ResponseWriter, r *http.Request) (T, spec.Error, error),
+	impl func(w http.ResponseWriter, r *http.Request) (T, api.Error, error),
 	successCode int,
-	allowedErrors []spec.Error,
+	allowedErrors []api.Error,
 ) http.HandlerFunc {
-	errors := make(map[spec.Error]struct{})
+	errors := make(map[api.Error]struct{})
 	for _, err := range allowedErrors {
 		errors[err] = struct{}{}
 	}
@@ -25,7 +25,7 @@ func handle[T any](
 				panic("implementation error: unexpected error returned")
 			}
 
-			writeJSONResponse(w, specError.HTTPCode(), spec.ErrorResponse{Error: string(specError)})
+			writeJSONResponse(w, specError.HTTPCode(), api.ErrorResponse{Error: string(specError)})
 			return
 		}
 

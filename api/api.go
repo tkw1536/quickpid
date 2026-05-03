@@ -1,5 +1,5 @@
-// Package spec holds type definitions for the PID Resolver API.
-package spec
+// Package api holds type definitions for the PID Resolver API.
+package api
 
 import (
 	"fmt"
@@ -158,14 +158,6 @@ type ListNamespacesParams struct {
 
 type ErrorResponse struct {
 	Error string `json:"error"`
-}
-
-//go:embed openapi.yaml
-var apiSpec string
-
-// Spec returns the api specification as a string.
-func Spec() string {
-	return apiSpec
 }
 
 // InfoResponse provides information about the resolver.

@@ -2,13 +2,13 @@
 package servertest
 
 import (
-	"embed"
 	"encoding/json"
 	"fmt"
 	"io/fs"
 	"sort"
 	"testing"
 
+	"github.com/tkw1536/quickpid"
 	"github.com/tkw1536/quickpid/backend"
 )
 
@@ -36,13 +36,12 @@ func TestBackend(t *testing.T, factory BackendFactory) {
 	}
 }
 
-//go:embed testdata/*.json
-var embeddedFlowsFS embed.FS
-
 // loadTestData loads all flows from the 'testdata' directory.
 // These have been embedded in the binary.
 func loadTestData() ([]flow, error) {
-	entries, err := fs.ReadDir(embeddedFlowsFS, "testdata")
+	testDataFS := quickpid.GetTestData()
+
+	entries, err := fs.ReadDir(testDataFS, ".")
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +57,7 @@ func loadTestData() ([]flow, error) {
 
 	out := make([]flow, 0, len(names))
 	for _, name := range names {
-		b, err := embeddedFlowsFS.ReadFile("testdata/" + name)
+		b, err := fs.ReadFile(testDataFS, name)
 		if err != nil {
 			return nil, err
 		}

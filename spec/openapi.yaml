@@ -3,10 +3,13 @@ info:
   title: PID Resolver API
   description: API for managing PIDs across namespaces.
   version: 2.0.0
+  license:
+    name: Creative Commons Attribution-ShareAlike 4.0 International
+    url: https://creativecommons.org/licenses/by-sa/4.0/
 
 tags:
   - name: resolver
-    description: Resolver configuration and limits.
+    description: Generic Limits information 
   - name: namespaces
     description: Operations related to namespaces.
   - name: resources
