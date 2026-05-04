@@ -44,6 +44,15 @@ All parts of the code are well-documented and include tests, which can be run wi
 To implement license notices, [gogenlicense](https://github.com/tkw1536/gogenlicense) is used.
 These should be updated using `go generate ./...` whenever the dependencies change.
 
+## Future Technical Work
+
+- add and build docker image on each commit
+- add [Golangci-lint](https://golangci-lint.run)
+- use something other than uuid for namespace generation to drop dependency
+- consider adding a minimal public frontend
+- consider removing the `/resolver/` prefix
+- improve documentation of test cases
+
 ## LICENSE
 
 The code in this repository is &copy; Tom Wiesing and available under the terms of the [GNU Affero General Public License 3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) license, see [the LICENSE file](./LICENSE).
