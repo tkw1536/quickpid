@@ -25,16 +25,18 @@ This README only describes the implementation.
 The API is implemented in modern idiomatic [go](https://go.dev).
 It can be installed and run like any other go program.
 
-The code has two entry points:
+The code has several entry points, each using a different backend for storage:
 
-- [quickpid-mem](./cmd/quickpid-mem/main.go), an in-memory implementation of the API.
+- [quickpid-mem](./cmd/quickpid-mem/main.go), an in-memory backend.
   It is intended to demonstrate the functionality of the API, and not intended as a production system.
-- [quickpid-sqlite](./cmd/quickpid-sqlite/main.go) an implementation based on an sqlite database.
+- [quickpid-sqlite](./cmd/quickpid-sqlite/main.go) a backend using an sqlite database for storage.
+- [quickpid-postgres](./cmd/quickpid-postgres/main.go) a backend using an external postgres database for storage.
 
 Each command can be invoked with a `-help` flag to list available configuration options. 
+The two database implementations are based on [GORM](https://gorm.io) and appropriate pure go database drivers.
 
 With the exception of the storage backend, code is shared between the two.
-Beyond the standard library, dependencies are kept to a minimum, primarily including only [GORM](https://gorm.io) and an appropriate database driver.
+Beyond the standard library, dependencies are kept to a minimum.
 All parts of the code are well-documented and include tests, which can be run with `go test`, and are checked by CI.
 
 To implement license notices, [gogenlicense](https://github.com/tkw1536/gogenlicense) is used. 
