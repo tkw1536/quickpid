@@ -73,6 +73,7 @@ func Main(name string, backendFactory func() (backend.Backend, error)) {
 			MountPath:        mountPath,
 			DisableSwaggerUI: disableSwagger,
 			Limits:           limits,
+			InfoEnabled:      !disableInfo,
 		},
 		server.NewRuntime(),
 		backend,
