@@ -22,18 +22,18 @@ paths:
   /resolver:
     get:
       operationId: getResolverInfo
-      summary: Return public resolver limits and configuration.
+      summary: Return information regarding the resolvers' limits and other configuration.
       tags:
         - resolver
       responses:
         '200':
-          description: Resolver configuration and limits.
+          description: Limits successfully retrieved.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/InfoResponse'
         '404':
-          description: Resolver configuration is unavailable.
+          description: Configuration is unavailable.
           content:
             application/json:
               schema:
@@ -42,14 +42,14 @@ paths:
   /resolver/namespaces:
     get:
       operationId: listNamespaces
-      summary: List namespaces.
+      summary: List namespaces available on the resolver.
       tags:
         - namespaces
 
       parameters:
         - name: tag
           description: |
-            Filter namespaces by tag.
+            Filter namespaces by their tag.
             If omitted, namespaces of all tags are included.
             If provided with an empty value, the value is treated as the empty string.
           in: query
@@ -63,8 +63,8 @@ paths:
           description: |
             Maximum number of items to return.
             If omitted, a default value is applied.
-            The maximum possible value MAY be clamped.
-            If the value is invalid, a '400' response is returned.
+            The maximum possible value may be clamped, and values larger than it may be silently truncated.
+            If the value is not a positive integer, a '400' response may be returned.
           schema:
             type: integer
             minimum: 1
@@ -74,7 +74,7 @@ paths:
           description: |
             Number of items to skip before starting to collect the result set.
             If omitted, the value is treated as 0.
-            If the value is invalid, a '400' response is returned.
+            If the value is not a positive integer, a '400' response may be returned.
           schema:
             type: integer
             minimum: 0
@@ -82,8 +82,7 @@ paths:
       responses:
         '200':
           description: |
-            A paginated list of namespaces.
-            The 'total' field counts namespaces after applying the tag filter (if any).
+            A paginated list of namespaces, sorted by their id in increasing order.
           content:
             application/json:
               schema:
@@ -105,7 +104,7 @@ paths:
 
     post:
       operationId: createNamespace
-      summary: Create a new namespace.
+      summary: Creates a new namespace.
       tags:
         - namespaces
 
@@ -217,7 +216,7 @@ paths:
 
       responses:
         '200':
-          description: A paginated list of resources within the namespace.
+          description: A paginated list of resources within the namespace, ordered by their pid in increasing order.
           content:
             application/json:
               schema:
@@ -329,7 +328,7 @@ paths:
           in: path
           required: true
           description: |
-            Server-assigned namespace id returned from create namespace.
+            Server-assigned namespace id.
           schema:
             $ref: '#/components/schemas/NamespaceId'
       requestBody:
@@ -416,7 +415,7 @@ paths:
           in: path
           required: true
           description: |
-            Server-assigned namespace id returned from create namespace.
+            Server-assigned namespace id.
           schema:
             $ref: '#/components/schemas/NamespaceId'
         - name: pid
@@ -468,7 +467,7 @@ paths:
           in: path
           required: true
           description: |
-            Server-assigned namespace id returned from create namespace.
+            Server-assigned namespace id.
           schema:
             $ref: '#/components/schemas/NamespaceId'
         - name: pid
@@ -479,10 +478,12 @@ paths:
       requestBody:
         description: |
           The new contents of the resource to update.
-          The update should use patch semantics, that is if a field is omitted, it should not be changed.
-          Regardless of the presence or absence of a field, all fields will always be returned in the response. 
+          The resource update request uses patch semantics: If a field is omitted, it is not be changed.
+          Regardless of the presence or absence of a field, all fields will always be returned in the response.
+
           Note that empty updates are permitted, and will simply return the current resource contents as is (provided they exist).
-          A limit on the maximum request body size MAY be enforced.
+
+          A limit on the maximum request body size may be enforced.
           If such a limit is exceeded, a '413' response is returned.
         required: true
         content:
@@ -531,6 +532,9 @@ paths:
 components:
   schemas:
     ErrorResponse:
+      description: |
+        An error response.
+        Specific routes return specific error responses.
       type: object
       required:
         - error
@@ -539,7 +543,8 @@ components:
           type: string
           description: |
             Machine-readable error code identifying the failure.
-            The precise string values are defined by this specification for each error response schema.
+            The precise string values are defined by this specification for each request.
+
     ErrorDatabaseError:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -549,7 +554,9 @@ components:
               type: string
               enum:
                 - database_error
-          description: An internal problem with the database.
+          description: |
+            An unspecified internal problem occurred while interacting with the database.
+            This may be due to the database being offline, or due to data corruption. 
     ErrorBadIDGeneration:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -559,7 +566,9 @@ components:
               type: string
               enum:
                 - bad_id_generation
-          description: The server failed to generate a valid namespace id or PID.
+          description: |
+            The resolver attempted to generate a namespace id or PID, but this resulted in an invalid value.
+            This is different from being unable to generate a value due to insufficient entropy.
     ErrorInsufficientEntropy:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -569,7 +578,9 @@ components:
               type: string
               enum:
                 - insufficient_entropy
-          description: Insufficient entropy for namespace or PID generation after repeated attempts.
+          description: |
+            The resolver attempted to generate a namespace id or PID, but this resulted only in duplicate ids after repeated attempts.
+            This is caused either by insufficient entropy available to the ID generator, or the set of available Namespace IDs or PIDs being exhausted. 
     ErrorBodyMissing:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -619,7 +630,7 @@ components:
               type: string
               enum:
                 - item_limit_exceeded
-          description: The number of items in the request exceeded the limit.
+          description: The number of items in a single request exceeded the limit.
     ErrorInvalidNamespaceID:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -629,7 +640,7 @@ components:
               type: string
               enum:
                 - invalid_namespace_id
-          description: The namespace id in the path was invalid.
+          description: The namespace id was invalid.
     ErrorInvalidPID:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -639,7 +650,7 @@ components:
               type: string
               enum:
                 - invalid_pid
-          description: The PID in the path was invalid.
+          description: The PID was invalid.
     ErrorNamespaceNotFound:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -669,7 +680,9 @@ components:
               type: string
               enum:
                 - info_unavailable
-          description: Resolver configuration info is private and cannot be accessed.
+          description: |
+            Resolver configuration info is unavailable.
+            The resolver may choose to hide this information for security reasons.
     InfoResponse:
       description:
         Public resolver limits and configuration.
@@ -683,19 +696,19 @@ components:
       properties:
         max_body_bytes:
           description: |
-            Maximum size of the request body.
+            Maximum permitted size of the request body in bytes.
           type: integer
           format: int64
           minimum: 0
         default_page_limit:
           description: |
-            Default number of items per page.
+            Maximum number of items per page.
           type: integer
           format: int64
           minimum: 0
         max_page_limit:
           description: |
-            Maximum number of items per page.
+            Maximum number of items per page in a response.
           type: integer
           format: int64
           minimum: 0
@@ -720,7 +733,7 @@ components:
         pid_format:
           $ref: '#/components/schemas/PIDFormat'
     Namespace:
-      description: Represents a namespace.
+      description: A namespace available on this resolver.
       type: object
       required:
         - id
@@ -755,9 +768,11 @@ components:
       properties:
         pattern:
           type: string
+          pattern: '^[\*_\-]*\*[\*_\-]*$'
           description: |
             Pattern consisting only of `*`, `-`, and `_`.
             `*` positions are replaced with random characters during PID generation.
+            At least one '*' is required.
           example: '***-***'
         characters:
           $ref: '#/components/schemas/PIDCharacters'
@@ -776,16 +791,16 @@ components:
         decimal: Decimal digits (`0-9`).
     NamespaceId:
       description: |
-        Server-assigned namespace id (opaque string, e.g. a UUID).
-        Allowed characters are letters, digits, hyphen, and underscore.
+        Server-assigned namespace id.
+        The server assigns an opaque id, the only guarantee being that it is unique within the resolver.
+        Allowed characters are lowercase letters, digits, hyphen, and underscore.
       type: string
       pattern: '^[a-z0-9_-]+$'
     PaginatedNamespacesResponse:
       description: |
-        A paginated response.
+        A single page of namespace responses.
         The 'total' field is the total number of namespaces after applying the tag filter (if any), ignoring 'limit' and 'offset'.
         The 'offset' field is the effective offset used to produce this response.
-        If the effective offset is greater than or equal to 'total', 'items' is empty.
       type: object
       required:
         - total
@@ -808,10 +823,9 @@ components:
             $ref: '#/components/schemas/Namespace'
     PaginatedResourcesResponse:
       description: |
-        A paginated response.
-        The 'total' field is the total number of items available for the request after applying any filters (ignoring 'limit' and 'offset').
+        A single page of resource responses.
+        The 'total' field is the total number of resources available after applying any applicable filters, ignoring 'limit' and 'offset'.
         The 'offset' field is the effective offset used to produce this response.
-        If the effective offset is greater than or equal to 'total', 'items' is empty.
       type: object
       required:
         - total
@@ -859,11 +873,12 @@ components:
       description: |
         A persistent identifier for a resource.
         The identifier uniquely identifies the resource within the namespace.
-        The precise format of the identifier is determined by the PID generator algorithm used for the namespace.
+        The precise format of the identifier is determined by the PID format of the applicable namespace.
       type: string
       pattern: '^[a-z0-9_-]+$'
       example: 'abc-def'
     ResourceResponse:
+      description: A resource stored on this resolver.
       type: object
       required:
         - pid
@@ -884,7 +899,6 @@ components:
         metadata:
           description: |
             Optional opaque metadata associated with the resource.
-            This may be null.
           type: string
           nullable: true
         date_created:
@@ -907,6 +921,9 @@ components:
             Whether this resource has been deleted.
           type: boolean
     ResourceUpdateRequest:
+      description: |
+        A request to update a resource.
+        Fields that are omitted will not be changed.
       type: object
       properties:
         url:
@@ -917,7 +934,7 @@ components:
         metadata:
           description: |
             Optional opaque metadata associated with the resource.
-            This may be null.
+            Note that there is a difference between not updating the metadata field, setting it to null, and setting it to the empty string.
           type: string
           nullable: true
         tag:
