@@ -50,7 +50,7 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
 		},
 		{
-			name:      "fail_missinFormat",
+			name:      "fail_missingFormat",
 			body:      `{"tag":"ns"}`,
 			wantErr:   true,
 			wantErrIn: []string{"missing required field", "pid_format"},

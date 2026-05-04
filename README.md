@@ -2,36 +2,45 @@
 
 [![CI](https://github.com/tkw1536/quickpid/actions/workflows/test.yaml/badge.svg)](https://github.com/tkw1536/quickpid/actions/workflows/test.yaml)
 
-> [!WARNING]
-> This README is still a work in progress and incomplete.
+In the scientific community it is common to issue [persistent identifiers](https://en.wikipedia.org/wiki/Persistent_identifier) -- or PIDs for short -- to objects to be able to identify and refer to them unambiguously.
+The term object can include papers, presentations, other publications as well as files, web pages or any kind of object. 
 
-This repository holds a specification and implementation of the backend of a PID system. 
-PID stands for Persistent Identifier - an identifier for an object that does not change.
+One type of persistent identifier is the [Digital Object Identifier](https://en.wikipedia.org/wiki/Digital_object_identifier) commonly referred to as a DOI.
+DOIs are centrally administered by the [International DOI Foundation](https://en.wikipedia.org/wiki/International_DOI_Foundation), and it is common for universities to issue a DOI for each publication.
 
-## Commands
+DOIs incur licensing fees for each identifier issued making them unsuitable for use cases where large sets of objects require identifiers.
+They also introduce a dependency on an external organization.
 
-**Persistent SQLite (default)** — stores data in a SQLite file using [GORM](https://gorm.io) and a pure-Go driver ([glebarez/sqlite](https://github.com/glebarez/sqlite):
+This repository instead contains a specification and implementation for an alternate system capable of issuing persistent identifiers.  
+It roughly consists of two parts:
 
-```bash
-go run ./cmd/quickpid
-```
+- An API specification and associated test cases in the [spec](./spec/) directory
+- An implementation of this API in the root directory of this repository
 
-Database DSN (optional), checked in order:
+The rationale behind the design the API, and how it fits into a larger PID System, are described in the spec directory.
+This README only describes the implementation.
 
-- `QUICKPID_DSN`
-- `DATABASE_URL`
-- default: `quickpid.db?_pragma=foreign_keys(1)` (file `quickpid.db` in the current directory)
+## API Implementation
 
-**In-memory only** — no persistence, useful for local testing:
+The API is implemented in modern idiomatic [go](https://go.dev).
+It can be installed and run like any other go program.
 
-```bash
-go run ./cmd/quickpid-mem
-```
+The code has two entry points:
 
-Both serve the HTTP API and embedded Swagger UI under `/api/v2/`. Port defaults to `8080`; override with `PORT`.
+- [quickpid-mem](./cmd/quickpid-mem/main.go), an in-memory implementation of the API.
+  It is intended to demonstrate the functionality of the API, and not intended as a production system.
+- [quickpid-sqlite](./cmd/quickpid-sqlite/main.go) an implementation based on an sqlite database.
+
+Each command can be invoked with a `-help` flag to list available configuration options. 
+
+With the exception of the storage backend, code is shared between the two.
+Beyond the standard library, dependencies are kept to a minimum, primarily including only [GORM](https://gorm.io) and an appropriate database driver.
+All parts of the code are well-documented and include tests, which can be run with `go test`, and are checked by CI.
 
 ## LICENSE
 
-The contents of this repository are available under the terms of the [GNU Affero General Public License 3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) license, see [the LICENSE file](./LICENSE).
+The code in this repository is &copy; Tom Wiesing and available under the terms of the [GNU Affero General Public License 3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) license, see [the LICENSE file](./LICENSE).
 
-To enable re-use, the specification and associated test data in the [`spec`](./spec/README.md) directory are *additionally* available under the terms of the [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/), see [The Spec README](./spec/README.md) for details.
+The [`spec` directory](./spec/README.md), which contains the API specification and test cases, is licensed separately to enable re-use.
+In addition to to being available under AGPL, it is also available under the terms of the [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/) license.
+See [the `spec` README](./spec/README.md) for details.

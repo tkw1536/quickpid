@@ -1,0 +1,33 @@
+{
+  "language": "en",
+  "words": [
+    "abcdefghjkmnpqrstvwxyz",
+    "BADUPPER",
+    "bitstring",
+    "Canonicalization",
+    "glebarez",
+    "Gorm",
+    "gowxnb",
+    "httptester",
+    "IDRE",
+    "openapi",
+    "pbxj",
+    "pids",
+    "quickpid",
+    "rdzl",
+    "servertest",
+    "unmarshaling",
+    "subtests",
+    "swaggest",
+    "swgui",
+    "testcases",
+    "xjccjy",
+    "zkpwt",
+  ],
+  "ignorePaths": [
+    "LICENSE",
+    "spec/LICENSE",
+    "go.mod",
+    "go.sum",
+  ]
+}

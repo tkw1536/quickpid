@@ -17,7 +17,7 @@ type Options struct {
 }
 
 func (o Options) withDefaults() Options {
-	o.Limits = o.Limits.withDefaults()
+	o.Limits = o.Limits.WithDefaults()
 	return o
 }
 
@@ -34,24 +34,34 @@ type Limits struct {
 	MaxPIDAttempts         int // maximum number of attempts to allocate a PID
 }
 
-func (o Limits) withDefaults() Limits {
+const (
+	defaultMaxBodyBytes           = 1 << 20 // 1 MiB
+	defaultDefaultPageLimit       = 100
+	defaultMaxPageLimit           = 1000
+	defaultMaxBatchItems          = 100
+	defaultMaxNamespaceIDAttempts = 100
+	defaultMaxPIDAttempts         = 100
+)
+
+// WithDefaults returns a copy of the limits with default values applied for unset fields.
+func (o Limits) WithDefaults() Limits {
 	if o.MaxBodyBytes <= 0 {
-		o.MaxBodyBytes = 1 << 20
+		o.MaxBodyBytes = defaultMaxBodyBytes
 	}
 	if o.MaxBatchItems <= 0 {
-		o.MaxBatchItems = 100
+		o.MaxBatchItems = defaultMaxBatchItems
 	}
 	if o.DefaultPageLimit <= 0 {
-		o.DefaultPageLimit = 100
+		o.DefaultPageLimit = defaultDefaultPageLimit
 	}
 	if o.MaxPageLimit <= 1 {
-		o.MaxPageLimit = 1000
+		o.MaxPageLimit = defaultMaxPageLimit
 	}
 	if o.MaxNamespaceIDAttempts <= 0 {
-		o.MaxNamespaceIDAttempts = 100
+		o.MaxNamespaceIDAttempts = defaultMaxNamespaceIDAttempts
 	}
 	if o.MaxPIDAttempts <= 0 {
-		o.MaxPIDAttempts = 100
+		o.MaxPIDAttempts = defaultMaxPIDAttempts
 	}
 	return o
 }
