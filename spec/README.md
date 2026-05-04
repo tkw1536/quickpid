@@ -1,7 +1,6 @@
 # PID Resolver Specification
 
 > [!WARNING]
-> This README is still a work in progress and incomplete.
 > See [the main README](../README.md) for a generic introduce to what PID is and why it is needed.
 
 ![Architectural Sketch Of The PID system](pid_arch.svg "The PID System Architecture")
@@ -13,6 +12,9 @@ We propose that a PID system consist out of the following components, also seen 
 - A public __Read-Only Frontend__ that can display each PID and respond to clients with a http redirect response for specific PIDs.  
 - A __Customer-Facing API__, which improves upon the usability of the internal API, as well as handle authentication and authorization.
 - Further __Internal Clients__, which connect directly to the API.
+
+
+## Credits & LICENSE
 
 This folder only provides a technical documentation and specification for the PID Resolver API.
 These were written up by me (Tom Wiesing).
@@ -86,4 +88,11 @@ Resources can additionally be filtered by deletion status.
 
 ## Testcases
 
+> [!WARNING]
+> The format of test cases may change in the future to become easier to parse.
+
 Testcases can be found in the [`tests`](`./tests/`) directory.
+Each test-case takes is held within a single json file.
+
+The structure of the test cases is rather self-explanatory -- each consists of a set of expected requests and expected responses.
+The precise format corresponds to the [the flow struct](../internal/servertest/apitest.go) in the `internal/servertest` package, but should be re-useable by other implementations.
