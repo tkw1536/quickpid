@@ -38,5 +38,6 @@
     "go.mod",
     "go.sum",
     "spec/pid_arch.svg",
+    "quickpid.db"
   ]
 }
