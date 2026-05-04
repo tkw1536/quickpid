@@ -1,6 +1,6 @@
 # Quickpid
 
-[![CI](https://github.com/tkw1536/quickpid/actions/workflows/test.yaml/badge.svg)](https://github.com/tkw1536/quickpid/actions/workflows/test.yaml)
+[![CI](https://github.com/tkw1536/quickpid/actions/workflows/go.yaml/badge.svg)](https://github.com/tkw1536/quickpid/actions/workflows/go.yaml)
 
 In the scientific community it is common to issue [persistent identifiers](https://en.wikipedia.org/wiki/Persistent_identifier) -- or PIDs for short -- to objects to be able to identify and refer to them unambiguously.
 The term object can include papers, presentations, other publications as well as files, web pages or any kind of object. 
