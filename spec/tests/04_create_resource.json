@@ -16,17 +16,15 @@
         "body": "{\"tag\":\"create-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-            "tag": "create-res",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "create-res"
         }
       }
     },
@@ -44,17 +42,15 @@
         "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "pid": "xjc-cjy",
-            "url": "https://example.com/a",
-            "metadata": "ext-1@sys-a",
-            "date_created": "2020-01-02T03:04:05Z",
-            "date_updated": "2020-01-02T03:04:05Z",
-            "tag": "alpha",
-            "deleted": false
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "ext-1@sys-a",
+          "pid": "xjc-cjy",
+          "tag": "alpha",
+          "url": "https://example.com/a"
         }
       }
     },
@@ -72,17 +68,15 @@
         "body": "{\"url\":\"https://example.com/metadata-null\",\"metadata\":null,\"tag\":\"alpha\"}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "pid": "8zk-pwt",
-            "url": "https://example.com/metadata-null",
-            "metadata": null,
-            "date_created": "2020-01-02T03:04:05Z",
-            "date_updated": "2020-01-02T03:04:05Z",
-            "tag": "alpha",
-            "deleted": false
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": null,
+          "pid": "8zk-pwt",
+          "tag": "alpha",
+          "url": "https://example.com/metadata-null"
         }
       }
     },
@@ -100,7 +94,7 @@
         "body": "{\"tag\":\"hex-res\",\"pid_format\":{\"pattern\":\"********-****-****-****-************\",\"characters\":\"hex\"}}"
       },
       "response": {
-        "status": 201
+        "code": 201
       }
     },
     {
@@ -114,11 +108,9 @@
         "body": "{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}"
       },
       "response": {
-        "status": 404,
+        "code": 404,
         "body": {
-          "json": {
-            "error": "namespace_not_found"
-          }
+          "error": "namespace_not_found"
         }
       }
     },
@@ -133,11 +125,9 @@
         "body": "{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_namespace_id"
-          }
+          "error": "invalid_namespace_id"
         }
       }
     },
@@ -147,7 +137,12 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBodyBytes": 256
+        "MaxBodyBytes": 256,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 0,
+        "MaxPIDAttempts": 0
       },
       "request": {
         "method": "POST",
@@ -155,11 +150,9 @@
         "body": "{\"url\":\"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"metadata\":\"x\",\"tag\":\"z\"}"
       },
       "response": {
-        "status": 413,
+        "code": 413,
         "body": {
-          "json": {
-            "error": "body_size_exceeded"
-          }
+          "error": "body_size_exceeded"
         }
       }
     },
@@ -173,11 +166,9 @@
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "body_missing"
-          }
+          "error": "body_missing"
         }
       }
     },
@@ -192,11 +183,9 @@
         "body": "{"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "body_invalid_json"
-          }
+          "error": "body_invalid_json"
         }
       }
     },
@@ -212,11 +201,9 @@
         "body": "{\"url\":\"https://example.com/e\",\"metadata\":null,\"tag\":\"t\"}"
       },
       "response": {
-        "status": 500,
+        "code": 500,
         "body": {
-          "json": {
-            "error": "bad_id_generation"
-          }
+          "error": "bad_id_generation"
         }
       }
     },
@@ -234,7 +221,7 @@
         "body": "{\"url\":\"https://example.com/collision-seed\",\"metadata\":null,\"tag\":\"t\"}"
       },
       "response": {
-        "status": 201
+        "code": 201
       }
     },
     {
@@ -248,6 +235,11 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
+        "MaxBodyBytes": 0,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 0,
         "MaxPIDAttempts": 3
       },
       "request": {
@@ -256,11 +248,9 @@
         "body": "{\"url\":\"https://example.com/collision-retry\",\"metadata\":null,\"tag\":\"t\"}"
       },
       "response": {
-        "status": 503,
+        "code": 503,
         "body": {
-          "json": {
-            "error": "insufficient_entropy"
-          }
+          "error": "insufficient_entropy"
         }
       }
     }

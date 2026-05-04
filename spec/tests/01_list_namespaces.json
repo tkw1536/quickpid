@@ -4,18 +4,17 @@
   "steps": [
     {
       "name": "empty",
+      "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "total": 0,
-            "offset": 0,
-            "items": []
-          }
+          "items": [],
+          "offset": 0,
+          "total": 0
         }
       }
     },
@@ -33,17 +32,15 @@
         "body": "{\"tag\":\"a\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-            "tag": "a",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "a"
         }
       }
     },
@@ -61,17 +58,15 @@
         "body": "{\"tag\":\"b\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "31d0952d-8d73-4119-8e95-b5f19d6f9df7",
-            "tag": "b",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "31d0952d-8d73-4119-8e95-b5f19d6f9df7",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "b"
         }
       }
     },
@@ -89,17 +84,15 @@
         "body": "{\"tag\":\"c\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "c00420c4-1461-4824-a2cc-34e3d04524d4",
-            "tag": "c",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "c00420c4-1461-4824-a2cc-34e3d04524d4",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "c"
         }
       }
     },
@@ -117,17 +110,15 @@
         "body": "{\"tag\":\"d\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "5565d865-a6dc-45e7-a086-28e49669e8a6",
-            "tag": "d",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "5565d865-a6dc-45e7-a086-28e49669e8a6",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "d"
         }
       }
     },
@@ -145,219 +136,222 @@
         "body": "{\"tag\":\"e\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef",
-            "tag": "e",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "e"
         }
       }
     },
     {
       "name": "pagination_defaultLimit",
-      "limits": { "DefaultPageLimit": 2 },
+      "config": {},
+      "limits": {
+        "MaxBodyBytes": 0,
+        "DefaultPageLimit": 2,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 0,
+        "MaxPIDAttempts": 0
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "total": 5,
-            "offset": 0,
-            "items": [
-              {
-                "id": "31d0952d-8d73-4119-8e95-b5f19d6f9df7",
-                "tag": "b",
-                "pid_format": {
-                  "pattern": "***-***",
-                  "characters": "full"
-                },
-                "date_created": "2020-01-02T03:04:05Z"
+          "items": [
+            {
+              "date_created": "2020-01-02T03:04:05Z",
+              "id": "31d0952d-8d73-4119-8e95-b5f19d6f9df7",
+              "pid_format": {
+                "characters": "full",
+                "pattern": "***-***"
               },
-              {
-                "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-                "tag": "a",
-                "pid_format": {
-                  "pattern": "***-***",
-                  "characters": "full"
-                },
-                "date_created": "2020-01-02T03:04:05Z"
-              }
-            ]
-          }
+              "tag": "b"
+            },
+            {
+              "date_created": "2020-01-02T03:04:05Z",
+              "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+              "pid_format": {
+                "characters": "full",
+                "pattern": "***-***"
+              },
+              "tag": "a"
+            }
+          ],
+          "offset": 0,
+          "total": 5
         }
       }
     },
     {
       "name": "pagination_clampMaxLimit",
-      "limits": { "MaxPageLimit": 3 },
+      "config": {},
+      "limits": {
+        "MaxBodyBytes": 0,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 3,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 0,
+        "MaxPIDAttempts": 0
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=999"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "total": 5,
-            "offset": 0,
-            "items": [
-              {
-                "id": "31d0952d-8d73-4119-8e95-b5f19d6f9df7",
-                "tag": "b",
-                "pid_format": {
-                  "pattern": "***-***",
-                  "characters": "full"
-                },
-                "date_created": "2020-01-02T03:04:05Z"
+          "items": [
+            {
+              "date_created": "2020-01-02T03:04:05Z",
+              "id": "31d0952d-8d73-4119-8e95-b5f19d6f9df7",
+              "pid_format": {
+                "characters": "full",
+                "pattern": "***-***"
               },
-              {
-                "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-                "tag": "a",
-                "pid_format": {
-                  "pattern": "***-***",
-                  "characters": "full"
-                },
-                "date_created": "2020-01-02T03:04:05Z"
+              "tag": "b"
+            },
+            {
+              "date_created": "2020-01-02T03:04:05Z",
+              "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+              "pid_format": {
+                "characters": "full",
+                "pattern": "***-***"
               },
-              {
-                "id": "5565d865-a6dc-45e7-a086-28e49669e8a6",
-                "tag": "d",
-                "pid_format": {
-                  "pattern": "***-***",
-                  "characters": "full"
-                },
-                "date_created": "2020-01-02T03:04:05Z"
-              }
-            ]
-          }
+              "tag": "a"
+            },
+            {
+              "date_created": "2020-01-02T03:04:05Z",
+              "id": "5565d865-a6dc-45e7-a086-28e49669e8a6",
+              "pid_format": {
+                "characters": "full",
+                "pattern": "***-***"
+              },
+              "tag": "d"
+            }
+          ],
+          "offset": 0,
+          "total": 5
         }
       }
     },
     {
       "name": "pagination_offsetPastEnd",
+      "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?offset=5"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "total": 5,
-            "offset": 5,
-            "items": []
-          }
+          "items": [],
+          "offset": 5,
+          "total": 5
         }
       }
     },
     {
       "name": "invalidQuery_limit_0",
+      "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=0"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_query_parameter"
-          }
+          "error": "invalid_query_parameter"
         }
       }
     },
     {
       "name": "invalidQuery_limit_-1",
+      "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=-1"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_query_parameter"
-          }
+          "error": "invalid_query_parameter"
         }
       }
     },
     {
       "name": "invalidQuery_limit_abc",
+      "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=abc"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_query_parameter"
-          }
+          "error": "invalid_query_parameter"
         }
       }
     },
     {
       "name": "invalidQuery_offset_-1",
+      "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?offset=-1"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_query_parameter"
-          }
+          "error": "invalid_query_parameter"
         }
       }
     },
     {
       "name": "invalidQuery_offset_abc",
+      "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?offset=abc"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_query_parameter"
-          }
+          "error": "invalid_query_parameter"
         }
       }
     },
     {
       "name": "filter_tag",
+      "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?tag=c"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "total": 1,
-            "offset": 0,
-            "items": [
-              {
-                "id": "c00420c4-1461-4824-a2cc-34e3d04524d4",
-                "tag": "c",
-                "pid_format": {
-                  "pattern": "***-***",
-                  "characters": "full"
-                },
-                "date_created": "2020-01-02T03:04:05Z"
-              }
-            ]
-          }
+          "items": [
+            {
+              "date_created": "2020-01-02T03:04:05Z",
+              "id": "c00420c4-1461-4824-a2cc-34e3d04524d4",
+              "pid_format": {
+                "characters": "full",
+                "pattern": "***-***"
+              },
+              "tag": "c"
+            }
+          ],
+          "offset": 0,
+          "total": 1
         }
       }
     }

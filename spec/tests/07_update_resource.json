@@ -16,17 +16,15 @@
         "body": "{\"tag\":\"update-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-            "tag": "update-res",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "update-res"
         }
       }
     },
@@ -44,7 +42,7 @@
         "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
       },
       "response": {
-        "status": 201
+        "code": 201
       }
     },
     {
@@ -58,17 +56,15 @@
         "body": "{\"url\":\"https://example.com/updated\",\"metadata\":\"ext-1b@sys-b\",\"tag\":\"beta\",\"deleted\":false}"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "pid": "xjc-cjy",
-            "url": "https://example.com/updated",
-            "metadata": "ext-1b@sys-b",
-            "date_created": "2020-01-02T03:04:05Z",
-            "date_updated": "2020-01-02T03:04:05Z",
-            "tag": "beta",
-            "deleted": false
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "ext-1b@sys-b",
+          "pid": "xjc-cjy",
+          "tag": "beta",
+          "url": "https://example.com/updated"
         }
       }
     },
@@ -83,17 +79,15 @@
         "body": "{\"url\":\"https://example.com/url-only\"}"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "pid": "xjc-cjy",
-            "url": "https://example.com/url-only",
-            "metadata": "ext-1b@sys-b",
-            "date_created": "2020-01-02T03:04:05Z",
-            "date_updated": "2020-01-02T03:04:05Z",
-            "tag": "beta",
-            "deleted": false
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "ext-1b@sys-b",
+          "pid": "xjc-cjy",
+          "tag": "beta",
+          "url": "https://example.com/url-only"
         }
       }
     },
@@ -108,17 +102,15 @@
         "body": "{\"metadata\":null}"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "pid": "xjc-cjy",
-            "url": "https://example.com/url-only",
-            "metadata": null,
-            "date_created": "2020-01-02T03:04:05Z",
-            "date_updated": "2020-01-02T03:04:05Z",
-            "tag": "beta",
-            "deleted": false
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": null,
+          "pid": "xjc-cjy",
+          "tag": "beta",
+          "url": "https://example.com/url-only"
         }
       }
     },
@@ -133,17 +125,15 @@
         "body": "{\"metadata\":\"ext-new@sys-c\"}"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "pid": "xjc-cjy",
-            "url": "https://example.com/url-only",
-            "metadata": "ext-new@sys-c",
-            "date_created": "2020-01-02T03:04:05Z",
-            "date_updated": "2020-01-02T03:04:05Z",
-            "tag": "beta",
-            "deleted": false
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "ext-new@sys-c",
+          "pid": "xjc-cjy",
+          "tag": "beta",
+          "url": "https://example.com/url-only"
         }
       }
     },
@@ -158,17 +148,15 @@
         "body": "{\"deleted\":true}"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "pid": "xjc-cjy",
-            "url": "https://example.com/url-only",
-            "metadata": "ext-new@sys-c",
-            "date_created": "2020-01-02T03:04:05Z",
-            "date_updated": "2020-01-02T03:04:05Z",
-            "tag": "beta",
-            "deleted": true
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": true,
+          "metadata": "ext-new@sys-c",
+          "pid": "xjc-cjy",
+          "tag": "beta",
+          "url": "https://example.com/url-only"
         }
       }
     },
@@ -183,17 +171,15 @@
         "body": "{}"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "pid": "xjc-cjy",
-            "url": "https://example.com/url-only",
-            "metadata": "ext-new@sys-c",
-            "date_created": "2020-01-02T03:04:05Z",
-            "date_updated": "2020-01-02T03:04:05Z",
-            "tag": "beta",
-            "deleted": true
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": true,
+          "metadata": "ext-new@sys-c",
+          "pid": "xjc-cjy",
+          "tag": "beta",
+          "url": "https://example.com/url-only"
         }
       }
     },
@@ -207,11 +193,9 @@
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "body_missing"
-          }
+          "error": "body_missing"
         }
       }
     },
@@ -226,11 +210,9 @@
         "body": "{"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "body_invalid_json"
-          }
+          "error": "body_invalid_json"
         }
       }
     },
@@ -245,11 +227,9 @@
         "body": "{\"url\":\"https://example.com/updated\"}"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_namespace_id"
-          }
+          "error": "invalid_namespace_id"
         }
       }
     },
@@ -264,11 +244,9 @@
         "body": "{\"url\":\"https://example.com/updated\"}"
       },
       "response": {
-        "status": 404,
+        "code": 404,
         "body": {
-          "json": {
-            "error": "namespace_not_found"
-          }
+          "error": "namespace_not_found"
         }
       }
     },
@@ -283,11 +261,9 @@
         "body": "{\"url\":\"https://example.com/updated\",\"metadata\":\"ext-1b@sys-b\",\"tag\":\"beta\",\"deleted\":false}"
       },
       "response": {
-        "status": 404,
+        "code": 404,
         "body": {
-          "json": {
-            "error": "resource_not_found"
-          }
+          "error": "resource_not_found"
         }
       }
     },
@@ -302,11 +278,9 @@
         "body": "{\"url\":\"https://example.com/updated\",\"metadata\":\"ext-1b@sys-b\",\"tag\":\"beta\",\"deleted\":false}"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_pid"
-          }
+          "error": "invalid_pid"
         }
       }
     },
@@ -316,7 +290,12 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBodyBytes": 256
+        "MaxBodyBytes": 256,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 0,
+        "MaxPIDAttempts": 0
       },
       "request": {
         "method": "PATCH",
@@ -324,11 +303,9 @@
         "body": "{\"url\":\"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"metadata\":\"x\",\"tag\":\"z\",\"deleted\":false}"
       },
       "response": {
-        "status": 413,
+        "code": 413,
         "body": {
-          "json": {
-            "error": "body_size_exceeded"
-          }
+          "error": "body_size_exceeded"
         }
       }
     }

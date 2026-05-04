@@ -16,55 +16,57 @@
         "body": "{\"tag\":\"flow-tag\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "fake-namespace-id",
-            "tag": "flow-tag",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "fake-namespace-id",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "flow-tag"
         }
       }
     },
     {
       "name": "emptyBody",
+      "config": {},
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "body_missing"
-          }
+          "error": "body_missing"
         }
       }
     },
     {
       "name": "trailingJSON",
+      "config": {},
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
         "body": "{\"tag\":\"x\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}} {\"tag\":\"y\"}"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "body_invalid_json"
-          }
+          "error": "body_invalid_json"
         }
       }
     },
     {
       "name": "tooLargeBody",
+      "config": {},
       "limits": {
-        "MaxBodyBytes": 256
+        "MaxBodyBytes": 256,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 0,
+        "MaxPIDAttempts": 0
       },
       "request": {
         "method": "POST",
@@ -72,43 +74,39 @@
         "body": "{\"tag\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 413,
+        "code": 413,
         "body": {
-          "json": {
-            "error": "body_size_exceeded"
-          }
+          "error": "body_size_exceeded"
         }
       }
     },
     {
       "name": "malformedJSON",
+      "config": {},
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
         "body": "{"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "body_invalid_json"
-          }
+          "error": "body_invalid_json"
         }
       }
     },
     {
       "name": "invalidPatternInBody",
+      "config": {},
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
         "body": "{\"tag\":\"t\",\"pid_format\":{\"pattern\":\"!!not-a-valid-pattern!!\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "body_invalid_json"
-          }
+          "error": "body_invalid_json"
         }
       }
     },
@@ -123,25 +121,27 @@
         "body": "{\"tag\":\"t\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 500,
+        "code": 500,
         "body": {
-          "json": {
-            "error": "bad_id_generation"
-          }
+          "error": "bad_id_generation"
         }
       }
     },
-
     {
       "name": "insufficientEntropy_fail",
       "config": {
         "namespaceIDs": [
           "fake-namespace-id"
         ],
-        "now": "2020-01-02T03:04:05.000Z"
+        "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxNamespaceIDAttempts": 1
+        "MaxBodyBytes": 0,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 1,
+        "MaxPIDAttempts": 0
       },
       "request": {
         "method": "POST",
@@ -149,11 +149,9 @@
         "body": "{\"tag\":\"seed-dup\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 503,
+        "code": 503,
         "body": {
-          "json": {
-            "error": "insufficient_entropy"
-          }
+          "error": "insufficient_entropy"
         }
       }
     },
@@ -168,7 +166,12 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxNamespaceIDAttempts": 3
+        "MaxBodyBytes": 0,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 3,
+        "MaxPIDAttempts": 0
       },
       "request": {
         "method": "POST",
@@ -176,17 +179,15 @@
         "body": "{\"tag\":\"t2\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "another-one",
-            "tag": "t2",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "another-one",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "t2"
         }
       }
     }

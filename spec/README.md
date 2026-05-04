@@ -88,11 +88,43 @@ Resources can additionally be filtered by deletion status.
 
 ## Test cases
 
-> [!WARNING]
-> The format of test cases may change in the future to become easier to parse.
-
 Test cases can be found in the [`tests`](./tests/) directory.
 Each test case is held within a single JSON file.
 
 The structure of the test cases is rather self-explanatory -- each consists of a set of expected requests and expected responses.
 The precise format corresponds to the [the flow struct](../internal/servertest/apitest.go) in the `internal/servertest` package, but should be reusable by other implementations.
+
+Each file is a single JSON object of the following structure.
+Fields may be omitted in case they are not relevant for the test case.
+
+- **`name`** (string): identifier for the test case.
+- **`comment`** (string, optional): human-readable note.
+- **`steps`** (array): ordered steps.
+  Each step corresponds to a single http request / response flow.
+  Each is an object with:
+  - **`name`** (string): step identifier.
+  - **`config`** (object, optional), representing configuration and expected "randomness" values to be used by the server.
+    Each option is optional.
+    - **`namespaceIDs`** and **`pids`** (string arrays): IDs the server should generate in order.
+    - **`now`** (RFC3339 timestamp string): The current time for the request.
+    - **`infoEnabled`** (boolean): If the general endpoint `/resolver` should be enabled or not.
+  - **`limits`** (object, optional): Determines limits to be set by the server.
+    Each field is numeric, and an omitted field implies no limit should be applied, or a suitable default may be used.
+    - **`MaxBodyBytes`**
+    - **`DefaultPageLimit`**
+    - **`MaxPageLimit`**
+    - **`MaxBatchItems`**, 
+    - **`MaxNamespaceIDAttempts`**
+    - **`MaxPIDAttempts`**
+  - **`request`** (object):
+    An object representing the request to send to the server.
+    - **`method`** and **`path`** (strings);
+    - optional **`headers`**, an array of two-element arrays **`[name, value]`** (strings);
+    - optional **`body`**, a **JSON string** whose UTF-8 text is the raw HTTP request body (valid JSON, invalid JSON, or other bytes as the case requires).
+      If there is no body, **`body`** is omitted.
+  - **`response`** (object, optional):
+    An object representing the expected response from the server.
+    - **`code`** (HTTP status integer); optional
+    - **`headers`** (same shape as the request) with the following difference:
+    - optional **`body`**, a JSON **value** (typically an object) representing the expected response body.
+    Comparison is JSON-semantic (e.g. object key order ignored).

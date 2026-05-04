@@ -16,17 +16,15 @@
         "body": "{\"tag\":\"batch-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-            "tag": "batch-res",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "batch-res"
         }
       }
     },
@@ -45,29 +43,27 @@
         "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"batch\"},{\"url\":\"https://b2\",\"metadata\":null,\"tag\":\"\"}]"
       },
       "response": {
-        "status": 201,
-        "body": {
-          "json": [
-            {
-              "pid": "xjc-cjy",
-              "url": "https://b1",
-              "metadata": "b1@batch",
-              "date_created": "2020-01-02T03:04:05Z",
-              "date_updated": "2020-01-02T03:04:05Z",
-              "tag": "batch",
-              "deleted": false
-            },
-            {
-              "pid": "8zk-pwt",
-              "url": "https://b2",
-              "metadata": null,
-              "date_created": "2020-01-02T03:04:05Z",
-              "date_updated": "2020-01-02T03:04:05Z",
-              "tag": "",
-              "deleted": false
-            }
-          ]
-        }
+        "code": 201,
+        "body": [
+          {
+            "date_created": "2020-01-02T03:04:05Z",
+            "date_updated": "2020-01-02T03:04:05Z",
+            "deleted": false,
+            "metadata": "b1@batch",
+            "pid": "xjc-cjy",
+            "tag": "batch",
+            "url": "https://b1"
+          },
+          {
+            "date_created": "2020-01-02T03:04:05Z",
+            "date_updated": "2020-01-02T03:04:05Z",
+            "deleted": false,
+            "metadata": null,
+            "pid": "8zk-pwt",
+            "tag": "",
+            "url": "https://b2"
+          }
+        ]
       }
     },
     {
@@ -76,7 +72,12 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBatchItems": 2
+        "MaxBodyBytes": 0,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 2,
+        "MaxNamespaceIDAttempts": 0,
+        "MaxPIDAttempts": 0
       },
       "request": {
         "method": "POST",
@@ -84,11 +85,9 @@
         "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"\"},{\"url\":\"https://b2\",\"metadata\":\"b2@batch\",\"tag\":\"\"},{\"url\":\"https://b3\",\"metadata\":\"b3@batch\",\"tag\":\"\"}]"
       },
       "response": {
-        "status": 422,
+        "code": 422,
         "body": {
-          "json": {
-            "error": "item_limit_exceeded"
-          }
+          "error": "item_limit_exceeded"
         }
       }
     },
@@ -103,11 +102,9 @@
         "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}]"
       },
       "response": {
-        "status": 404,
+        "code": 404,
         "body": {
-          "json": {
-            "error": "namespace_not_found"
-          }
+          "error": "namespace_not_found"
         }
       }
     },
@@ -117,7 +114,12 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
-        "MaxBodyBytes": 256
+        "MaxBodyBytes": 256,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 0,
+        "MaxPIDAttempts": 0
       },
       "request": {
         "method": "POST",
@@ -125,11 +127,9 @@
         "body": "[{\"url\":\"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"metadata\":\"x\",\"tag\":\"\"}]"
       },
       "response": {
-        "status": 413,
+        "code": 413,
         "body": {
-          "json": {
-            "error": "body_size_exceeded"
-          }
+          "error": "body_size_exceeded"
         }
       }
     },
@@ -143,11 +143,9 @@
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "body_missing"
-          }
+          "error": "body_missing"
         }
       }
     },
@@ -162,11 +160,9 @@
         "body": "not-json"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "body_invalid_json"
-          }
+          "error": "body_invalid_json"
         }
       }
     },
@@ -181,11 +177,9 @@
         "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}]"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_namespace_id"
-          }
+          "error": "invalid_namespace_id"
         }
       }
     },
@@ -203,7 +197,7 @@
         "body": "{\"url\":\"https://example.com/batch-seed\",\"metadata\":null,\"tag\":\"\"}"
       },
       "response": {
-        "status": 201
+        "code": 201
       }
     },
     {
@@ -217,6 +211,11 @@
         "now": "2020-01-02T03:04:05Z"
       },
       "limits": {
+        "MaxBodyBytes": 0,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 0,
         "MaxPIDAttempts": 3
       },
       "request": {
@@ -225,11 +224,9 @@
         "body": "[{\"url\":\"https://example.com/batch-dup\",\"metadata\":null,\"tag\":\"\"}]"
       },
       "response": {
-        "status": 503,
+        "code": 503,
         "body": {
-          "json": {
-            "error": "insufficient_entropy"
-          }
+          "error": "insufficient_entropy"
         }
       }
     }

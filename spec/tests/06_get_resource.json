@@ -16,17 +16,15 @@
         "body": "{\"tag\":\"get-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
-        "status": 201,
+        "code": 201,
         "body": {
-          "json": {
-            "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-            "tag": "get-res",
-            "pid_format": {
-              "pattern": "***-***",
-              "characters": "full"
-            },
-            "date_created": "2020-01-02T03:04:05Z"
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "get-res"
         }
       }
     },
@@ -44,7 +42,7 @@
         "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
       },
       "response": {
-        "status": 201
+        "code": 201
       }
     },
     {
@@ -57,17 +55,15 @@
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy"
       },
       "response": {
-        "status": 200,
+        "code": 200,
         "body": {
-          "json": {
-            "pid": "xjc-cjy",
-            "url": "https://example.com/a",
-            "metadata": "ext-1@sys-a",
-            "date_created": "2020-01-02T03:04:05Z",
-            "date_updated": "2020-01-02T03:04:05Z",
-            "tag": "alpha",
-            "deleted": false
-          }
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "ext-1@sys-a",
+          "pid": "xjc-cjy",
+          "tag": "alpha",
+          "url": "https://example.com/a"
         }
       }
     },
@@ -81,11 +77,9 @@
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/99999"
       },
       "response": {
-        "status": 404,
+        "code": 404,
         "body": {
-          "json": {
-            "error": "resource_not_found"
-          }
+          "error": "resource_not_found"
         }
       }
     },
@@ -99,11 +93,9 @@
         "path": "/resolver/namespaces/bad.ns/resources/xjc-cjy"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_namespace_id"
-          }
+          "error": "invalid_namespace_id"
         }
       }
     },
@@ -117,11 +109,9 @@
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/bad.pid"
       },
       "response": {
-        "status": 400,
+        "code": 400,
         "body": {
-          "json": {
-            "error": "invalid_pid"
-          }
+          "error": "invalid_pid"
         }
       }
     },
@@ -135,11 +125,9 @@
         "path": "/resolver/namespaces/00000000-0000-0000-0000-000000000001/resources/xjc-cjy"
       },
       "response": {
-        "status": 404,
+        "code": 404,
         "body": {
-          "json": {
-            "error": "namespace_not_found"
-          }
+          "error": "namespace_not_found"
         }
       }
     }

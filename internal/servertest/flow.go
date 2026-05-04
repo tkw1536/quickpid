@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/internal/httptester"
+	"github.com/tkw1536/quickpid/internal/httpfixture"
 	"github.com/tkw1536/quickpid/pid"
 	"github.com/tkw1536/quickpid/server"
 )
 
-// flow describes an HTTP test flow in terms of deterministic randomness and steps.
+// flow describes an HTTP test flow in terms.
 type flow struct {
 
 	// General metadata about the flow.
@@ -24,16 +24,15 @@ type flow struct {
 		Name string `json:"name"`
 
 		Config struct {
-			NamespaceIDs []string  `json:"namespaceIDs"`
-			PIDs         []string  `json:"pids"`
-			Now          time.Time `json:"now"`
-			// InfoEnabled mirrors [server.Options.InfoEnabled]: when true, GET /resolver returns [spec.InfoUnavailable].
-			InfoEnabled bool `json:"infoEnabled"`
+			NamespaceIDs []string  `json:"namespaceIDs,omitzero"`
+			PIDs         []string  `json:"pids,omitzero"`
+			Now          time.Time `json:"now,omitzero"`
+			InfoEnabled  bool      `json:"infoEnabled"`
 		} `json:"config"`
 
-		Limits server.Limits `json:"limits"`
+		Limits server.Limits `json:"limits,omitzero"`
 
-		httptester.TestCase
+		httpfixture.Fixture
 	} `json:"steps"`
 }
 
@@ -47,7 +46,8 @@ func (f flow) Run(t *testing.T, b backend.Backend) {
 	handler := server.NewHandler(opts, &runtime, b, nil)
 
 	for _, s := range f.Steps {
-		// update the options for the handler
+
+		// setup server options for this step
 		handler.SetOptions(server.Options{
 			Limits:      s.Limits,
 			InfoEnabled: s.Config.InfoEnabled,
@@ -61,7 +61,7 @@ func (f flow) Run(t *testing.T, b backend.Backend) {
 		t.Run(s.Name, func(t *testing.T) {
 			runtime.t = t
 
-			s.TestCase.Run(t, handler)
+			s.Fixture.Run(t, handler)
 
 			if !runtime.now.IsZero() && !runtime.usedNow {
 				t.Errorf("now: %s was not used (this is an error in the testcases themselves)", runtime.now)

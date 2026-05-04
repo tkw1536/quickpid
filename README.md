@@ -51,7 +51,6 @@ These should be updated using `go generate ./...` whenever the dependencies chan
 - use something other than uuid for namespace generation to drop dependency
 - consider adding a minimal public frontend
 - consider removing the `/resolver/` prefix
-- improve documentation of test cases
 
 ## LICENSE
 
