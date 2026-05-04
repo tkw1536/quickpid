@@ -2,6 +2,8 @@ package backend
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -224,4 +226,30 @@ func (s *inMemoryBackend) UpdateResource(_ context.Context, namespace, pid strin
 	res.DateUpdated = now().UTC().Format(time.RFC3339)
 	s.resources[namespace][pid] = res
 	return &res, nil
+}
+
+var errShutdownMemoryBackend = errors.New("stopped waiting for shutdown to complete")
+
+func (s *inMemoryBackend) Shutdown(ctx context.Context) error {
+	done := make(chan struct{}, 1)
+	go func() {
+		defer close(done)
+
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		if err := ctx.Err(); err != nil {
+			return
+		}
+
+		s.namespaces = nil
+		s.resources = nil
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return fmt.Errorf("%w: %w", errShutdownMemoryBackend, ctx.Err())
+	}
 }

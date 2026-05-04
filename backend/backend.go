@@ -51,6 +51,10 @@ type Backend interface {
 	// Returns [ErrNamespaceNotFound] if the namespace is not found.
 	// Returns [ErrResourceNotFound] if the resource did not previously exist.
 	UpdateResource(ctx context.Context, namespace, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error)
+
+	// Close instructs this backend to initiate shutdown.
+	// It should wait until the shutdown is complete, or ctx is done, whichever happens first.
+	Shutdown(ctx context.Context) error
 }
 
 // Sentinel errors to be returned by [Backend] implementations.

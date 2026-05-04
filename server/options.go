@@ -16,22 +16,23 @@ type Options struct {
 	Limits Limits
 }
 
-func (o Options) withDefaults() Options {
-	o.Limits = o.Limits.WithDefaults()
+// withValidValues returns a copy of the Options where each field is set to a valid value.
+func (o Options) withValidValues() Options {
+	o.Limits = o.Limits.WithValidValues()
 	return o
 }
 
 // Limits represent limits for the server.
 type Limits struct {
-	MaxBodyBytes int64 // maximum size of request body
+	MaxBodyBytes int64 // maximum size of request body, 0 means no limit.
 
-	DefaultPageLimit int // default number of items per page
-	MaxPageLimit     int // maximum number of items per page
+	DefaultPageLimit int // default number of items per page, must be at least 1.
+	MaxPageLimit     int // maximum number of items per page, 0 or negative means no limit.
 
-	MaxBatchItems int // maximum number of items in a batch
+	MaxBatchItems int // maximum number of items in a batch, 0 or negative means no limit.
 
-	MaxNamespaceIDAttempts int // maximum number of attempts to allocate a namespace ID
-	MaxPIDAttempts         int // maximum number of attempts to allocate a PID
+	MaxNamespaceIDAttempts int // maximum number of attempts to allocate a namespace ID, must be at least 1.
+	MaxPIDAttempts         int // maximum number of attempts to allocate a PID, must be at least 1.
 }
 
 const (
@@ -43,25 +44,42 @@ const (
 	defaultMaxPIDAttempts         = 100
 )
 
-// WithDefaults returns a copy of the limits with default values applied for unset fields.
-func (o Limits) WithDefaults() Limits {
-	if o.MaxBodyBytes <= 0 {
-		o.MaxBodyBytes = defaultMaxBodyBytes
+// DefaultLimits returns a new Limits struct with default values.
+func DefaultLimits() Limits {
+	return Limits{
+		MaxBodyBytes:           defaultMaxBodyBytes,
+		DefaultPageLimit:       defaultDefaultPageLimit,
+		MaxPageLimit:           defaultMaxPageLimit,
+		MaxBatchItems:          defaultMaxBatchItems,
+		MaxNamespaceIDAttempts: defaultMaxNamespaceIDAttempts,
+		MaxPIDAttempts:         defaultMaxPIDAttempts,
 	}
-	if o.MaxBatchItems <= 0 {
-		o.MaxBatchItems = defaultMaxBatchItems
+}
+
+// WithValidValues returns a copy of the Limits where each field is set to a valid value.
+// All fields are set to at least zero, or their minimum valid value.
+func (o Limits) WithValidValues() Limits {
+	if o.MaxBodyBytes < 0 {
+		o.MaxBodyBytes = 0
 	}
-	if o.DefaultPageLimit <= 0 {
-		o.DefaultPageLimit = defaultDefaultPageLimit
+
+	if o.DefaultPageLimit < 1 {
+		o.DefaultPageLimit = 1
 	}
-	if o.MaxPageLimit <= 1 {
-		o.MaxPageLimit = defaultMaxPageLimit
+	if o.MaxPageLimit < 0 {
+		o.MaxPageLimit = 0
 	}
-	if o.MaxNamespaceIDAttempts <= 0 {
-		o.MaxNamespaceIDAttempts = defaultMaxNamespaceIDAttempts
+
+	if o.MaxBatchItems < 0 {
+		o.MaxBatchItems = 0
 	}
-	if o.MaxPIDAttempts <= 0 {
-		o.MaxPIDAttempts = defaultMaxPIDAttempts
+
+	if o.MaxNamespaceIDAttempts < 1 {
+		o.MaxNamespaceIDAttempts = 1
 	}
+	if o.MaxPIDAttempts < 1 {
+		o.MaxPIDAttempts = 1
+	}
+
 	return o
 }

@@ -36,7 +36,7 @@ type Handler struct {
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
 // mount with http.StripPrefix(mountPath, NewHandler(Options{MountPath: mountPath}, res)) at mountPath+"/".
 func NewHandler(options Options, runtime Runtime, backend backend.Backend, logger *slog.Logger) *Handler {
-	options = options.withDefaults()
+	options = options.withValidValues()
 
 	h := &Handler{
 		backend: backend,
@@ -187,7 +187,7 @@ func (h *Handler) SetOptions(options Options) {
 	h.m.Lock()
 	defer h.m.Unlock()
 
-	h.ops = options.withDefaults()
+	h.ops = options.withValidValues()
 }
 
 // ServeHTTP implements [http.Handler].
@@ -391,7 +391,7 @@ func (h *Handler) batchCreateResources(w http.ResponseWriter, r *http.Request) (
 	if specError, err := h.decodeJSON(w, r, &reqs); err != nil {
 		return nil, specError, err
 	}
-	if len(reqs) > h.ops.Limits.MaxBatchItems {
+	if h.ops.Limits.MaxBatchItems > 0 && len(reqs) > h.ops.Limits.MaxBatchItems {
 		return nil, api.ItemLimitExceeded, fmt.Errorf("%d > %d", len(reqs), h.ops.Limits.MaxBatchItems)
 	}
 
@@ -500,7 +500,10 @@ var errTrailingJSON = errors.New("trailing json after value")
 // - [api.BodyMissing]
 // - [api.BodyInvalidJSON]
 func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (api.Error, error) {
-	body := http.MaxBytesReader(w, r.Body, h.ops.Limits.MaxBodyBytes)
+	var body io.ReadCloser = r.Body
+	if h.ops.Limits.MaxBodyBytes > 0 {
+		body = http.MaxBytesReader(w, body, h.ops.Limits.MaxBodyBytes)
+	}
 	defer body.Close()
 
 	dec := json.NewDecoder(body)
@@ -550,7 +553,7 @@ func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, specE
 			return 0, 0, api.InvalidQueryParameter, errLimitMustBePositive
 		}
 	}
-	if limit > h.ops.Limits.MaxPageLimit {
+	if h.ops.Limits.MaxPageLimit > 0 && limit > h.ops.Limits.MaxPageLimit {
 		limit = h.ops.Limits.MaxPageLimit
 	}
 

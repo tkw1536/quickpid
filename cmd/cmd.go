@@ -36,6 +36,8 @@ type mainCmd struct {
 
 	legal bool
 
+	shutdownTimeout time.Duration
+
 	addr   string
 	logger *slog.Logger
 }
@@ -55,12 +57,14 @@ func Main(name string, backendFactory func() (backend.Backend, error)) {
 
 			disableSwagger: false,
 			disableInfo:    false,
-			limits:         server.Limits{}.WithDefaults(),
+			limits:         server.DefaultLimits(),
 
 			logLevel: "info",
 			logJSON:  false,
 
 			legal: false,
+
+			shutdownTimeout: time.Minute,
 		}).run(),
 	)
 }
@@ -91,6 +95,17 @@ func (main *mainCmd) run() int {
 		return 1
 	}
 
+	defer func() {
+		main.logger.Info("shutting down backend")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), main.shutdownTimeout)
+		defer cancel()
+		if err := b.Shutdown(shutdownCtx); err != nil {
+			main.logger.Error("backend shutdown failed", slog.Any("error", err))
+			return
+		}
+		main.logger.Info("backend shutdown complete")
+	}()
+
 	h := main.newServerHandler(b)
 	return main.serve(h)
 }
@@ -119,6 +134,8 @@ func (main *mainCmd) parseFlags() error {
 	flag.BoolVar(&main.logJSON, "log-json", main.logJSON, "output logs as json")
 
 	flag.BoolVar(&main.legal, "legal", main.legal, "print license notices and exit")
+
+	flag.DurationVar(&main.shutdownTimeout, "shutdown-timeout", main.shutdownTimeout, "timeout applied to backend and HTTP server shutdowns")
 
 	flag.Parse()
 
@@ -207,7 +224,7 @@ func (main *mainCmd) serve(h http.Handler) int {
 	select {
 	case <-ctx.Done():
 		main.logger.Info("starting server shutdown")
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), main.shutdownTimeout)
 		defer cancel()
 		if err := srv.Shutdown(shutdownCtx); err != nil {
 			main.logger.Error("http server shutdown failed", slog.Any("error", err))

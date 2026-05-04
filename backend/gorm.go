@@ -377,3 +377,29 @@ func (r resourceRow) toSpec() api.ResourceResponse {
 func (s *gormBackend) String() string {
 	return fmt.Sprintf("gormBackend(batchSize=%d)", s.batchSize)
 }
+
+var errShutdownGorm = errors.New("stopped waiting for shutdown to complete")
+
+func (s *gormBackend) Shutdown(ctx context.Context) error {
+	result := make(chan error, 1)
+	go func() {
+		defer close(result)
+
+		sqlDB, err := s.db.DB()
+		if err != nil {
+			result <- fmt.Errorf("failed to get sql.DB: %w", err)
+			return
+		}
+		if err := sqlDB.Close(); err != nil {
+			result <- fmt.Errorf("failed to close sql.DB: %w", err)
+			return
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("%w: %w", errShutdownGorm, ctx.Err())
+	case err := <-result:
+		return err
+	}
+}
