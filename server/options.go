@@ -24,7 +24,7 @@ func (o Options) withValidValues() Options {
 
 // Limits represent limits for the server.
 type Limits struct {
-	MaxBodyBytes int64 // maximum size of request body, 0 means no limit.
+	MaxBodyBytes int64 // maximum size of request body, 0 or negative means no limit.
 
 	DefaultPageLimit int // default number of items per page, must be at least 1.
 	MaxPageLimit     int // maximum number of items per page, 0 or negative means no limit.
