@@ -374,10 +374,6 @@ func (r resourceRow) toSpec() api.ResourceResponse {
 	}
 }
 
-func (s *gormBackend) String() string {
-	return fmt.Sprintf("gormBackend(batchSize=%d)", s.batchSize)
-}
-
 var errShutdownGorm = errors.New("stopped waiting for shutdown to complete")
 
 func (s *gormBackend) Shutdown(ctx context.Context) error {
