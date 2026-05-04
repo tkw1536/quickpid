@@ -1,16 +1,16 @@
 # PID Resolver Specification
 
 > [!WARNING]
-> See [the main README](../README.md) for a generic introduce to what PID is and why it is needed.
+> See [the main README](../README.md) for a generic introduction to what a PID is and why it is needed.
 
 ![Architectural Sketch Of The PID system](pid_arch.svg "The PID System Architecture")
 
-We propose that a PID system consist out of the following components, also seen in the sketch above:
+We propose that a PID system consists of the following components, also seen in the sketch above:
 
 - An internal __PID Resolver API__ and associated database backend.
   It is the central system that handles issuing and storing PIDs and associated metadata.
-- A public __Read-Only Frontend__ that can display each PID and respond to clients with a http redirect response for specific PIDs.  
-- A __Customer-Facing API__, which improves upon the usability of the internal API, as well as handle authentication and authorization.
+- A public __Read-Only Frontend__ that can display each PID and respond to clients with an HTTP redirect response for specific PIDs.
+- A __Customer-Facing API__, which improves upon the usability of the internal API, as well as handling authentication and authorization.
 - Further __Internal Clients__, which connect directly to the API.
 
 
@@ -30,16 +30,16 @@ The system as a whole, and the PID Resolver API in particular, were designed col
 Content in this directory is available under either of the following two licenses:
 
 - [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/), see [the LICENSE file](./LICENSE).
-- [GNU Affero General Public License 3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) (to match the rest of this repository) see [Top-Level LICENSE file](../LICENSE).
+- [GNU Affero General Public License 3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) (to match the rest of this repository) see [the top-level LICENSE file](../LICENSE).
 
 ## The API Specification
 
 The API specification takes the shape of an [OpenAPI 3.0.0](https://spec.openapis.org/oas/v3.0.0.html) specification in [`openapi.yaml`](./openapi.yaml).
 Information in this README is non-normative, and provided for convenience only.
 
-As the API is not intended to be customer-facing, it is designed with a lot of verbosity in mind. 
+As the API is not intended to be customer-facing, it is designed with a lot of verbosity in mind.
 In particular, all routes always require explicit parameters and in most cases are not defaulted automatically.
-Implementations should also validate objects passed, and return appropriate error codes when they do not match. 
+Implementations should also validate objects passed, and return appropriate error codes when they do not match.
 
 The PID Resolver API talks about two kinds of objects:
 - **Namespaces**, which hold a set of Resources, and
@@ -67,12 +67,12 @@ It is possible to create a single resource at a time, or create multiple resourc
 When bulk creating resources, they must live in the same namespace.
 
 The metadata for a Resource can be updated, but the underlying PID cannot be changed.
-Resources can not be deleted, however they contain a deleted flag enabling soft deletion.
+Resources cannot be deleted, however they contain a deleted flag enabling soft deletion.
 From the perspective of the API this flag is just like any other flag.
 
 Both Resources and Namespaces additionally hold a so-called tag.
 This is just a single string, and can be used in the API to filter them, but has no other effect.
-A resource tag can be updated, a namespace tag cannot. 
+A resource tag can be updated, a namespace tag cannot.
 
 ### Listing and Retrieval
 
@@ -80,19 +80,19 @@ Given the ID of a namespace the API can return information about the namespace.
 Given the PID of a resource along with a namespace, the API can return the current metadata for the associated resource.
 
 The API also has functionalities for listing all namespaces, and all resources inside a namespace.
-List responses are always paginated and take appropriate Query parameters.
+List responses are always paginated and take appropriate query parameters.
 Objects are always returned in ascending order by ID.
 
-Both Namespaces and Resource can be filtered by tag.
+Both Namespaces and Resources can be filtered by tag.
 Resources can additionally be filtered by deletion status.
 
-## Testcases
+## Test cases
 
 > [!WARNING]
 > The format of test cases may change in the future to become easier to parse.
 
-Testcases can be found in the [`tests`](`./tests/`) directory.
-Each test-case takes is held within a single json file.
+Test cases can be found in the [`tests`](./tests/) directory.
+Each test case is held within a single JSON file.
 
 The structure of the test cases is rather self-explanatory -- each consists of a set of expected requests and expected responses.
-The precise format corresponds to the [the flow struct](../internal/servertest/apitest.go) in the `internal/servertest` package, but should be re-useable by other implementations.
+The precise format corresponds to the [the flow struct](../internal/servertest/apitest.go) in the `internal/servertest` package, but should be reusable by other implementations.
