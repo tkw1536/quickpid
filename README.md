@@ -32,11 +32,13 @@ The code has several entry points, each using a different backend for storage:
 - [quickpid-sqlite](./cmd/quickpid-sqlite/main.go) a backend using an sqlite database for storage.
 - [quickpid-postgres](./cmd/quickpid-postgres/main.go) a backend using an external postgres database for storage.
 
-Each command can be invoked with a `-help` flag to list available configuration options. 
-The two database implementations are based on [GORM](https://gorm.io) and appropriate pure go database drivers.
+The commands produce informational output on STDOUT, and produce logs on STDERR.
+Each command can be invoked with a `-help` flag to list available options.
 
-With the exception of the storage backend, code is shared between the two.
-Beyond the standard library, dependencies are kept to a minimum.
+With the exception of the storage backend, all other code is shared between the two.
+
+The two database implementations are based on [GORM](https://gorm.io) and appropriate pure go database drivers.
+Beyond the standard library, dependencies are otherwise kept to a minimum.
 All parts of the code are well-documented and include tests, which can be run with `go test`, and are checked by CI.
 
 To implement license notices, [gogenlicense](https://github.com/tkw1536/gogenlicense) is used. 

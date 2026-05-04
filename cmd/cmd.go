@@ -83,6 +83,8 @@ func (main *mainCmd) run() int {
 		return 2
 	}
 
+	main.printStartupBanner()
+
 	b, err := main.backendFactory()
 	if err != nil {
 		main.logger.Error("backend initialization failed", slog.Any("error", err))
@@ -91,6 +93,11 @@ func (main *mainCmd) run() int {
 
 	h := main.newServerHandler(b)
 	return main.serve(h)
+}
+
+func (main *mainCmd) printStartupBanner() {
+	fmt.Printf("%s — %s\n", main.name, quickpid.CopyrightNotice)
+	fmt.Println("Use -legal to view licensing information and notices.")
 }
 
 func (main *mainCmd) parseFlags() error {
@@ -108,7 +115,7 @@ func (main *mainCmd) parseFlags() error {
 	flag.IntVar(&main.limits.MaxNamespaceIDAttempts, "max-namespace-id-attempts", main.limits.MaxNamespaceIDAttempts, "maximum number of attempts to allocate a namespace ID")
 	flag.IntVar(&main.limits.MaxPIDAttempts, "max-pid-attempts", main.limits.MaxPIDAttempts, "maximum number of attempts to allocate a PID")
 
-	flag.StringVar(&main.logLevel, "log-level", main.logLevel, "log level: error, warn, info, debug")
+	flag.StringVar(&main.logLevel, "log-level", main.logLevel, "log level: none, error, warn, info, debug")
 	flag.BoolVar(&main.logJSON, "log-json", main.logJSON, "output logs as json")
 
 	flag.BoolVar(&main.legal, "legal", main.legal, "print license notices and exit")
@@ -142,8 +149,12 @@ func (main *mainCmd) setupLogger() error {
 		level = slog.LevelInfo
 	case "debug":
 		level = slog.LevelDebug
+	case "none":
+		main.logger = slog.New(slog.DiscardHandler)
+		slog.SetDefault(main.logger)
+		return nil
 	default:
-		return fmt.Errorf("invalid -log-level %q (expected error|warn|info|debug)", main.logLevel)
+		return fmt.Errorf("invalid -log-level %q (expected none|error|warn|info|debug)", main.logLevel)
 	}
 
 	var logHandler slog.Handler
