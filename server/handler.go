@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -26,13 +27,15 @@ type Handler struct {
 	runtime Runtime
 	backend backend.Backend
 	mux     *http.ServeMux
+
+	logger *slog.Logger
 }
 
 // NewHandler returns an http.Handler for the PID Resolver API and Swagger UI.
 //
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
 // mount with http.StripPrefix(mountPath, NewHandler(Options{MountPath: mountPath}, res)) at mountPath+"/".
-func NewHandler(options Options, runtime Runtime, backend backend.Backend) *Handler {
+func NewHandler(options Options, runtime Runtime, backend backend.Backend, logger *slog.Logger) *Handler {
 	options = options.withDefaults()
 
 	h := &Handler{
@@ -40,6 +43,7 @@ func NewHandler(options Options, runtime Runtime, backend backend.Backend) *Hand
 		ops:     options,
 		runtime: runtime,
 		mux:     http.NewServeMux(),
+		logger:  logger,
 	}
 
 	h.mux.Handle("GET /resolver", handle(

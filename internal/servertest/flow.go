@@ -44,7 +44,7 @@ func (f flow) Run(t *testing.T, b backend.Backend) {
 		opts    server.Options
 		runtime testRuntime
 	)
-	handler := server.NewHandler(opts, &runtime, b)
+	handler := server.NewHandler(opts, &runtime, b, nil)
 
 	for _, s := range f.Steps {
 		// update the options for the handler
