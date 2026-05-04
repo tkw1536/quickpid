@@ -17,6 +17,7 @@
     "rdzl",
     "servertest",
     "unmarshaling",
+    "gogenlicense",
     "subtests",
     "swaggest",
     "swgui",

@@ -2,18 +2,20 @@ package cmd
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/tkw1536/quickpid"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/server"
 )
 
 // Main runs and invokes a new main function using the given backend factory.
-func Main(backendFactory func() (backend.Backend, error)) {
+func Main(name string, backendFactory func() (backend.Backend, error)) {
 
 	// parse command line flags
 	var (
@@ -25,6 +27,8 @@ func Main(backendFactory func() (backend.Backend, error)) {
 		disableInfo    bool = false
 
 		limits server.Limits = server.Limits{}.WithDefaults()
+
+		legal bool = false
 	)
 
 	flag.StringVar(&listenHost, "host", listenHost, "host or IP to listen on")
@@ -41,7 +45,18 @@ func Main(backendFactory func() (backend.Backend, error)) {
 	flag.IntVar(&limits.MaxNamespaceIDAttempts, "max-namespace-id-attempts", limits.MaxNamespaceIDAttempts, "maximum number of attempts to allocate a namespace ID")
 	flag.IntVar(&limits.MaxPIDAttempts, "max-pid-attempts", limits.MaxPIDAttempts, "maximum number of attempts to allocate a PID")
 
+	flag.BoolVar(&legal, "legal", legal, "print license notices and exit")
+
 	flag.Parse()
+
+	if legal {
+		fmt.Printf("%s is %s\n", name, quickpid.CopyrightNotice)
+		fmt.Print(quickpid.License())
+		fmt.Println()
+		fmt.Println("================================================================================")
+		fmt.Print(notices)
+		return
+	}
 
 	mountPath = strings.TrimSuffix(mountPath, "/")
 
@@ -71,3 +86,5 @@ func Main(backendFactory func() (backend.Backend, error)) {
 	}
 
 }
+
+//go:generate go tool gogenlicense -m -n notices

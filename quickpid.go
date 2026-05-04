@@ -25,3 +25,14 @@ func GetTestData() fs.FS {
 	}
 	return data
 }
+
+// CopyrightNotice is the copyright notice for the project.
+const CopyrightNotice = "© Tom Wiesing. Available under AGPL 3.0."
+
+//go:embed LICENSE
+var license string
+
+// License returns the full text of the license file.
+func License() string {
+	return license
+}

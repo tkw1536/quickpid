@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	cmd.Main(func() (backend.Backend, error) {
+	cmd.Main("quickpid-sqlite", func() (backend.Backend, error) {
 		db, err := gorm.Open(sqlite.Open(sqliteDSN), &gorm.Config{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to open database: %w", err)

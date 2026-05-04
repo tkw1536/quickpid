@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	cmd.Main(func() (backend.Backend, error) {
+	cmd.Main("quickpid-mem", func() (backend.Backend, error) {
 		return backend.NewInMemoryBackend(), nil
 	})
 }

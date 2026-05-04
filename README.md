@@ -37,6 +37,9 @@ With the exception of the storage backend, code is shared between the two.
 Beyond the standard library, dependencies are kept to a minimum, primarily including only [GORM](https://gorm.io) and an appropriate database driver.
 All parts of the code are well-documented and include tests, which can be run with `go test`, and are checked by CI.
 
+To implement license notices, [gogenlicense](https://github.com/tkw1536/gogenlicense) is used. 
+These should be updated using `go generate ./...` whenever the dependencies change.
+
 ## LICENSE
 
 The code in this repository is &copy; Tom Wiesing and available under the terms of the [GNU Affero General Public License 3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) license, see [the LICENSE file](./LICENSE).
