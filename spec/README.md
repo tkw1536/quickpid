@@ -17,7 +17,7 @@ We propose that a PID system consist out of the following components, also seen 
 This folder only provides a technical documentation and specification for the PID Resolver API.
 These were written up by me (Tom Wiesing).
 
-The system as a whole, and the PID Resolver API specifically, were designed collaboratively with input, feedback, and discussion from (in alphabetical order):
+The system as a whole, and the PID Resolver API in particular, were designed collaboratively with input, feedback, and discussion from (in alphabetical order):
 <!-- spellchecker:words Dominik Schmid Amann Walther -->
 - Ann-Christine Planck
 - Dominik Schmid
