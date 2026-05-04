@@ -45,6 +45,11 @@ type mainCmd struct {
 //go:generate go tool gogenlicense -m -n notices
 
 // Main is the main entry point using the given backend factory.
+//
+// Backends are initialized once using the backendFactory function.
+//
+// To add additional flags, callers should add to [flag.CommandLine] prior to the call to Main
+// and access variables in the factory function.
 func Main(name string, backendFactory func() (backend.Backend, error)) {
 	os.Exit(
 		new(mainCmd{
