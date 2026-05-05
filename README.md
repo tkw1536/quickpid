@@ -44,9 +44,31 @@ All parts of the code are well-documented and include tests, which can be run wi
 To implement license notices, [gogenlicense](https://github.com/tkw1536/gogenlicense) is used.
 These should be updated using `go generate ./...` whenever the dependencies change.
 
+## Docker images
+
+Multi-arch images are published to GitHub Container Registry:
+
+- `ghcr.io/tkw1536/quickpid-mem:latest`
+- `ghcr.io/tkw1536/quickpid-sqlite:latest`
+- `ghcr.io/tkw1536/quickpid-postgres:latest`
+
+Examples:
+
+- **In-memory backend**:
+
+  `docker run --rm -p 8080:8080 ghcr.io/tkw1536/quickpid-mem:latest`
+
+- **SQLite backend** (persist DB in a volume at `/data`):
+
+  `docker run --rm -p 8080:8080 -v quickpid_data:/data ghcr.io/tkw1536/quickpid-sqlite:latest
+
+- **Postgres backend** (set `DSN` to point at your Postgres):
+
+  `docker run --rm -p 8080:8080 -e DSN='host=postgres user=postgres password=postgres dbname=quickpid port=5432 sslmode=disable' ghcr.io/tkw1536/quickpid-postgres:latest`
+
+
 ## Future Technical Work
 
-- add and build docker image on each commit
 - add [Golangci-lint](https://golangci-lint.run)
 - use something other than uuid for namespace generation to drop dependency
 - consider adding a minimal public frontend

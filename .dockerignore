@@ -1,0 +1,6 @@
+*
+!**/*.go
+!spec/
+!LICENSE
+!go.mod
+!go.sum

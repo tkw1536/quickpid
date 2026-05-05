@@ -1,0 +1,41 @@
+FROM alpine AS permission
+
+# create www-data
+RUN set -x ; \
+  addgroup -g 82 -S www-data ; \
+  adduser -u 82 -D -S -G www-data www-data && exit 0 ; exit 1
+
+RUN mkdir -p /data
+
+# build the server
+FROM golang AS build
+
+# build the app
+ADD . /app/
+WORKDIR /app/
+
+RUN go mod download
+RUN go generate ./...
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /quickpid-sqlite ./cmd/quickpid-sqlite 
+
+# add it into a scratch image
+FROM scratch
+WORKDIR /
+
+# set the user
+COPY --from=permission /etc/passwd /etc/passwd
+COPY --from=permission /etc/group /etc/group
+USER www-data:www-data
+
+# setup the volume and configure the default database
+COPY --from=permission --chown=www-data:www-data /data/ /data/
+VOLUME /data/
+ENV DSN=/data/quickpid.db?_pragma=foreign_keys(1)
+
+# expose the port
+EXPOSE 8080
+
+
+# set the entrypoint and command
+COPY --from=build /quickpid-sqlite /quickpid-sqlite
+ENTRYPOINT ["/quickpid-sqlite", "-host", "0.0.0.0"]

@@ -21,7 +21,7 @@ import (
 
 type mainCmd struct {
 	name           string
-	backendFactory func() (backend.Backend, error)
+	backendFactory func(*slog.Logger) (backend.Backend, error)
 
 	listenHost string
 	listenPort int
@@ -50,7 +50,7 @@ type mainCmd struct {
 //
 // To add additional flags, callers should add to [flag.CommandLine] prior to the call to Main
 // and access variables in the factory function.
-func Main(name string, backendFactory func() (backend.Backend, error)) {
+func Main(name string, backendFactory func(logger *slog.Logger) (backend.Backend, error)) {
 	os.Exit(
 		new(mainCmd{
 			name:           name,
@@ -94,7 +94,7 @@ func (main *mainCmd) run() int {
 
 	main.printStartupBanner()
 
-	b, err := main.backendFactory()
+	b, err := main.backendFactory(main.logger)
 	if err != nil {
 		main.logger.Error("backend initialization failed", slog.Any("error", err))
 		return 1

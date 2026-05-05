@@ -1,12 +1,14 @@
 package main
 
 import (
+	"log/slog"
+
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/cmd"
 )
 
 func main() {
-	cmd.Main("quickpid-mem", func() (backend.Backend, error) {
+	cmd.Main("quickpid-mem", func(*slog.Logger) (backend.Backend, error) {
 		return backend.NewInMemoryBackend(), nil
 	})
 }
