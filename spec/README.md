@@ -24,7 +24,7 @@ The system as a whole, and the PID Resolver API in particular, were designed col
 
 - Kai Amann
 - Mona Dietrich
-- Ann-Christine Planck
+- Anne-Christine Plank
 - Dominik Schmid
 - Marcus Walther
 
