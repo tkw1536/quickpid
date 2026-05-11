@@ -21,11 +21,12 @@ These were written up by me (Tom Wiesing).
 
 The system as a whole, and the PID Resolver API in particular, were designed collaboratively with input, feedback, and discussion from (in alphabetical order):
 <!-- spellchecker:words Dominik Schmid Amann Walther -->
+
+- Kai Amann
+- Mona Dietrich
 - Ann-Christine Planck
 - Dominik Schmid
-- Kai Amann
 - Marcus Walther
-- Mona Dietrich
 
 Content in this directory is available under either of the following two licenses:
 
