@@ -63,6 +63,14 @@ func NewHandler(options Options, runtime Runtime, backend backend.Backend, logge
 			api.DatabaseError,
 		},
 	))
+	h.mux.Handle("GET /resolver/resources/count", handle(
+		h,
+		h.countAllResources,
+		http.StatusOK,
+		[]api.Error{
+			api.DatabaseError,
+		},
+	))
 	h.mux.Handle("POST /resolver/namespaces", handle(
 		h,
 		h.createNamespace,
@@ -236,6 +244,19 @@ func (h *Handler) listNamespaces(w http.ResponseWriter, r *http.Request) (*api.P
 		return nil, api.DatabaseError, err
 	}
 	return out, "", nil
+}
+
+// countAllResources returns the total number of resources across all namespaces.
+//
+// It can return the following errors:
+//
+// - [api.DatabaseError]
+func (h *Handler) countAllResources(w http.ResponseWriter, r *http.Request) (*api.ResourceCountResponse, api.Error, error) {
+	n, err := h.backend.CountAllResources(r.Context())
+	if err != nil {
+		return nil, api.DatabaseError, err
+	}
+	return &api.ResourceCountResponse{Total: int(n)}, "", nil
 }
 
 // createNamespace creates a new namespace.

@@ -81,6 +81,7 @@ Given the ID of a namespace the API can return information about the namespace.
 Given the PID of a resource along with a namespace, the API can return the current metadata for the associated resource.
 
 The API also has functionalities for listing all namespaces, and all resources inside a namespace.
+A dedicated endpoint returns the total number of resources (issued PIDs) across all namespaces, including soft-deleted resources (`GET /resolver/resources/count`).
 List responses are always paginated and take appropriate query parameters.
 Objects are always returned in ascending order by ID.
 

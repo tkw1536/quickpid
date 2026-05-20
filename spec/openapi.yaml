@@ -157,6 +157,29 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
+  /resolver/resources/count:
+    get:
+      operationId: countAllResources
+      summary: Return the total number of resources (issued PIDs) stored across all namespaces.
+      tags:
+        - resources
+      responses:
+        '200':
+          description: |
+            Total count of resources in the resolver.
+            Includes soft-deleted resources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceCountResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
   /resolver/namespaces/{namespace}/resources:
     get:
       operationId: listResources
@@ -821,6 +844,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Namespace'
+    ResourceCountResponse:
+      description: |
+        Total number of resources (issued PIDs) across all namespaces.
+        Includes soft-deleted resources.
+      type: object
+      required:
+        - total
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of resource rows in the resolver.
     PaginatedResourcesResponse:
       description: |
         A single page of resource responses.

@@ -1,0 +1,151 @@
+{
+  "name": "count_resources",
+  "comment": "Global count of resources (PIDs) across all namespaces.",
+  "steps": [
+    {
+      "name": "empty",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/resources/count"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 0
+        }
+      }
+    },
+    {
+      "name": "create_namespace_a",
+      "config": {
+        "namespaceIDs": [
+          "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"count-ns-a\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "count-ns-a"
+        }
+      }
+    },
+    {
+      "name": "create_resource_one",
+      "config": {
+        "pids": [
+          "aaa-bbb"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/a1b2c3d4-e5f6-7890-abcd-ef1234567890/resources",
+        "body": "{\"url\":\"https://example.com/one\",\"metadata\":null,\"tag\":\"t1\"}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "create_resource_two",
+      "config": {
+        "pids": [
+          "ccc-ddd"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/a1b2c3d4-e5f6-7890-abcd-ef1234567890/resources",
+        "body": "{\"url\":\"https://example.com/two\",\"metadata\":null,\"tag\":\"t2\"}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "count_after_two",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/resources/count"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 2
+        }
+      }
+    },
+    {
+      "name": "create_namespace_b",
+      "config": {
+        "namespaceIDs": [
+          "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"count-ns-b\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "count-ns-b"
+        }
+      }
+    },
+    {
+      "name": "create_resource_other_ns",
+      "config": {
+        "pids": [
+          "eee-fff"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/b2c3d4e5-f6a7-8901-bcde-f12345678901/resources",
+        "body": "{\"url\":\"https://example.com/other-ns\",\"metadata\":null,\"tag\":\"t3\"}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "count_across_namespaces",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/resources/count"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 3
+        }
+      }
+    }
+  ]
+}

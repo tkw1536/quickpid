@@ -109,6 +109,11 @@ type PaginatedResourcesResponse struct {
 	Items []ResourceResponse `json:"items"`
 }
 
+// ResourceCountResponse is returned for countAllResources.
+type ResourceCountResponse struct {
+	Total int `json:"total"`
+}
+
 // ResourceUpdateRequest is the JSON body for updateResource.
 //
 // A nil pointer indicates that no update should be performed on that field.

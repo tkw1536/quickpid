@@ -186,6 +186,16 @@ func (s *gormBackend) ListResources(ctx context.Context, params api.ListResource
 	})
 }
 
+func (s *gormBackend) CountAllResources(ctx context.Context) (int64, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (int64, error) {
+		var total int64
+		if err := tx.Model(&resourceRow{}).Count(&total).Error; err != nil {
+			return 0, err
+		}
+		return total, nil
+	})
+}
+
 func (s *gormBackend) CreateResource(ctx context.Context, namespace, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {

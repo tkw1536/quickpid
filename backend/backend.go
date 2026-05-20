@@ -29,6 +29,9 @@ type Backend interface {
 	// Returns [ErrNamespaceNotFound] if the namespace is not found.
 	ListResources(ctx context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error)
 
+	// CountAllResources returns the number of resources across all namespaces (including soft-deleted).
+	CountAllResources(ctx context.Context) (int64, error)
+
 	// Retrieves a resource using the given namespace and pid.
 	// Returns [ErrNamespaceNotFound] if the namespace is not found.
 	// Returns [ErrResourceNotFound] if the resource is not found.

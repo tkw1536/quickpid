@@ -115,6 +115,17 @@ func (s *inMemoryBackend) ListResources(_ context.Context, params api.ListResour
 	return &api.PaginatedResourcesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
+func (s *inMemoryBackend) CountAllResources(_ context.Context) (int64, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var n int64
+	for _, byPID := range s.resources {
+		n += int64(len(byPID))
+	}
+	return n, nil
+}
+
 func (s *inMemoryBackend) CreateResource(_ context.Context, namespace, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
