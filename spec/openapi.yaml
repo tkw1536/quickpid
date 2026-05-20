@@ -64,17 +64,17 @@ paths:
             Maximum number of items to return.
             If omitted, a default value is applied.
             The maximum possible value may be clamped, and values larger than it may be silently truncated.
-            If the value is not a positive integer, a '400' response may be returned.
+            If the value is a negative integer, a '400' response may be returned.
           schema:
             type: integer
-            minimum: 1
+            minimum: 0
         - name: offset
           in: query
           required: false
           description: |
             Number of items to skip before starting to collect the result set.
             If omitted, the value is treated as 0.
-            If the value is not a positive integer, a '400' response may be returned.
+            If the value is negative or not an integer, a '400' response may be returned.
           schema:
             type: integer
             minimum: 0
@@ -263,17 +263,17 @@ paths:
             Maximum number of items to return.
             If omitted, a default value is applied.
             The maximum possible value MAY be clamped.
-            If the value is invalid, a '400' response is returned.
+            Negative values or non-integers yield a '400' response.
           schema:
             type: integer
-            minimum: 1
+            minimum: 0
         - name: offset
           in: query
           required: false
           description: |
             Number of items to skip before starting to collect the result set.
             If omitted, the value is treated as 0.
-            If the value is invalid, a '400' response is returned.
+            If the value is negative or not an integer, a '400' response may be returned.
           schema:
             type: integer
             minimum: 0

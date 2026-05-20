@@ -226,6 +226,22 @@
       }
     },
     {
+      "name": "pagination_limit_zero",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?limit=0"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "items": [],
+          "offset": 0,
+          "total": 5
+        }
+      }
+    },
+    {
       "name": "tagOmitted",
       "config": {
         "now": "2020-01-02T03:04:05Z"

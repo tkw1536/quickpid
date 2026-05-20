@@ -260,16 +260,18 @@
       }
     },
     {
-      "name": "invalidQuery_limit_0",
+      "name": "pagination_limit_zero",
       "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=0"
       },
       "response": {
-        "code": 400,
+        "code": 200,
         "body": {
-          "error": "invalid_query_parameter"
+          "items": [],
+          "offset": 0,
+          "total": 5
         }
       }
     },

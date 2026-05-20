@@ -82,7 +82,7 @@ func (s *gormBackend) ListNamespaces(ctx context.Context, params api.ListNamespa
 
 		limit := params.Limit
 		offset := params.Offset
-		if int64(offset) >= total {
+		if limit == 0 || int64(offset) >= total {
 			return &api.PaginatedNamespacesResponse{
 				Total:  int(total),
 				Offset: offset,
@@ -162,7 +162,7 @@ func (s *gormBackend) ListResources(ctx context.Context, params api.ListResource
 
 		limit := params.Limit
 		offset := params.Offset
-		if int64(offset) >= total {
+		if limit == 0 || int64(offset) >= total {
 			return &api.PaginatedResourcesResponse{
 				Total:  int(total),
 				Offset: offset,

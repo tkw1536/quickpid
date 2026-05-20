@@ -583,12 +583,14 @@ func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (api
 
 var (
 	errLimitInvalid            = errors.New("invalid limit")
-	errLimitMustBePositive     = errors.New("limit must be positive")
+	errLimitMustBeNonNegative  = errors.New("limit must be non-negative")
 	errOffsetInvalid           = errors.New("invalid offset")
 	errOffsetMustBeNonNegative = errors.New("offset must be non-negative")
 )
 
 // parsePagination parses pagination parameters from the query string.
+//
+// A limit of 0 means no items are returned; the list handler still computes total.
 //
 // It can return the following errors:
 //
@@ -602,8 +604,8 @@ func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, specE
 		if err != nil {
 			return 0, 0, api.InvalidQueryParameter, fmt.Errorf("%w: %w", errLimitInvalid, err)
 		}
-		if limit <= 0 {
-			return 0, 0, api.InvalidQueryParameter, errLimitMustBePositive
+		if limit < 0 {
+			return 0, 0, api.InvalidQueryParameter, errLimitMustBeNonNegative
 		}
 	}
 	if h.ops.Limits.MaxPageLimit > 0 && limit > h.ops.Limits.MaxPageLimit {

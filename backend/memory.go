@@ -50,6 +50,9 @@ func (s *inMemoryBackend) ListNamespaces(_ context.Context, params api.ListNames
 	}
 	end := min(offset+limit, total)
 	items := append([]api.NamespaceResponse(nil), all[offset:end]...)
+	if items == nil {
+		items = []api.NamespaceResponse{}
+	}
 	return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
@@ -112,6 +115,9 @@ func (s *inMemoryBackend) ListResources(_ context.Context, params api.ListResour
 	}
 	end := min(offset+limit, total)
 	items := append([]api.ResourceResponse(nil), filtered[offset:end]...)
+	if items == nil {
+		items = []api.ResourceResponse{}
+	}
 	return &api.PaginatedResourcesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
