@@ -180,6 +180,47 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
+  /resolver/namespaces/{namespace}:
+    get:
+      operationId: getNamespace
+      summary: Retrieve a single namespace by id.
+      tags:
+        - namespaces
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          description: |
+            Server-assigned namespace id returned from create namespace.
+          schema:
+            $ref: '#/components/schemas/NamespaceId'
+      responses:
+        '200':
+          description: Namespace found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Namespace'
+        '400':
+          description: Invalid namespace id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+        '404':
+          description: Namespace does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNamespaceNotFound'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
   /resolver/namespaces/{namespace}/resources:
     get:
       operationId: listResources

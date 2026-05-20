@@ -1,0 +1,80 @@
+{
+  "name": "get_namespace",
+  "comment": "GET single namespace by id; same payload as list items.",
+  "steps": [
+    {
+      "name": "invalid_namespace_id",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/BADUPPER"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_namespace_id"
+        }
+      }
+    },
+    {
+      "name": "not_found",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/ffffffff-ffff-ffff-ffff-ffffffffffff"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "namespace_not_found"
+        }
+      }
+    },
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "e9e8e7e6-d5c4-b3a2-9108-76543210fedc"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"get-ns-single\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "e9e8e7e6-d5c4-b3a2-9108-76543210fedc",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "get-ns-single"
+        }
+      }
+    },
+    {
+      "name": "get_matches_create",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/e9e8e7e6-d5c4-b3a2-9108-76543210fedc"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "e9e8e7e6-d5c4-b3a2-9108-76543210fedc",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "get-ns-single"
+        }
+      }
+    }
+  ]
+}

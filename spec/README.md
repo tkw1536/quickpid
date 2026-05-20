@@ -77,7 +77,7 @@ A resource tag can be updated, a namespace tag cannot.
 
 ### Listing and Retrieval
 
-Given the ID of a namespace the API can return information about the namespace.
+Given the ID of a namespace the API can return information about the namespace (`GET /resolver/namespaces/{namespace}`; same JSON shape as each entry when listing namespaces).
 Given the PID of a resource along with a namespace, the API can return the current metadata for the associated resource.
 
 The API also has functionalities for listing all namespaces, and all resources inside a namespace.

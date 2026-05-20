@@ -84,6 +84,16 @@ func NewHandler(options Options, runtime Runtime, backend backend.Backend, logge
 			api.InsufficientEntropy,
 		},
 	))
+	h.mux.Handle("GET /resolver/namespaces/{namespace}", handle(
+		h,
+		h.getNamespaceDetail,
+		http.StatusOK,
+		[]api.Error{
+			api.InvalidNamespaceID,
+			api.NamespaceNotFound,
+			api.DatabaseError,
+		},
+	))
 
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", handle(
 		h,
@@ -240,6 +250,28 @@ func (h *Handler) listNamespaces(w http.ResponseWriter, r *http.Request) (*api.P
 		Limit:  limit,
 		Offset: offset,
 	})
+	if err != nil {
+		return nil, api.DatabaseError, err
+	}
+	return out, "", nil
+}
+
+// getNamespaceDetail returns one namespace by path id.
+//
+// It can return the following errors:
+//
+// - [api.InvalidNamespaceID]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError]
+func (h *Handler) getNamespaceDetail(w http.ResponseWriter, r *http.Request) (*api.NamespaceResponse, api.Error, error) {
+	namespace, specError, err := getNamespace(r)
+	if err != nil {
+		return nil, specError, err
+	}
+	out, err := h.backend.GetNamespace(r.Context(), namespace)
+	if errors.Is(err, backend.ErrNamespaceNotFound) {
+		return nil, api.NamespaceNotFound, err
+	}
 	if err != nil {
 		return nil, api.DatabaseError, err
 	}
