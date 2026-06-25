@@ -33,6 +33,15 @@ The code has several entry points, each using a different backend for storage:
 - [quickpid-postgres](./cmd/quickpid-postgres/main.go) a backend using an external Postgres database for storage.
 
 The commands produce informational output on STDOUT, and produce logs on STDERR.
+By default, each command runs the API at:
+
+```http://localhost:8080/api/v2```
+
+Each command can be run like:
+
+```
+go run ./cmd/quickpid-[IMPLEMENTATION] [...FLAGS]
+```
 Each command can be invoked with a `-help` flag to list available options.
 
 With the exception of the storage backend, all other code is shared between the implementations.
@@ -60,7 +69,7 @@ Examples:
 
 - **SQLite backend** (persist DB in a volume at `/data`):
 
-  `docker run --rm -p 8080:8080 -v quickpid_data:/data ghcr.io/tkw1536/quickpid-sqlite:latest
+  `docker run --rm -p 8080:8080 -v quickpid_data:/data ghcr.io/tkw1536/quickpid-sqlite:latest`
 
 - **Postgres backend** (set `DSN` to point at your Postgres):
 
