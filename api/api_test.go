@@ -1,5 +1,6 @@
 package api_test
 
+//spellchecker:words encoding json reflect strings testing github quickpid
 import (
 	"encoding/json"
 	"reflect"

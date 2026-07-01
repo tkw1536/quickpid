@@ -1,5 +1,7 @@
+//spellchecker:words bitstring
 package bitstring_test
 
+//spellchecker:words strings github quickpid internal bitstring
 import (
 	"fmt"
 	"strings"

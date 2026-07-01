@@ -1,5 +1,7 @@
+//spellchecker:words strict
 package strict_test
 
+//spellchecker:words encoding json errors github quickpid internal strict
 import (
 	"encoding/json"
 	"errors"

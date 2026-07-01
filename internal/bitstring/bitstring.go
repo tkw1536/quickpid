@@ -1,5 +1,7 @@
+//spellchecker:words bitstring
 package bitstring
 
+//spellchecker:words math
 import (
 	"io"
 	"math/big"

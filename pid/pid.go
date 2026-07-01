@@ -1,6 +1,7 @@
 // Package pid implements generation of a PID.
 package pid
 
+//spellchecker:words errors strings github quickpid internal strict
 import (
 	"errors"
 	"fmt"

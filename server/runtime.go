@@ -1,5 +1,7 @@
+//spellchecker:words server
 package server
 
+//spellchecker:words crypto rand time github google uuid quickpid
 import (
 	"crypto/rand"
 	"time"

@@ -1,5 +1,7 @@
+//spellchecker:words httpfixture
 package httpfixture_test
 
+//spellchecker:words context encoding json errors http httptest strings testing github quickpid internal httpfixture
 import (
 	"context"
 	"encoding/json"

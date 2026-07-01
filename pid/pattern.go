@@ -1,5 +1,6 @@
 package pid
 
+//spellchecker:words errors
 import (
 	"errors"
 )

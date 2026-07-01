@@ -1,5 +1,7 @@
+//spellchecker:words backend
 package backend_test
 
+//spellchecker:words testing github quickpid backend internal servertest
 import (
 	"testing"
 

@@ -1,5 +1,6 @@
 package api
 
+//spellchecker:words http
 import "net/http"
 
 // Error represents a specific API error.

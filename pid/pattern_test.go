@@ -1,5 +1,6 @@
 package pid_test
 
+//spellchecker:words testing github quickpid
 import (
 	"testing"
 

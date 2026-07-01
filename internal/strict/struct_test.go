@@ -1,5 +1,7 @@
+//spellchecker:words strict
 package strict_test
 
+//spellchecker:words github quickpid internal strict
 import (
 	"fmt"
 

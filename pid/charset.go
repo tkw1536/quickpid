@@ -1,5 +1,6 @@
 package pid
 
+//spellchecker:words encoding binary errors math
 import (
 	"encoding/binary"
 	"errors"

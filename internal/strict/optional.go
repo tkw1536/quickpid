@@ -1,5 +1,7 @@
+//spellchecker:words strict
 package strict
 
+//spellchecker:words encoding json
 import (
 	"encoding/json"
 	"fmt"

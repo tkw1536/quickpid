@@ -1,3 +1,4 @@
+//spellchecker:words server
 package server
 
 // Options represents options for the handler.

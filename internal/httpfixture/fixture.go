@@ -1,6 +1,9 @@
 // Package httpfixture provides tools for testing HTTP handlers.
+//
+//spellchecker:words httpfixture
 package httpfixture
 
+//spellchecker:words bytes context encoding json errors http httptest slices strconv strings
 import (
 	"bytes"
 	"context"

@@ -34,7 +34,10 @@
     "installsuffix",
     "workdir",
     "adduser",
-    "zkpwt"
+    "zkpwt",
+    "shapass",
+    "bcryptpass",
+    "htpasswd",
   ],
   "ignorePaths": [
     "LICENSE",
@@ -42,6 +45,7 @@
     "go.mod",
     "go.sum",
     "spec/pid_arch.svg",
-    "quickpid.db"
+    "quickpid.db",
+    "*.json"
   ]
 }

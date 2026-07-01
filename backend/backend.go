@@ -1,6 +1,9 @@
 // Package backend provides [Backend] and implementations.
+//
+//spellchecker:words backend
 package backend
 
+//spellchecker:words context errors time github quickpid
 import (
 	"context"
 	"errors"

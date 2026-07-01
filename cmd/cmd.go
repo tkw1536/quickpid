@@ -1,7 +1,9 @@
 package cmd
 
+//spellchecker:words context encoding json flag slog http signal strconv strings syscall time github quickpid auth backend server
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -15,6 +17,7 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid"
+	"github.com/tkw1536/quickpid/auth"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/server"
 )
@@ -22,6 +25,7 @@ import (
 type mainCmd struct {
 	name           string
 	backendFactory func(*slog.Logger) (backend.Backend, error)
+	basicAuthFile  string
 
 	listenHost string
 	listenPort int
@@ -128,6 +132,8 @@ func (main *mainCmd) parseFlags() error {
 	flag.BoolVar(&main.disableSwagger, "disable-swagger", main.disableSwagger, "disable swagger UI and spec file being served")
 	flag.BoolVar(&main.disableInfo, "disable-info", main.disableInfo, "disable info endpoint")
 
+	flag.StringVar(&main.basicAuthFile, "basic-auth-file", main.basicAuthFile, "path to HTTP Basic Authentication file")
+
 	flag.Int64Var(&main.limits.MaxBodyBytes, "max-body-bytes", main.limits.MaxBodyBytes, "maximum size of request body")
 	flag.IntVar(&main.limits.DefaultPageLimit, "default-page-limit", main.limits.DefaultPageLimit, "default number of items per page")
 	flag.IntVar(&main.limits.MaxPageLimit, "max-page-limit", main.limits.MaxPageLimit, "maximum number of items per page")
@@ -204,8 +210,48 @@ func (main *mainCmd) newServerHandler(b backend.Backend) *server.Handler {
 	)
 }
 
+func (main *mainCmd) readAuthFile() (auth.Authorization, error) {
+	if main.basicAuthFile == "" {
+		main.logger.Info("authorization disabled")
+		return auth.NoAuthentication{}, nil
+	}
+
+	data, err := os.ReadFile(main.basicAuthFile)
+	if err != nil {
+		return nil, fmt.Errorf("read auth file %q: %w", main.basicAuthFile, err)
+	}
+
+	var authorization auth.BasicAuthorization
+	if err := json.Unmarshal(data, &authorization); err != nil {
+		return nil, fmt.Errorf("parse auth file %q: %w", main.basicAuthFile, err)
+	}
+
+	main.logger.Info(
+		"loaded authorization",
+		slog.String("auth_file", main.basicAuthFile),
+		slog.Int("users", len(authorization.Authentication.Users)),
+		slog.Int("superusers", len(authorization.Superusers)),
+		slog.Int("namespaces", len(authorization.Permissions)),
+	)
+
+	return &authorization, nil
+}
+
 func (main *mainCmd) serve(h http.Handler) int {
-	http.Handle(main.mountPath+"/", http.StripPrefix(main.mountPath, h))
+	authorization, err := main.readAuthFile()
+	if err != nil {
+		main.logger.Error("failed to read auth file", slog.Any("error", err))
+		return 1
+	}
+
+	proxy := auth.Proxy{
+		Forward: func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		},
+		Logger: main.logger,
+		Auth:   authorization,
+	}
+	http.Handle(main.mountPath+"/", http.StripPrefix(main.mountPath, &proxy))
 
 	srv := &http.Server{
 		Addr:    main.addr,

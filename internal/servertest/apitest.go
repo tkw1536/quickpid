@@ -1,6 +1,9 @@
 // Package servertest runs tests for a specific [backend.Backend] implementation against the [server.Handler].
+//
+//spellchecker:words servertest
 package servertest
 
+//spellchecker:words encoding json sort testing github quickpid backend
 import (
 	"encoding/json"
 	"fmt"

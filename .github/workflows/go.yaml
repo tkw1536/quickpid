@@ -3,7 +3,7 @@ name: Go Tests
 on: [push, pull_request]
 
 env:
-  GO_VERSION: '~1.26.2'
+  GO_VERSION: '1.27-rc.1'
 
 jobs:
   test:

@@ -1,5 +1,7 @@
+//spellchecker:words main
 package main
 
+//spellchecker:words slog github quickpid backend
 import (
 	"log/slog"
 

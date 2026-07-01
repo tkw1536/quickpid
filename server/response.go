@@ -1,5 +1,7 @@
+//spellchecker:words server
 package server
 
+//spellchecker:words context encoding json slog http time github quickpid
 import (
 	"context"
 	"encoding/json"

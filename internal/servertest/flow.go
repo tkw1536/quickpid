@@ -1,5 +1,7 @@
+//spellchecker:words servertest
 package servertest
 
+//spellchecker:words slices testing time github quickpid backend internal httpfixture server
 import (
 	"fmt"
 	"slices"

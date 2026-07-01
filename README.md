@@ -75,6 +75,53 @@ Examples:
 
   `docker run --rm -p 8080:8080 -e DSN='host=postgres user=postgres password=postgres dbname=quickpid port=5432 sslmode=disable' ghcr.io/tkw1536/quickpid-postgres:latest`
 
+## Authentication & Authorization
+
+Quickpid can protect write and list operations with HTTP Basic authentication.
+Authentication and authorization are loaded from a JSON file passed via
+`-basic-auth-file /path/to/auth.json`.
+
+If authentication is enabled, protected endpoints respond with an HTTP Basic
+challenge, so browsers should prompt for a username and password automatically.
+
+Permission levels are:
+
+- `none`: may read individual PID records, but may not list namespace contents or create/update resources (default)
+- `contributor`: may do everything from `none`, and may create resources and submit batch creates
+- `editor`: may do everything from `contributor`, and may also list and update resources
+
+Authorization is determined in two steps:
+
+- `superusers`: usernames listed here may create new namespaces and automatically have `editor` access to every namespace
+- `permissions`: per-namespace permission levels for individual users; users not listed for a namespace default to `none`
+
+The authentication file stores HTTP Basic credentials in `htpasswd` format under
+the `users` key. Each entry is a `username:hash` string. Hashes should be
+generated with a tool such as `htpasswd`; for example:
+
+```sh
+htpasswd -nB admin
+```
+
+An example authentication file looks like:
+
+<!-- spellchecker:disable -->
+```json
+{
+  "users": [
+    "admin:$apr1$b6C7u008$LIOlAY4ltdsPD.mbKPRjc.",
+    "editor:$2y$05$y6RJtugGZOvBPuDg/f8.7O8GqTZAvUD8nNm1ipNrS8LiAm28fbdk2"
+  ],
+  "superusers": ["admin"],
+  "permissions": {
+    "my-namespace": {
+      "editor": "editor",
+      "contributor": "contributor"
+    }
+  }
+}
+```
+<!-- spellchecker:enable -->
 
 ## Future Technical Work
 

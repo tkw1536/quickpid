@@ -1,16 +1,20 @@
 module github.com/tkw1536/quickpid
 
-go 1.26.1
+go 1.27rc1
 
 require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/google/uuid v1.6.0
 	github.com/swaggest/swgui v1.8.7
+	github.com/tg123/go-htpasswd v1.2.5
+	go.tkw01536.de/pkglib v0.0.0-20260628122543-f4fafa0a2f85
+	golang.org/x/crypto v0.53.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
 
 require (
+	github.com/GehirnInc/crypt v0.0.0-20230320061759-8cc1b52080c5 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -33,12 +37,12 @@ require (
 	github.com/vearutop/statigz v1.5.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.tkw01536.de/gogenlicense v1.8.0 // indirect
-	golang.org/x/mod v0.34.0 // indirect
-	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
-	golang.org/x/tools v0.43.0 // indirect
+	golang.org/x/mod v0.36.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
+	golang.org/x/tools v0.45.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	modernc.org/libc v1.72.2 // indirect
 	modernc.org/mathutil v1.7.1 // indirect

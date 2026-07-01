@@ -1,6 +1,9 @@
 // Package quickpid holds specification data for the PID Resolver API.
+//
+//spellchecker:words quickpid
 package quickpid
 
+//spellchecker:words embed
 import (
 	"embed"
 	"io/fs"
