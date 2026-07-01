@@ -8,7 +8,7 @@ RUN set -x ; \
 RUN mkdir -p /data
 
 # build the server
-FROM golang AS build
+FROM golang:1.27-rc AS build
 
 # build the app
 ADD . /app/
