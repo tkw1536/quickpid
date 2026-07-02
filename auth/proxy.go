@@ -27,19 +27,20 @@ type Proxy struct {
 func (ap *Proxy) initMux() *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.Handle("GET /resolver", ap.forward())
-	mux.Handle("GET /resolver/namespaces", ap.forward())
-	mux.Handle("GET /resolver/resources/count", ap.forward())
+	mux.Handle("GET /resolver", ap.alwaysForward())
+	mux.Handle("GET /resolver/resources/count", ap.alwaysForward())
+
+	mux.Handle("GET /resolver/namespaces", ap.forwardListNamespaces())
 	mux.Handle("POST /resolver/namespaces", ap.forwardCreateNamespace())
 
-	mux.Handle("GET /resolver/namespaces/{namespace}", ap.forwardMinLevel(LevelContributor))
-	mux.Handle("GET /resolver/namespaces/{namespace}/resources", ap.forwardMinLevel(LevelEditor))
-	mux.Handle("POST /resolver/namespaces/{namespace}/resources", ap.forwardMinLevel(LevelContributor))
-	mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", ap.forwardMinLevel(LevelContributor))
-	mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", ap.forwardMinLevel(LevelNone))
-	mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", ap.forwardMinLevel(LevelEditor))
+	mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", ap.forwardNamespaceMinLevel(LevelNone))
+	mux.Handle("GET /resolver/namespaces/{namespace}", ap.forwardNamespaceMinLevel(LevelContributor))
+	mux.Handle("POST /resolver/namespaces/{namespace}/resources", ap.forwardNamespaceMinLevel(LevelContributor))
+	mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", ap.forwardNamespaceMinLevel(LevelContributor))
+	mux.Handle("GET /resolver/namespaces/{namespace}/resources", ap.forwardNamespaceMinLevel(LevelEditor))
+	mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", ap.forwardNamespaceMinLevel(LevelEditor))
 
-	mux.Handle("/", ap.forward())
+	mux.Handle("/", ap.alwaysForward())
 
 	return mux
 }
@@ -48,16 +49,33 @@ func (ap *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ap.mux.Get(ap.initMux).ServeHTTP(w, r)
 }
 
-func (ap *Proxy) forward() http.HandlerFunc {
+func (ap *Proxy) alwaysForward() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ap.writeForwardResponse(w, r, nil)
 	}
 }
 
-func (ap *Proxy) forwardMinLevel(min Level) http.HandlerFunc {
+func (ap *Proxy) forwardListNamespaces() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if ap.Auth != nil {
+			ok, err := ap.Auth.CanListNamespaces(ap.Logger, r)
+			if err != nil {
+				ap.writeUnauthorized(w, r, err)
+				return
+			}
+			if !ok {
+				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+				return
+			}
+		}
+		ap.writeForwardResponse(w, r, nil)
+	}
+}
+
+func (ap *Proxy) forwardNamespaceMinLevel(min Level) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		namespace := r.PathValue("namespace")
-		level, err := ap.level(r, namespace)
+		level, err := ap.getNamespaceLevel(r, namespace)
 		if err != nil {
 			if min.Int() > LevelNone.Int() {
 				ap.writeUnauthorized(w, r, err)
@@ -106,11 +124,11 @@ func (ap *Proxy) forwardCreateNamespace() http.HandlerFunc {
 	}
 }
 
-func (ap *Proxy) level(r *http.Request, namespace string) (Level, error) {
+func (ap *Proxy) getNamespaceLevel(r *http.Request, namespace string) (Level, error) {
 	if ap.Auth == nil {
 		return LevelEditor, nil
 	}
-	return ap.Auth.Level(ap.Logger, r, namespace)
+	return ap.Auth.GetNamespaceLevel(ap.Logger, r, namespace)
 }
 
 // writeForwardResponse forwards the request to the backend and calls the capture function with the response code and body.

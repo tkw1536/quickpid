@@ -35,7 +35,7 @@ func (ba *BasicAuthorization) isSuperuser(username string) bool {
 	return count > 0
 }
 
-func (ba *BasicAuthorization) Level(l *slog.Logger, r *http.Request, namespace string) (Level, error) {
+func (ba *BasicAuthorization) GetNamespaceLevel(l *slog.Logger, r *http.Request, namespace string) (Level, error) {
 	username, err := ba.Authentication.Authenticate(r)
 	if err != nil {
 		return LevelNone, errUnauthorized
@@ -50,6 +50,14 @@ func (ba *BasicAuthorization) Level(l *slog.Logger, r *http.Request, namespace s
 		level = LevelNone
 	}
 	return level, nil
+}
+
+func (ba *BasicAuthorization) CanListNamespaces(l *slog.Logger, r *http.Request) (bool, error) {
+	_, err := ba.Authentication.Authenticate(r)
+	if err != nil {
+		return false, errUnauthorized
+	}
+	return true, nil
 }
 
 func (ba *BasicAuthorization) CanCreate(l *slog.Logger, r *http.Request) (bool, error) {

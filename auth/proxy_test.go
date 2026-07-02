@@ -12,12 +12,15 @@ import (
 )
 
 type trackingAuth struct {
+	canListNamespaces    bool
+	canListNamespacesErr error
 	level                auth.Level
 	levelErr             error
 	canCreate            bool
 	canCreateErr         error
 	onCreateNamespaceErr error
 
+	canListNamespacesCalls int
 	levelCalls             int
 	canCreateCalls         int
 	onCreateNamespaceCalls int
@@ -26,7 +29,12 @@ type trackingAuth struct {
 	lastOnCreateNamespace  string
 }
 
-func (a *trackingAuth) Level(_ *slog.Logger, _ *http.Request, namespace string) (auth.Level, error) {
+func (a *trackingAuth) CanListNamespaces(_ *slog.Logger, _ *http.Request) (bool, error) {
+	a.canListNamespacesCalls++
+	return a.canListNamespaces, a.canListNamespacesErr
+}
+
+func (a *trackingAuth) GetNamespaceLevel(_ *slog.Logger, _ *http.Request, namespace string) (auth.Level, error) {
 	a.levelCalls++
 	a.lastLevelNamespace = namespace
 	return a.level, a.levelErr
@@ -73,7 +81,7 @@ func newAuthProxy(authImpl auth.Authorization, forward *forwardRecorder) *auth.P
 func TestAuthProxy_UnauthenticatedRouteForwardsWithoutAuth(t *testing.T) {
 	t.Parallel()
 
-	mockAuth := &trackingAuth{level: auth.LevelEditor, canCreate: true}
+	mockAuth := &trackingAuth{canListNamespaces: true, level: auth.LevelEditor, canCreate: true}
 	forward := &forwardRecorder{status: http.StatusOK, body: "resolver-list"}
 
 	proxy := newAuthProxy(mockAuth, forward)
@@ -82,8 +90,8 @@ func TestAuthProxy_UnauthenticatedRouteForwardsWithoutAuth(t *testing.T) {
 
 	proxy.ServeHTTP(rec, req)
 
-	if mockAuth.levelCalls != 0 || mockAuth.canCreateCalls != 0 {
-		t.Fatalf("auth calls = level %d canCreate %d, want 0 for unauthenticated route", mockAuth.levelCalls, mockAuth.canCreateCalls)
+	if mockAuth.canListNamespacesCalls != 0 || mockAuth.levelCalls != 0 || mockAuth.canCreateCalls != 0 {
+		t.Fatalf("auth calls = canListNamespaces %d level %d canCreate %d, want 0 for unauthenticated route", mockAuth.canListNamespacesCalls, mockAuth.levelCalls, mockAuth.canCreateCalls)
 	}
 	if forward.calls != 1 {
 		t.Fatalf("forward calls = %d, want 1", forward.calls)
@@ -93,6 +101,78 @@ func TestAuthProxy_UnauthenticatedRouteForwardsWithoutAuth(t *testing.T) {
 	}
 	if rec.Body.String() != "resolver-list" {
 		t.Fatalf("body = %q, want %q", rec.Body.String(), "resolver-list")
+	}
+}
+
+func TestAuthProxy_ListNamespacesCallsCanListNamespacesAndForwardsWhenAuthorized(t *testing.T) {
+	t.Parallel()
+
+	mockAuth := &trackingAuth{canListNamespaces: true}
+	forward := &forwardRecorder{status: http.StatusOK, body: "namespace-list"}
+
+	proxy := newAuthProxy(mockAuth, forward)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/resolver/namespaces", nil)
+
+	proxy.ServeHTTP(rec, req)
+
+	if mockAuth.canListNamespacesCalls != 1 {
+		t.Fatalf("canListNamespaces calls = %d, want 1", mockAuth.canListNamespacesCalls)
+	}
+	if forward.calls != 1 {
+		t.Fatalf("forward calls = %d, want 1", forward.calls)
+	}
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+}
+
+func TestAuthProxy_ListNamespacesDoesNotForwardWhenCanListNamespacesReturnsFalse(t *testing.T) {
+	t.Parallel()
+
+	mockAuth := &trackingAuth{canListNamespaces: false}
+	forward := &forwardRecorder{status: http.StatusOK, body: "should-not-reach-client"}
+
+	proxy := newAuthProxy(mockAuth, forward)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/resolver/namespaces", nil)
+
+	proxy.ServeHTTP(rec, req)
+
+	if mockAuth.canListNamespacesCalls != 1 {
+		t.Fatalf("canListNamespaces calls = %d, want 1", mockAuth.canListNamespacesCalls)
+	}
+	if forward.calls != 0 {
+		t.Fatalf("forward calls = %d, want 0 when CanListNamespaces returns false", forward.calls)
+	}
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusForbidden)
+	}
+}
+
+func TestAuthProxy_ListNamespacesDoesNotForwardWhenCanListNamespacesFails(t *testing.T) {
+	t.Parallel()
+
+	mockAuth := &trackingAuth{canListNamespacesErr: errUnauthorized}
+	forward := &forwardRecorder{status: http.StatusOK}
+
+	proxy := newAuthProxy(mockAuth, forward)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/resolver/namespaces", nil)
+
+	proxy.ServeHTTP(rec, req)
+
+	if mockAuth.canListNamespacesCalls != 1 {
+		t.Fatalf("canListNamespaces calls = %d, want 1", mockAuth.canListNamespacesCalls)
+	}
+	if forward.calls != 0 {
+		t.Fatalf("forward calls = %d, want 0 when CanListNamespaces returns an error", forward.calls)
+	}
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
+	}
+	if mockAuth.onUnauthorizedCalls != 1 {
+		t.Fatalf("onUnauthorized calls = %d, want 1", mockAuth.onUnauthorizedCalls)
 	}
 }
 
@@ -284,6 +364,59 @@ func TestAuthProxy_BasicAuthorizationPromptsOnProtectedRoute(t *testing.T) {
 	wantAuth := `Basic realm="quickpid"`
 	if got := rec.Header().Get("WWW-Authenticate"); got != wantAuth {
 		t.Fatalf("WWW-Authenticate = %q, want %q", got, wantAuth)
+	}
+}
+
+func TestAuthProxy_BasicAuthorizationPromptsOnListNamespacesWithoutCredentials(t *testing.T) {
+	t.Parallel()
+
+	authz := &auth.BasicAuthorization{
+		Authentication: auth.BasicAuthentication{
+			Users: []string{"alice:" + testBcryptSecret},
+		},
+	}
+	forward := &forwardRecorder{status: http.StatusOK}
+
+	proxy := newAuthProxy(authz, forward)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/resolver/namespaces", nil)
+
+	proxy.ServeHTTP(rec, req)
+
+	if forward.calls != 0 {
+		t.Fatalf("forward calls = %d, want 0 without credentials", forward.calls)
+	}
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
+	}
+	wantAuth := `Basic realm="quickpid"`
+	if got := rec.Header().Get("WWW-Authenticate"); got != wantAuth {
+		t.Fatalf("WWW-Authenticate = %q, want %q", got, wantAuth)
+	}
+}
+
+func TestAuthProxy_BasicAuthorizationAllowsListNamespacesForAuthenticatedUser(t *testing.T) {
+	t.Parallel()
+
+	authz := &auth.BasicAuthorization{
+		Authentication: auth.BasicAuthentication{
+			Users: []string{"alice:" + testBcryptSecret},
+		},
+	}
+	forward := &forwardRecorder{status: http.StatusOK, body: "namespace-list"}
+
+	proxy := newAuthProxy(authz, forward)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/resolver/namespaces", nil)
+	req.SetBasicAuth("alice", "secret")
+
+	proxy.ServeHTTP(rec, req)
+
+	if forward.calls != 1 {
+		t.Fatalf("forward calls = %d, want 1 with valid credentials", forward.calls)
+	}
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
 	}
 }
 
