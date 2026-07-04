@@ -18,6 +18,7 @@ import (
 	"github.com/tkw1536/quickpid"
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/internal/openapi"
 	"github.com/tkw1536/quickpid/pid"
 )
 
@@ -221,10 +222,19 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 var openapiYAML = []byte(quickpid.Spec())
 
 func (h *Handler) handleOpenAPISpec() http.HandlerFunc {
+	processed, err := openapi.Rewrite(openapiYAML, openapi.Server{
+		MountPath: h.ops.MountPath,
+		BasicAuth: h.ops.RegisterBasicAuthInSpec,
+	})
+	if err != nil {
+		h.logger.Error("failed to preprocess openapi.yaml", slog.Any("error", err))
+		processed = openapiYAML
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/yaml")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(openapiYAML)
+		_, _ = w.Write(processed)
 	}
 }
 

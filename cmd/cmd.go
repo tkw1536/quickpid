@@ -199,10 +199,11 @@ func (main *mainCmd) setupLogger() error {
 func (main *mainCmd) newServerHandler(b backend.Backend) *server.Handler {
 	return server.NewHandler(
 		server.Options{
-			MountPath:        main.mountPath,
-			DisableSwaggerUI: main.disableSwagger,
-			Limits:           main.limits,
-			InfoEnabled:      !main.disableInfo,
+			MountPath:               main.mountPath,
+			DisableSwaggerUI:        main.disableSwagger,
+			RegisterBasicAuthInSpec: main.basicAuthFile != "",
+			Limits:                  main.limits,
+			InfoEnabled:             !main.disableInfo,
 		},
 		server.NewRuntime(),
 		b,
