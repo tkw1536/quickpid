@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/bicpid/api/resolver"
 	"go.tkw01536.de/pkglib/errorsx"
 	"go.tkw01536.de/pkglib/lazy"
 )
@@ -109,7 +109,7 @@ func (ap *Proxy) forwardCreateNamespace() http.HandlerFunc {
 			if code != http.StatusCreated {
 				return
 			}
-			var created api.NamespaceResponse
+			var created resolver.NamespaceResponse
 			if err := json.Unmarshal(body, &created); err != nil {
 				ap.logError("failed to parse created namespace response", err)
 				return

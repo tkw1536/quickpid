@@ -1,4 +1,4 @@
-package api_test
+package resolver_test
 
 //spellchecker:words encoding json reflect strings testing github quickpid
 import (
@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/bicpid/api/resolver"
 	"github.com/tkw1536/bicpid/pid"
 )
 
@@ -19,13 +19,13 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 		body      string
 		wantErr   bool
 		wantErrIn []string
-		want      api.NamespaceCreateRequest
+		want      resolver.NamespaceCreateRequest
 	}{
 		{
 			name:    "ok",
 			body:    `{"tag":"ns","pid_format":{"pattern":"***","characters":"full"}}`,
 			wantErr: false,
-			want: api.NamespaceCreateRequest{
+			want: resolver.NamespaceCreateRequest{
 				Tag:       "ns",
 				PIDFormat: pid.Format{Pattern: "***", Characters: pid.Full},
 			},
@@ -99,7 +99,7 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			var req api.NamespaceCreateRequest
+			var req resolver.NamespaceCreateRequest
 			err := json.Unmarshal([]byte(tt.body), &req)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
@@ -127,7 +127,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 		body      string
 		wantErr   bool
 		wantErrIn []string
-		want      api.ResourceCreateRequest
+		want      resolver.ResourceCreateRequest
 	}{
 		{
 			name:      "fail_null",
@@ -181,7 +181,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:    "ok_metadataNull",
 			body:    `{"url":"https://example.com","metadata":null,"tag":"t"}`,
 			wantErr: false,
-			want: api.ResourceCreateRequest{
+			want: resolver.ResourceCreateRequest{
 				URL:      "https://example.com",
 				Metadata: nil,
 				Tag:      "t",
@@ -191,7 +191,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:    "ok_metadataString",
 			body:    `{"url":"https://example.com","metadata":"m","tag":"t"}`,
 			wantErr: false,
-			want: api.ResourceCreateRequest{
+			want: resolver.ResourceCreateRequest{
 				URL:      "https://example.com",
 				Metadata: new("m"),
 				Tag:      "t",
@@ -202,7 +202,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			var req api.ResourceCreateRequest
+			var req resolver.ResourceCreateRequest
 			err := json.Unmarshal([]byte(tt.body), &req)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
@@ -242,11 +242,11 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			body      string
 			wantErr   bool
 			wantErrIn []string
-			want      api.ResourceUpdateRequest
+			want      resolver.ResourceUpdateRequest
 		}{
-			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
-			{name: "string", body: `{"url":"https://example.com"}`, want: api.ResourceUpdateRequest{URL: strPtr("https://example.com"), Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
-			{name: "emptyString", body: `{"url":""}`, want: api.ResourceUpdateRequest{URL: strPtr(""), Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
+			{name: "absent", body: `{}`, want: resolver.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
+			{name: "string", body: `{"url":"https://example.com"}`, want: resolver.ResourceUpdateRequest{URL: strPtr("https://example.com"), Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
+			{name: "emptyString", body: `{"url":""}`, want: resolver.ResourceUpdateRequest{URL: strPtr(""), Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
 			{name: "null_isError", body: `{"url":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "number_isError", body: `{"url":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "bool_isError", body: `{"url":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
@@ -258,7 +258,7 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
-				var req api.ResourceUpdateRequest
+				var req resolver.ResourceUpdateRequest
 				err := json.Unmarshal([]byte(tt.body), &req)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
@@ -289,11 +289,11 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			body      string
 			wantErr   bool
 			wantErrIn []string
-			want      api.ResourceUpdateRequest
+			want      resolver.ResourceUpdateRequest
 		}{
-			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
-			{name: "string", body: `{"tag":"t"}`, want: api.ResourceUpdateRequest{URL: nil, Tag: strPtr("t"), Deleted: nil, Metadata: metadataAbsent}},
-			{name: "emptyString", body: `{"tag":""}`, want: api.ResourceUpdateRequest{URL: nil, Tag: strPtr(""), Deleted: nil, Metadata: metadataAbsent}},
+			{name: "absent", body: `{}`, want: resolver.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
+			{name: "string", body: `{"tag":"t"}`, want: resolver.ResourceUpdateRequest{URL: nil, Tag: strPtr("t"), Deleted: nil, Metadata: metadataAbsent}},
+			{name: "emptyString", body: `{"tag":""}`, want: resolver.ResourceUpdateRequest{URL: nil, Tag: strPtr(""), Deleted: nil, Metadata: metadataAbsent}},
 			{name: "null_isError", body: `{"tag":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "number_isError", body: `{"tag":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "bool_isError", body: `{"tag":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
@@ -304,7 +304,7 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
-				var req api.ResourceUpdateRequest
+				var req resolver.ResourceUpdateRequest
 				err := json.Unmarshal([]byte(tt.body), &req)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
@@ -335,18 +335,18 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			body      string
 			wantErr   bool
 			wantErrIn []string
-			want      api.ResourceUpdateRequest
+			want      resolver.ResourceUpdateRequest
 		}{
-			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
+			{name: "absent", body: `{}`, want: resolver.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
 			{
 				name: "null",
 				body: `{"metadata":null}`,
-				want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataNull},
+				want: resolver.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataNull},
 			},
 			{
 				name: "string",
 				body: `{"metadata":"m"}`,
-				want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataString("m")},
+				want: resolver.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataString("m")},
 			},
 			{name: "number_isError", body: `{"metadata":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "bool_isError", body: `{"metadata":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
@@ -357,7 +357,7 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
-				var req api.ResourceUpdateRequest
+				var req resolver.ResourceUpdateRequest
 				err := json.Unmarshal([]byte(tt.body), &req)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
@@ -388,11 +388,11 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			body      string
 			wantErr   bool
 			wantErrIn []string
-			want      api.ResourceUpdateRequest
+			want      resolver.ResourceUpdateRequest
 		}{
-			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
-			{name: "true", body: `{"deleted":true}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: boolPtr(true), Metadata: metadataAbsent}},
-			{name: "false", body: `{"deleted":false}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: boolPtr(false), Metadata: metadataAbsent}},
+			{name: "absent", body: `{}`, want: resolver.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: metadataAbsent}},
+			{name: "true", body: `{"deleted":true}`, want: resolver.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: boolPtr(true), Metadata: metadataAbsent}},
+			{name: "false", body: `{"deleted":false}`, want: resolver.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: boolPtr(false), Metadata: metadataAbsent}},
 			{name: "null_isError", body: `{"deleted":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "number_isError", body: `{"deleted":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "string_isError", body: `{"deleted":"no"}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
@@ -403,7 +403,7 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
-				var req api.ResourceUpdateRequest
+				var req resolver.ResourceUpdateRequest
 				err := json.Unmarshal([]byte(tt.body), &req)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)

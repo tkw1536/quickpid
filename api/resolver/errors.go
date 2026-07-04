@@ -1,4 +1,4 @@
-package api
+package resolver
 
 //spellchecker:words http
 import "net/http"

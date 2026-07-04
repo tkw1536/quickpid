@@ -9,16 +9,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/bicpid/api/resolver"
 )
 
 func handle[T any](
 	h *Handler,
-	impl func(w http.ResponseWriter, r *http.Request) (T, api.Error, error),
+	impl func(w http.ResponseWriter, r *http.Request) (T, resolver.Error, error),
 	successCode int,
-	allowedErrors []api.Error,
+	allowedErrors []resolver.Error,
 ) http.HandlerFunc {
-	errors := make(map[api.Error]struct{})
+	errors := make(map[resolver.Error]struct{})
 	for _, err := range allowedErrors {
 		errors[err] = struct{}{}
 	}
@@ -42,7 +42,7 @@ func handle[T any](
 				slog.Any("cause", err),
 			)
 
-			writeJSONResponse(w, specError.HTTPCode(), api.ErrorResponse{Error: string(specError)})
+			writeJSONResponse(w, specError.HTTPCode(), resolver.ErrorResponse{Error: string(specError)})
 			return
 		}
 
