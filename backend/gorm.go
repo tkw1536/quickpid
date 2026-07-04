@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/pid"
+	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/bicpid/pid"
 	"gorm.io/gorm"
 )
 

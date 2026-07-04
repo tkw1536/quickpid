@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/tkw1536/quickpid/internal/strict"
+	"github.com/tkw1536/bicpid/internal/strict"
 )
 
 // Format describes the format of a PID.

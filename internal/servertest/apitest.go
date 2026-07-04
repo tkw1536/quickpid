@@ -11,8 +11,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/tkw1536/quickpid"
-	"github.com/tkw1536/quickpid/backend"
+	quickpid "github.com/tkw1536/bicpid"
+	"github.com/tkw1536/bicpid/backend"
 )
 
 // BackendFactory is a function that creates a concrete new Resolver.

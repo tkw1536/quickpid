@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/bicpid/api"
 )
 
 func handle[T any](

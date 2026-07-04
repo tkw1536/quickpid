@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/bicpid/api"
 	"go.tkw01536.de/pkglib/errorsx"
 	"go.tkw01536.de/pkglib/lazy"
 )

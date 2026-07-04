@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/bicpid/api"
 )
 
 // NewInMemoryBackend returns a new backend backed by an in-memory map.

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tkw1536/quickpid/internal/bitstring"
+	"github.com/tkw1536/bicpid/internal/bitstring"
 )
 
 func ExampleNewReader() {

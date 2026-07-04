@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkw1536/quickpid/pid"
+	"github.com/tkw1536/bicpid/pid"
 )
 
 // Runtime is used by server to interact with specific system functions.

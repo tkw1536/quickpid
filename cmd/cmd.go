@@ -16,10 +16,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tkw1536/quickpid"
-	"github.com/tkw1536/quickpid/auth"
-	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/server"
+	quickpid "github.com/tkw1536/bicpid"
+	"github.com/tkw1536/bicpid/auth"
+	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/server"
 )
 
 type mainCmd struct {

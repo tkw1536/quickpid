@@ -1,4 +1,4 @@
-module github.com/tkw1536/quickpid
+module github.com/tkw1536/bicpid
 
 go 1.26
 

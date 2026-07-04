@@ -5,8 +5,8 @@ package backend_test
 import (
 	"testing"
 
-	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/internal/servertest"
+	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/internal/servertest"
 )
 
 func TestInMemoryBackend(t *testing.T) {

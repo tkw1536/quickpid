@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tkw1536/quickpid/internal/strict"
+	"github.com/tkw1536/bicpid/internal/strict"
 )
 
 var errRequiredMissing = errors.New("field 'required' is missing")

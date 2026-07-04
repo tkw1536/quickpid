@@ -1,6 +1,11 @@
-# Quickpid
+# Bicpid
 
-[![CI](https://github.com/tkw1536/quickpid/actions/workflows/go.yaml/badge.svg)](https://github.com/tkw1536/quickpid/actions/workflows/go.yaml)
+This is a fork of [github.com/tkw1536/quickpid](https://github.com/tkw1536/quickpid).
+Because it is my personal copyright, the original license is removed, and you're not allowed to use this.
+
+<!--
+[![CI](https://github.com/tkw1536/bicpid/actions/workflows/go.yaml/badge.svg)](https://github.com/tkw1536/bicpid/actions/workflows/go.yaml)
+-->
 
 In the scientific community it is common to issue [persistent identifiers](https://en.wikipedia.org/wiki/Persistent_identifier) -- or PIDs for short -- to objects to be able to identify and refer to them unambiguously.
 The term object can include papers, presentations, other publications as well as files, web pages or any kind of object.
@@ -53,6 +58,7 @@ All parts of the code are well-documented and include tests, which can be run wi
 To implement license notices, [gogenlicense](https://github.com/tkw1536/gogenlicense) is used.
 These should be updated using `go generate ./...` whenever the dependencies change.
 
+<!--
 ## Docker images
 
 Multi-arch images are published to GitHub Container Registry:
@@ -74,6 +80,7 @@ Examples:
 - **Postgres backend** (set `DSN` to point at your Postgres):
 
   `docker run --rm -p 8080:8080 -e DSN='host=postgres user=postgres password=postgres dbname=quickpid port=5432 sslmode=disable' ghcr.io/tkw1536/quickpid-postgres:latest`
+-->
 
 ## Authentication & Authorization
 
@@ -132,7 +139,7 @@ An example authentication file looks like:
 
 ## LICENSE
 
-The code in this repository is &copy; Tom Wiesing and available under the terms of the [GNU Affero General Public License 3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) license, see [the LICENSE file](./LICENSE).
+The code in this repository is unlicensed.
 
 The [`spec` directory](./spec/README.md), which contains the API specification and test cases, is licensed separately to enable re-use.
 In addition to being available under AGPL, it is also available under the terms of the [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/) license.

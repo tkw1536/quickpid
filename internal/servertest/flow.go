@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/internal/httpfixture"
-	"github.com/tkw1536/quickpid/pid"
-	"github.com/tkw1536/quickpid/server"
+	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/internal/httpfixture"
+	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/bicpid/server"
 )
 
 // flow describes an HTTP test flow in terms.

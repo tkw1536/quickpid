@@ -5,8 +5,8 @@ package api
 import (
 	"fmt"
 
-	"github.com/tkw1536/quickpid/internal/strict"
-	"github.com/tkw1536/quickpid/pid"
+	"github.com/tkw1536/bicpid/internal/strict"
+	"github.com/tkw1536/bicpid/pid"
 
 	_ "embed"
 )

@@ -9,7 +9,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/bicpid/api"
 )
 
 // Backend represents the backend of a PID resolver.

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tkw1536/quickpid/pid"
+	"github.com/tkw1536/bicpid/pid"
 )
 
 func TestCharacterSetValidate(t *testing.T) {

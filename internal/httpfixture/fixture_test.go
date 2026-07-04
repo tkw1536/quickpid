@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tkw1536/quickpid/internal/httpfixture"
+	"github.com/tkw1536/bicpid/internal/httpfixture"
 )
 
 func TestRequestToRequest_EncodesBodyAsJSON(t *testing.T) {

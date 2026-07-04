@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tkw1536/quickpid/internal/bitstring"
-	"github.com/tkw1536/quickpid/pid"
+	"github.com/tkw1536/bicpid/internal/bitstring"
+	"github.com/tkw1536/bicpid/pid"
 )
 
 func TestFormat_Validate(t *testing.T) {

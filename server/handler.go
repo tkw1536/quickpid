@@ -15,11 +15,11 @@ import (
 
 	"github.com/swaggest/swgui"
 	"github.com/swaggest/swgui/v5emb"
-	"github.com/tkw1536/quickpid"
-	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/internal/openapi"
-	"github.com/tkw1536/quickpid/pid"
+	quickpid "github.com/tkw1536/bicpid"
+	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/internal/openapi"
+	"github.com/tkw1536/bicpid/pid"
 )
 
 type Handler struct {

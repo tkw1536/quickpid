@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/tkw1536/quickpid/auth"
+	"github.com/tkw1536/bicpid/auth"
 )
 
 type trackingAuth struct {

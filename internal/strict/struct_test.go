@@ -5,7 +5,7 @@ package strict_test
 import (
 	"fmt"
 
-	"github.com/tkw1536/quickpid/internal/strict"
+	"github.com/tkw1536/bicpid/internal/strict"
 )
 
 func ExampleMustBeStruct() {

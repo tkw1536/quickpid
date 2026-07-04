@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/cmd"
+	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/cmd"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

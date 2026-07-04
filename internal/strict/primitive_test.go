@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/tkw1536/quickpid/internal/strict"
+	"github.com/tkw1536/bicpid/internal/strict"
 )
 
 func ExampleString() {

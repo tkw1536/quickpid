@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/glebarez/sqlite"
-	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/internal/servertest"
+	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/internal/servertest"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
