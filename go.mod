@@ -1,14 +1,15 @@
 module github.com/tkw1536/quickpid
 
-go 1.27rc1
+go 1.26
 
 require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/google/uuid v1.6.0
 	github.com/swaggest/swgui v1.8.7
 	github.com/tg123/go-htpasswd v1.2.5
-	go.tkw01536.de/pkglib v0.0.0-20260628122543-f4fafa0a2f85
+	go.tkw01536.de/pkglib v0.0.0-20260703071639-6b0b0b91646c
 	golang.org/x/crypto v0.53.0
+	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
@@ -37,12 +38,12 @@ require (
 	github.com/vearutop/statigz v1.5.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.tkw01536.de/gogenlicense v1.8.0 // indirect
-	golang.org/x/mod v0.36.0 // indirect
-	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/mod v0.37.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
-	golang.org/x/tools v0.45.0 // indirect
+	golang.org/x/tools v0.47.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	modernc.org/libc v1.72.2 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
