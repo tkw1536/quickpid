@@ -1,7 +1,11 @@
-package resolver
+package api
 
 //spellchecker:words http
 import "net/http"
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
 
 // Error represents a specific API error.
 type Error string

@@ -16,7 +16,7 @@ import (
 	"github.com/swaggest/swgui"
 	"github.com/swaggest/swgui/v5emb"
 	quickpid "github.com/tkw1536/bicpid"
-	"github.com/tkw1536/bicpid/api/resolver"
+	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/internal/openapi"
 	"github.com/tkw1536/bicpid/pid"
@@ -53,48 +53,48 @@ func NewHandler(options Options, runtime Runtime, backend backend.Backend, logge
 		h,
 		h.getResolverInfo,
 		http.StatusOK,
-		[]resolver.Error{
-			resolver.InfoUnavailable,
+		[]api.Error{
+			api.InfoUnavailable,
 		},
 	))
 	h.mux.Handle("GET /resolver/namespaces", handle(
 		h,
 		h.listNamespaces,
 		http.StatusOK,
-		[]resolver.Error{
-			resolver.InvalidQueryParameter,
-			resolver.DatabaseError,
+		[]api.Error{
+			api.InvalidQueryParameter,
+			api.DatabaseError,
 		},
 	))
 	h.mux.Handle("GET /resolver/resources/count", handle(
 		h,
 		h.countAllResources,
 		http.StatusOK,
-		[]resolver.Error{
-			resolver.DatabaseError,
+		[]api.Error{
+			api.DatabaseError,
 		},
 	))
 	h.mux.Handle("POST /resolver/namespaces", handle(
 		h,
 		h.createNamespace,
 		http.StatusCreated,
-		[]resolver.Error{
-			resolver.BodySizeExceeded,
-			resolver.BodyMissing,
-			resolver.BodyInvalidJSON,
-			resolver.DatabaseError,
-			resolver.BadIDGeneration,
-			resolver.InsufficientEntropy,
+		[]api.Error{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.DatabaseError,
+			api.BadIDGeneration,
+			api.InsufficientEntropy,
 		},
 	))
 	h.mux.Handle("GET /resolver/namespaces/{namespace}", handle(
 		h,
 		h.getNamespaceDetail,
 		http.StatusOK,
-		[]resolver.Error{
-			resolver.InvalidNamespaceID,
-			resolver.NamespaceNotFound,
-			resolver.DatabaseError,
+		[]api.Error{
+			api.InvalidNamespaceID,
+			api.NamespaceNotFound,
+			api.DatabaseError,
 		},
 	))
 
@@ -102,11 +102,11 @@ func NewHandler(options Options, runtime Runtime, backend backend.Backend, logge
 		h,
 		h.listResources,
 		http.StatusOK,
-		[]resolver.Error{
-			resolver.InvalidNamespaceID,
-			resolver.InvalidQueryParameter,
-			resolver.NamespaceNotFound,
-			resolver.DatabaseError,
+		[]api.Error{
+			api.InvalidNamespaceID,
+			api.InvalidQueryParameter,
+			api.NamespaceNotFound,
+			api.DatabaseError,
 		},
 	))
 
@@ -114,31 +114,31 @@ func NewHandler(options Options, runtime Runtime, backend backend.Backend, logge
 		h,
 		h.createResource,
 		http.StatusCreated,
-		[]resolver.Error{
-			resolver.BodySizeExceeded,
-			resolver.BodyMissing,
-			resolver.BodyInvalidJSON,
-			resolver.InvalidNamespaceID,
-			resolver.NamespaceNotFound,
-			resolver.DatabaseError,
-			resolver.BadIDGeneration,
-			resolver.InsufficientEntropy,
+		[]api.Error{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidNamespaceID,
+			api.NamespaceNotFound,
+			api.DatabaseError,
+			api.BadIDGeneration,
+			api.InsufficientEntropy,
 		},
 	))
 	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", handle(
 		h,
 		h.batchCreateResources,
 		http.StatusCreated,
-		[]resolver.Error{
-			resolver.BodySizeExceeded,
-			resolver.BodyMissing,
-			resolver.BodyInvalidJSON,
-			resolver.ItemLimitExceeded,
-			resolver.InvalidNamespaceID,
-			resolver.NamespaceNotFound,
-			resolver.DatabaseError,
-			resolver.BadIDGeneration,
-			resolver.InsufficientEntropy,
+		[]api.Error{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.ItemLimitExceeded,
+			api.InvalidNamespaceID,
+			api.NamespaceNotFound,
+			api.DatabaseError,
+			api.BadIDGeneration,
+			api.InsufficientEntropy,
 		},
 	))
 
@@ -146,27 +146,27 @@ func NewHandler(options Options, runtime Runtime, backend backend.Backend, logge
 		h,
 		h.getResource,
 		http.StatusOK,
-		[]resolver.Error{
-			resolver.InvalidNamespaceID,
-			resolver.InvalidPID,
-			resolver.NamespaceNotFound,
-			resolver.ResourceNotFound,
-			resolver.DatabaseError,
+		[]api.Error{
+			api.InvalidNamespaceID,
+			api.InvalidPID,
+			api.NamespaceNotFound,
+			api.ResourceNotFound,
+			api.DatabaseError,
 		},
 	))
 	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", handle(
 		h,
 		h.updateResource,
 		http.StatusOK,
-		[]resolver.Error{
-			resolver.BodySizeExceeded,
-			resolver.BodyMissing,
-			resolver.BodyInvalidJSON,
-			resolver.InvalidNamespaceID,
-			resolver.InvalidPID,
-			resolver.DatabaseError,
-			resolver.NamespaceNotFound,
-			resolver.ResourceNotFound,
+		[]api.Error{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidNamespaceID,
+			api.InvalidPID,
+			api.DatabaseError,
+			api.NamespaceNotFound,
+			api.ResourceNotFound,
 		},
 	))
 
@@ -189,12 +189,12 @@ var errSpecInfoPrivate = errors.New("info is private")
 //
 // It can return the following errors:
 //
-// - [resolver.InfoUnavailable]
-func (h *Handler) getResolverInfo(w http.ResponseWriter, r *http.Request) (*resolver.InfoResponse, resolver.Error, error) {
+// - [api.InfoUnavailable]
+func (h *Handler) getResolverInfo(w http.ResponseWriter, r *http.Request) (*api.InfoResponse, api.Error, error) {
 	if !h.ops.InfoEnabled {
-		return nil, resolver.InfoUnavailable, errSpecInfoPrivate
+		return nil, api.InfoUnavailable, errSpecInfoPrivate
 	}
-	return &resolver.InfoResponse{
+	return &api.InfoResponse{
 		MaxBodyBytes:     h.ops.Limits.MaxBodyBytes,
 		DefaultPageLimit: int64(h.ops.Limits.DefaultPageLimit),
 		MaxPageLimit:     int64(h.ops.Limits.MaxPageLimit),
@@ -242,9 +242,9 @@ func (h *Handler) handleOpenAPISpec() http.HandlerFunc {
 //
 // It can return the following errors:
 //
-// - [resolver.InvalidQueryParameter]
-// - [resolver.DatabaseError]
-func (h *Handler) listNamespaces(w http.ResponseWriter, r *http.Request) (*resolver.PaginatedNamespacesResponse, resolver.Error, error) {
+// - [api.InvalidQueryParameter]
+// - [api.DatabaseError]
+func (h *Handler) listNamespaces(w http.ResponseWriter, r *http.Request) (*api.PaginatedNamespacesResponse, api.Error, error) {
 	limit, offset, specError, err := h.parsePagination(r)
 	if err != nil {
 		return nil, specError, err
@@ -257,13 +257,13 @@ func (h *Handler) listNamespaces(w http.ResponseWriter, r *http.Request) (*resol
 		tag = &v
 	}
 
-	out, err := h.backend.ListNamespaces(r.Context(), resolver.ListNamespacesParams{
+	out, err := h.backend.ListNamespaces(r.Context(), api.ListNamespacesParams{
 		Tag:    tag,
 		Limit:  limit,
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, resolver.DatabaseError, err
+		return nil, api.DatabaseError, err
 	}
 	return out, "", nil
 }
@@ -272,20 +272,20 @@ func (h *Handler) listNamespaces(w http.ResponseWriter, r *http.Request) (*resol
 //
 // It can return the following errors:
 //
-// - [resolver.InvalidNamespaceID]
-// - [resolver.NamespaceNotFound]
-// - [resolver.DatabaseError]
-func (h *Handler) getNamespaceDetail(w http.ResponseWriter, r *http.Request) (*resolver.NamespaceResponse, resolver.Error, error) {
+// - [api.InvalidNamespaceID]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError]
+func (h *Handler) getNamespaceDetail(w http.ResponseWriter, r *http.Request) (*api.NamespaceResponse, api.Error, error) {
 	namespace, specError, err := getNamespace(r)
 	if err != nil {
 		return nil, specError, err
 	}
 	out, err := h.backend.GetNamespace(r.Context(), namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, resolver.NamespaceNotFound, err
+		return nil, api.NamespaceNotFound, err
 	}
 	if err != nil {
-		return nil, resolver.DatabaseError, err
+		return nil, api.DatabaseError, err
 	}
 	return out, "", nil
 }
@@ -294,28 +294,28 @@ func (h *Handler) getNamespaceDetail(w http.ResponseWriter, r *http.Request) (*r
 //
 // It can return the following errors:
 //
-// - [resolver.DatabaseError]
-func (h *Handler) countAllResources(w http.ResponseWriter, r *http.Request) (*resolver.ResourceCountResponse, resolver.Error, error) {
+// - [api.DatabaseError]
+func (h *Handler) countAllResources(w http.ResponseWriter, r *http.Request) (*api.ResourceCountResponse, api.Error, error) {
 	n, err := h.backend.CountAllResources(r.Context())
 	if err != nil {
-		return nil, resolver.DatabaseError, err
+		return nil, api.DatabaseError, err
 	}
-	return &resolver.ResourceCountResponse{Total: int(n)}, "", nil
+	return &api.ResourceCountResponse{Total: int(n)}, "", nil
 }
 
 // createNamespace creates a new namespace.
 //
 // It can return the following errors:
 //
-// - [resolver.BodySizeExceeded]
-// - [resolver.BodyMissing]
-// - [resolver.BodyInvalidJSON]
+// - [api.BodySizeExceeded]
+// - [api.BodyMissing]
+// - [api.BodyInvalidJSON]
 //
-// - [resolver.DatabaseError]
-// - [resolver.BadIDGeneration]
-// - [resolver.InsufficientEntropy]
-func (h *Handler) createNamespace(w http.ResponseWriter, r *http.Request) (*resolver.NamespaceResponse, resolver.Error, error) {
-	var req resolver.NamespaceCreateRequest
+// - [api.DatabaseError]
+// - [api.BadIDGeneration]
+// - [api.InsufficientEntropy]
+func (h *Handler) createNamespace(w http.ResponseWriter, r *http.Request) (*api.NamespaceResponse, api.Error, error) {
+	var req api.NamespaceCreateRequest
 	if specError, err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, specError, err
 	}
@@ -323,20 +323,20 @@ func (h *Handler) createNamespace(w http.ResponseWriter, r *http.Request) (*reso
 	for range h.ops.Limits.MaxNamespaceIDAttempts {
 		name, err := h.runtime.NewNamespaceID()
 		if err != nil {
-			return nil, resolver.BadIDGeneration, err
+			return nil, api.BadIDGeneration, err
 		}
 		if !namespaceIDRE.MatchString(name) {
-			return nil, resolver.BadIDGeneration, fmt.Errorf("%w: %q is not a valid namespace id", errBadNamespaceID, name)
+			return nil, api.BadIDGeneration, fmt.Errorf("%w: %q is not a valid namespace id", errBadNamespaceID, name)
 		}
 		out, err := h.backend.CreateNamespace(r.Context(), name, req, h.runtime.Now)
 		if err == nil {
 			return out, "", nil
 		}
 		if !errors.Is(err, backend.ErrDuplicateNamespaceID) {
-			return nil, resolver.DatabaseError, err
+			return nil, api.DatabaseError, err
 		}
 	}
-	return nil, resolver.InsufficientEntropy, fmt.Errorf("%w: gave up namespace id generation after %d attempts", errInsufficientEntropy, h.ops.Limits.MaxNamespaceIDAttempts)
+	return nil, api.InsufficientEntropy, fmt.Errorf("%w: gave up namespace id generation after %d attempts", errInsufficientEntropy, h.ops.Limits.MaxNamespaceIDAttempts)
 }
 
 var errDeletedInvalid = errors.New("invalid deleted query parameter")
@@ -345,13 +345,13 @@ var errDeletedInvalid = errors.New("invalid deleted query parameter")
 //
 // It can return the following errors:
 //
-// - [resolver.InvalidNamespaceID]
+// - [api.InvalidNamespaceID]
 //
-// - [resolver.InvalidQueryParameter]
+// - [api.InvalidQueryParameter]
 //
-// - [resolver.NamespaceNotFound]
-// - [resolver.DatabaseError]
-func (h *Handler) listResources(w http.ResponseWriter, r *http.Request) (*resolver.PaginatedResourcesResponse, resolver.Error, error) {
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError]
+func (h *Handler) listResources(w http.ResponseWriter, r *http.Request) (*api.PaginatedResourcesResponse, api.Error, error) {
 	namespace, specError, err := getNamespace(r)
 	if err != nil {
 		return nil, specError, err
@@ -368,7 +368,7 @@ func (h *Handler) listResources(w http.ResponseWriter, r *http.Request) (*resolv
 	if query.Has("deleted") {
 		b, err := strconv.ParseBool(query.Get("deleted"))
 		if err != nil {
-			return nil, resolver.InvalidQueryParameter, fmt.Errorf("%w: %w", errDeletedInvalid, err)
+			return nil, api.InvalidQueryParameter, fmt.Errorf("%w: %w", errDeletedInvalid, err)
 		}
 		deleted = &b
 	}
@@ -378,7 +378,7 @@ func (h *Handler) listResources(w http.ResponseWriter, r *http.Request) (*resolv
 		return nil, specError, err
 	}
 
-	out, err := h.backend.ListResources(r.Context(), resolver.ListResourcesParams{
+	out, err := h.backend.ListResources(r.Context(), api.ListResourcesParams{
 		Namespace: namespace,
 		Tag:       tag,
 		Deleted:   deleted,
@@ -387,10 +387,10 @@ func (h *Handler) listResources(w http.ResponseWriter, r *http.Request) (*resolv
 		Offset: offset,
 	})
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, resolver.NamespaceNotFound, err
+		return nil, api.NamespaceNotFound, err
 	}
 	if err != nil {
-		return nil, resolver.DatabaseError, err
+		return nil, api.DatabaseError, err
 	}
 	return out, "", nil
 }
@@ -399,17 +399,17 @@ func (h *Handler) listResources(w http.ResponseWriter, r *http.Request) (*resolv
 //
 // It can return the following errors:
 //
-// - [resolver.BodySizeExceeded]
-// - [resolver.BodyMissing]
-// - [resolver.BodyInvalidJSON]
+// - [api.BodySizeExceeded]
+// - [api.BodyMissing]
+// - [api.BodyInvalidJSON]
 //
-// - [resolver.InvalidNamespaceID]
-// - [resolver.NamespaceNotFound]
-// - [resolver.DatabaseError]
-// - [resolver.BadIDGeneration]
-// - [resolver.InsufficientEntropy]
-func (h *Handler) createResource(w http.ResponseWriter, r *http.Request) (*resolver.ResourceResponse, resolver.Error, error) {
-	var req resolver.ResourceCreateRequest
+// - [api.InvalidNamespaceID]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError]
+// - [api.BadIDGeneration]
+// - [api.InsufficientEntropy]
+func (h *Handler) createResource(w http.ResponseWriter, r *http.Request) (*api.ResourceResponse, api.Error, error) {
+	var req api.ResourceCreateRequest
 	if specError, err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, specError, err
 	}
@@ -421,13 +421,13 @@ func (h *Handler) createResource(w http.ResponseWriter, r *http.Request) (*resol
 
 	ns, err := h.backend.GetNamespace(r.Context(), namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, resolver.NamespaceNotFound, err
+		return nil, api.NamespaceNotFound, err
 	}
 	if err != nil {
-		return nil, resolver.DatabaseError, err
+		return nil, api.DatabaseError, err
 	}
 
-	out, specError, err := h.allocatePID(ns.PIDFormat, func(pid string) (*resolver.ResourceResponse, error) {
+	out, specError, err := h.allocatePID(ns.PIDFormat, func(pid string) (*api.ResourceResponse, error) {
 		return h.backend.CreateResource(r.Context(), namespace, pid, req, h.runtime.Now)
 	})
 	if err != nil {
@@ -440,24 +440,24 @@ func (h *Handler) createResource(w http.ResponseWriter, r *http.Request) (*resol
 //
 // It can return the following errors:
 //
-// - [resolver.BodySizeExceeded]
-// - [resolver.BodyMissing]
-// - [resolver.BodyInvalidJSON]
+// - [api.BodySizeExceeded]
+// - [api.BodyMissing]
+// - [api.BodyInvalidJSON]
 //
-// - [resolver.ItemLimitExceeded]
-// - [resolver.InvalidNamespaceID]
-// - [resolver.NamespaceNotFound]
-// - [resolver.DatabaseError]
+// - [api.ItemLimitExceeded]
+// - [api.InvalidNamespaceID]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError]
 //
-// - [resolver.BadIDGeneration]
-// - [resolver.InsufficientEntropy]
-func (h *Handler) batchCreateResources(w http.ResponseWriter, r *http.Request) ([]resolver.ResourceResponse, resolver.Error, error) {
-	var reqs []resolver.ResourceCreateRequest
+// - [api.BadIDGeneration]
+// - [api.InsufficientEntropy]
+func (h *Handler) batchCreateResources(w http.ResponseWriter, r *http.Request) ([]api.ResourceResponse, api.Error, error) {
+	var reqs []api.ResourceCreateRequest
 	if specError, err := h.decodeJSON(w, r, &reqs); err != nil {
 		return nil, specError, err
 	}
 	if h.ops.Limits.MaxBatchItems > 0 && len(reqs) > h.ops.Limits.MaxBatchItems {
-		return nil, resolver.ItemLimitExceeded, fmt.Errorf("%d > %d", len(reqs), h.ops.Limits.MaxBatchItems)
+		return nil, api.ItemLimitExceeded, fmt.Errorf("%d > %d", len(reqs), h.ops.Limits.MaxBatchItems)
 	}
 
 	namespace, specError, err := getNamespace(r)
@@ -467,13 +467,13 @@ func (h *Handler) batchCreateResources(w http.ResponseWriter, r *http.Request) (
 
 	ns, err := h.backend.GetNamespace(r.Context(), namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, resolver.NamespaceNotFound, err
+		return nil, api.NamespaceNotFound, err
 	}
 	if err != nil {
-		return nil, resolver.DatabaseError, err
+		return nil, api.DatabaseError, err
 	}
 
-	out, specError, err := h.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []string) ([]resolver.ResourceResponse, error) {
+	out, specError, err := h.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []string) ([]api.ResourceResponse, error) {
 		return h.backend.BatchCreateResources(r.Context(), namespace, pids, reqs, h.runtime.Now)
 	})
 	if err != nil {
@@ -486,12 +486,12 @@ func (h *Handler) batchCreateResources(w http.ResponseWriter, r *http.Request) (
 //
 // It can return the following errors:
 //
-// - [resolver.InvalidNamespaceID]
-// - [resolver.InvalidPID]
-// - [resolver.NamespaceNotFound]
-// - [resolver.ResourceNotFound]
-// - [resolver.DatabaseError]
-func (h *Handler) getResource(w http.ResponseWriter, r *http.Request) (*resolver.ResourceResponse, resolver.Error, error) {
+// - [api.InvalidNamespaceID]
+// - [api.InvalidPID]
+// - [api.NamespaceNotFound]
+// - [api.ResourceNotFound]
+// - [api.DatabaseError]
+func (h *Handler) getResource(w http.ResponseWriter, r *http.Request) (*api.ResourceResponse, api.Error, error) {
 	namespace, specError, err := getNamespace(r)
 	if err != nil {
 		return nil, specError, err
@@ -503,13 +503,13 @@ func (h *Handler) getResource(w http.ResponseWriter, r *http.Request) (*resolver
 
 	out, err := h.backend.GetResource(r.Context(), namespace, pid)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, resolver.NamespaceNotFound, err
+		return nil, api.NamespaceNotFound, err
 	}
 	if errors.Is(err, backend.ErrResourceNotFound) {
-		return nil, resolver.ResourceNotFound, err
+		return nil, api.ResourceNotFound, err
 	}
 	if err != nil {
-		return nil, resolver.DatabaseError, err
+		return nil, api.DatabaseError, err
 	}
 	return out, "", nil
 }
@@ -518,18 +518,18 @@ func (h *Handler) getResource(w http.ResponseWriter, r *http.Request) (*resolver
 //
 // It can return the following errors:
 //
-// - [resolver.BodySizeExceeded]
-// - [resolver.BodyMissing]
-// - [resolver.BodyInvalidJSON]
+// - [api.BodySizeExceeded]
+// - [api.BodyMissing]
+// - [api.BodyInvalidJSON]
 //
-// - [resolver.InvalidNamespaceID]
-// - [resolver.InvalidPID]
+// - [api.InvalidNamespaceID]
+// - [api.InvalidPID]
 //
-// - [resolver.DatabaseError]
-// - [resolver.NamespaceNotFound]
-// - [resolver.ResourceNotFound]
-func (h *Handler) updateResource(w http.ResponseWriter, r *http.Request) (*resolver.ResourceResponse, resolver.Error, error) {
-	var req resolver.ResourceUpdateRequest
+// - [api.DatabaseError]
+// - [api.NamespaceNotFound]
+// - [api.ResourceNotFound]
+func (h *Handler) updateResource(w http.ResponseWriter, r *http.Request) (*api.ResourceResponse, api.Error, error) {
+	var req api.ResourceUpdateRequest
 	if specError, err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, specError, err
 	}
@@ -544,13 +544,13 @@ func (h *Handler) updateResource(w http.ResponseWriter, r *http.Request) (*resol
 	}
 	out, err := h.backend.UpdateResource(r.Context(), namespace, pid, req, h.runtime.Now)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, resolver.NamespaceNotFound, err
+		return nil, api.NamespaceNotFound, err
 	}
 	if errors.Is(err, backend.ErrResourceNotFound) {
-		return nil, resolver.ResourceNotFound, err
+		return nil, api.ResourceNotFound, err
 	}
 	if err != nil {
-		return nil, resolver.DatabaseError, err
+		return nil, api.DatabaseError, err
 	}
 	return out, "", nil
 }
@@ -561,10 +561,10 @@ var errTrailingJSON = errors.New("trailing json after value")
 //
 // It can return the following errors:
 //
-// - [resolver.BodySizeExceeded]
-// - [resolver.BodyMissing]
-// - [resolver.BodyInvalidJSON]
-func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (resolver.Error, error) {
+// - [api.BodySizeExceeded]
+// - [api.BodyMissing]
+// - [api.BodyInvalidJSON]
+func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (api.Error, error) {
 	var body io.ReadCloser = r.Body
 	if h.ops.Limits.MaxBodyBytes > 0 {
 		body = http.MaxBytesReader(w, body, h.ops.Limits.MaxBodyBytes)
@@ -576,19 +576,19 @@ func (h *Handler) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (res
 
 	if err := dec.Decode(v); err != nil {
 		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-			return resolver.BodySizeExceeded, err
+			return api.BodySizeExceeded, err
 		}
 		if errors.Is(err, io.EOF) {
-			return resolver.BodyMissing, err
+			return api.BodyMissing, err
 		}
-		return resolver.BodyInvalidJSON, err
+		return api.BodyInvalidJSON, err
 	}
 	_, err := dec.Token()
 	if !errors.Is(err, io.EOF) || err == nil {
 		if err == nil {
 			err = errTrailingJSON
 		}
-		return resolver.BodyInvalidJSON, err
+		return api.BodyInvalidJSON, err
 	}
 	return "", nil
 }
@@ -606,18 +606,18 @@ var (
 //
 // It can return the following errors:
 //
-// - [resolver.InvalidQueryParameter]
-func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, specError resolver.Error, err error) {
+// - [api.InvalidQueryParameter]
+func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, specError api.Error, err error) {
 	query := r.URL.Query()
 
 	limit = h.ops.Limits.DefaultPageLimit
 	if query.Has("limit") {
 		limit, err = parseInt(query.Get("limit"))
 		if err != nil {
-			return 0, 0, resolver.InvalidQueryParameter, fmt.Errorf("%w: %w", errLimitInvalid, err)
+			return 0, 0, api.InvalidQueryParameter, fmt.Errorf("%w: %w", errLimitInvalid, err)
 		}
 		if limit < 0 {
-			return 0, 0, resolver.InvalidQueryParameter, errLimitMustBeNonNegative
+			return 0, 0, api.InvalidQueryParameter, errLimitMustBeNonNegative
 		}
 	}
 	if h.ops.Limits.MaxPageLimit > 0 && limit > h.ops.Limits.MaxPageLimit {
@@ -628,10 +628,10 @@ func (h *Handler) parsePagination(r *http.Request) (limit int, offset int, specE
 	if query.Has("offset") {
 		offset, err = parseInt(query.Get("offset"))
 		if err != nil {
-			return 0, 0, resolver.InvalidQueryParameter, fmt.Errorf("%w: %w", errOffsetInvalid, err)
+			return 0, 0, api.InvalidQueryParameter, fmt.Errorf("%w: %w", errOffsetInvalid, err)
 		}
 		if offset < 0 {
-			return 0, 0, resolver.InvalidQueryParameter, errOffsetMustBeNonNegative
+			return 0, 0, api.InvalidQueryParameter, errOffsetMustBeNonNegative
 		}
 	}
 	return limit, offset, "", nil
@@ -643,11 +643,11 @@ var errInvalidNamespaceID = errors.New("invalid namespace id")
 //
 // It can return the following errors:
 //
-// - [resolver.InvalidNamespaceID]
-func getNamespace(r *http.Request) (namespace string, specError resolver.Error, err error) {
+// - [api.InvalidNamespaceID]
+func getNamespace(r *http.Request) (namespace string, specError api.Error, err error) {
 	namespace = r.PathValue("namespace")
 	if !namespaceIDRE.MatchString(namespace) {
-		return "", resolver.InvalidNamespaceID, errInvalidNamespaceID
+		return "", api.InvalidNamespaceID, errInvalidNamespaceID
 	}
 	return namespace, "", nil
 }
@@ -658,11 +658,11 @@ var errInvalidPID = errors.New("invalid pid")
 //
 // It can return the following errors:
 //
-// - [resolver.InvalidPID]
-func getPID(r *http.Request) (pid string, specError resolver.Error, err error) {
+// - [api.InvalidPID]
+func getPID(r *http.Request) (pid string, specError api.Error, err error) {
 	pid = r.PathValue("pid")
 	if !pidRE.MatchString(pid) {
-		return "", resolver.InvalidPID, errInvalidPID
+		return "", api.InvalidPID, errInvalidPID
 	}
 	return pid, "", nil
 }
@@ -690,12 +690,12 @@ var (
 //
 // It can return the following errors:
 //
-// - [resolver.BadIDGeneration]
-// - [resolver.DatabaseError]
-// - [resolver.InsufficientEntropy]
-func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) ([]resolver.ResourceResponse, error)) ([]resolver.ResourceResponse, resolver.Error, error) {
+// - [api.BadIDGeneration]
+// - [api.DatabaseError]
+// - [api.InsufficientEntropy]
+func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) ([]api.ResourceResponse, error)) ([]api.ResourceResponse, api.Error, error) {
 	if n == 0 {
-		return []resolver.ResourceResponse{}, "", nil
+		return []api.ResourceResponse{}, "", nil
 	}
 	for range h.ops.Limits.MaxPIDAttempts {
 		pids := make([]string, n)
@@ -705,7 +705,7 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 			for range h.ops.Limits.MaxPIDAttempts {
 				candidate, err := h.runtime.NewPID(format)
 				if err != nil {
-					return nil, resolver.BadIDGeneration, err
+					return nil, api.BadIDGeneration, err
 				}
 				if _, exists := seen[candidate]; exists {
 					continue
@@ -715,7 +715,7 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 				break
 			}
 			if !format.IsValid(pids[i]) {
-				return nil, resolver.BadIDGeneration, fmt.Errorf("%w: %q is not a valid pid", errBadPID, pids[i])
+				return nil, api.BadIDGeneration, fmt.Errorf("%w: %q is not a valid pid", errBadPID, pids[i])
 			}
 		}
 
@@ -724,20 +724,20 @@ func (h *Handler) allocatePIDs(format pid.Format, n int, insert func([]string) (
 			return out, "", nil
 		}
 		if !errors.Is(err, backend.ErrPIDAllocationFailed) {
-			return nil, resolver.DatabaseError, err
+			return nil, api.DatabaseError, err
 		}
 	}
-	return nil, resolver.InsufficientEntropy, fmt.Errorf("%w: gave up pid generation after %d attempts", errInsufficientEntropy, h.ops.Limits.MaxPIDAttempts)
+	return nil, api.InsufficientEntropy, fmt.Errorf("%w: gave up pid generation after %d attempts", errInsufficientEntropy, h.ops.Limits.MaxPIDAttempts)
 }
 
 // allocatePIDs is like [Handler.allocatePIDs] but for a single PID.
-func (h *Handler) allocatePID(format pid.Format, insert func(string) (*resolver.ResourceResponse, error)) (*resolver.ResourceResponse, resolver.Error, error) {
-	pids, specError, err := h.allocatePIDs(format, 1, func(pids []string) ([]resolver.ResourceResponse, error) {
+func (h *Handler) allocatePID(format pid.Format, insert func(string) (*api.ResourceResponse, error)) (*api.ResourceResponse, api.Error, error) {
+	pids, specError, err := h.allocatePIDs(format, 1, func(pids []string) ([]api.ResourceResponse, error) {
 		res, err := insert(pids[0])
 		if err != nil {
 			return nil, err
 		}
-		return []resolver.ResourceResponse{*res}, nil
+		return []api.ResourceResponse{*res}, nil
 	})
 	if err != nil {
 		return nil, specError, err

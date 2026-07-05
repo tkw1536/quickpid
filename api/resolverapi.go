@@ -1,5 +1,5 @@
 // Package api holds type definitions for the PID Resolver API.
-package resolver
+package api
 
 //spellchecker:words github quickpid internal strict embed
 import (
@@ -160,10 +160,6 @@ type ListNamespacesParams struct {
 
 	Limit  int
 	Offset int
-}
-
-type ErrorResponse struct {
-	Error string `json:"error"`
 }
 
 // InfoResponse provides information about the resolver.
