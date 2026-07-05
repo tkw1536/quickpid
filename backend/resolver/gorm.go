@@ -1,5 +1,5 @@
 //spellchecker:words backend
-package backend
+package resolver
 
 //spellchecker:words context errors strings time github quickpid gorm
 import (
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/pid"
 	"gorm.io/gorm"
 )
@@ -22,11 +23,11 @@ func MigrateGorm(db *gorm.DB) error {
 // DefaultGormBatchSize is the default batch size to be used by [NewGormBackend].
 const DefaultGormBatchSize = 100
 
-// NewGormBackend returns [Backend] backed by gorm.
+// NewGormBackend returns [ResolverBackend] backed by gorm.
 //
 // batchSize is the batch size to be used during create operations.
 // If <= 0, [DefaultGormBatchSize] is used.
-func NewGormBackend(db *gorm.DB, batchSize int) Backend {
+func NewGormBackend(db *gorm.DB, batchSize int) backend.ResolverBackend {
 	if batchSize <= 0 {
 		batchSize = DefaultGormBatchSize
 	}
@@ -120,7 +121,7 @@ func (s *gormBackend) CreateNamespace(ctx context.Context, namespace string, req
 		}
 		if err := tx.Create(&ns).Error; err != nil {
 			if isUniqueConstraintError(err) {
-				return nil, ErrDuplicateNamespaceID
+				return nil, backend.ErrDuplicateNamespaceID
 			}
 			return nil, err
 		}
@@ -134,7 +135,7 @@ func (s *gormBackend) GetNamespace(ctx context.Context, namespace string) (*api.
 		var ns namespaceRow
 		if err := tx.First(&ns, "id = ?", namespace).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, ErrNamespaceNotFound
+				return nil, backend.ErrNamespaceNotFound
 			}
 			return nil, err
 		}
@@ -216,7 +217,7 @@ func (s *gormBackend) CreateResource(ctx context.Context, namespace, pid string,
 		}
 		if err := tx.Create(&row).Error; err != nil {
 			if isUniqueConstraintError(err) {
-				return nil, ErrPIDAllocationFailed
+				return nil, backend.ErrPIDAllocationFailed
 			}
 			return nil, err
 		}
@@ -230,7 +231,7 @@ func (s *gormBackend) BatchCreateResources(ctx context.Context, namespace string
 		return nil, nil
 	}
 	if len(pids) != len(reqs) {
-		return nil, ErrPIDAllocationFailed
+		return nil, backend.ErrPIDAllocationFailed
 	}
 
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) ([]api.ResourceResponse, error) {
@@ -254,7 +255,7 @@ func (s *gormBackend) BatchCreateResources(ctx context.Context, namespace string
 
 		if err := tx.CreateInBatches(&rows, s.batchSize).Error; err != nil {
 			if isUniqueConstraintError(err) {
-				return nil, ErrPIDAllocationFailed
+				return nil, backend.ErrPIDAllocationFailed
 			}
 			return nil, err
 		}
@@ -276,7 +277,7 @@ func (s *gormBackend) GetResource(ctx context.Context, namespace, pid string) (*
 		var row resourceRow
 		if err := tx.First(&row, "namespace_id = ? AND pid = ?", namespace, pid).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, ErrResourceNotFound
+				return nil, backend.ErrResourceNotFound
 			}
 			return nil, err
 		}
@@ -294,7 +295,7 @@ func (s *gormBackend) UpdateResource(ctx context.Context, id, pid string, req ap
 		var row resourceRow
 		if err := tx.First(&row, "namespace_id = ? AND pid = ?", id, pid).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, ErrResourceNotFound
+				return nil, backend.ErrResourceNotFound
 			}
 			return nil, err
 		}
@@ -326,7 +327,7 @@ func ensureNamespaceExists(tx *gorm.DB, id string) error {
 		return err
 	}
 	if n == 0 {
-		return ErrNamespaceNotFound
+		return backend.ErrNamespaceNotFound
 	}
 	return nil
 }

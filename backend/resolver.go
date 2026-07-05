@@ -1,4 +1,4 @@
-// Package backend provides [Backend] and implementations.
+// Package backend provides [ResolverBackend], [AuthBackend], and implementations.
 //
 //spellchecker:words backend
 package backend
@@ -12,10 +12,10 @@ import (
 	"github.com/tkw1536/bicpid/api"
 )
 
-// Backend represents the backend of a PID resolver.
+// ResolverBackend represents the backend of a PID resolver.
 //
 // See [NewGormBackend] and [NewInMemoryBackend] for implementations.
-type Backend interface {
+type ResolverBackend interface {
 	// Lists all available namespaces, ordered ascending by namespace id.
 	// Has no specific error conditions.
 	ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error)
@@ -63,7 +63,7 @@ type Backend interface {
 	Shutdown(ctx context.Context) error
 }
 
-// Sentinel errors to be returned by [Backend] implementations.
+// Sentinel errors to be returned by [ResolverBackend] implementations.
 var (
 	ErrDuplicateNamespaceID = errors.New("duplicate namespace id")
 

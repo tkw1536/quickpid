@@ -28,7 +28,7 @@ type Handler struct {
 
 	ops     Options
 	runtime Runtime
-	backend backend.Backend
+	backend backend.ResolverBackend
 	mux     *http.ServeMux
 
 	logger *slog.Logger
@@ -38,7 +38,7 @@ type Handler struct {
 //
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
 // mount with http.StripPrefix(mountPath, NewHandler(Options{MountPath: mountPath}, res)) at mountPath+"/".
-func NewHandler(options Options, runtime Runtime, backend backend.Backend, logger *slog.Logger) *Handler {
+func NewHandler(options Options, runtime Runtime, backend backend.ResolverBackend, logger *slog.Logger) *Handler {
 	options = options.withValidValues()
 
 	h := &Handler{
@@ -224,7 +224,6 @@ var openapiYAML = []byte(quickpid.Spec())
 func (h *Handler) handleOpenAPISpec() http.HandlerFunc {
 	processed, err := openapi.Rewrite(openapiYAML, openapi.Server{
 		MountPath: h.ops.MountPath,
-		BasicAuth: h.ops.RegisterBasicAuthInSpec,
 	})
 	if err != nil {
 		h.logger.Error("failed to preprocess openapi.yaml", slog.Any("error", err))

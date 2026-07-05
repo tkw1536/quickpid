@@ -1,4 +1,4 @@
-// Package servertest runs tests for a specific [backend.Backend] implementation against the [server.Handler].
+// Package servertest runs tests for a specific [backend.ResolverBackend] implementation against the [server.Handler].
 //
 //spellchecker:words servertest
 package servertest
@@ -18,7 +18,7 @@ import (
 // BackendFactory is a function that creates a concrete new Resolver.
 // It should call t.Fatal the test if it cannot create a resolver.
 // It should use t.Cleanup if cleanup is needed after the test.
-type BackendFactory = func(t *testing.T) backend.Backend
+type BackendFactory = func(t *testing.T) backend.ResolverBackend
 
 // TestBackend starts an httptest server for res and runs a sequential suite of
 // subtests against resolver HTTP routes (namespaces, resources, batch, errors).

@@ -30,6 +30,10 @@ const (
 	ResourceNotFound  Error = "resource_not_found"  // Resource not found
 
 	InfoUnavailable Error = "info_unavailable" // Info is unavailable (possibly for security reasons)
+
+	DuplicateUsername Error = "duplicate_username" // Username is already in use
+	UserNotFound      Error = "user_not_found"     // User not found
+	KeyNotFound       Error = "key_not_found"      // API key not found
 )
 
 // codes maps [Error]s to HTTP status codes.
@@ -53,6 +57,10 @@ var codes = map[Error]int{
 	ResourceNotFound:  http.StatusNotFound,
 
 	InfoUnavailable: http.StatusNotFound,
+
+	DuplicateUsername: http.StatusConflict,
+	UserNotFound:      http.StatusNotFound,
+	KeyNotFound:       http.StatusNotFound,
 }
 
 // HTTPCode returns the HTTP status code for the error.

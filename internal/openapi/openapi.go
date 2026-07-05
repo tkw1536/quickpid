@@ -14,7 +14,6 @@ import (
 // Server represents options for an openapi spec 'server' section.
 type Server struct {
 	MountPath string
-	BasicAuth bool
 }
 
 // Rewrite loads input as an openapi yaml, updates the server according to the options, and then serializes it back as yaml.
@@ -36,28 +35,6 @@ func Rewrite(input []byte, server Server) ([]byte, error) {
 	}
 	if err := yamlx.Assign(root, "servers", *serversNode); err != nil {
 		return nil, err
-	}
-
-	if server.BasicAuth {
-		schemeNode, err := openapiYAMLNode(map[string]any{
-			"type":   "http",
-			"scheme": "basic",
-		})
-		if err != nil {
-			return nil, err
-		}
-		securitySchemes := ensureOpenAPIMapValue(ensureOpenAPIMapValue(root, "components"), "securitySchemes")
-		if err := yamlx.Assign(securitySchemes, "BasicAuth", *schemeNode); err != nil {
-			return nil, err
-		}
-
-		securityNode, err := openapiYAMLNode([]map[string][]string{{"BasicAuth": {}}})
-		if err != nil {
-			return nil, err
-		}
-		if err := yamlx.Assign(root, "security", *securityNode); err != nil {
-			return nil, err
-		}
 	}
 
 	// re en-code the document into bytes.
@@ -82,18 +59,4 @@ func openapiYAMLNode(value any) (*yaml.Node, error) {
 		return nil, err
 	}
 	return root, nil
-}
-
-func ensureOpenAPIMapValue(node *yaml.Node, key string) *yaml.Node {
-	if child, err := yamlx.Child(node, key); err == nil {
-		return child
-	}
-
-	child := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
-	node.Content = append(
-		node.Content,
-		&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key},
-		child,
-	)
-	return child
 }

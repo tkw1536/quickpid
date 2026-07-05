@@ -11,23 +11,24 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/backend/resolver"
 	"github.com/tkw1536/bicpid/cmd"
 	"gorm.io/gorm"
 )
 
 func main() {
-	cmd.Main("quickpid-sqlite", func(logger *slog.Logger) (backend.Backend, error) {
+	cmd.Main("quickpid-sqlite", func(logger *slog.Logger) (backend.ResolverBackend, error) {
 		logger.Info("opening database", "dsn", sqliteDSN)
 		db, err := gorm.Open(sqlite.Open(sqliteDSN), &gorm.Config{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to open database: %w", err)
 		}
 		if !disableAutoMigrate {
-			if err := backend.MigrateGorm(db); err != nil {
+			if err := resolver.MigrateGorm(db); err != nil {
 				return nil, fmt.Errorf("failed to migrate database: %w", err)
 			}
 		}
-		return backend.NewGormBackend(db, 0), nil
+		return resolver.NewGormBackend(db, 0), nil
 	})
 }
 

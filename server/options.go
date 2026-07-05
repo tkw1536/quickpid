@@ -10,11 +10,6 @@ type Options struct {
 	// Disable swagger UI and spec file being served.
 	DisableSwaggerUI bool
 
-	// Should we register basic authentication in openapi.yaml?
-	// This flag ONLY changes the openapi.yaml file, and does not effect actually
-	// enforcing basic auth for the endpoints.
-	RegisterBasicAuthInSpec bool
-
 	// InfoEnabled disable the generic info endpoint.
 	InfoEnabled bool
 

@@ -22,8 +22,7 @@ import (
 
 type mainCmd struct {
 	name           string
-	backendFactory func(*slog.Logger) (backend.Backend, error)
-	basicAuthFile  string
+	backendFactory func(*slog.Logger) (backend.ResolverBackend, error)
 
 	listenHost string
 	listenPort int
@@ -52,7 +51,7 @@ type mainCmd struct {
 //
 // To add additional flags, callers should add to [flag.CommandLine] prior to the call to Main
 // and access variables in the factory function.
-func Main(name string, backendFactory func(logger *slog.Logger) (backend.Backend, error)) {
+func Main(name string, backendFactory func(logger *slog.Logger) (backend.ResolverBackend, error)) {
 	os.Exit(
 		new(mainCmd{
 			name:           name,
@@ -192,14 +191,13 @@ func (main *mainCmd) setupLogger() error {
 	return nil
 }
 
-func (main *mainCmd) newServerHandler(b backend.Backend) *server.Handler {
+func (main *mainCmd) newServerHandler(b backend.ResolverBackend) *server.Handler {
 	return server.NewHandler(
 		server.Options{
-			MountPath:               main.mountPath,
-			DisableSwaggerUI:        main.disableSwagger,
-			RegisterBasicAuthInSpec: main.basicAuthFile != "",
-			Limits:                  main.limits,
-			InfoEnabled:             !main.disableInfo,
+			MountPath:        main.mountPath,
+			DisableSwaggerUI: main.disableSwagger,
+			Limits:           main.limits,
+			InfoEnabled:      !main.disableInfo,
 		},
 		server.NewRuntime(),
 		b,

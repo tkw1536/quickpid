@@ -1,5 +1,5 @@
 //spellchecker:words backend
-package backend
+package resolver
 
 //spellchecker:words context errors sort sync time github quickpid
 import (
@@ -11,10 +11,11 @@ import (
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/bicpid/backend"
 )
 
 // NewInMemoryBackend returns a new backend backed by an in-memory map.
-func NewInMemoryBackend() Backend {
+func NewInMemoryBackend() backend.ResolverBackend {
 	return &inMemoryBackend{
 		namespaces: make(map[string]api.NamespaceResponse),
 		resources:  make(map[string]map[string]api.ResourceResponse),
@@ -63,7 +64,7 @@ func (s *inMemoryBackend) CreateNamespace(_ context.Context, namespace string, r
 	defer s.mu.Unlock()
 
 	if _, exists := s.namespaces[namespace]; exists {
-		return nil, ErrDuplicateNamespaceID
+		return nil, backend.ErrDuplicateNamespaceID
 	}
 	created := now().UTC().Format(time.RFC3339)
 	ns := api.NamespaceResponse{
@@ -82,7 +83,7 @@ func (s *inMemoryBackend) GetNamespace(_ context.Context, namespace string) (*ap
 	defer s.mu.RUnlock()
 	ns, ok := s.namespaces[namespace]
 	if !ok {
-		return nil, ErrNamespaceNotFound
+		return nil, backend.ErrNamespaceNotFound
 	}
 	return &ns, nil
 }
@@ -92,7 +93,7 @@ func (s *inMemoryBackend) ListResources(_ context.Context, params api.ListResour
 	defer s.mu.RUnlock()
 
 	if _, ok := s.namespaces[params.Namespace]; !ok {
-		return nil, ErrNamespaceNotFound
+		return nil, backend.ErrNamespaceNotFound
 	}
 
 	byPID := s.resources[params.Namespace]
@@ -139,11 +140,11 @@ func (s *inMemoryBackend) CreateResource(_ context.Context, namespace, pid strin
 	defer s.mu.Unlock()
 
 	if _, ok := s.namespaces[namespace]; !ok {
-		return nil, ErrNamespaceNotFound
+		return nil, backend.ErrNamespaceNotFound
 	}
 	byPID := s.resources[namespace]
 	if _, exists := byPID[pid]; exists {
-		return nil, ErrPIDAllocationFailed
+		return nil, backend.ErrPIDAllocationFailed
 	}
 	ts := now().UTC().Format(time.RFC3339)
 	res := api.ResourceResponse{
@@ -164,21 +165,21 @@ func (s *inMemoryBackend) BatchCreateResources(_ context.Context, namespace stri
 	defer s.mu.Unlock()
 
 	if _, ok := s.namespaces[namespace]; !ok {
-		return nil, ErrNamespaceNotFound
+		return nil, backend.ErrNamespaceNotFound
 	}
 	if len(pids) != len(reqs) {
-		return nil, ErrPIDAllocationFailed
+		return nil, backend.ErrPIDAllocationFailed
 	}
 
 	byPID := s.resources[namespace]
 	seen := make(map[string]struct{}, len(pids))
 	for _, pid := range pids {
 		if _, dup := seen[pid]; dup {
-			return nil, ErrPIDAllocationFailed
+			return nil, backend.ErrPIDAllocationFailed
 		}
 		seen[pid] = struct{}{}
 		if _, exists := byPID[pid]; exists {
-			return nil, ErrPIDAllocationFailed
+			return nil, backend.ErrPIDAllocationFailed
 		}
 	}
 
@@ -205,11 +206,11 @@ func (s *inMemoryBackend) GetResource(_ context.Context, namespace, pid string) 
 	defer s.mu.RUnlock()
 
 	if _, ok := s.namespaces[namespace]; !ok {
-		return nil, ErrNamespaceNotFound
+		return nil, backend.ErrNamespaceNotFound
 	}
 	res, ok := s.resources[namespace][pid]
 	if !ok {
-		return nil, ErrResourceNotFound
+		return nil, backend.ErrResourceNotFound
 	}
 	return &res, nil
 }
@@ -219,11 +220,11 @@ func (s *inMemoryBackend) UpdateResource(_ context.Context, namespace, pid strin
 	defer s.mu.Unlock()
 
 	if _, ok := s.namespaces[namespace]; !ok {
-		return nil, ErrNamespaceNotFound
+		return nil, backend.ErrNamespaceNotFound
 	}
 	prev, ok := s.resources[namespace][pid]
 	if !ok {
-		return nil, ErrResourceNotFound
+		return nil, backend.ErrResourceNotFound
 	}
 
 	// Apply only the updates that are present.

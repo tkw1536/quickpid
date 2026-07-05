@@ -38,7 +38,7 @@ type flow struct {
 	} `json:"steps"`
 }
 
-func (f flow) Run(t *testing.T, b backend.Backend) {
+func (f flow) Run(t *testing.T, b backend.ResolverBackend) {
 	t.Helper()
 
 	var (

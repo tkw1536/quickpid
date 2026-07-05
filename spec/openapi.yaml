@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: PID Resolver API
-  description: API for managing PIDs across namespaces.
-  version: 2.0.0
+  title: Bicpid API
+  description: API for managing PIDs across namespaces and user accounts with API keys.
+  version: 3.0.0
   license:
     name: Creative Commons Attribution-ShareAlike 4.0 International
     url: https://creativecommons.org/licenses/by-sa/4.0/
@@ -14,6 +14,10 @@ tags:
     description: Operations related to namespaces.
   - name: resources
     description: Operations related to resources.
+  - name: user
+    description: Operations related to user accounts.
+  - name: keys
+    description: Operations related to API keys.
 
 servers:
   - url: /api/v2
@@ -593,6 +597,283 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /user/:
+    get:
+      operationId: getCurrentUser
+      summary: Return information about the currently authenticated user.
+      tags:
+        - user
+      responses:
+        '200':
+          description: User information successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
+    post:
+      operationId: createUser
+      summary: Create a new user account.
+      tags:
+        - user
+      requestBody:
+        required: true
+        description: |
+          A user account to create.
+          A limit on the maximum request body size MAY be enforced.
+          If such a limit is exceeded, a '413' response is returned.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: User created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreateResponse'
+        '400':
+          description: Invalid request body.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+        '413':
+          description: Request body exceeds the configured maximum size.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /users/:
+    get:
+      operationId: listUsers
+      summary: List all user accounts.
+      tags:
+        - user
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Maximum number of items to return.
+            If omitted, a default value is applied.
+            The maximum possible value may be clamped, and values larger than it may be silently truncated.
+            If the value is a negative integer, a '400' response may be returned.
+          schema:
+            type: integer
+            minimum: 0
+        - name: offset
+          in: query
+          required: false
+          description: |
+            Number of items to skip before starting to collect the result set.
+            If omitted, the value is treated as 0.
+            If the value is negative or not an integer, a '400' response may be returned.
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: |
+            A paginated list of users, sorted by username in increasing order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUsersResponse'
+        '400':
+          description: Invalid query parameter (e.g. limit or offset).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /user/key:
+    get:
+      operationId: listKeys
+      summary: List API keys for the currently authenticated user.
+      tags:
+        - keys
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Maximum number of items to return.
+            If omitted, a default value is applied.
+            The maximum possible value may be clamped, and values larger than it may be silently truncated.
+            If the value is a negative integer, a '400' response may be returned.
+          schema:
+            type: integer
+            minimum: 0
+        - name: offset
+          in: query
+          required: false
+          description: |
+            Number of items to skip before starting to collect the result set.
+            If omitted, the value is treated as 0.
+            If the value is negative or not an integer, a '400' response may be returned.
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: |
+            A paginated list of API keys, sorted by id in increasing order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAPIKeysResponse'
+        '400':
+          description: Invalid query parameter (e.g. limit or offset).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
+    post:
+      operationId: issueKey
+      summary: Issue a new API key for the currently authenticated user.
+      tags:
+        - keys
+      requestBody:
+        required: true
+        description: |
+          Metadata for the API key to issue.
+          A limit on the maximum request body size MAY be enforced.
+          If such a limit is exceeded, a '413' response is returned.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueKeyRequest'
+      responses:
+        '201':
+          description: |
+            API key issued successfully.
+            The raw key value is returned only once in this response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueKeyResponse'
+        '400':
+          description: Invalid request body.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+        '413':
+          description: Request body exceeds the configured maximum size.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /user/key/revoke:
+    post:
+      operationId: revokeKey
+      summary: Revoke an API key belonging to the currently authenticated user.
+      tags:
+        - keys
+      requestBody:
+        required: true
+        description: |
+          Identifies the API key to revoke.
+          A limit on the maximum request body size MAY be enforced.
+          If such a limit is exceeded, a '413' response is returned.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeKeyRequest'
+      responses:
+        '200':
+          description: API key revoked successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevokeKeyResponse'
+        '400':
+          description: Invalid request body.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+        '404':
+          description: The API key does not exist or does not belong to the current user.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorKeyNotFound'
+        '413':
+          description: Request body exceeds the configured maximum size.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
 components:
   schemas:
     ErrorResponse:
@@ -1020,3 +1301,160 @@ components:
           type: string
         deleted:
           type: boolean
+    ErrorKeyNotFound:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - key_not_found
+          description: The API key does not exist or does not belong to the current user.
+    UserCreateRequest:
+      description: A user account to create.
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          description: The username for the new account.
+          type: string
+    UserCreateResponse:
+      description: A newly created user account.
+      allOf:
+        - $ref: '#/components/schemas/UserInfo'
+    UserInfo:
+      description: Information about a user account.
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          description: The username of the account.
+          type: string
+    PaginatedUsersResponse:
+      description: |
+        A single page of user responses.
+        The 'total' field is the total number of users, ignoring 'limit' and 'offset'.
+        The 'offset' field is the effective offset used to produce this response.
+      type: object
+      required:
+        - total
+        - offset
+        - items
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          example: 1
+          description: Total number of items available.
+        offset:
+          type: integer
+          minimum: 0
+          example: 0
+          description: Offset of the current response.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserInfo'
+    PaginatedAPIKeysResponse:
+      description: |
+        A single page of API key responses.
+        The 'total' field is the total number of API keys for the user, ignoring 'limit' and 'offset'.
+        The 'offset' field is the effective offset used to produce this response.
+      type: object
+      required:
+        - total
+        - offset
+        - items
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          example: 1
+          description: Total number of items available.
+        offset:
+          type: integer
+          minimum: 0
+          example: 0
+          description: Offset of the current response.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/APIKeyInfo'
+    IssueKeyRequest:
+      description: Metadata for an API key to issue.
+      type: object
+      required:
+        - comment
+      properties:
+        comment:
+          description: A human-readable comment describing the purpose of this key.
+          type: string
+        expires_at:
+          description: |
+            Optional expiration time for the key.
+            If omitted, the key does not expire.
+          type: string
+          format: date-time
+          nullable: true
+    IssueKeyResponse:
+      description: |
+        A newly issued API key.
+        The raw key value is returned only once and cannot be retrieved again.
+      allOf:
+        - $ref: '#/components/schemas/APIKeyInfo'
+        - type: object
+          required:
+            - key
+          properties:
+            key:
+              description: |
+                The raw API key value.
+                This value is returned only once at creation time.
+              type: string
+    RevokeKeyRequest:
+      description: Identifies an API key to revoke.
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          description: Server-assigned id of the API key to revoke.
+          allOf:
+            - $ref: '#/components/schemas/APIKeyId'
+    RevokeKeyResponse:
+      description: A revoked API key.
+      allOf:
+        - $ref: '#/components/schemas/APIKeyInfo'
+    APIKeyId:
+      description: Server-assigned API key id.
+      type: string
+    APIKeyInfo:
+      description: Metadata for an API key.
+      type: object
+      required:
+        - id
+        - comment
+        - created_at
+        - expires_at
+      properties:
+        id:
+          description: Server-assigned id of this API key.
+          allOf:
+            - $ref: '#/components/schemas/APIKeyId'
+        comment:
+          description: A human-readable comment describing the purpose of this key.
+          type: string
+        created_at:
+          description: The date and time the key was created.
+          type: string
+          format: date-time
+        expires_at:
+          description: |
+            Optional expiration time for the key.
+            If null, the key does not expire.
+          type: string
+          format: date-time
+          nullable: true
