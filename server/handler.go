@@ -28,8 +28,11 @@ type Handler struct {
 
 	ops     Options
 	runtime Runtime
+
 	backend backend.ResolverBackend
-	mux     *http.ServeMux
+	auth    authHandler
+
+	mux *http.ServeMux
 
 	logger *slog.Logger
 }
@@ -38,11 +41,12 @@ type Handler struct {
 //
 // Routes on the returned handler are rooted at / (e.g. GET /resolver/namespaces);
 // mount with http.StripPrefix(mountPath, NewHandler(Options{MountPath: mountPath}, res)) at mountPath+"/".
-func NewHandler(options Options, runtime Runtime, backend backend.ResolverBackend, logger *slog.Logger) *Handler {
+func NewHandler(options Options, runtime Runtime, resolver backend.ResolverBackend, auth backend.AuthBackend, logger *slog.Logger) *Handler {
 	options = options.withValidValues()
 
 	h := &Handler{
-		backend: backend,
+		backend: resolver,
+		auth:    authHandler{backend: auth},
 		ops:     options,
 		runtime: runtime,
 		mux:     http.NewServeMux(),
@@ -169,6 +173,14 @@ func NewHandler(options Options, runtime Runtime, backend backend.ResolverBacken
 			api.ResourceNotFound,
 		},
 	))
+
+	h.mux.Handle("GET /user/", handleAuthReq(h, h.getCurrentUserHTTP, http.StatusOK))
+	h.mux.Handle("PATCH /user/", handleAuthReq(h, h.updateCurrentUser, http.StatusOK))
+	h.mux.Handle("POST /user/", handleAuthReq(h, h.createUser, http.StatusCreated))
+	h.mux.Handle("GET /users/", handleAuthReq(h, h.listUsers, http.StatusOK))
+	h.mux.Handle("GET /user/key", handleAuthReq(h, h.listKeys, http.StatusOK))
+	h.mux.Handle("POST /user/key", handleAuthReq(h, h.issueKey, http.StatusCreated))
+	h.mux.Handle("POST /user/key/revoke", handleAuthReq(h, h.revokeKey, http.StatusOK))
 
 	if !options.DisableSwaggerUI {
 		h.mux.Handle("GET /openapi.yaml", h.handleOpenAPISpec())

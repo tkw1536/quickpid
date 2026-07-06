@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words flag slog github glebarez sqlite quickpid backend gorm
+//spellchecker:words flag slog github glebarez sqlite quickpid backend authentication gorm
 import (
 	"cmp"
 	"flag"
@@ -11,25 +11,41 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/backend/authentication"
 	"github.com/tkw1536/bicpid/backend/resolver"
 	"github.com/tkw1536/bicpid/cmd"
 	"gorm.io/gorm"
 )
 
 func main() {
-	cmd.Main("quickpid-sqlite", func(logger *slog.Logger) (backend.ResolverBackend, error) {
-		logger.Info("opening database", "dsn", sqliteDSN)
-		db, err := gorm.Open(sqlite.Open(sqliteDSN), &gorm.Config{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to open database: %w", err)
-		}
-		if !disableAutoMigrate {
-			if err := resolver.MigrateGorm(db); err != nil {
-				return nil, fmt.Errorf("failed to migrate database: %w", err)
+	var db *gorm.DB
+	cmd.Main("quickpid-sqlite",
+		func(logger *slog.Logger) error {
+			logger.Info("opening database", "dsn", sqliteDSN)
+			var err error
+			db, err = gorm.Open(sqlite.Open(sqliteDSN), &gorm.Config{})
+			if err != nil {
+				return fmt.Errorf("failed to open database: %w", err)
 			}
-		}
-		return resolver.NewGormBackend(db, 0), nil
-	})
+			return nil
+		},
+		func(logger *slog.Logger) (backend.ResolverBackend, error) {
+			if !disableAutoMigrate {
+				if err := resolver.MigrateGorm(db); err != nil {
+					return nil, fmt.Errorf("failed to migrate database: %w", err)
+				}
+			}
+			return resolver.NewGormBackend(db, 0), nil
+		},
+		func(logger *slog.Logger) (backend.AuthBackend, error) {
+			if !disableAutoMigrate {
+				if err := authentication.MigrateGorm(db); err != nil {
+					return nil, fmt.Errorf("failed to migrate auth database: %w", err)
+				}
+			}
+			return authentication.NewGormBackend(db), nil
+		},
+	)
 }
 
 var (

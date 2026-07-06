@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words flag slog github quickpid backend gorm driver postgres
+//spellchecker:words flag slog github quickpid backend authentication gorm driver postgres
 import (
 	"cmp"
 	"flag"
@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/backend/authentication"
 	"github.com/tkw1536/bicpid/backend/resolver"
 	"github.com/tkw1536/bicpid/cmd"
 	"gorm.io/driver/postgres"
@@ -17,19 +18,34 @@ import (
 )
 
 func main() {
-	cmd.Main("quickpid-postgres", func(logger *slog.Logger) (backend.ResolverBackend, error) {
-		db, err := gorm.Open(postgres.Open(postgresDSN), &gorm.Config{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to open database: %w", err)
-		}
-
-		if !disableAutoMigrate {
-			if err := resolver.MigrateGorm(db); err != nil {
-				return nil, fmt.Errorf("failed to migrate database: %w", err)
+	var db *gorm.DB
+	cmd.Main("quickpid-postgres",
+		func(logger *slog.Logger) error {
+			logger.Info("opening database", "dsn", postgresDSN)
+			var err error
+			db, err = gorm.Open(postgres.Open(postgresDSN), &gorm.Config{})
+			if err != nil {
+				return fmt.Errorf("failed to open database: %w", err)
 			}
-		}
-		return resolver.NewGormBackend(db, 0), nil
-	})
+			return nil
+		},
+		func(logger *slog.Logger) (backend.ResolverBackend, error) {
+			if !disableAutoMigrate {
+				if err := resolver.MigrateGorm(db); err != nil {
+					return nil, fmt.Errorf("failed to migrate database: %w", err)
+				}
+			}
+			return resolver.NewGormBackend(db, 0), nil
+		},
+		func(logger *slog.Logger) (backend.AuthBackend, error) {
+			if !disableAutoMigrate {
+				if err := authentication.MigrateGorm(db); err != nil {
+					return nil, fmt.Errorf("failed to migrate auth database: %w", err)
+				}
+			}
+			return authentication.NewGormBackend(db), nil
+		},
+	)
 }
 
 var (

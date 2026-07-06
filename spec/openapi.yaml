@@ -613,6 +613,67 @@ paths:
                 $ref: '#/components/schemas/UserInfo'
         '401':
           description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
+    patch:
+      operationId: updateCurrentUser
+      summary: Update the currently authenticated user account.
+      tags:
+        - user
+      requestBody:
+        required: true
+        description: |
+          Fields to update on the user account.
+          A limit on the maximum request body size MAY be enforced.
+          If such a limit is exceeded, a '413' response is returned.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User account updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '400':
+          description: Invalid request body.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to perform this update.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '413':
+          description: Request body exceeds the configured maximum size.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error.
           content:
@@ -651,6 +712,25 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to create user accounts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '409':
+          description: The username is already in use.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDuplicateUsername'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
@@ -709,6 +789,18 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to list user accounts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '500':
           description: Internal server error.
           content:
@@ -762,6 +854,10 @@ paths:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
         '500':
           description: Internal server error.
           content:
@@ -804,6 +900,10 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
         '401':
           description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
@@ -852,6 +952,10 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
         '401':
           description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
         '404':
           description: The API key does not exist or does not belong to the current user.
           content:
@@ -1028,6 +1132,26 @@ components:
           description: |
             Resolver configuration info is unavailable.
             The resolver may choose to hide this information for security reasons.
+    ErrorUnauthorized:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - unauthorized
+          description: Authentication is required or the bearer token is invalid.
+    ErrorForbidden:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - forbidden
+          description: The authenticated user is not allowed to perform this action.
     InfoResponse:
       description:
         Public resolver limits and configuration.
@@ -1301,6 +1425,16 @@ components:
           type: string
         deleted:
           type: boolean
+    ErrorDuplicateUsername:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - duplicate_username
+          description: The username is already in use.
     ErrorKeyNotFound:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -1320,6 +1454,10 @@ components:
         username:
           description: The username for the new account.
           type: string
+        superuser:
+          description: Whether the new account should have superuser privileges.
+          type: boolean
+          default: false
     UserCreateResponse:
       description: A newly created user account.
       allOf:
@@ -1329,10 +1467,29 @@ components:
       type: object
       required:
         - username
+        - superuser
       properties:
         username:
           description: The username of the account.
           type: string
+        superuser:
+          description: Whether the account has superuser privileges.
+          type: boolean
+    UpdateUserRequest:
+      description: Fields to update on a user account.
+      type: object
+      properties:
+        username:
+          description: |
+            Username of the account to update.
+            If omitted, the authenticated user account is updated.
+            Updating another user's account requires superuser privileges.
+          type: string
+        superuser:
+          description: |
+            Whether the account should have superuser privileges.
+            Changing this field requires superuser privileges.
+          type: boolean
     PaginatedUsersResponse:
       description: |
         A single page of user responses.

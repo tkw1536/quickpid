@@ -8,12 +8,14 @@ import (
 
 // UserCreateRequest is the JSON body for createUser.
 type UserCreateRequest struct {
-	Username string `json:"username"`
+	Username  string `json:"username"`
+	Superuser bool   `json:"superuser"`
 }
 
 func (r *UserCreateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
-		Username strict.Optional[strict.String] `json:"username"`
+		Username  strict.Optional[strict.String] `json:"username"`
+		Superuser strict.Optional[strict.Bool]   `json:"superuser"`
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
@@ -23,12 +25,39 @@ func (r *UserCreateRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("missing required field: username")
 	}
 	r.Username = string(decoded.Username.Value)
+	if decoded.Superuser.Present {
+		r.Superuser = bool(decoded.Superuser.Value)
+	}
 	return nil
 }
 
 // UserInfo is returned for user operations.
 type UserInfo struct {
-	Username string `json:"username"`
+	Username  string `json:"username"`
+	Superuser bool   `json:"superuser"`
+}
+
+// UpdateUserRequest updates fields on an existing user account.
+//
+// A nil pointer indicates that no update should be performed on that field.
+// When username is omitted, the authenticated user account is updated.
+type UpdateUserRequest struct {
+	Username  *string `json:"username"`
+	Superuser *bool   `json:"superuser"`
+}
+
+func (r *UpdateUserRequest) UnmarshalJSON(data []byte) error {
+	type internal struct {
+		Username  strict.Optional[strict.String] `json:"username"`
+		Superuser strict.Optional[strict.Bool]   `json:"superuser"`
+	}
+	decoded, err := strict.UnmarshalStruct[internal](data)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
+	}
+	r.Username = strict.OptionalStringToPointer(decoded.Username)
+	r.Superuser = strict.OptionalBoolToPointer(decoded.Superuser)
+	return nil
 }
 
 type ListUsersParams struct {

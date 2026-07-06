@@ -34,6 +34,10 @@ const (
 	DuplicateUsername Error = "duplicate_username" // Username is already in use
 	UserNotFound      Error = "user_not_found"     // User not found
 	KeyNotFound       Error = "key_not_found"      // API key not found
+
+	Unauthorized Error = "unauthorized" // Authentication is required or the bearer token is invalid
+
+	Forbidden Error = "forbidden" // The authenticated user is not allowed to perform this action
 )
 
 // codes maps [Error]s to HTTP status codes.
@@ -61,6 +65,9 @@ var codes = map[Error]int{
 	DuplicateUsername: http.StatusConflict,
 	UserNotFound:      http.StatusNotFound,
 	KeyNotFound:       http.StatusNotFound,
+
+	Unauthorized: http.StatusUnauthorized,
+	Forbidden:    http.StatusForbidden,
 }
 
 // HTTPCode returns the HTTP status code for the error.

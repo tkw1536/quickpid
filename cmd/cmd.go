@@ -22,7 +22,9 @@ import (
 
 type mainCmd struct {
 	name           string
+	preamble       func(*slog.Logger) error
 	backendFactory func(*slog.Logger) (backend.ResolverBackend, error)
+	authFactory    func(*slog.Logger) (backend.AuthBackend, error)
 
 	listenHost string
 	listenPort int
@@ -37,6 +39,8 @@ type mainCmd struct {
 
 	legal bool
 
+	noCreateRoot bool
+
 	shutdownTimeout time.Duration
 
 	addr   string
@@ -45,17 +49,19 @@ type mainCmd struct {
 
 //go:generate go tool gogenlicense -m -n notices
 
-// Main is the main entry point using the given backend factory.
+// Main is the main entry point using the given backend factories.
 //
-// Backends are initialized once using the backendFactory function.
+// Backends are initialized once using the backendFactory and authFactory functions.
 //
 // To add additional flags, callers should add to [flag.CommandLine] prior to the call to Main
 // and access variables in the factory function.
-func Main(name string, backendFactory func(logger *slog.Logger) (backend.ResolverBackend, error)) {
+func Main(name string, preamble func(*slog.Logger) error, backendFactory func(logger *slog.Logger) (backend.ResolverBackend, error), authFactory func(logger *slog.Logger) (backend.AuthBackend, error)) {
 	os.Exit(
 		new(mainCmd{
 			name:           name,
+			preamble:       preamble,
 			backendFactory: backendFactory,
+			authFactory:    authFactory,
 
 			listenHost: "127.0.0.1",
 			listenPort: 8080,
@@ -95,10 +101,30 @@ func (main *mainCmd) run() int {
 
 	main.printStartupBanner()
 
+	if main.preamble != nil {
+		if err := main.preamble(main.logger); err != nil {
+			main.logger.Error("preamble failed", slog.Any("error", err))
+			return 1
+		}
+	}
+
 	b, err := main.backendFactory(main.logger)
 	if err != nil {
 		main.logger.Error("backend initialization failed", slog.Any("error", err))
 		return 1
+	}
+
+	auth, err := main.authFactory(main.logger)
+	if err != nil {
+		main.logger.Error("auth backend initialization failed", slog.Any("error", err))
+		return 1
+	}
+
+	if !main.noCreateRoot {
+		if err := ensureRootUser(context.Background(), auth, main.logger); err != nil {
+			main.logger.Error("root user bootstrap failed", slog.Any("error", err))
+			return 1
+		}
 	}
 
 	defer func() {
@@ -112,7 +138,18 @@ func (main *mainCmd) run() int {
 		main.logger.Info("backend shutdown complete")
 	}()
 
-	h := main.newServerHandler(b)
+	defer func() {
+		main.logger.Info("shutting down auth backend")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), main.shutdownTimeout)
+		defer cancel()
+		if err := auth.Shutdown(shutdownCtx); err != nil {
+			main.logger.Error("auth backend shutdown failed", slog.Any("error", err))
+			return
+		}
+		main.logger.Info("auth backend shutdown complete")
+	}()
+
+	h := main.newServerHandler(b, auth)
 	return main.serve(h)
 }
 
@@ -140,6 +177,8 @@ func (main *mainCmd) parseFlags() error {
 	flag.BoolVar(&main.logJSON, "log-json", main.logJSON, "output logs as json")
 
 	flag.BoolVar(&main.legal, "legal", main.legal, "print license notices and exit")
+
+	flag.BoolVar(&main.noCreateRoot, "no-create-root", main.noCreateRoot, "do not automatically create a root superuser when no accounts exist")
 
 	flag.DurationVar(&main.shutdownTimeout, "shutdown-timeout", main.shutdownTimeout, "timeout applied to backend and HTTP server shutdowns")
 
@@ -191,7 +230,7 @@ func (main *mainCmd) setupLogger() error {
 	return nil
 }
 
-func (main *mainCmd) newServerHandler(b backend.ResolverBackend) *server.Handler {
+func (main *mainCmd) newServerHandler(b backend.ResolverBackend, auth backend.AuthBackend) *server.Handler {
 	return server.NewHandler(
 		server.Options{
 			MountPath:        main.mountPath,
@@ -201,6 +240,7 @@ func (main *mainCmd) newServerHandler(b backend.ResolverBackend) *server.Handler
 		},
 		server.NewRuntime(),
 		b,
+		auth,
 		main.logger,
 	)
 }

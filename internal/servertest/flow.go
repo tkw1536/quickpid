@@ -1,7 +1,7 @@
 //spellchecker:words servertest
 package servertest
 
-//spellchecker:words slices testing time github quickpid backend internal httpfixture server
+//spellchecker:words slices testing time github quickpid backend authentication internal httpfixture server
 import (
 	"fmt"
 	"slices"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/backend/authentication"
 	"github.com/tkw1536/bicpid/internal/httpfixture"
 	"github.com/tkw1536/bicpid/pid"
 	"github.com/tkw1536/bicpid/server"
@@ -45,7 +46,7 @@ func (f flow) Run(t *testing.T, b backend.ResolverBackend) {
 		opts    server.Options
 		runtime testRuntime
 	)
-	handler := server.NewHandler(opts, &runtime, b, nil)
+	handler := server.NewHandler(opts, &runtime, b, authentication.NewInMemoryBackend(), nil)
 
 	for _, s := range f.Steps {
 

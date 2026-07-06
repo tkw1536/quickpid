@@ -1,9 +1,8 @@
 //spellchecker:words backend authentication
 package authentication
 
-//spellchecker:words bytes context errors fmt sort sync time github quickpid
+//spellchecker:words context errors fmt sort sync time github quickpid internal apikey
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -13,48 +12,57 @@ import (
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/bicpid/internal/apikey"
 )
 
 // NewInMemoryBackend returns a new backend backed by in-memory maps.
 func NewInMemoryBackend() backend.AuthBackend {
 	return &inMemoryBackend{
-		users: make(map[string]*userRecord),
+		users:      make(map[string]*userRecord),
+		keyFormat:  apikey.Default,
 	}
 }
 
 type inMemoryBackend struct {
-	mu    sync.RWMutex
-	users map[string]*userRecord
+	mu        sync.RWMutex
+	users     map[string]*userRecord
+	keyFormat apikey.Format
 }
 
 type userRecord struct {
-	keys map[string]*keyRecord
+	superuser bool
+	keys      map[string]*keyRecord
 }
 
 type keyRecord struct {
-	info api.APIKeyInfo
-	hash []byte
+	info   api.APIKeyInfo
+	prefix string
+	digest []byte
 }
 
-func (s *inMemoryBackend) CreateUser(_ context.Context, username string, _ func() time.Time) (*api.UserInfo, error) {
+func (s *inMemoryBackend) CreateUser(_ context.Context, req api.UserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.users[username]; exists {
+	if _, exists := s.users[req.Username]; exists {
 		return nil, backend.ErrDuplicateUsername
 	}
-	s.users[username] = &userRecord{keys: make(map[string]*keyRecord)}
-	return &api.UserInfo{Username: username}, nil
+	s.users[req.Username] = &userRecord{
+		superuser: req.Superuser,
+		keys:      make(map[string]*keyRecord),
+	}
+	return userInfo(req.Username, s.users[req.Username]), nil
 }
 
 func (s *inMemoryBackend) GetUser(_ context.Context, username string) (*api.UserInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if _, err := s.userLocked(username); err != nil {
+	user, err := s.userLocked(username)
+	if err != nil {
 		return nil, err
 	}
-	return &api.UserInfo{Username: username}, nil
+	return userInfo(username, user), nil
 }
 
 func (s *inMemoryBackend) ListUsers(_ context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
@@ -62,8 +70,8 @@ func (s *inMemoryBackend) ListUsers(_ context.Context, params api.ListUsersParam
 	defer s.mu.RUnlock()
 
 	all := make([]api.UserInfo, 0, len(s.users))
-	for username := range s.users {
-		all = append(all, api.UserInfo{Username: username})
+	for username, user := range s.users {
+		all = append(all, *userInfo(username, user))
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i].Username < all[j].Username })
 
@@ -93,7 +101,21 @@ func (s *inMemoryBackend) DeleteUser(_ context.Context, username string) error {
 	return nil
 }
 
-func (s *inMemoryBackend) CreateKey(_ context.Context, username, keyID string, keyHash []byte, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error) {
+func (s *inMemoryBackend) UpdateUser(_ context.Context, username string, req api.UpdateUserRequest) (*api.UserInfo, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	user, err := s.userLocked(username)
+	if err != nil {
+		return nil, err
+	}
+	if req.Superuser != nil {
+		user.superuser = *req.Superuser
+	}
+	return userInfo(username, user), nil
+}
+
+func (s *inMemoryBackend) CreateKey(_ context.Context, username, keyID, key string, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -108,8 +130,22 @@ func (s *inMemoryBackend) CreateKey(_ context.Context, username, keyID string, k
 		CreatedAt: now().UTC().Format(time.RFC3339),
 		ExpiresAt: cloneStringPtr(req.ExpiresAt),
 	}
-	user.keys[keyID] = &keyRecord{info: info, hash: append([]byte(nil), keyHash...)}
+	hashed, err := s.keyFormat.Hash(key)
+	if err != nil {
+		return nil, err
+	}
+	user.keys[keyID] = &keyRecord{
+		info:   info,
+		prefix: hashed.Prefix,
+		digest: hashed.Digest,
+	}
 	return cloneAPIKeyInfo(&info), nil
+}
+
+func (s *inMemoryBackend) IssueKey(ctx context.Context, username, keyID string, req api.IssueKeyRequest, now func() time.Time) (*api.IssueKeyResponse, error) {
+	return generateAndCreateKey(s.keyFormat, func(rawKey string) (*api.APIKeyInfo, error) {
+		return s.CreateKey(ctx, username, keyID, rawKey, req, now)
+	})
 }
 
 func (s *inMemoryBackend) ListKeys(_ context.Context, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
@@ -196,13 +232,21 @@ func (s *inMemoryBackend) RevokeKey(_ context.Context, username, keyID string) (
 	return info, nil
 }
 
-func (s *inMemoryBackend) LookupUserByKeyHash(_ context.Context, keyHash []byte) (string, error) {
+func (s *inMemoryBackend) LookupUserByKey(_ context.Context, key string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	lookupPrefix, err := s.keyFormat.Prefix(key)
+	if err != nil {
+		return "", backend.ErrInvalidKey
+	}
+
 	for username, user := range s.users {
-		for _, key := range user.keys {
-			if bytes.Equal(key.hash, keyHash) {
+		for _, record := range user.keys {
+			if record.prefix != lookupPrefix {
+				continue
+			}
+			if s.keyFormat.Verify(key, apikey.Stored{Prefix: record.prefix, Digest: record.digest}) {
 				return username, nil
 			}
 		}
@@ -241,6 +285,13 @@ func (s *inMemoryBackend) userLocked(username string) (*userRecord, error) {
 		return nil, backend.ErrUserNotFound
 	}
 	return user, nil
+}
+
+func userInfo(username string, u *userRecord) *api.UserInfo {
+	return &api.UserInfo{
+		Username:  username,
+		Superuser: u.superuser,
+	}
 }
 
 func cloneStringPtr(v *string) *string {
