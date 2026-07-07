@@ -18,6 +18,8 @@ tags:
     description: Operations related to user accounts.
   - name: keys
     description: Operations related to API keys.
+  - name: permissions
+    description: Operations related to per-namespace permissions.
 
 servers:
   - url: /api/v2
@@ -109,6 +111,10 @@ paths:
     post:
       operationId: createNamespace
       summary: Creates a new namespace.
+      description: |
+        Creates a new namespace with a server-assigned id.
+        When authentication is required, the authenticated user becomes the namespace owner
+        and receives manager permissions for that namespace automatically.
       tags:
         - namespaces
 
@@ -224,6 +230,252 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /resolver/namespaces/{namespace}/permissions:
+    get:
+      operationId: listNamespacePermissions
+      summary: List explicit namespace permissions.
+      description: |
+        Lists users who have an explicit non-none permission level in the namespace.
+        Users without an explicit permission record have the default `none` level and are not listed.
+      tags:
+        - permissions
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/NamespaceId'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: Permissions listed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNamespacePermissionsResponse'
+        '400':
+          description: Invalid namespace id or query parameter.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to list permissions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: Namespace does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNamespaceNotFound'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /resolver/namespaces/{namespace}/permissions/{username}:
+    get:
+      operationId: getNamespacePermission
+      summary: Get a user's permission level in a namespace.
+      tags:
+        - permissions
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/NamespaceId'
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Permission retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamespacePermission'
+        '400':
+          description: Invalid namespace id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to view this permission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: Namespace does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNamespaceNotFound'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDatabaseError'
+
+    put:
+      operationId: setNamespacePermission
+      summary: Set a user's permission level in a namespace.
+      tags:
+        - permissions
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/NamespaceId'
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetNamespacePermissionRequest'
+      responses:
+        '200':
+          description: Permission updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamespacePermission'
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorInvalidPermissionLevel'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to set permissions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: Namespace does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNamespaceNotFound'
+        '413':
+          description: Request body exceeds the configured maximum size.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDatabaseError'
+
+    delete:
+      operationId: deleteNamespacePermission
+      summary: Remove a user's explicit permission in a namespace.
+      description: |
+        Removes an explicit permission record, reverting the user to the default `none` level.
+      tags:
+        - permissions
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/NamespaceId'
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Permission removed successfully.
+        '400':
+          description: Invalid namespace id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to delete permissions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: Namespace or explicit permission not found.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                  - $ref: '#/components/schemas/ErrorPermissionNotFound'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /resolver/namespaces/{namespace}/resources:
     get:
@@ -1615,3 +1867,76 @@ components:
           type: string
           format: date-time
           nullable: true
+    PermissionLevel:
+      description: |
+        Permission level for a user within a namespace.
+        The default level is `none`.
+      type: string
+      enum:
+        - none
+        - contributor
+        - editor
+        - manager
+      x-enum-descriptions:
+        - Can read any resource by exact namespace and PID; cannot list, create, edit, or manage permissions.
+        - Can create resources; cannot read resources.
+        - Can create, edit, and list all resources in the namespace.
+        - Editor privileges plus the ability to manage permissions for other users in the namespace.
+    NamespacePermission:
+      description: A user's permission level within a namespace.
+      type: object
+      required:
+        - username
+        - level
+      properties:
+        username:
+          description: Username of the user account.
+          type: string
+        level:
+          $ref: '#/components/schemas/PermissionLevel'
+    SetNamespacePermissionRequest:
+      description: Request to set a user's permission level in a namespace.
+      type: object
+      required:
+        - level
+      properties:
+        level:
+          $ref: '#/components/schemas/PermissionLevel'
+    PaginatedNamespacePermissionsResponse:
+      description: Paginated list of namespace permissions.
+      type: object
+      required:
+        - total
+        - offset
+        - items
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        offset:
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NamespacePermission'
+    ErrorPermissionNotFound:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - permission_not_found
+          description: No explicit permission exists for the user in this namespace.
+    ErrorInvalidPermissionLevel:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - invalid_permission_level
+          description: The permission level is not valid.

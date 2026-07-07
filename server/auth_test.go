@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words context encoding json http httptest strings testing time github bicpid backend authentication resolver service
+//spellchecker:words context encoding json http httptest strings testing time github bicpid backend memory service
 import (
 	"context"
 	"encoding/json"
@@ -14,16 +14,16 @@ import (
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/authentication"
-	"github.com/tkw1536/bicpid/backend/resolver"
+	"github.com/tkw1536/bicpid/backend/memory"
 	"github.com/tkw1536/bicpid/service"
 )
 
-func testHandler(t *testing.T, auth backend.AuthBackend) *Server {
+func testHandler(t *testing.T, store backend.Store) *Server {
 	t.Helper()
 	svc := service.New(
-		resolver.NewInMemoryBackend(),
-		auth,
+		store,
+		store,
+		store,
 		service.NewRuntime(),
 		service.Options{},
 	)
@@ -50,7 +50,7 @@ func createUserWithKey(t *testing.T, auth backend.AuthBackend, username string, 
 }
 
 func TestGetCurrentUser_UnauthorizedJSON(t *testing.T) {
-	h := testHandler(t, authentication.NewInMemoryBackend())
+	h := testHandler(t, memory.NewStore())
 
 	t.Run("missing authorization header", func(t *testing.T) {
 		rec := httptest.NewRecorder()
@@ -117,7 +117,7 @@ func assertForbiddenJSON(t *testing.T, rec *httptest.ResponseRecorder) {
 }
 
 func TestUpdateCurrentUser_Forbidden(t *testing.T) {
-	auth := authentication.NewInMemoryBackend()
+	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
 	rootKey := createUserWithKey(t, auth, "root", true)
 	h := testHandler(t, auth)
@@ -162,7 +162,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 }
 
 func TestUpdateCurrentUser_AllowedSelfUpdate(t *testing.T) {
-	auth := authentication.NewInMemoryBackend()
+	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
 	h := testHandler(t, auth)
 
@@ -178,7 +178,7 @@ func TestUpdateCurrentUser_AllowedSelfUpdate(t *testing.T) {
 }
 
 func TestCreateUser_RequiresSuperuser(t *testing.T) {
-	auth := authentication.NewInMemoryBackend()
+	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
 	rootKey := createUserWithKey(t, auth, "root", true)
 	h := testHandler(t, auth)
@@ -214,7 +214,7 @@ func TestCreateUser_RequiresSuperuser(t *testing.T) {
 }
 
 func TestListUsers_RequiresSuperuser(t *testing.T) {
-	auth := authentication.NewInMemoryBackend()
+	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
 	rootKey := createUserWithKey(t, auth, "root", true)
 	h := testHandler(t, auth)
@@ -248,7 +248,7 @@ func TestListUsers_RequiresSuperuser(t *testing.T) {
 }
 
 func TestIssueAndRevokeKey(t *testing.T) {
-	auth := authentication.NewInMemoryBackend()
+	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
 	h := testHandler(t, auth)
 

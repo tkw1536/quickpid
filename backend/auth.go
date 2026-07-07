@@ -1,4 +1,4 @@
-// Package backend provides [ResolverBackend], [AuthBackend], and implementations.
+// Package backend provides [ResolverBackend], [AuthBackend], [AuthorizationBackend], [Store], and implementations.
 //
 //spellchecker:words backend
 package backend

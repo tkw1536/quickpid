@@ -1,6 +1,6 @@
 package cmd
 
-//spellchecker:words context slog testing time github bicpid backend authentication service
+//spellchecker:words context slog testing time github bicpid backend memory service
 import (
 	"context"
 	"log/slog"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/authentication"
+	"github.com/tkw1536/bicpid/backend/memory"
 	"github.com/tkw1536/bicpid/service"
 )
 
@@ -22,14 +22,14 @@ func fixedNow() func() time.Time {
 	return func() time.Time { return t }
 }
 
-func testService(auth backend.AuthBackend) *service.Service {
-	return service.New(nil, auth, service.NewRuntime(), service.Options{})
+func testService(store backend.Store) *service.Service {
+	return service.New(store, store, store, service.NewRuntime(), service.Options{})
 }
 
 func TestEnsureRootUser_EmptyBackend(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
-	auth := authentication.NewInMemoryBackend()
+	auth := memory.NewStore()
 	svc := testService(auth)
 
 	if err := svc.EnsureRootUser(ctx, testLogger()); err != nil {
@@ -56,7 +56,7 @@ func TestEnsureRootUser_EmptyBackend(t *testing.T) {
 func TestEnsureRootUser_ExistingUser(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
-	auth := authentication.NewInMemoryBackend()
+	auth := memory.NewStore()
 
 	if _, err := auth.CreateUser(ctx, api.UserCreateRequest{Username: "alice"}, fixedNow()); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
@@ -82,7 +82,7 @@ func TestEnsureRootUser_ExistingUser(t *testing.T) {
 func TestEnsureRootUser_ExistingRootRace(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
-	auth := authentication.NewInMemoryBackend()
+	auth := memory.NewStore()
 
 	if _, err := auth.CreateUser(ctx, api.UserCreateRequest{Username: "root", Superuser: true}, fixedNow()); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
@@ -97,7 +97,7 @@ func TestEnsureRootUser_ExistingRootRace(t *testing.T) {
 func TestEnsureRootUser_Idempotent(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
-	auth := authentication.NewInMemoryBackend()
+	auth := memory.NewStore()
 	logger := testLogger()
 	svc := testService(auth)
 

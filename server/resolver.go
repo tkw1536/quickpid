@@ -51,7 +51,7 @@ func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request) (*api.N
 	if specError, err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, specError, err
 	}
-	return h.svc.CreateNamespace(r.Context(), req)
+	return h.svc.CreateNamespace(r.Context(), "", req)
 }
 
 func (h *Server) listResources(w http.ResponseWriter, r *http.Request) (*api.PaginatedResourcesResponse, api.Error, error) {

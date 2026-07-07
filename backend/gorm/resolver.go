@@ -1,77 +1,44 @@
-//spellchecker:words resolver
-package resolver
+package gorm
 
-//spellchecker:words context errors strings time github bicpid backend gorm
+//spellchecker:words context errors fmt time github bicpid backend gorm
 import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/pid"
 	"gorm.io/gorm"
 )
 
-// MigrateGorm automatically migrates the gorm schema used by [].
-func MigrateGorm(db *gorm.DB) error {
-	return db.AutoMigrate(&namespaceRow{}, &resourceRow{})
-}
+var errShutdownGormStore = errors.New("stopped waiting for shutdown to complete")
 
-// DefaultGormBatchSize is the default batch size to be used by [NewGormBackend].
-const DefaultGormBatchSize = 100
+func (s *Store) Shutdown(ctx context.Context) error {
+	result := make(chan error, 1)
+	go func() {
+		defer close(result)
 
-// NewGormBackend returns [ResolverBackend] backed by gorm.
-//
-// batchSize is the batch size to be used during create operations.
-// If <= 0, [DefaultGormBatchSize] is used.
-func NewGormBackend(db *gorm.DB, batchSize int) backend.ResolverBackend {
-	if batchSize <= 0 {
-		batchSize = DefaultGormBatchSize
-	}
-	return &gormBackend{db: db, batchSize: batchSize}
-}
+		sqlDB, err := s.db.DB()
+		if err != nil {
+			result <- fmt.Errorf("failed to get sql.DB: %w", err)
+			return
+		}
+		if err := sqlDB.Close(); err != nil {
+			result <- fmt.Errorf("failed to close sql.DB: %w", err)
+			return
+		}
+	}()
 
-// gormBackend implements api.Resolver using GORM. It is safe for concurrent use when backed by a
-// database that serializes transactions appropriately (e.g. SQLite) or supports row locking.
-type gormBackend struct {
-	db *gorm.DB
-
-	batchSize int // batch size to be used during create operations
-}
-
-func withTx[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
-	var out V
-	if err := db.Transaction(func(tx *gorm.DB) error {
-		var err error
-		out, err = fn(tx)
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("%w: %w", errShutdownGormStore, ctx.Err())
+	case err := <-result:
 		return err
-	}); err != nil {
-		var zero V
-		return zero, err
 	}
-	return out, nil
 }
 
-func isUniqueConstraintError(err error) bool {
-	if err == nil {
-		return false
-	}
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
-		return true
-	}
-
-	// some badly behaved drivers return strings ...
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "unique constraint failed") ||
-		strings.Contains(msg, "duplicate") ||
-		strings.Contains(msg, "duplicated") ||
-		strings.Contains(msg, "unique constraint")
-}
-
-func (s *gormBackend) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
 		q := tx.Model(&namespaceRow{})
 		if params.Tag != nil {
@@ -109,8 +76,12 @@ func (s *gormBackend) ListNamespaces(ctx context.Context, params api.ListNamespa
 	})
 }
 
-func (s *gormBackend) CreateNamespace(ctx context.Context, namespace string, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(ctx context.Context, namespace string, req api.NamespaceCreateRequest, owner string, now func() time.Time) (*api.NamespaceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
+		if err := ensureUserExists(tx, owner); err != nil {
+			return nil, err
+		}
+
 		ts := now().UTC()
 		ns := namespaceRow{
 			ID:          namespace,
@@ -125,12 +96,22 @@ func (s *gormBackend) CreateNamespace(ctx context.Context, namespace string, req
 			}
 			return nil, err
 		}
+
+		perm := namespacePermissionRow{
+			Namespace: namespace,
+			Username:  owner,
+			Level:     string(api.PermissionLevelManager),
+		}
+		if err := tx.Create(&perm).Error; err != nil {
+			return nil, err
+		}
+
 		resp := ns.toSpec()
 		return &resp, nil
 	})
 }
 
-func (s *gormBackend) GetNamespace(ctx context.Context, namespace string) (*api.NamespaceResponse, error) {
+func (s *Store) GetNamespace(ctx context.Context, namespace string) (*api.NamespaceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		var ns namespaceRow
 		if err := tx.First(&ns, "id = ?", namespace).Error; err != nil {
@@ -144,7 +125,7 @@ func (s *gormBackend) GetNamespace(ctx context.Context, namespace string) (*api.
 	})
 }
 
-func (s *gormBackend) ListResources(ctx context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+func (s *Store) ListResources(ctx context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedResourcesResponse, error) {
 		if err := ensureNamespaceExists(tx, params.Namespace); err != nil {
 			return nil, err
@@ -189,7 +170,7 @@ func (s *gormBackend) ListResources(ctx context.Context, params api.ListResource
 	})
 }
 
-func (s *gormBackend) CountAllResources(ctx context.Context) (int64, error) {
+func (s *Store) CountAllResources(ctx context.Context) (int64, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (int64, error) {
 		var total int64
 		if err := tx.Model(&resourceRow{}).Count(&total).Error; err != nil {
@@ -199,7 +180,7 @@ func (s *gormBackend) CountAllResources(ctx context.Context) (int64, error) {
 	})
 }
 
-func (s *gormBackend) CreateResource(ctx context.Context, namespace, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(ctx context.Context, namespace, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
@@ -226,7 +207,7 @@ func (s *gormBackend) CreateResource(ctx context.Context, namespace, pid string,
 	})
 }
 
-func (s *gormBackend) BatchCreateResources(ctx context.Context, namespace string, pids []string, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(ctx context.Context, namespace string, pids []string, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
@@ -268,7 +249,7 @@ func (s *gormBackend) BatchCreateResources(ctx context.Context, namespace string
 	})
 }
 
-func (s *gormBackend) GetResource(ctx context.Context, namespace, pid string) (*api.ResourceResponse, error) {
+func (s *Store) GetResource(ctx context.Context, namespace, pid string) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
@@ -286,7 +267,7 @@ func (s *gormBackend) GetResource(ctx context.Context, namespace, pid string) (*
 	})
 }
 
-func (s *gormBackend) UpdateResource(ctx context.Context, id, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(ctx context.Context, id, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, id); err != nil {
 			return nil, err
@@ -319,96 +300,4 @@ func (s *gormBackend) UpdateResource(ctx context.Context, id, pid string, req ap
 		r := row.toSpec()
 		return &r, nil
 	})
-}
-
-func ensureNamespaceExists(tx *gorm.DB, id string) error {
-	var n int64
-	if err := tx.Model(&namespaceRow{}).Where("id = ?", id).Count(&n).Error; err != nil {
-		return err
-	}
-	if n == 0 {
-		return backend.ErrNamespaceNotFound
-	}
-	return nil
-}
-
-// namespaceRow maps to the namespaces table.
-type namespaceRow struct {
-	ID string `gorm:"column:id;type:text;primaryKey"`
-
-	DateCreated time.Time `gorm:"column:date_created;not null"`
-
-	PIDPattern pid.Pattern      `gorm:"column:pid_pattern;type:text;not null"`
-	PIDChars   pid.CharacterSet `gorm:"column:pid_chars;type:text;not null"`
-
-	Tag string `gorm:"column:tag;type:text;not null;index"`
-}
-
-func (namespaceRow) TableName() string { return "namespaces" }
-
-func (n namespaceRow) toSpec() api.NamespaceResponse {
-	return api.NamespaceResponse{
-		ID:  n.ID,
-		Tag: n.Tag,
-		PIDFormat: pid.Format{
-			Pattern:    n.PIDPattern,
-			Characters: n.PIDChars,
-		},
-		DateCreated: n.DateCreated.UTC().Format(time.RFC3339),
-	}
-}
-
-// resourceRow maps to the resources table.
-type resourceRow struct {
-	NamespaceID string `gorm:"column:namespace_id;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:1;index:idx_resources_ns_tag,priority:1"`
-	PID         string `gorm:"column:pid;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:2"`
-
-	URL      string  `gorm:"column:url;type:text;not null"`
-	Metadata *string `gorm:"column:metadata;type:text"`
-
-	DateCreated time.Time `gorm:"column:date_created;not null"`
-	DateUpdated time.Time `gorm:"column:date_updated;not null"`
-
-	Tag     string `gorm:"column:tag;type:text;not null;index:idx_resources_ns_tag,priority:2"`
-	Deleted bool   `gorm:"column:deleted;not null;default:false;index"`
-}
-
-func (resourceRow) TableName() string { return "resources" }
-
-func (r resourceRow) toSpec() api.ResourceResponse {
-	return api.ResourceResponse{
-		PID:         r.PID,
-		URL:         r.URL,
-		Metadata:    r.Metadata,
-		DateCreated: r.DateCreated.UTC().Format(time.RFC3339),
-		DateUpdated: r.DateUpdated.UTC().Format(time.RFC3339),
-		Tag:         r.Tag,
-		Deleted:     r.Deleted,
-	}
-}
-
-var errShutdownGorm = errors.New("stopped waiting for shutdown to complete")
-
-func (s *gormBackend) Shutdown(ctx context.Context) error {
-	result := make(chan error, 1)
-	go func() {
-		defer close(result)
-
-		sqlDB, err := s.db.DB()
-		if err != nil {
-			result <- fmt.Errorf("failed to get sql.DB: %w", err)
-			return
-		}
-		if err := sqlDB.Close(); err != nil {
-			result <- fmt.Errorf("failed to close sql.DB: %w", err)
-			return
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("%w: %w", errShutdownGorm, ctx.Err())
-	case err := <-result:
-		return err
-	}
 }

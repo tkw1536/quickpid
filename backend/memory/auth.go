@@ -1,13 +1,9 @@
-//spellchecker:words authentication
-package authentication
+package memory
 
-//spellchecker:words context errors sort sync time github bicpid backend internal apikey
+//spellchecker:words context sort time github bicpid backend internal apikey
 import (
 	"context"
-	"errors"
-	"fmt"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
@@ -15,32 +11,7 @@ import (
 	"github.com/tkw1536/bicpid/internal/apikey"
 )
 
-// NewInMemoryBackend returns a new backend backed by in-memory maps.
-func NewInMemoryBackend() backend.AuthBackend {
-	return &inMemoryBackend{
-		users:     make(map[string]*userRecord),
-		keyFormat: apikey.Default,
-	}
-}
-
-type inMemoryBackend struct {
-	mu        sync.RWMutex
-	users     map[string]*userRecord
-	keyFormat apikey.Format
-}
-
-type userRecord struct {
-	superuser bool
-	keys      map[string]*keyRecord
-}
-
-type keyRecord struct {
-	info   api.APIKeyInfo
-	prefix string
-	digest []byte
-}
-
-func (s *inMemoryBackend) CreateUser(_ context.Context, req api.UserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
+func (s *Store) CreateUser(_ context.Context, req api.UserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -54,7 +25,7 @@ func (s *inMemoryBackend) CreateUser(_ context.Context, req api.UserCreateReques
 	return userInfo(req.Username, s.users[req.Username]), nil
 }
 
-func (s *inMemoryBackend) GetUser(_ context.Context, username string) (*api.UserInfo, error) {
+func (s *Store) GetUser(_ context.Context, username string) (*api.UserInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -65,7 +36,7 @@ func (s *inMemoryBackend) GetUser(_ context.Context, username string) (*api.User
 	return userInfo(username, user), nil
 }
 
-func (s *inMemoryBackend) ListUsers(_ context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
+func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -90,18 +61,29 @@ func (s *inMemoryBackend) ListUsers(_ context.Context, params api.ListUsersParam
 	return &api.PaginatedUsersResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *inMemoryBackend) DeleteUser(_ context.Context, username string) error {
+func (s *Store) DeleteUser(_ context.Context, username string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, exists := s.users[username]; !exists {
 		return backend.ErrUserNotFound
 	}
+
 	delete(s.users, username)
+	s.deletePermissionsForUserLocked(username)
 	return nil
 }
 
-func (s *inMemoryBackend) UpdateUser(_ context.Context, username string, req api.UpdateUserRequest) (*api.UserInfo, error) {
+func (s *Store) deletePermissionsForUserLocked(username string) {
+	for namespace, byUser := range s.permissions {
+		delete(byUser, username)
+		if len(byUser) == 0 {
+			delete(s.permissions, namespace)
+		}
+	}
+}
+
+func (s *Store) UpdateUser(_ context.Context, username string, req api.UpdateUserRequest) (*api.UserInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -115,7 +97,7 @@ func (s *inMemoryBackend) UpdateUser(_ context.Context, username string, req api
 	return userInfo(username, user), nil
 }
 
-func (s *inMemoryBackend) CreateKey(_ context.Context, username, keyID, key string, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) CreateKey(_ context.Context, username, keyID, key string, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -142,7 +124,7 @@ func (s *inMemoryBackend) CreateKey(_ context.Context, username, keyID, key stri
 	return cloneAPIKeyInfo(&info), nil
 }
 
-func (s *inMemoryBackend) ListKeys(_ context.Context, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+func (s *Store) ListKeys(_ context.Context, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -172,7 +154,7 @@ func (s *inMemoryBackend) ListKeys(_ context.Context, username string, params ap
 	return &api.PaginatedAPIKeysResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *inMemoryBackend) GetKey(_ context.Context, username, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) GetKey(_ context.Context, username, keyID string) (*api.APIKeyInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -187,7 +169,7 @@ func (s *inMemoryBackend) GetKey(_ context.Context, username, keyID string) (*ap
 	return cloneAPIKeyInfo(&key.info), nil
 }
 
-func (s *inMemoryBackend) UpdateKey(_ context.Context, username, keyID string, req api.UpdateKeyRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) UpdateKey(_ context.Context, username, keyID string, req api.UpdateKeyRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -209,7 +191,7 @@ func (s *inMemoryBackend) UpdateKey(_ context.Context, username, keyID string, r
 	return cloneAPIKeyInfo(&key.info), nil
 }
 
-func (s *inMemoryBackend) RevokeKey(_ context.Context, username, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) RevokeKey(_ context.Context, username, keyID string) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -226,7 +208,7 @@ func (s *inMemoryBackend) RevokeKey(_ context.Context, username, keyID string) (
 	return info, nil
 }
 
-func (s *inMemoryBackend) LookupUserByKey(_ context.Context, key string) (string, error) {
+func (s *Store) LookupUserByKey(_ context.Context, key string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -248,32 +230,7 @@ func (s *inMemoryBackend) LookupUserByKey(_ context.Context, key string) (string
 	return "", backend.ErrInvalidKey
 }
 
-var errShutdownInMemoryBackend = errors.New("stopped waiting for shutdown to complete")
-
-func (s *inMemoryBackend) Shutdown(ctx context.Context) error {
-	done := make(chan struct{}, 1)
-	go func() {
-		defer close(done)
-
-		s.mu.Lock()
-		defer s.mu.Unlock()
-
-		if err := ctx.Err(); err != nil {
-			return
-		}
-
-		s.users = nil
-	}()
-
-	select {
-	case <-done:
-		return nil
-	case <-ctx.Done():
-		return fmt.Errorf("%w: %w", errShutdownInMemoryBackend, ctx.Err())
-	}
-}
-
-func (s *inMemoryBackend) userLocked(username string) (*userRecord, error) {
+func (s *Store) userLocked(username string) (*userRecord, error) {
 	user, ok := s.users[username]
 	if !ok {
 		return nil, backend.ErrUserNotFound

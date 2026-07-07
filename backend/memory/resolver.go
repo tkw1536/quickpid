@@ -1,37 +1,46 @@
-//spellchecker:words resolver
-package resolver
+package memory
 
-//spellchecker:words context errors sort sync time github bicpid backend
+//spellchecker:words context errors fmt time github bicpid backend
 import (
 	"context"
 	"errors"
 	"fmt"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
 )
 
-// NewInMemoryBackend returns a new backend backed by an in-memory map.
-func NewInMemoryBackend() backend.ResolverBackend {
-	return &inMemoryBackend{
-		namespaces: make(map[string]api.NamespaceResponse),
-		resources:  make(map[string]map[string]api.ResourceResponse),
+var errShutdownMemoryStore = errors.New("stopped waiting for shutdown to complete")
+
+func (s *Store) Shutdown(ctx context.Context) error {
+	done := make(chan struct{}, 1)
+	go func() {
+		defer close(done)
+
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		if err := ctx.Err(); err != nil {
+			return
+		}
+
+		s.users = nil
+		s.namespaces = nil
+		s.resources = nil
+		s.permissions = nil
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return fmt.Errorf("%w: %w", errShutdownMemoryStore, ctx.Err())
 	}
 }
 
-// inMemoryBackend is an in-memory Resolver implementation protected by a single RWMutex.
-type inMemoryBackend struct {
-	// protects the namespace and resource maps.
-	mu sync.RWMutex
-
-	namespaces map[string]api.NamespaceResponse
-	resources  map[string]map[string]api.ResourceResponse
-}
-
-func (s *inMemoryBackend) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -59,13 +68,17 @@ func (s *inMemoryBackend) ListNamespaces(_ context.Context, params api.ListNames
 	return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *inMemoryBackend) CreateNamespace(_ context.Context, namespace string, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(_ context.Context, namespace string, req api.NamespaceCreateRequest, owner string, now func() time.Time) (*api.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if _, exists := s.users[owner]; !exists {
+		return nil, backend.ErrUserNotFound
+	}
 	if _, exists := s.namespaces[namespace]; exists {
 		return nil, backend.ErrDuplicateNamespaceID
 	}
+
 	created := now().UTC().Format(time.RFC3339)
 	ns := api.NamespaceResponse{
 		ID:          namespace,
@@ -75,10 +88,16 @@ func (s *inMemoryBackend) CreateNamespace(_ context.Context, namespace string, r
 	}
 	s.namespaces[namespace] = ns
 	s.resources[namespace] = make(map[string]api.ResourceResponse)
+
+	if s.permissions[namespace] == nil {
+		s.permissions[namespace] = make(map[string]api.PermissionLevel)
+	}
+	s.permissions[namespace][owner] = api.PermissionLevelManager
+
 	return &ns, nil
 }
 
-func (s *inMemoryBackend) GetNamespace(_ context.Context, namespace string) (*api.NamespaceResponse, error) {
+func (s *Store) GetNamespace(_ context.Context, namespace string) (*api.NamespaceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	ns, ok := s.namespaces[namespace]
@@ -88,7 +107,7 @@ func (s *inMemoryBackend) GetNamespace(_ context.Context, namespace string) (*ap
 	return &ns, nil
 }
 
-func (s *inMemoryBackend) ListResources(_ context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -124,7 +143,7 @@ func (s *inMemoryBackend) ListResources(_ context.Context, params api.ListResour
 	return &api.PaginatedResourcesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *inMemoryBackend) CountAllResources(_ context.Context) (int64, error) {
+func (s *Store) CountAllResources(_ context.Context) (int64, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -135,7 +154,7 @@ func (s *inMemoryBackend) CountAllResources(_ context.Context) (int64, error) {
 	return n, nil
 }
 
-func (s *inMemoryBackend) CreateResource(_ context.Context, namespace, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(_ context.Context, namespace, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -160,7 +179,7 @@ func (s *inMemoryBackend) CreateResource(_ context.Context, namespace, pid strin
 	return &res, nil
 }
 
-func (s *inMemoryBackend) BatchCreateResources(_ context.Context, namespace string, pids []string, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(_ context.Context, namespace string, pids []string, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -201,7 +220,7 @@ func (s *inMemoryBackend) BatchCreateResources(_ context.Context, namespace stri
 	return out, nil
 }
 
-func (s *inMemoryBackend) GetResource(_ context.Context, namespace, pid string) (*api.ResourceResponse, error) {
+func (s *Store) GetResource(_ context.Context, namespace, pid string) (*api.ResourceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -215,7 +234,7 @@ func (s *inMemoryBackend) GetResource(_ context.Context, namespace, pid string) 
 	return &res, nil
 }
 
-func (s *inMemoryBackend) UpdateResource(_ context.Context, namespace, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -227,7 +246,6 @@ func (s *inMemoryBackend) UpdateResource(_ context.Context, namespace, pid strin
 		return nil, backend.ErrResourceNotFound
 	}
 
-	// Apply only the updates that are present.
 	res := prev
 	if req.URL != nil {
 		res.URL = *req.URL
@@ -239,37 +257,10 @@ func (s *inMemoryBackend) UpdateResource(_ context.Context, namespace, pid strin
 		res.Deleted = *req.Deleted
 	}
 	if req.Metadata != nil {
-		// nil: set to null; non-nil: set to value
 		res.Metadata = *req.Metadata
 	}
 
 	res.DateUpdated = now().UTC().Format(time.RFC3339)
 	s.resources[namespace][pid] = res
 	return &res, nil
-}
-
-var errShutdownMemoryBackend = errors.New("stopped waiting for shutdown to complete")
-
-func (s *inMemoryBackend) Shutdown(ctx context.Context) error {
-	done := make(chan struct{}, 1)
-	go func() {
-		defer close(done)
-
-		s.mu.Lock()
-		defer s.mu.Unlock()
-
-		if err := ctx.Err(); err != nil {
-			return
-		}
-
-		s.namespaces = nil
-		s.resources = nil
-	}()
-
-	select {
-	case <-done:
-		return nil
-	case <-ctx.Done():
-		return fmt.Errorf("%w: %w", errShutdownMemoryBackend, ctx.Err())
-	}
 }

@@ -15,15 +15,12 @@ import (
 	"github.com/tkw1536/bicpid/backend"
 )
 
-// BackendFactory is a function that creates a concrete new Resolver.
-// It should call t.Fatal the test if it cannot create a resolver.
-// It should use t.Cleanup if cleanup is needed after the test.
-type BackendFactory = func(t *testing.T) backend.ResolverBackend
+// StoreFactory creates a concrete [backend.Store] for HTTP integration tests.
+type StoreFactory = func(t *testing.T) backend.Store
 
-// TestBackend starts an httptest server for res and runs a sequential suite of
+// TestBackend starts an httptest server and runs a sequential suite of
 // subtests against resolver HTTP routes (namespaces, resources, batch, errors).
-// Resolver implementations can call this from their tests with their concrete implementation.
-func TestBackend(t *testing.T, factory BackendFactory) {
+func TestBackend(t *testing.T, factory StoreFactory) {
 	t.Helper()
 
 	flows, err := loadTestData()
@@ -33,8 +30,8 @@ func TestBackend(t *testing.T, factory BackendFactory) {
 
 	for _, flow := range flows {
 		t.Run(flow.Name, func(t *testing.T) {
-			b := factory(t)
-			flow.Run(t, b)
+			s := factory(t)
+			flow.Run(t, s)
 		})
 	}
 }

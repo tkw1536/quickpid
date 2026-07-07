@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel_test
 
-//spellchecker:words context errors slog http httptest strings testing time github bicpid backend authentication resolver server internal lowlevel service
+//spellchecker:words context errors slog http httptest strings testing time github bicpid backend memory server internal lowlevel service
 import (
 	"context"
 	"errors"
@@ -14,8 +14,7 @@ import (
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/authentication"
-	"github.com/tkw1536/bicpid/backend/resolver"
+	"github.com/tkw1536/bicpid/backend/memory"
 	"github.com/tkw1536/bicpid/server/internal/lowlevel"
 	"github.com/tkw1536/bicpid/service"
 )
@@ -258,14 +257,15 @@ func TestHandleRequiredUsernamePanicsWhenUnauthorizedNotAllowed(t *testing.T) {
 func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 	t.Parallel()
 
-	auth := authentication.NewInMemoryBackend()
+	store := memory.NewStore()
 	svc := service.New(
-		resolver.NewInMemoryBackend(),
-		auth,
+		store,
+		store,
+		store,
 		service.NewRuntime(),
 		service.Options{},
 	)
-	key := createUserWithKey(t, auth, "alice", false)
+	key := createUserWithKey(t, store, "alice", false)
 
 	h := lowlevel.NewAuthHandler(svc, nil)
 	handler := lowlevel.HandleRequiredUser(

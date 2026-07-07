@@ -8,6 +8,10 @@ type Options struct {
 	// InfoEnabled enables the generic info endpoint.
 	InfoEnabled bool
 
+	// DefaultNamespaceOwner is used as the namespace owner when CreateNamespace
+	// is called without an explicit owner (e.g. before auth is enforced on that route).
+	DefaultNamespaceOwner string
+
 	// Limits for various internal behavior.
 	Limits Limits
 }

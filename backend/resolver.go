@@ -1,4 +1,4 @@
-// Package backend provides [ResolverBackend], [AuthBackend], and implementations.
+// Package backend provides [ResolverBackend], [AuthBackend], [AuthorizationBackend], [Store], and implementations.
 //
 //spellchecker:words backend
 package backend
@@ -22,7 +22,9 @@ type ResolverBackend interface {
 
 	// Create a new namespace with the given identifier.
 	// Should return [ErrDuplicateNamespaceID] if the namespace id is already in use.
-	CreateNamespace(ctx context.Context, namespace string, req api.NamespaceCreateRequest, now func() time.Time) (*api.NamespaceResponse, error)
+	// CreateNamespace creates a namespace and grants manager permissions to owner.
+	// Returns [ErrUserNotFound] if owner does not exist.
+	CreateNamespace(ctx context.Context, namespace string, req api.NamespaceCreateRequest, owner string, now func() time.Time) (*api.NamespaceResponse, error)
 
 	// Retrieve a namespace by its identifier.
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.

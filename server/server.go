@@ -82,6 +82,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.BodySizeExceeded,
 			api.BodyMissing,
 			api.BodyInvalidJSON,
+			api.UserNotFound,
 			api.DatabaseError,
 			api.BadIDGeneration,
 			api.InsufficientEntropy,
@@ -262,8 +263,9 @@ func (h *Server) SetOptions(options Options) {
 	h.ops.InfoEnabled = options.InfoEnabled
 
 	h.svc.SetOptions(service.Options{
-		Limits:      options.Limits,
-		InfoEnabled: options.InfoEnabled,
+		Limits:                options.Limits,
+		InfoEnabled:           options.InfoEnabled,
+		DefaultNamespaceOwner: h.svc.Options().DefaultNamespaceOwner,
 	})
 }
 

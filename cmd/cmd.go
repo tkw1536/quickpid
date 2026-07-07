@@ -24,9 +24,8 @@ import (
 type mainCmd struct {
 	name string
 
-	preamble        func(*slog.Logger) error
-	resolverFactory func(*slog.Logger) (backend.ResolverBackend, error)
-	authFactory     func(*slog.Logger) (backend.AuthBackend, error)
+	preamble     func(*slog.Logger) error
+	storeFactory func(*slog.Logger) (backend.Store, error)
 
 	listenHost string
 	listenPort int
@@ -51,19 +50,18 @@ type mainCmd struct {
 
 //go:generate go tool gogenlicense -m -n notices
 
-// Main is the main entry point using the given backend factories.
+// Main is the main entry point using the given store factory.
 //
-// Backends are initialized once using the backendFactory and authFactory functions.
+// The store is initialized once using storeFactory.
 //
 // To add additional flags, callers should add to [flag.CommandLine] prior to the call to Main
 // and access variables in the factory function.
-func Main(name string, preamble func(*slog.Logger) error, backendFactory func(logger *slog.Logger) (backend.ResolverBackend, error), authFactory func(logger *slog.Logger) (backend.AuthBackend, error)) {
+func Main(name string, preamble func(*slog.Logger) error, storeFactory func(logger *slog.Logger) (backend.Store, error)) {
 	os.Exit(
 		new(mainCmd{
-			name:            name,
-			preamble:        preamble,
-			resolverFactory: backendFactory,
-			authFactory:     authFactory,
+			name:         name,
+			preamble:     preamble,
+			storeFactory: storeFactory,
 
 			listenHost: "127.0.0.1",
 			listenPort: 8080,
@@ -110,43 +108,27 @@ func (main *mainCmd) run() int {
 		}
 	}
 
-	resolver, err := main.resolverFactory(main.logger)
+	store, err := main.storeFactory(main.logger)
 	if err != nil {
-		main.logger.Error("resolver backend initialization failed", slog.Any("error", err))
+		main.logger.Error("store initialization failed", slog.Any("error", err))
 		return 1
 	}
 
 	defer func() {
-		main.logger.Info("shutting down resolver backend")
+		main.logger.Info("shutting down store")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), main.shutdownTimeout)
 		defer cancel()
-		if err := resolver.Shutdown(shutdownCtx); err != nil {
-			main.logger.Error("backend shutdown failed", slog.Any("error", err))
+		if err := store.Shutdown(shutdownCtx); err != nil {
+			main.logger.Error("store shutdown failed", slog.Any("error", err))
 			return
 		}
-		main.logger.Info("resolver backend shutdown complete")
-	}()
-
-	auth, err := main.authFactory(main.logger)
-	if err != nil {
-		main.logger.Error("auth backend initialization failed", slog.Any("error", err))
-		return 1
-	}
-
-	defer func() {
-		main.logger.Info("shutting down auth backend")
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), main.shutdownTimeout)
-		defer cancel()
-		if err := auth.Shutdown(shutdownCtx); err != nil {
-			main.logger.Error("auth backend shutdown failed", slog.Any("error", err))
-			return
-		}
-		main.logger.Info("auth backend shutdown complete")
+		main.logger.Info("store shutdown complete")
 	}()
 
 	svc := service.New(
-		resolver,
-		auth,
+		store,
+		store,
+		store,
 		service.NewRuntime(),
 		service.Options{
 			Limits:      main.limits,

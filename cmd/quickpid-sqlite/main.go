@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words flag slog github glebarez sqlite bicpid backend authentication resolver gorm
+//spellchecker:words flag slog github glebarez sqlite bicpid backend gorm
 import (
 	"cmp"
 	"flag"
@@ -11,8 +11,7 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/authentication"
-	"github.com/tkw1536/bicpid/backend/resolver"
+	gormstore "github.com/tkw1536/bicpid/backend/gorm"
 	"github.com/tkw1536/bicpid/cmd"
 	"gorm.io/gorm"
 )
@@ -29,21 +28,13 @@ func main() {
 			}
 			return nil
 		},
-		func(logger *slog.Logger) (backend.ResolverBackend, error) {
+		func(logger *slog.Logger) (backend.Store, error) {
 			if !disableAutoMigrate {
-				if err := resolver.MigrateGorm(db); err != nil {
+				if err := gormstore.Migrate(db); err != nil {
 					return nil, fmt.Errorf("failed to migrate database: %w", err)
 				}
 			}
-			return resolver.NewGormBackend(db, 0), nil
-		},
-		func(logger *slog.Logger) (backend.AuthBackend, error) {
-			if !disableAutoMigrate {
-				if err := authentication.MigrateGorm(db); err != nil {
-					return nil, fmt.Errorf("failed to migrate auth database: %w", err)
-				}
-			}
-			return authentication.NewGormBackend(db), nil
+			return gormstore.NewStore(db, 0), nil
 		},
 	)
 }

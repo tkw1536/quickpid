@@ -81,17 +81,27 @@ func (s *Service) CountAllResources(ctx context.Context) (*api.ResourceCountResp
 	return &api.ResourceCountResponse{Total: int(n)}, "", nil
 }
 
-// CreateNamespace creates a new namespace.
+// CreateNamespace creates a new namespace owned by owner.
+//
+// When owner is empty, [Options.DefaultNamespaceOwner] is used.
 //
 // It can return the following errors:
 //
+// - [api.UserNotFound]
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy]
-func (s *Service) CreateNamespace(ctx context.Context, req api.NamespaceCreateRequest) (*api.NamespaceResponse, api.Error, error) {
+func (s *Service) CreateNamespace(ctx context.Context, owner string, req api.NamespaceCreateRequest) (*api.NamespaceResponse, api.Error, error) {
 	s.mu.RLock()
 	maxAttempts := s.opts.Limits.MaxNamespaceIDAttempts
+	if owner == "" {
+		owner = s.opts.DefaultNamespaceOwner
+	}
 	s.mu.RUnlock()
+
+	if owner == "" {
+		return nil, api.UserNotFound, backend.ErrUserNotFound
+	}
 
 	for range maxAttempts {
 		name, err := s.runtime.NewNamespaceID()
@@ -101,9 +111,12 @@ func (s *Service) CreateNamespace(ctx context.Context, req api.NamespaceCreateRe
 		if !namespaceIDRE.MatchString(name) {
 			return nil, api.BadIDGeneration, fmt.Errorf("%w: %q is not a valid namespace id", errBadNamespaceID, name)
 		}
-		out, err := s.resolver.CreateNamespace(ctx, name, req, s.runtime.Now)
+		out, err := s.resolver.CreateNamespace(ctx, name, req, owner, s.runtime.Now)
 		if err == nil {
 			return out, "", nil
+		}
+		if errors.Is(err, backend.ErrUserNotFound) {
+			return nil, api.UserNotFound, err
 		}
 		if !errors.Is(err, backend.ErrDuplicateNamespaceID) {
 			return nil, api.DatabaseError, err

@@ -1,7 +1,7 @@
 //spellchecker:words servertest
 package servertest
 
-//spellchecker:words slices testing time github bicpid backend authentication internal httpfixture server service
+//spellchecker:words slices testing time github bicpid backend storetest internal httpfixture server service
 import (
 	"fmt"
 	"slices"
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/authentication"
+	"github.com/tkw1536/bicpid/backend/storetest"
 	"github.com/tkw1536/bicpid/internal/httpfixture"
 	"github.com/tkw1536/bicpid/pid"
 	"github.com/tkw1536/bicpid/server"
@@ -40,11 +40,13 @@ type flow struct {
 	} `json:"steps"`
 }
 
-func (f flow) Run(t *testing.T, b backend.ResolverBackend) {
+func (f flow) Run(t *testing.T, s backend.Store) {
 	t.Helper()
 
 	var runtime testRuntime
-	svc := service.New(b, authentication.NewInMemoryBackend(), &runtime, service.Options{})
+	svc := service.New(s, s, s, &runtime, service.Options{
+		DefaultNamespaceOwner: storetest.TestNamespaceOwner,
+	})
 	handler := server.NewServer(server.Options{}, svc, nil)
 
 	for _, s := range f.Steps {
