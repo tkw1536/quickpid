@@ -1,7 +1,7 @@
 //spellchecker:words strict
 package strict_test
 
-//spellchecker:words github quickpid internal strict
+//spellchecker:words github bicpid internal strict
 import (
 	"fmt"
 

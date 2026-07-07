@@ -3,7 +3,7 @@
 //spellchecker:words backend
 package backend
 
-//spellchecker:words context errors time github quickpid
+//spellchecker:words context errors time github bicpid
 import (
 	"context"
 	"errors"

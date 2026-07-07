@@ -1,7 +1,7 @@
-//spellchecker:words backend
+//spellchecker:words resolver
 package resolver_test
 
-//spellchecker:words testing github glebarez sqlite quickpid backend internal servertest gorm logger
+//spellchecker:words testing github glebarez sqlite bicpid backend resolver internal servertest gorm logger
 import (
 	"testing"
 

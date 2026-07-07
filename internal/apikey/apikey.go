@@ -4,9 +4,10 @@
 // Keys are random alphanumeric strings. When persisted, the leading prefix is kept
 // in plaintext to speed up lookup; the digest covers only the remaining secret portion.
 //
-//spellchecker:words apikey crypto sha256 subtle encoding binary math
+//spellchecker:words apikey
 package apikey
 
+//spellchecker:words crypto subtle errors github bicpid
 import (
 	"crypto/sha256"
 	"crypto/subtle"

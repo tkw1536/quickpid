@@ -1,7 +1,7 @@
-//spellchecker:words backend authentication
+//spellchecker:words authentication
 package authentication
 
-//spellchecker:words context errors fmt sort sync time github quickpid internal apikey
+//spellchecker:words context errors sort sync time github bicpid backend internal apikey
 import (
 	"context"
 	"errors"
@@ -18,8 +18,8 @@ import (
 // NewInMemoryBackend returns a new backend backed by in-memory maps.
 func NewInMemoryBackend() backend.AuthBackend {
 	return &inMemoryBackend{
-		users:      make(map[string]*userRecord),
-		keyFormat:  apikey.Default,
+		users:     make(map[string]*userRecord),
+		keyFormat: apikey.Default,
 	}
 }
 
@@ -140,12 +140,6 @@ func (s *inMemoryBackend) CreateKey(_ context.Context, username, keyID, key stri
 		digest: hashed.Digest,
 	}
 	return cloneAPIKeyInfo(&info), nil
-}
-
-func (s *inMemoryBackend) IssueKey(ctx context.Context, username, keyID string, req api.IssueKeyRequest, now func() time.Time) (*api.IssueKeyResponse, error) {
-	return generateAndCreateKey(s.keyFormat, func(rawKey string) (*api.APIKeyInfo, error) {
-		return s.CreateKey(ctx, username, keyID, rawKey, req, now)
-	})
 }
 
 func (s *inMemoryBackend) ListKeys(_ context.Context, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {

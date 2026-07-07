@@ -1,7 +1,7 @@
-//spellchecker:words backend authentication
+//spellchecker:words authentication
 package authentication_test
 
-//spellchecker:words strings testing time github quickpid backend authentication
+//spellchecker:words strings testing time github bicpid backend authentication
 import (
 	"strings"
 	"testing"
@@ -64,6 +64,7 @@ func TestInMemoryBackend_Superuser(t *testing.T) {
 	testBackendSuperuser(t, newInMemoryBackend)
 }
 
+//go:fix inline
 func ptrStringPtr(v *string) **string {
-	return &v
+	return new(v)
 }

@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words slog github quickpid backend authentication
+//spellchecker:words slog github bicpid backend authentication resolver
 import (
 	"log/slog"
 

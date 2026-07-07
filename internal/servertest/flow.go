@@ -1,7 +1,7 @@
 //spellchecker:words servertest
 package servertest
 
-//spellchecker:words slices testing time github quickpid backend authentication internal httpfixture server
+//spellchecker:words slices testing time github bicpid backend authentication internal httpfixture server service
 import (
 	"fmt"
 	"slices"
@@ -13,6 +13,7 @@ import (
 	"github.com/tkw1536/bicpid/internal/httpfixture"
 	"github.com/tkw1536/bicpid/pid"
 	"github.com/tkw1536/bicpid/server"
+	"github.com/tkw1536/bicpid/service"
 )
 
 // flow describes an HTTP test flow in terms.
@@ -33,7 +34,7 @@ type flow struct {
 			InfoEnabled  bool      `json:"infoEnabled"`
 		} `json:"config"`
 
-		Limits server.Limits `json:"limits,omitzero"`
+		Limits service.Limits `json:"limits,omitzero"`
 
 		httpfixture.Fixture
 	} `json:"steps"`
@@ -42,11 +43,9 @@ type flow struct {
 func (f flow) Run(t *testing.T, b backend.ResolverBackend) {
 	t.Helper()
 
-	var (
-		opts    server.Options
-		runtime testRuntime
-	)
-	handler := server.NewHandler(opts, &runtime, b, authentication.NewInMemoryBackend(), nil)
+	var runtime testRuntime
+	svc := service.New(b, authentication.NewInMemoryBackend(), &runtime, service.Options{})
+	handler := server.NewServer(server.Options{}, svc, nil)
 
 	for _, s := range f.Steps {
 
@@ -81,7 +80,7 @@ func (f flow) Run(t *testing.T, b backend.ResolverBackend) {
 	}
 }
 
-// testRuntime is a [server.Runtime] used during testing.
+// testRuntime is a [service.Runtime] used during testing.
 type testRuntime struct {
 	t *testing.T
 

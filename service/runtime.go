@@ -1,7 +1,7 @@
-//spellchecker:words server
-package server
+//spellchecker:words service
+package service
 
-//spellchecker:words crypto rand time github google uuid quickpid
+//spellchecker:words crypto rand time github google uuid bicpid
 import (
 	"crypto/rand"
 	"time"
@@ -10,23 +10,20 @@ import (
 	"github.com/tkw1536/bicpid/pid"
 )
 
-// Runtime is used by server to interact with specific system functions.
+// Runtime is used by the service to interact with specific system functions.
 type Runtime interface {
 	// NewNamespaceID returns a new namespace identifier.
-	// If nil, a v4 UUID is generated using [rand.Reader].
 	NewNamespaceID() (string, error)
 
 	// NewPID returns a new PID for the given PID format.
-	// If nil, this calls [pid.Format.Generate] with [rand.Reader].
 	NewPID(format pid.Format) (string, error)
 
 	// Now returns the current time.
-	// If nil, time.Now is used.
 	Now() time.Time
 }
 
-// NewRuntime returns a new [Runtime] implementation, that uses [rand.Reader] to generate both namespace IDs and PIDs.
-// It furthermore returns the real current time.
+// NewRuntime returns a new [Runtime] implementation that uses [rand.Reader] to generate
+// namespace IDs and PIDs, and returns the real current time.
 func NewRuntime() Runtime {
 	return runtime{}
 }

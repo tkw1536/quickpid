@@ -1,6 +1,6 @@
 package cmd
 
-//spellchecker:words context log slog testing time github quickpid backend authentication
+//spellchecker:words context slog testing time github bicpid backend authentication service
 import (
 	"context"
 	"log/slog"
@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/backend/authentication"
+	"github.com/tkw1536/bicpid/service"
 )
 
 func testLogger() *slog.Logger {
@@ -20,13 +22,18 @@ func fixedNow() func() time.Time {
 	return func() time.Time { return t }
 }
 
+func testService(auth backend.AuthBackend) *service.Service {
+	return service.New(nil, auth, service.NewRuntime(), service.Options{})
+}
+
 func TestEnsureRootUser_EmptyBackend(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
 	auth := authentication.NewInMemoryBackend()
+	svc := testService(auth)
 
-	if err := ensureRootUser(ctx, auth, testLogger()); err != nil {
-		t.Fatalf("ensureRootUser() error = %v", err)
+	if err := svc.EnsureRootUser(ctx, testLogger()); err != nil {
+		t.Fatalf("EnsureRootUser() error = %v", err)
 	}
 
 	user, err := auth.GetUser(ctx, "root")
@@ -55,8 +62,9 @@ func TestEnsureRootUser_ExistingUser(t *testing.T) {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
 
-	if err := ensureRootUser(ctx, auth, testLogger()); err != nil {
-		t.Fatalf("ensureRootUser() error = %v", err)
+	svc := testService(auth)
+	if err := svc.EnsureRootUser(ctx, testLogger()); err != nil {
+		t.Fatalf("EnsureRootUser() error = %v", err)
 	}
 
 	page, err := auth.ListUsers(ctx, api.ListUsersParams{Limit: 100})
@@ -80,8 +88,9 @@ func TestEnsureRootUser_ExistingRootRace(t *testing.T) {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
 
-	if err := ensureRootUser(ctx, auth, testLogger()); err != nil {
-		t.Fatalf("ensureRootUser() error = %v", err)
+	svc := testService(auth)
+	if err := svc.EnsureRootUser(ctx, testLogger()); err != nil {
+		t.Fatalf("EnsureRootUser() error = %v", err)
 	}
 }
 
@@ -90,12 +99,13 @@ func TestEnsureRootUser_Idempotent(t *testing.T) {
 	ctx := context.Background()
 	auth := authentication.NewInMemoryBackend()
 	logger := testLogger()
+	svc := testService(auth)
 
-	if err := ensureRootUser(ctx, auth, logger); err != nil {
-		t.Fatalf("first ensureRootUser() error = %v", err)
+	if err := svc.EnsureRootUser(ctx, logger); err != nil {
+		t.Fatalf("first EnsureRootUser() error = %v", err)
 	}
-	if err := ensureRootUser(ctx, auth, logger); err != nil {
-		t.Fatalf("second ensureRootUser() error = %v", err)
+	if err := svc.EnsureRootUser(ctx, logger); err != nil {
+		t.Fatalf("second EnsureRootUser() error = %v", err)
 	}
 
 	page, err := auth.ListUsers(ctx, api.ListUsersParams{Limit: 100})

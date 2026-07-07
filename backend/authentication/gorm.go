@@ -1,7 +1,7 @@
-//spellchecker:words backend authentication
+//spellchecker:words authentication
 package authentication
 
-//spellchecker:words context errors strings time github quickpid internal apikey gorm
+//spellchecker:words context errors strings time github bicpid backend internal apikey gorm
 import (
 	"context"
 	"errors"
@@ -180,12 +180,6 @@ func (s *gormBackend) CreateKey(ctx context.Context, username, keyID, key string
 		}
 		info := row.toSpec()
 		return &info, nil
-	})
-}
-
-func (s *gormBackend) IssueKey(ctx context.Context, username, keyID string, req api.IssueKeyRequest, now func() time.Time) (*api.IssueKeyResponse, error) {
-	return generateAndCreateKey(s.keyFormat, func(rawKey string) (*api.APIKeyInfo, error) {
-		return s.CreateKey(ctx, username, keyID, rawKey, req, now)
 	})
 }
 

@@ -1,7 +1,7 @@
-//spellchecker:words backend
+//spellchecker:words resolver
 package resolver_test
 
-//spellchecker:words testing github quickpid backend internal servertest
+//spellchecker:words testing github bicpid backend resolver internal servertest
 import (
 	"testing"
 

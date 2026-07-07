@@ -1,7 +1,7 @@
 //spellchecker:words strict
 package strict_test
 
-//spellchecker:words encoding json github quickpid internal strict
+//spellchecker:words encoding json github bicpid internal strict
 import (
 	"encoding/json"
 	"fmt"

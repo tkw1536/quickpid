@@ -1,7 +1,7 @@
-//spellchecker:words backend
+//spellchecker:words resolver
 package resolver
 
-//spellchecker:words context errors sort sync time github quickpid
+//spellchecker:words context errors sort sync time github bicpid backend
 import (
 	"context"
 	"errors"

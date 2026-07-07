@@ -1,6 +1,6 @@
 package cmd
 
-//spellchecker:words context encoding json flag slog http signal strconv strings syscall time github quickpid auth backend server
+//spellchecker:words context flag slog http signal strconv strings syscall time github bicpid quickpid backend server service
 import (
 	"context"
 	"flag"
@@ -18,13 +18,15 @@ import (
 	quickpid "github.com/tkw1536/bicpid"
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/server"
+	"github.com/tkw1536/bicpid/service"
 )
 
 type mainCmd struct {
-	name           string
-	preamble       func(*slog.Logger) error
-	backendFactory func(*slog.Logger) (backend.ResolverBackend, error)
-	authFactory    func(*slog.Logger) (backend.AuthBackend, error)
+	name string
+
+	preamble        func(*slog.Logger) error
+	resolverFactory func(*slog.Logger) (backend.ResolverBackend, error)
+	authFactory     func(*slog.Logger) (backend.AuthBackend, error)
 
 	listenHost string
 	listenPort int
@@ -32,7 +34,7 @@ type mainCmd struct {
 
 	disableSwagger bool
 	disableInfo    bool
-	limits         server.Limits
+	limits         service.Limits
 
 	logLevel string
 	logJSON  bool
@@ -58,10 +60,10 @@ type mainCmd struct {
 func Main(name string, preamble func(*slog.Logger) error, backendFactory func(logger *slog.Logger) (backend.ResolverBackend, error), authFactory func(logger *slog.Logger) (backend.AuthBackend, error)) {
 	os.Exit(
 		new(mainCmd{
-			name:           name,
-			preamble:       preamble,
-			backendFactory: backendFactory,
-			authFactory:    authFactory,
+			name:            name,
+			preamble:        preamble,
+			resolverFactory: backendFactory,
+			authFactory:     authFactory,
 
 			listenHost: "127.0.0.1",
 			listenPort: 8080,
@@ -69,7 +71,7 @@ func Main(name string, preamble func(*slog.Logger) error, backendFactory func(lo
 
 			disableSwagger: false,
 			disableInfo:    false,
-			limits:         server.DefaultLimits(),
+			limits:         service.DefaultLimits(),
 
 			logLevel: "info",
 			logJSON:  false,
@@ -108,35 +110,28 @@ func (main *mainCmd) run() int {
 		}
 	}
 
-	b, err := main.backendFactory(main.logger)
+	resolver, err := main.resolverFactory(main.logger)
 	if err != nil {
-		main.logger.Error("backend initialization failed", slog.Any("error", err))
+		main.logger.Error("resolver backend initialization failed", slog.Any("error", err))
 		return 1
 	}
+
+	defer func() {
+		main.logger.Info("shutting down resolver backend")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), main.shutdownTimeout)
+		defer cancel()
+		if err := resolver.Shutdown(shutdownCtx); err != nil {
+			main.logger.Error("backend shutdown failed", slog.Any("error", err))
+			return
+		}
+		main.logger.Info("resolver backend shutdown complete")
+	}()
 
 	auth, err := main.authFactory(main.logger)
 	if err != nil {
 		main.logger.Error("auth backend initialization failed", slog.Any("error", err))
 		return 1
 	}
-
-	if !main.noCreateRoot {
-		if err := ensureRootUser(context.Background(), auth, main.logger); err != nil {
-			main.logger.Error("root user bootstrap failed", slog.Any("error", err))
-			return 1
-		}
-	}
-
-	defer func() {
-		main.logger.Info("shutting down backend")
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), main.shutdownTimeout)
-		defer cancel()
-		if err := b.Shutdown(shutdownCtx); err != nil {
-			main.logger.Error("backend shutdown failed", slog.Any("error", err))
-			return
-		}
-		main.logger.Info("backend shutdown complete")
-	}()
 
 	defer func() {
 		main.logger.Info("shutting down auth backend")
@@ -149,8 +144,36 @@ func (main *mainCmd) run() int {
 		main.logger.Info("auth backend shutdown complete")
 	}()
 
-	h := main.newServerHandler(b, auth)
+	svc := service.New(
+		resolver,
+		auth,
+		service.NewRuntime(),
+		service.Options{
+			Limits:      main.limits,
+			InfoEnabled: !main.disableInfo,
+		},
+	)
+
+	if !main.noCreateRoot {
+		if err := svc.EnsureRootUser(context.Background(), main.logger); err != nil {
+			main.logger.Error("root user bootstrap failed", slog.Any("error", err))
+			return 1
+		}
+	}
+
+	h := main.newServerHandler(svc)
 	return main.serve(h)
+}
+
+func (main *mainCmd) newServerHandler(svc *service.Service) *server.Server {
+	return server.NewServer(
+		server.Options{
+			MountPath:        main.mountPath,
+			DisableSwaggerUI: main.disableSwagger,
+		},
+		svc,
+		main.logger,
+	)
 }
 
 func (main *mainCmd) printStartupBanner() {
@@ -228,21 +251,6 @@ func (main *mainCmd) setupLogger() error {
 	main.logger = slog.New(logHandler)
 	slog.SetDefault(main.logger)
 	return nil
-}
-
-func (main *mainCmd) newServerHandler(b backend.ResolverBackend, auth backend.AuthBackend) *server.Handler {
-	return server.NewHandler(
-		server.Options{
-			MountPath:        main.mountPath,
-			DisableSwaggerUI: main.disableSwagger,
-			Limits:           main.limits,
-			InfoEnabled:      !main.disableInfo,
-		},
-		server.NewRuntime(),
-		b,
-		auth,
-		main.logger,
-	)
 }
 
 func (main *mainCmd) serve(h http.Handler) int {

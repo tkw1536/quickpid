@@ -1,6 +1,6 @@
 package pid_test
 
-//spellchecker:words encoding json strings testing github quickpid internal bitstring
+//spellchecker:words encoding json strings testing github bicpid internal bitstring
 import (
 	"encoding/json"
 	"strings"

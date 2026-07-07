@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words flag slog github quickpid backend authentication gorm driver postgres
+//spellchecker:words flag slog github bicpid backend authentication resolver gorm driver postgres
 import (
 	"cmp"
 	"flag"

@@ -1,6 +1,7 @@
+//spellchecker:words server
 package server
 
-//spellchecker:words context encoding json io log net http strings testing time github quickpid backend authentication resolver
+//spellchecker:words context encoding json http httptest strings testing time github bicpid backend authentication resolver service
 import (
 	"context"
 	"encoding/json"
@@ -15,15 +16,20 @@ import (
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/backend/authentication"
 	"github.com/tkw1536/bicpid/backend/resolver"
+	"github.com/tkw1536/bicpid/service"
 )
 
-func testHandler(t *testing.T, auth backend.AuthBackend) *Handler {
+func testHandler(t *testing.T, auth backend.AuthBackend) *Server {
 	t.Helper()
-	return NewHandler(
-		Options{DisableSwaggerUI: true},
-		NewRuntime(),
+	svc := service.New(
 		resolver.NewInMemoryBackend(),
 		auth,
+		service.NewRuntime(),
+		service.Options{},
+	)
+	return NewServer(
+		Options{DisableSwaggerUI: true},
+		svc,
 		nil,
 	)
 }
@@ -265,7 +271,7 @@ func TestIssueAndRevokeKey(t *testing.T) {
 	}
 
 	rec = httptest.NewRecorder()
-	revokeReq := httptest.NewRequest(http.MethodPost, "/user/key/revoke", strings.NewReader(`{"id":"`+issued.ID+ `"}`))
+	revokeReq := httptest.NewRequest(http.MethodPost, "/user/key/revoke", strings.NewReader(`{"id":"`+issued.ID+`"}`))
 	revokeReq.Header.Set("Authorization", "Bearer "+aliceKey)
 	revokeReq.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, revokeReq)

@@ -3,7 +3,7 @@
 //spellchecker:words backend
 package backend
 
-//spellchecker:words context errors time github quickpid
+//spellchecker:words context errors time github bicpid
 import (
 	"context"
 	"errors"
@@ -39,11 +39,6 @@ type AuthBackend interface {
 	// key is the full raw API key; only a secure hash of it is stored.
 	// Should return [ErrUserNotFound] if the user does not exist.
 	CreateKey(ctx context.Context, username, keyID, key string, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error)
-
-	// IssueKey generates a new API key and stores it for the given user.
-	// The raw key value is returned only in the response.
-	// Should return [ErrUserNotFound] if the user does not exist.
-	IssueKey(ctx context.Context, username, keyID string, req api.IssueKeyRequest, now func() time.Time) (*api.IssueKeyResponse, error)
 
 	// ListKeys lists API keys for the given user, ordered ascending by id.
 	// Should return [ErrUserNotFound] if the user does not exist.

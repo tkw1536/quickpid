@@ -1,7 +1,7 @@
-//spellchecker:words backend authentication
+//spellchecker:words authentication
 package authentication_test
 
-//spellchecker:words testing github glebarez sqlite quickpid backend gorm logger
+//spellchecker:words testing github glebarez sqlite bicpid backend authentication gorm logger
 import (
 	"testing"
 

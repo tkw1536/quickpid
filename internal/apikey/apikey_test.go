@@ -1,6 +1,7 @@
+//spellchecker:words apikey
 package apikey_test
 
-//spellchecker:words apikey crypto sha256 errors fmt io strings testing github quickpid internal bitstring
+//spellchecker:words crypto errors strings testing github bicpid internal apikey bitstring
 import (
 	"crypto/sha256"
 	"errors"

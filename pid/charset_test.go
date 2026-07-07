@@ -1,6 +1,6 @@
 package pid_test
 
-//spellchecker:words bytes strings testing github quickpid
+//spellchecker:words bytes strings testing github bicpid
 import (
 	"bytes"
 	"io"

@@ -1,7 +1,7 @@
-//spellchecker:words backend authentication
+//spellchecker:words authentication
 package authentication_test
 
-//spellchecker:words context errors strings testing time github quickpid backend
+//spellchecker:words context errors strings testing time github bicpid backend
 import (
 	"context"
 	"errors"
@@ -271,7 +271,7 @@ func testBackendUpdateKeyExpiresAt(t *testing.T, newBackend func() backend.AuthB
 	}
 
 	expires := "2028-01-01T00:00:00Z"
-	updated, err := b.UpdateKey(ctx, "alice", "key-1", api.UpdateKeyRequest{ExpiresAt: ptrStringPtr(&expires)}, now)
+	updated, err := b.UpdateKey(ctx, "alice", "key-1", api.UpdateKeyRequest{ExpiresAt: new(&expires)}, now)
 	if err != nil {
 		t.Fatalf("UpdateKey() error = %v", err)
 	}
