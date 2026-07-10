@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words flag slog github glebarez sqlite bicpid backend gorm
+//spellchecker:words flag slog github glebarez sqlite bicpid backend gorm gormstore
 import (
 	"cmp"
 	"flag"

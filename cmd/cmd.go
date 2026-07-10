@@ -33,6 +33,7 @@ type mainCmd struct {
 
 	disableSwagger bool
 	disableInfo    bool
+	anonymous      bool
 	limits         service.Limits
 
 	logLevel string
@@ -69,6 +70,7 @@ func Main(name string, preamble func(*slog.Logger) error, storeFactory func(logg
 
 			disableSwagger: false,
 			disableInfo:    false,
+			anonymous:      false,
 			limits:         service.DefaultLimits(),
 
 			logLevel: "info",
@@ -100,6 +102,9 @@ func (main *mainCmd) run() int {
 	}
 
 	main.printStartupBanner()
+	if main.anonymous {
+		main.logger.Warn("anonymous mode enabled; authentication, user management, and permission checks for resolver operations are disabled")
+	}
 
 	if main.preamble != nil {
 		if err := main.preamble(main.logger); err != nil {
@@ -133,6 +138,7 @@ func (main *mainCmd) run() int {
 		service.Options{
 			Limits:      main.limits,
 			InfoEnabled: !main.disableInfo,
+			Anonymous:   main.anonymous,
 		},
 	)
 
@@ -152,6 +158,7 @@ func (main *mainCmd) newServerHandler(svc *service.Service) *server.Server {
 		server.Options{
 			MountPath:        main.mountPath,
 			DisableSwaggerUI: main.disableSwagger,
+			Anonymous:        main.anonymous,
 		},
 		svc,
 		main.logger,
@@ -170,6 +177,7 @@ func (main *mainCmd) parseFlags() error {
 
 	flag.BoolVar(&main.disableSwagger, "disable-swagger", main.disableSwagger, "disable swagger UI and spec file being served")
 	flag.BoolVar(&main.disableInfo, "disable-info", main.disableInfo, "disable info endpoint")
+	flag.BoolVar(&main.anonymous, "anon", main.anonymous, "enable anonymous resolver mode without user management")
 
 	flag.Int64Var(&main.limits.MaxBodyBytes, "max-body-bytes", main.limits.MaxBodyBytes, "maximum size of request body")
 	flag.IntVar(&main.limits.DefaultPageLimit, "default-page-limit", main.limits.DefaultPageLimit, "default number of items per page")

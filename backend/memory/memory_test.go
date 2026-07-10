@@ -1,6 +1,7 @@
+//spellchecker:words memory
 package memory_test
 
-//spellchecker:words testing github bicpid backend memory internal servertest storetest
+//spellchecker:words testing github bicpid backend memory storetest internal servertest
 import (
 	"testing"
 
@@ -15,31 +16,31 @@ func newStore() backend.Store {
 }
 
 func TestStore_AuthUserCRUD(t *testing.T) {
-	storetest.RunAuthUserCRUD(t, func() backend.AuthBackend { return newStore() })
+	storetest.RunAuthUserCRUD(t, func() backend.AuthenticationBackend { return newStore() })
 }
 
 func TestStore_AuthKeyLifecycle(t *testing.T) {
-	storetest.RunAuthKeyLifecycle(t, func() backend.AuthBackend { return newStore() })
+	storetest.RunAuthKeyLifecycle(t, func() backend.AuthenticationBackend { return newStore() })
 }
 
 func TestStore_AuthNotFoundErrors(t *testing.T) {
-	storetest.RunAuthNotFoundErrors(t, func() backend.AuthBackend { return newStore() })
+	storetest.RunAuthNotFoundErrors(t, func() backend.AuthenticationBackend { return newStore() })
 }
 
 func TestStore_AuthShutdown(t *testing.T) {
-	storetest.RunAuthShutdown(t, func() backend.AuthBackend { return newStore() })
+	storetest.RunAuthShutdown(t, func() backend.AuthenticationBackend { return newStore() })
 }
 
 func TestStore_AuthListKeysSorted(t *testing.T) {
-	storetest.RunAuthListKeysSorted(t, func() backend.AuthBackend { return newStore() })
+	storetest.RunAuthListKeysSorted(t, func() backend.AuthenticationBackend { return newStore() })
 }
 
 func TestStore_AuthListUsers(t *testing.T) {
-	storetest.RunAuthListUsers(t, func() backend.AuthBackend { return newStore() })
+	storetest.RunAuthListUsers(t, func() backend.AuthenticationBackend { return newStore() })
 }
 
 func TestStore_AuthSuperuser(t *testing.T) {
-	storetest.RunAuthSuperuser(t, func() backend.AuthBackend { return newStore() })
+	storetest.RunAuthSuperuser(t, func() backend.AuthenticationBackend { return newStore() })
 }
 
 func TestStore_AuthorizationCRUD(t *testing.T) {
@@ -57,8 +58,6 @@ func TestStore_DeleteUserCascadesPermissions(t *testing.T) {
 func TestStore_ResolverHTTP(t *testing.T) {
 	servertest.TestBackend(t, func(t *testing.T) backend.Store {
 		t.Helper()
-		s := memory.NewStore()
-		storetest.SeedNamespaceOwner(t, s)
-		return s
+		return memory.NewStore()
 	})
 }

@@ -1,6 +1,6 @@
 package cmd
 
-//spellchecker:words context slog testing time github bicpid backend memory service
+//spellchecker:words context slog testing time github bicpid backend memory internal apikey service
 import (
 	"context"
 	"log/slog"
@@ -10,6 +10,7 @@ import (
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/backend/memory"
+	"github.com/tkw1536/bicpid/internal/apikey"
 	"github.com/tkw1536/bicpid/service"
 )
 
@@ -44,7 +45,7 @@ func TestEnsureRootUser_EmptyBackend(t *testing.T) {
 		t.Fatalf("GetUser(root) superuser = false, want true")
 	}
 
-	keys, err := auth.ListKeys(ctx, "root", api.ListKeysParams{Limit: 100})
+	keys, err := auth.ListKeys(ctx, apikey.Default, "root", api.ListKeysParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListKeys(root) error = %v", err)
 	}
@@ -114,5 +115,24 @@ func TestEnsureRootUser_Idempotent(t *testing.T) {
 	}
 	if page.Total != 1 {
 		t.Fatalf("ListUsers() total = %d, want 1", page.Total)
+	}
+}
+
+func TestEnsureRootUser_AnonymousModeSkipsBootstrap(t *testing.T) {
+	t.Helper()
+	ctx := context.Background()
+	auth := memory.NewStore()
+	svc := service.New(auth, auth, auth, service.NewRuntime(), service.Options{Anonymous: true})
+
+	if err := svc.EnsureRootUser(ctx, testLogger()); err != nil {
+		t.Fatalf("EnsureRootUser() error = %v", err)
+	}
+
+	page, err := auth.ListUsers(ctx, api.ListUsersParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUsers() error = %v", err)
+	}
+	if page.Total != 0 {
+		t.Fatalf("ListUsers() total = %d, want 0", page.Total)
 	}
 }

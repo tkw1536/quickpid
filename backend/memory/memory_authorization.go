@@ -1,3 +1,4 @@
+//spellchecker:words memory
 package memory
 
 //spellchecker:words context sort github bicpid backend

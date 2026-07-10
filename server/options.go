@@ -20,6 +20,9 @@ type Options struct {
 
 	// InfoEnabled enables or disables the info endpoint.
 	InfoEnabled bool
+
+	// Anonymous enables service anonymous mode.
+	Anonymous bool
 }
 
 func (o Options) withValidValues() Options {

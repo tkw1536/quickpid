@@ -16,11 +16,14 @@ import (
 // Authenticate looks up the username for a valid API key.
 // It returns errUnauthorized when the key is missing or invalid.
 func (s *Service) Authenticate(ctx context.Context, apiKey string) (string, error) {
+	if s.anonymousMode() {
+		return "", errUnauthorized
+	}
 	if apiKey == "" {
 		return "", errUnauthorized
 	}
 
-	username, err := s.auth.LookupUserByKey(ctx, apiKey)
+	username, err := s.authentication.LookupUserByKey(ctx, s.apiKeyFormat(), apiKey)
 	if errors.Is(err, backend.ErrInvalidKey) {
 		return "", errUnauthorized
 	}
@@ -33,11 +36,14 @@ func (s *Service) Authenticate(ctx context.Context, apiKey string) (string, erro
 // CurrentUser authenticates an API key and returns the corresponding user account.
 // It returns errUnauthorized when the key is missing, invalid, or the user no longer exists.
 func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo, error) {
+	if s.anonymousMode() {
+		return nil, errUnauthorized
+	}
 	caller, err := s.Authenticate(ctx, apiKey)
 	if err != nil {
 		return nil, err
 	}
-	user, err := s.auth.GetUser(ctx, caller)
+	user, err := s.authentication.GetUser(ctx, caller)
 	if errors.Is(err, backend.ErrUserNotFound) {
 		return nil, errUnauthorized
 	}
@@ -49,7 +55,10 @@ func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo
 
 // GetUser returns the user account for caller.
 func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, api.Error, error) {
-	user, err := s.auth.GetUser(ctx, caller)
+	if s.anonymousMode() {
+		return nil, "", errForbidden
+	}
+	user, err := s.authentication.GetUser(ctx, caller)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -61,14 +70,17 @@ func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, ap
 
 // CreateUser creates a new user account. Caller must be a superuser.
 func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.UserCreateRequest) (*api.UserInfo, api.Error, error) {
-	if err := requireSuperuser(caller); errors.Is(err, errForbidden) {
+	if s.anonymousMode() {
+		return nil, "", errForbidden
+	}
+	if err := requireSuperuser(caller); err != nil {
 		return nil, "", err
 	}
 	if req.Superuser && !caller.Superuser {
 		return nil, "", errForbidden
 	}
 
-	user, err := s.auth.CreateUser(ctx, req, s.runtime.Now)
+	user, err := s.authentication.CreateUser(ctx, req, s.runtime.Now)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -80,11 +92,14 @@ func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.
 
 // ListUsers lists all user accounts. Caller must be a superuser.
 func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params api.ListUsersParams) (*api.PaginatedUsersResponse, api.Error, error) {
-	if err := requireSuperuser(caller); errors.Is(err, errForbidden) {
+	if s.anonymousMode() {
+		return nil, "", errForbidden
+	}
+	if err := requireSuperuser(caller); err != nil {
 		return nil, "", err
 	}
 
-	page, err := s.auth.ListUsers(ctx, params)
+	page, err := s.authentication.ListUsers(ctx, params)
 	if err != nil {
 		return nil, api.DatabaseError, err
 	}
@@ -93,7 +108,10 @@ func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params ap
 
 // ListKeys lists API keys for caller.
 func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, api.Error, error) {
-	page, err := s.auth.ListKeys(ctx, caller.Username, params)
+	if s.anonymousMode() {
+		return nil, "", errForbidden
+	}
+	page, err := s.authentication.ListKeys(ctx, s.apiKeyFormat(), caller.Username, params)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -105,6 +123,9 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, params api
 
 // IssueKey issues a new API key for caller.
 func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, req api.IssueKeyRequest) (*api.IssueKeyResponse, api.Error, error) {
+	if s.anonymousMode() {
+		return nil, "", errForbidden
+	}
 	keyID, err := s.runtime.NewNamespaceID()
 	if err != nil {
 		return nil, api.BadIDGeneration, err
@@ -121,11 +142,12 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, req api.Is
 }
 
 func (s *Service) createIssuedKey(ctx context.Context, username, keyID string, req api.IssueKeyRequest) (*api.IssueKeyResponse, error) {
-	rawKey, err := apikey.Default.Generate(rand.Reader)
+	format := s.apiKeyFormat()
+	rawKey, err := format.Generate(rand.Reader)
 	if err != nil {
 		return nil, err
 	}
-	info, err := s.auth.CreateKey(ctx, username, keyID, rawKey, req, s.runtime.Now)
+	info, err := s.authentication.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +156,10 @@ func (s *Service) createIssuedKey(ctx context.Context, username, keyID string, r
 
 // RevokeKey revokes an API key for caller.
 func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, req api.RevokeKeyRequest) (*api.RevokeKeyResponse, api.Error, error) {
-	info, err := s.auth.RevokeKey(ctx, caller.Username, req.ID)
+	if s.anonymousMode() {
+		return nil, "", errForbidden
+	}
+	info, err := s.authentication.RevokeKey(ctx, s.apiKeyFormat(), caller.Username, req.ID)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -146,6 +171,9 @@ func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, req api.R
 
 // UpdateUser updates caller's account or another user when caller is a superuser.
 func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, req api.UpdateUserRequest) (*api.UserInfo, api.Error, error) {
+	if s.anonymousMode() {
+		return nil, "", errForbidden
+	}
 	target := caller.Username
 	if req.Username != nil {
 		target = *req.Username
@@ -161,7 +189,7 @@ func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, req api.
 		return nil, "", errForbidden
 	}
 
-	user, err := s.auth.UpdateUser(ctx, target, req)
+	user, err := s.authentication.UpdateUser(ctx, target, req)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -172,10 +200,17 @@ func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, req api.
 }
 
 func requireSuperuser(user *api.UserInfo) error {
+	if user == nil {
+		return errUnauthorized
+	}
 	if !user.Superuser {
 		return errForbidden
 	}
 	return nil
+}
+
+func (s *Service) apiKeyFormat() apikey.Format {
+	return apikey.Default
 }
 
 func mapAuthBackendError(err error) (api.Error, bool) {
@@ -197,7 +232,10 @@ const rootKeyID = "bootstrap"
 
 // EnsureRootUser creates a root superuser with a bootstrap API key when no accounts exist.
 func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error {
-	page, err := s.auth.ListUsers(ctx, api.ListUsersParams{Limit: 1})
+	if s.anonymousMode() {
+		return nil
+	}
+	page, err := s.authentication.ListUsers(ctx, api.ListUsersParams{Limit: 1})
 	if err != nil {
 		return err
 	}
@@ -205,7 +243,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 		return nil
 	}
 
-	_, err = s.auth.CreateUser(ctx, api.UserCreateRequest{
+	_, err = s.authentication.CreateUser(ctx, api.UserCreateRequest{
 		Username:  rootUsername,
 		Superuser: true,
 	}, s.runtime.Now)

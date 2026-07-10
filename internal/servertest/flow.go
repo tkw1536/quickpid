@@ -1,20 +1,30 @@
 //spellchecker:words servertest
 package servertest
 
-//spellchecker:words slices testing time github bicpid backend storetest internal httpfixture server service
+//spellchecker:words context slices strings testing time github bicpid backend storetest internal apikey httpfixture server service
 import (
+	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/backend/storetest"
+	"github.com/tkw1536/bicpid/internal/apikey"
 	"github.com/tkw1536/bicpid/internal/httpfixture"
 	"github.com/tkw1536/bicpid/pid"
 	"github.com/tkw1536/bicpid/server"
 	"github.com/tkw1536/bicpid/service"
 )
+
+const servertestUsername = "servertest"
+
+const servertestKeyID = "test"
+
+var servertestAPIKey = storetest.TestAPIKey("servertest")
 
 // flow describes an HTTP test flow in terms.
 type flow struct {
@@ -43,10 +53,12 @@ type flow struct {
 func (f flow) Run(t *testing.T, s backend.Store) {
 	t.Helper()
 
+	if err := bootstrapServertestAuth(context.Background(), s); err != nil {
+		t.Fatalf("bootstrapServertestAuth() error = %v", err)
+	}
+
 	var runtime testRuntime
-	svc := service.New(s, s, s, &runtime, service.Options{
-		DefaultNamespaceOwner: storetest.TestNamespaceOwner,
-	})
+	svc := service.New(s, s, s, &runtime, service.Options{})
 	handler := server.NewServer(server.Options{}, svc, nil)
 
 	for _, s := range f.Steps {
@@ -65,7 +77,11 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 		t.Run(s.Name, func(t *testing.T) {
 			runtime.t = t
 
-			s.Fixture.Run(t, handler)
+			fix := s.Fixture
+			if !fix.Request.SkipAuth {
+				fix.Request.Headers = withBearerToken(fix.Request.Headers, servertestAPIKey)
+			}
+			fix.Run(t, handler)
 
 			if !runtime.now.IsZero() && !runtime.usedNow {
 				t.Errorf("now: %s was not used (this is an error in the testcases themselves)", runtime.now)
@@ -80,6 +96,29 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 			runtime.t = nil
 		})
 	}
+}
+
+func bootstrapServertestAuth(ctx context.Context, s backend.Store) error {
+	now := storetest.FixedNow()
+	if _, err := s.CreateUser(ctx, api.UserCreateRequest{
+		Username:  servertestUsername,
+		Superuser: true,
+	}, now); err != nil {
+		return err
+	}
+	_, err := s.CreateKey(ctx, apikey.Default, servertestUsername, servertestKeyID, servertestAPIKey, api.IssueKeyRequest{
+		Comment: "servertest",
+	}, now)
+	return err
+}
+
+func withBearerToken(headers [][2]string, token string) [][2]string {
+	for _, header := range headers {
+		if strings.EqualFold(header[0], "Authorization") {
+			return headers
+		}
+	}
+	return append([][2]string{{"Authorization", "Bearer " + token}}, headers...)
 }
 
 // testRuntime is a [service.Runtime] used during testing.

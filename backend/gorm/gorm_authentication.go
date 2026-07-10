@@ -1,3 +1,4 @@
+//spellchecker:words gorm
 package gorm
 
 //spellchecker:words context time github bicpid backend internal apikey gorm
@@ -110,13 +111,13 @@ func (s *Store) UpdateUser(ctx context.Context, username string, req api.UpdateU
 	})
 }
 
-func (s *Store) CreateKey(ctx context.Context, username, keyID, key string, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username, keyID string, key string, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
 		}
 
-		hashed, err := s.keyFormat.Hash(key)
+		hashed, err := format.Hash(key)
 		if err != nil {
 			return nil, err
 		}
@@ -139,7 +140,7 @@ func (s *Store) CreateKey(ctx context.Context, username, keyID, key string, req 
 	})
 }
 
-func (s *Store) ListKeys(ctx context.Context, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+func (s *Store) ListKeys(ctx context.Context, _ apikey.Format, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedAPIKeysResponse, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
@@ -177,7 +178,7 @@ func (s *Store) ListKeys(ctx context.Context, username string, params api.ListKe
 	})
 }
 
-func (s *Store) GetKey(ctx context.Context, username, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) GetKey(ctx context.Context, _ apikey.Format, username, keyID string) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
@@ -191,7 +192,7 @@ func (s *Store) GetKey(ctx context.Context, username, keyID string) (*api.APIKey
 	})
 }
 
-func (s *Store) UpdateKey(ctx context.Context, username, keyID string, req api.UpdateKeyRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) UpdateKey(ctx context.Context, _ apikey.Format, username, keyID string, req api.UpdateKeyRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
@@ -215,7 +216,7 @@ func (s *Store) UpdateKey(ctx context.Context, username, keyID string, req api.U
 	})
 }
 
-func (s *Store) RevokeKey(ctx context.Context, username, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username, keyID string) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
@@ -232,9 +233,9 @@ func (s *Store) RevokeKey(ctx context.Context, username, keyID string) (*api.API
 	})
 }
 
-func (s *Store) LookupUserByKey(ctx context.Context, key string) (string, error) {
+func (s *Store) LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (string, error) {
-		lookupPrefix, err := s.keyFormat.Prefix(key)
+		lookupPrefix, err := format.Prefix(key)
 		if err != nil {
 			return "", backend.ErrInvalidKey
 		}
@@ -244,7 +245,7 @@ func (s *Store) LookupUserByKey(ctx context.Context, key string) (string, error)
 			return "", err
 		}
 		for _, row := range rows {
-			if s.keyFormat.Verify(key, apikey.Stored{Prefix: row.Prefix, Digest: row.Digest}) {
+			if format.Verify(key, apikey.Stored{Prefix: row.Prefix, Digest: row.Digest}) {
 				return row.Username, nil
 			}
 		}

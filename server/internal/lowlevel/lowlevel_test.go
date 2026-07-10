@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel_test
 
-//spellchecker:words context errors slog http httptest strings testing time github bicpid backend memory server internal lowlevel service
+//spellchecker:words context errors slog http httptest strings testing time github bicpid backend memory internal apikey server lowlevel service
 import (
 	"context"
 	"errors"
@@ -15,6 +15,7 @@ import (
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/backend/memory"
+	"github.com/tkw1536/bicpid/internal/apikey"
 	"github.com/tkw1536/bicpid/server/internal/lowlevel"
 	"github.com/tkw1536/bicpid/service"
 )
@@ -458,7 +459,7 @@ func assertStatusAndCalled(t *testing.T, rec *httptest.ResponseRecorder, gotCall
 	}
 }
 
-func createUserWithKey(t *testing.T, auth backend.AuthBackend, username string, superuser bool) string {
+func createUserWithKey(t *testing.T, auth backend.AuthenticationBackend, username string, superuser bool) string {
 	t.Helper()
 
 	ctx := context.Background()
@@ -468,7 +469,7 @@ func createUserWithKey(t *testing.T, auth backend.AuthBackend, username string, 
 	}
 
 	rawKey := strings.Repeat("a", 32-len(username)) + username
-	if _, err := auth.CreateKey(ctx, username, "key-1", rawKey, api.IssueKeyRequest{Comment: "test"}, now); err != nil {
+	if _, err := auth.CreateKey(ctx, apikey.Default, username, "key-1", rawKey, api.IssueKeyRequest{Comment: "test"}, now); err != nil {
 		t.Fatalf("CreateKey(%q) error = %v", username, err)
 	}
 	return rawKey

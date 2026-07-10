@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words context encoding json http httptest strings testing time github bicpid backend memory service
+//spellchecker:words context encoding json http httptest strings testing time github bicpid backend memory internal apikey service
 import (
 	"context"
 	"encoding/json"
@@ -15,6 +15,7 @@ import (
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/backend/memory"
+	"github.com/tkw1536/bicpid/internal/apikey"
 	"github.com/tkw1536/bicpid/service"
 )
 
@@ -34,7 +35,23 @@ func testHandler(t *testing.T, store backend.Store) *Server {
 	)
 }
 
-func createUserWithKey(t *testing.T, auth backend.AuthBackend, username string, superuser bool) string {
+func testAnonymousHandler(t *testing.T, store backend.Store) *Server {
+	t.Helper()
+	svc := service.New(
+		store,
+		store,
+		store,
+		service.NewRuntime(),
+		service.Options{Anonymous: true},
+	)
+	return NewServer(
+		Options{DisableSwaggerUI: true, Anonymous: true},
+		svc,
+		nil,
+	)
+}
+
+func createUserWithKey(t *testing.T, auth backend.AuthenticationBackend, username string, superuser bool) string {
 	t.Helper()
 	ctx := context.Background()
 	now := func() time.Time { return time.Date(2026, 7, 5, 12, 0, 0, 0, time.UTC) }
@@ -43,7 +60,7 @@ func createUserWithKey(t *testing.T, auth backend.AuthBackend, username string, 
 		t.Fatalf("CreateUser(%q) error = %v", username, err)
 	}
 	rawKey := strings.Repeat("a", 32-len(username)) + username
-	if _, err := auth.CreateKey(ctx, username, "key-1", rawKey, api.IssueKeyRequest{Comment: "test"}, now); err != nil {
+	if _, err := auth.CreateKey(ctx, apikey.Default, username, "key-1", rawKey, api.IssueKeyRequest{Comment: "test"}, now); err != nil {
 		t.Fatalf("CreateKey(%q) error = %v", username, err)
 	}
 	return rawKey
@@ -278,5 +295,25 @@ func TestIssueAndRevokeKey(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("revoke status = %d, want %d, body = %s", rec.Code, http.StatusOK, rec.Body.String())
+	}
+}
+
+func TestResolverAnonymousMode_AllowsRequestsWithoutAuth(t *testing.T) {
+	store := memory.NewStore()
+	h := testAnonymousHandler(t, store)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/resolver/namespaces", strings.NewReader(`{"tag":"anon","pid_format":{"pattern":"***-***","characters":"full"}}`))
+	req.Header.Set("Content-Type", "application/json")
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create namespace status = %d, want %d, body = %s", rec.Code, http.StatusCreated, rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/resolver/namespaces", nil)
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("list namespaces status = %d, want %d, body = %s", rec.Code, http.StatusOK, rec.Body.String())
 	}
 }

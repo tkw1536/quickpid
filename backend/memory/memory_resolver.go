@@ -1,44 +1,15 @@
+//spellchecker:words memory
 package memory
 
-//spellchecker:words context errors fmt time github bicpid backend
+//spellchecker:words context sort time github bicpid backend
 import (
 	"context"
-	"errors"
-	"fmt"
 	"sort"
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
 )
-
-var errShutdownMemoryStore = errors.New("stopped waiting for shutdown to complete")
-
-func (s *Store) Shutdown(ctx context.Context) error {
-	done := make(chan struct{}, 1)
-	go func() {
-		defer close(done)
-
-		s.mu.Lock()
-		defer s.mu.Unlock()
-
-		if err := ctx.Err(); err != nil {
-			return
-		}
-
-		s.users = nil
-		s.namespaces = nil
-		s.resources = nil
-		s.permissions = nil
-	}()
-
-	select {
-	case <-done:
-		return nil
-	case <-ctx.Done():
-		return fmt.Errorf("%w: %w", errShutdownMemoryStore, ctx.Err())
-	}
-}
 
 func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	s.mu.RLock()
@@ -68,12 +39,14 @@ func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParam
 	return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateNamespace(_ context.Context, namespace string, req api.NamespaceCreateRequest, owner string, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(_ context.Context, namespace string, req api.NamespaceCreateRequest, owner *string, now func() time.Time) (*api.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.users[owner]; !exists {
-		return nil, backend.ErrUserNotFound
+	if owner != nil {
+		if _, exists := s.users[*owner]; !exists {
+			return nil, backend.ErrUserNotFound
+		}
 	}
 	if _, exists := s.namespaces[namespace]; exists {
 		return nil, backend.ErrDuplicateNamespaceID
@@ -89,10 +62,12 @@ func (s *Store) CreateNamespace(_ context.Context, namespace string, req api.Nam
 	s.namespaces[namespace] = ns
 	s.resources[namespace] = make(map[string]api.ResourceResponse)
 
-	if s.permissions[namespace] == nil {
-		s.permissions[namespace] = make(map[string]api.PermissionLevel)
+	if owner != nil {
+		if s.permissions[namespace] == nil {
+			s.permissions[namespace] = make(map[string]api.PermissionLevel)
+		}
+		s.permissions[namespace][*owner] = api.PermissionLevelManager
 	}
-	s.permissions[namespace][owner] = api.PermissionLevelManager
 
 	return &ns, nil
 }

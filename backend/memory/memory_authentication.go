@@ -1,3 +1,4 @@
+//spellchecker:words memory
 package memory
 
 //spellchecker:words context sort time github bicpid backend internal apikey
@@ -22,7 +23,7 @@ func (s *Store) CreateUser(_ context.Context, req api.UserCreateRequest, _ func(
 		superuser: req.Superuser,
 		keys:      make(map[string]*keyRecord),
 	}
-	return userInfo(req.Username, s.users[req.Username]), nil
+	return s.users[req.Username].toSpec(req.Username), nil
 }
 
 func (s *Store) GetUser(_ context.Context, username string) (*api.UserInfo, error) {
@@ -33,7 +34,7 @@ func (s *Store) GetUser(_ context.Context, username string) (*api.UserInfo, erro
 	if err != nil {
 		return nil, err
 	}
-	return userInfo(username, user), nil
+	return user.toSpec(username), nil
 }
 
 func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
@@ -42,7 +43,7 @@ func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.P
 
 	all := make([]api.UserInfo, 0, len(s.users))
 	for username, user := range s.users {
-		all = append(all, *userInfo(username, user))
+		all = append(all, *user.toSpec(username))
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i].Username < all[j].Username })
 
@@ -70,17 +71,13 @@ func (s *Store) DeleteUser(_ context.Context, username string) error {
 	}
 
 	delete(s.users, username)
-	s.deletePermissionsForUserLocked(username)
-	return nil
-}
-
-func (s *Store) deletePermissionsForUserLocked(username string) {
 	for namespace, byUser := range s.permissions {
 		delete(byUser, username)
 		if len(byUser) == 0 {
 			delete(s.permissions, namespace)
 		}
 	}
+	return nil
 }
 
 func (s *Store) UpdateUser(_ context.Context, username string, req api.UpdateUserRequest) (*api.UserInfo, error) {
@@ -94,10 +91,10 @@ func (s *Store) UpdateUser(_ context.Context, username string, req api.UpdateUse
 	if req.Superuser != nil {
 		user.superuser = *req.Superuser
 	}
-	return userInfo(username, user), nil
+	return user.toSpec(username), nil
 }
 
-func (s *Store) CreateKey(_ context.Context, username, keyID, key string, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) CreateKey(_ context.Context, format apikey.Format, username, keyID string, key string, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -112,7 +109,7 @@ func (s *Store) CreateKey(_ context.Context, username, keyID, key string, req ap
 		CreatedAt: now().UTC().Format(time.RFC3339),
 		ExpiresAt: cloneStringPtr(req.ExpiresAt),
 	}
-	hashed, err := s.keyFormat.Hash(key)
+	hashed, err := format.Hash(key)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +121,7 @@ func (s *Store) CreateKey(_ context.Context, username, keyID, key string, req ap
 	return cloneAPIKeyInfo(&info), nil
 }
 
-func (s *Store) ListKeys(_ context.Context, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+func (s *Store) ListKeys(_ context.Context, _ apikey.Format, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -154,7 +151,7 @@ func (s *Store) ListKeys(_ context.Context, username string, params api.ListKeys
 	return &api.PaginatedAPIKeysResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) GetKey(_ context.Context, username, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) GetKey(_ context.Context, _ apikey.Format, username, keyID string) (*api.APIKeyInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -169,7 +166,7 @@ func (s *Store) GetKey(_ context.Context, username, keyID string) (*api.APIKeyIn
 	return cloneAPIKeyInfo(&key.info), nil
 }
 
-func (s *Store) UpdateKey(_ context.Context, username, keyID string, req api.UpdateKeyRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) UpdateKey(_ context.Context, _ apikey.Format, username, keyID string, req api.UpdateKeyRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -191,7 +188,7 @@ func (s *Store) UpdateKey(_ context.Context, username, keyID string, req api.Upd
 	return cloneAPIKeyInfo(&key.info), nil
 }
 
-func (s *Store) RevokeKey(_ context.Context, username, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username, keyID string) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -208,11 +205,11 @@ func (s *Store) RevokeKey(_ context.Context, username, keyID string) (*api.APIKe
 	return info, nil
 }
 
-func (s *Store) LookupUserByKey(_ context.Context, key string) (string, error) {
+func (s *Store) LookupUserByKey(_ context.Context, format apikey.Format, key string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	lookupPrefix, err := s.keyFormat.Prefix(key)
+	lookupPrefix, err := format.Prefix(key)
 	if err != nil {
 		return "", backend.ErrInvalidKey
 	}
@@ -222,7 +219,7 @@ func (s *Store) LookupUserByKey(_ context.Context, key string) (string, error) {
 			if record.prefix != lookupPrefix {
 				continue
 			}
-			if s.keyFormat.Verify(key, apikey.Stored{Prefix: record.prefix, Digest: record.digest}) {
+			if format.Verify(key, apikey.Stored{Prefix: record.prefix, Digest: record.digest}) {
 				return username, nil
 			}
 		}
@@ -236,13 +233,6 @@ func (s *Store) userLocked(username string) (*userRecord, error) {
 		return nil, backend.ErrUserNotFound
 	}
 	return user, nil
-}
-
-func userInfo(username string, u *userRecord) *api.UserInfo {
-	return &api.UserInfo{
-		Username:  username,
-		Superuser: u.superuser,
-	}
 }
 
 func cloneStringPtr(v *string) *string {

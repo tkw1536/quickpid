@@ -38,9 +38,6 @@ const (
 	Unauthorized Error = "unauthorized" // Authentication is required or the bearer token is invalid
 
 	Forbidden Error = "forbidden" // The authenticated user is not allowed to perform this action
-
-	PermissionNotFound    Error = "permission_not_found"    // Namespace permission not found
-	InvalidPermissionLevel Error = "invalid_permission_level" // Invalid permission level
 )
 
 // codes maps [Error]s to HTTP status codes.
@@ -71,9 +68,6 @@ var codes = map[Error]int{
 
 	Unauthorized: http.StatusUnauthorized,
 	Forbidden:    http.StatusForbidden,
-
-	PermissionNotFound:     http.StatusNotFound,
-	InvalidPermissionLevel: http.StatusBadRequest,
 }
 
 // HTTPCode returns the HTTP status code for the error.

@@ -1,6 +1,7 @@
+//spellchecker:words gorm
 package gorm
 
-//spellchecker:words gorm github bicpid pid
+//spellchecker:words time github bicpid gorm
 import (
 	"time"
 

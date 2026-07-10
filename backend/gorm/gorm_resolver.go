@@ -1,42 +1,16 @@
+//spellchecker:words gorm
 package gorm
 
-//spellchecker:words context errors fmt time github bicpid backend gorm
+//spellchecker:words context errors time github bicpid backend gorm
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
 	"gorm.io/gorm"
 )
-
-var errShutdownGormStore = errors.New("stopped waiting for shutdown to complete")
-
-func (s *Store) Shutdown(ctx context.Context) error {
-	result := make(chan error, 1)
-	go func() {
-		defer close(result)
-
-		sqlDB, err := s.db.DB()
-		if err != nil {
-			result <- fmt.Errorf("failed to get sql.DB: %w", err)
-			return
-		}
-		if err := sqlDB.Close(); err != nil {
-			result <- fmt.Errorf("failed to close sql.DB: %w", err)
-			return
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("%w: %w", errShutdownGormStore, ctx.Err())
-	case err := <-result:
-		return err
-	}
-}
 
 func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
@@ -76,10 +50,12 @@ func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesPar
 	})
 }
 
-func (s *Store) CreateNamespace(ctx context.Context, namespace string, req api.NamespaceCreateRequest, owner string, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(ctx context.Context, namespace string, req api.NamespaceCreateRequest, owner *string, now func() time.Time) (*api.NamespaceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
-		if err := ensureUserExists(tx, owner); err != nil {
-			return nil, err
+		if owner != nil {
+			if err := ensureUserExists(tx, *owner); err != nil {
+				return nil, err
+			}
 		}
 
 		ts := now().UTC()
@@ -97,13 +73,15 @@ func (s *Store) CreateNamespace(ctx context.Context, namespace string, req api.N
 			return nil, err
 		}
 
-		perm := namespacePermissionRow{
-			Namespace: namespace,
-			Username:  owner,
-			Level:     string(api.PermissionLevelManager),
-		}
-		if err := tx.Create(&perm).Error; err != nil {
-			return nil, err
+		if owner != nil {
+			perm := namespacePermissionRow{
+				Namespace: namespace,
+				Username:  *owner,
+				Level:     string(api.PermissionLevelManager),
+			}
+			if err := tx.Create(&perm).Error; err != nil {
+				return nil, err
+			}
 		}
 
 		resp := ns.toSpec()

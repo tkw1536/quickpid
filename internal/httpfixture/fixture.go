@@ -58,6 +58,9 @@ type Request struct {
 	// The request path, starting with a "/", but relative to the API resolver root.
 	Path string `json:"path"`
 
+	// SkipAuth disables automatic bearer token injection in servertest flows.
+	SkipAuth bool `json:"skipAuth,omitzero"`
+
 	// Set of request headers to set.
 	Headers [][2]string `json:"headers,omitzero"`
 

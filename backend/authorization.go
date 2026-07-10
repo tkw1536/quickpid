@@ -1,5 +1,3 @@
-// Package backend provides [ResolverBackend], [AuthBackend], [AuthorizationBackend], and implementations.
-//
 //spellchecker:words backend
 package backend
 
@@ -15,28 +13,27 @@ import (
 //
 // See [memory.NewStore] and [gorm.NewStore] for implementations.
 type AuthorizationBackend interface {
-	// GetNamespacePermission returns the permission level for username in namespace.
-	// Returns [api.PermissionLevelNone] when no explicit permission is stored.
+	// Gets the permission level for a username in a namespace.
+	// Returns [api.PermissionLevelNone] if no explicit permission is stored.
 	GetNamespacePermission(ctx context.Context, namespace, username string) (api.PermissionLevel, error)
 
-	// SetNamespacePermission sets or updates the permission level for username in namespace.
-	// Setting [api.PermissionLevelNone] removes any explicit permission record.
+	// Sets or updates the permission level for a username in a namespace.
+	// Setting [api.PermissionLevelNone] should remove any explicit permission record.
 	SetNamespacePermission(ctx context.Context, namespace, username string, level api.PermissionLevel) error
 
-	// DeleteNamespacePermission removes an explicit permission record.
-	// Returns [ErrPermissionNotFound] when no explicit permission exists.
+	// Deletes an explicit permission record.
+	// Should return [ErrPermissionNotFound] if no explicit permission exists.
 	DeleteNamespacePermission(ctx context.Context, namespace, username string) error
 
-	// ListNamespacePermissions lists users with explicit non-none permissions in a namespace,
-	// ordered ascending by username.
+	// Lists users with explicit non-none permissions in a namespace, ordered ascending by username.
+	// Has no specific error conditions.
 	ListNamespacePermissions(ctx context.Context, namespace string, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error)
 
-	// Shutdown instructs this backend to initiate shutdown.
-	Shutdown(ctx context.Context) error
+	Shutdowner
 }
 
 // Sentinel errors to be returned by [AuthorizationBackend] implementations.
 var (
-	ErrPermissionNotFound    = errors.New("permission not found")
+	ErrPermissionNotFound     = errors.New("permission not found")
 	ErrInvalidPermissionLevel = errors.New("invalid permission level")
 )

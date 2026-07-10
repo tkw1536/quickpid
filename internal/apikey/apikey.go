@@ -63,17 +63,12 @@ var Default = Format{
 }
 
 var (
-	errInvalidPrefixLen   = errors.New("prefix length must be positive")
-	errInvalidLength      = errors.New("key length must exceed prefix length")
-	errInvalidCharset     = errors.New("charset must be valid")
-	errInvalidKeyLength   = errors.New("key length does not match format")
-	errInvalidKeyChar     = errors.New("key contains character outside alphabet")
-	errFailedToReadRandom = errors.New("failed to read random")
-	errAllAttemptsFailed  = errors.New("repeated attempts to pick character fell outside of range")
+	errInvalidPrefixLen = errors.New("prefix length must be positive")
+	errInvalidLength    = errors.New("key length must exceed prefix length")
+	errInvalidCharset   = errors.New("charset must be valid")
+	errInvalidKeyLength = errors.New("key length does not match format")
+	errInvalidKeyChar   = errors.New("key contains character outside alphabet")
 )
-
-// maxPickRetryAttempts limits rejection sampling retries in pickRune.
-const maxPickRetryAttempts = 100
 
 // Validate checks that this format is usable for key generation and verification.
 func (f Format) Validate() error {

@@ -13,6 +13,10 @@ import (
 
 // writeJSONResponse writes a JSON response to the client.
 func writeJSONResponse(w http.ResponseWriter, status int, v any) {
+	if status == http.StatusNoContent {
+		w.WriteHeader(status)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)

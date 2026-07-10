@@ -1,6 +1,7 @@
+//spellchecker:words gorm
 package gorm_test
 
-//spellchecker:words testing github glebarez sqlite bicpid backend gorm internal servertest storetest logger
+//spellchecker:words testing github glebarez sqlite bicpid backend gorm gormstore storetest internal servertest logger
 import (
 	"testing"
 
@@ -28,31 +29,31 @@ func newStore(t *testing.T) backend.Store {
 }
 
 func TestStore_AuthUserCRUD(t *testing.T) {
-	storetest.RunAuthUserCRUD(t, func() backend.AuthBackend { return newStore(t) })
+	storetest.RunAuthUserCRUD(t, func() backend.AuthenticationBackend { return newStore(t) })
 }
 
 func TestStore_AuthKeyLifecycle(t *testing.T) {
-	storetest.RunAuthKeyLifecycle(t, func() backend.AuthBackend { return newStore(t) })
+	storetest.RunAuthKeyLifecycle(t, func() backend.AuthenticationBackend { return newStore(t) })
 }
 
 func TestStore_AuthNotFoundErrors(t *testing.T) {
-	storetest.RunAuthNotFoundErrors(t, func() backend.AuthBackend { return newStore(t) })
+	storetest.RunAuthNotFoundErrors(t, func() backend.AuthenticationBackend { return newStore(t) })
 }
 
 func TestStore_AuthShutdown(t *testing.T) {
-	storetest.RunAuthShutdown(t, func() backend.AuthBackend { return newStore(t) })
+	storetest.RunAuthShutdown(t, func() backend.AuthenticationBackend { return newStore(t) })
 }
 
 func TestStore_AuthListKeysSorted(t *testing.T) {
-	storetest.RunAuthListKeysSorted(t, func() backend.AuthBackend { return newStore(t) })
+	storetest.RunAuthListKeysSorted(t, func() backend.AuthenticationBackend { return newStore(t) })
 }
 
 func TestStore_AuthListUsers(t *testing.T) {
-	storetest.RunAuthListUsers(t, func() backend.AuthBackend { return newStore(t) })
+	storetest.RunAuthListUsers(t, func() backend.AuthenticationBackend { return newStore(t) })
 }
 
 func TestStore_AuthSuperuser(t *testing.T) {
-	storetest.RunAuthSuperuser(t, func() backend.AuthBackend { return newStore(t) })
+	storetest.RunAuthSuperuser(t, func() backend.AuthenticationBackend { return newStore(t) })
 }
 
 func TestStore_AuthorizationCRUD(t *testing.T) {
@@ -70,8 +71,6 @@ func TestStore_DeleteUserCascadesPermissions(t *testing.T) {
 func TestStore_ResolverHTTP(t *testing.T) {
 	servertest.TestBackend(t, func(t *testing.T) backend.Store {
 		t.Helper()
-		s := newStore(t)
-		storetest.SeedNamespaceOwner(t, s)
-		return s
+		return newStore(t)
 	})
 }

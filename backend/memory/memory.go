@@ -1,12 +1,16 @@
 // Package memory provides an in-memory [backend.Store].
+//
+//spellchecker:words memory
 package memory
 
-//spellchecker:words sync github bicpid backend internal apikey
+//spellchecker:words context errors sync github bicpid
 import (
+	"context"
+	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/internal/apikey"
 )
 
 // NewStore returns a new in-memory backend store.
@@ -16,7 +20,6 @@ func NewStore() *Store {
 		namespaces:  make(map[string]api.NamespaceResponse),
 		resources:   make(map[string]map[string]api.ResourceResponse),
 		permissions: make(map[string]map[string]api.PermissionLevel),
-		keyFormat:   apikey.Default,
 	}
 }
 
@@ -28,8 +31,6 @@ type Store struct {
 	namespaces  map[string]api.NamespaceResponse
 	resources   map[string]map[string]api.ResourceResponse
 	permissions map[string]map[string]api.PermissionLevel
-
-	keyFormat apikey.Format
 }
 
 type userRecord struct {
@@ -37,8 +38,43 @@ type userRecord struct {
 	keys      map[string]*keyRecord
 }
 
+func (u *userRecord) toSpec(username string) *api.UserInfo {
+	return &api.UserInfo{
+		Username:  username,
+		Superuser: u.superuser,
+	}
+}
+
 type keyRecord struct {
 	info   api.APIKeyInfo
 	prefix string
 	digest []byte
+}
+
+var errShutdownMemoryStore = errors.New("stopped waiting for shutdown to complete")
+
+func (s *Store) Shutdown(ctx context.Context) error {
+	done := make(chan struct{}, 1)
+	go func() {
+		defer close(done)
+
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		if err := ctx.Err(); err != nil {
+			return
+		}
+
+		s.users = nil
+		s.namespaces = nil
+		s.resources = nil
+		s.permissions = nil
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return fmt.Errorf("%w: %w", errShutdownMemoryStore, ctx.Err())
+	}
 }

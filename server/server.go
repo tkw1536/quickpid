@@ -57,24 +57,27 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.InfoUnavailable,
 		},
 	))
-	h.mux.Handle("GET /resolver/namespaces", lowlevel.HandleNoAuth(
+	h.mux.Handle("GET /resolver/namespaces", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.listNamespaces,
 		http.StatusOK,
 		[]api.Error{
 			api.InvalidQueryParameter,
+			api.Unauthorized,
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /resolver/resources/count", lowlevel.HandleNoAuth(
+	h.mux.Handle("GET /resolver/resources/count", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.countAllResources,
 		http.StatusOK,
 		[]api.Error{
+			api.Unauthorized,
+			api.Forbidden,
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("POST /resolver/namespaces", lowlevel.HandleNoAuth(
+	h.mux.Handle("POST /resolver/namespaces", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.createNamespace,
 		http.StatusCreated,
@@ -82,36 +85,41 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.BodySizeExceeded,
 			api.BodyMissing,
 			api.BodyInvalidJSON,
+			api.Unauthorized,
 			api.UserNotFound,
 			api.DatabaseError,
 			api.BadIDGeneration,
 			api.InsufficientEntropy,
 		},
 	))
-	h.mux.Handle("GET /resolver/namespaces/{namespace}", lowlevel.HandleNoAuth(
+	h.mux.Handle("GET /resolver/namespaces/{namespace}", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.getNamespaceDetail,
 		http.StatusOK,
 		[]api.Error{
 			api.InvalidNamespaceID,
+			api.Unauthorized,
+			api.Forbidden,
 			api.NamespaceNotFound,
 			api.DatabaseError,
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", lowlevel.HandleNoAuth(
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.listResources,
 		http.StatusOK,
 		[]api.Error{
 			api.InvalidNamespaceID,
 			api.InvalidQueryParameter,
+			api.Unauthorized,
+			api.Forbidden,
 			api.NamespaceNotFound,
 			api.DatabaseError,
 		},
 	))
 
-	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", lowlevel.HandleNoAuth(
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.createResource,
 		http.StatusCreated,
@@ -120,13 +128,15 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.InvalidNamespaceID,
+			api.Unauthorized,
+			api.Forbidden,
 			api.NamespaceNotFound,
 			api.DatabaseError,
 			api.BadIDGeneration,
 			api.InsufficientEntropy,
 		},
 	))
-	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", lowlevel.HandleNoAuth(
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.batchCreateResources,
 		http.StatusCreated,
@@ -136,6 +146,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.BodyInvalidJSON,
 			api.ItemLimitExceeded,
 			api.InvalidNamespaceID,
+			api.Unauthorized,
+			api.Forbidden,
 			api.NamespaceNotFound,
 			api.DatabaseError,
 			api.BadIDGeneration,
@@ -143,19 +155,21 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", lowlevel.HandleNoAuth(
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.getResource,
 		http.StatusOK,
 		[]api.Error{
 			api.InvalidNamespaceID,
 			api.InvalidPID,
+			api.Unauthorized,
+			api.Forbidden,
 			api.NamespaceNotFound,
 			api.ResourceNotFound,
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", lowlevel.HandleNoAuth(
+	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.updateResource,
 		http.StatusOK,
@@ -165,11 +179,46 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.BodyInvalidJSON,
 			api.InvalidNamespaceID,
 			api.InvalidPID,
+			api.Unauthorized,
+			api.Forbidden,
 			api.DatabaseError,
 			api.NamespaceNotFound,
 			api.ResourceNotFound,
 		},
 	))
+
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/permissions", lowlevel.HandleRequiredUser(h.authHandler, h.listNamespacePermissions, http.StatusOK, []api.Error{
+		api.InvalidNamespaceID,
+		api.InvalidQueryParameter,
+		api.Unauthorized,
+		api.Forbidden,
+		api.NamespaceNotFound,
+		api.DatabaseError,
+	}))
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/permissions/{username}", lowlevel.HandleRequiredUser(h.authHandler, h.getNamespacePermission, http.StatusOK, []api.Error{
+		api.InvalidNamespaceID,
+		api.Unauthorized,
+		api.Forbidden,
+		api.NamespaceNotFound,
+		api.DatabaseError,
+	}))
+	h.mux.Handle("PUT /resolver/namespaces/{namespace}/permissions/{username}", lowlevel.HandleRequiredUser(h.authHandler, h.setNamespacePermission, http.StatusOK, []api.Error{
+		api.BodySizeExceeded,
+		api.BodyMissing,
+		api.BodyInvalidJSON,
+		api.InvalidNamespaceID,
+		api.Unauthorized,
+		api.Forbidden,
+		api.NamespaceNotFound,
+		api.DatabaseError,
+	}))
+	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/permissions/{username}", lowlevel.HandleRequiredUser(h.authHandler, h.deleteNamespacePermission, http.StatusNoContent, []api.Error{
+		api.InvalidNamespaceID,
+		api.Unauthorized,
+		api.Forbidden,
+		api.NamespaceNotFound,
+		api.DatabaseError,
+	}))
 
 	h.mux.Handle("GET /user/", lowlevel.HandleRequiredUser(h.authHandler, h.getCurrentUserHTTP, http.StatusOK, []api.Error{
 		api.Unauthorized,
@@ -263,9 +312,9 @@ func (h *Server) SetOptions(options Options) {
 	h.ops.InfoEnabled = options.InfoEnabled
 
 	h.svc.SetOptions(service.Options{
-		Limits:                options.Limits,
-		InfoEnabled:           options.InfoEnabled,
-		DefaultNamespaceOwner: h.svc.Options().DefaultNamespaceOwner,
+		Limits:      options.Limits,
+		InfoEnabled: options.InfoEnabled,
+		Anonymous:   options.Anonymous,
 	})
 }
 

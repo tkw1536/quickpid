@@ -1,3 +1,4 @@
+//spellchecker:words gorm
 package gorm
 
 //spellchecker:words context errors github bicpid backend gorm
