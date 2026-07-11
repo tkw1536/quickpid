@@ -4,7 +4,9 @@
   "steps": [
     {
       "name": "empty",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces"
@@ -24,7 +26,8 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -50,7 +53,8 @@
         "namespaceIDs": [
           "31d0952d-8d73-4119-8e95-b5f19d6f9df7"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -76,7 +80,8 @@
         "namespaceIDs": [
           "c00420c4-1461-4824-a2cc-34e3d04524d4"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -102,7 +107,8 @@
         "namespaceIDs": [
           "5565d865-a6dc-45e7-a086-28e49669e8a6"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -128,7 +134,8 @@
         "namespaceIDs": [
           "aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -150,7 +157,9 @@
     },
     {
       "name": "pagination_defaultLimit",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "limits": {
         "MaxBodyBytes": 0,
         "DefaultPageLimit": 2,
@@ -193,7 +202,9 @@
     },
     {
       "name": "pagination_clampMaxLimit",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "limits": {
         "MaxBodyBytes": 0,
         "DefaultPageLimit": 0,
@@ -245,7 +256,9 @@
     },
     {
       "name": "pagination_offsetPastEnd",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?offset=5"
@@ -261,7 +274,9 @@
     },
     {
       "name": "pagination_limit_zero",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=0"
@@ -277,7 +292,9 @@
     },
     {
       "name": "invalidQuery_limit_-1",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=-1"
@@ -291,7 +308,9 @@
     },
     {
       "name": "invalidQuery_limit_abc",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?limit=abc"
@@ -305,7 +324,9 @@
     },
     {
       "name": "invalidQuery_offset_-1",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?offset=-1"
@@ -319,7 +340,9 @@
     },
     {
       "name": "invalidQuery_offset_abc",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?offset=abc"
@@ -333,7 +356,9 @@
     },
     {
       "name": "filter_tag",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces?tag=c"

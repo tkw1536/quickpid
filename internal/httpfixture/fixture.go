@@ -58,9 +58,6 @@ type Request struct {
 	// The request path, starting with a "/", but relative to the API resolver root.
 	Path string `json:"path"`
 
-	// SkipAuth disables automatic bearer token injection in servertest flows.
-	SkipAuth bool `json:"skipAuth,omitzero"`
-
 	// Set of request headers to set.
 	Headers [][2]string `json:"headers,omitzero"`
 
@@ -178,14 +175,4 @@ func canonicalJSON(r io.Reader) (string, error) {
 		return "", fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 	return string(out), nil
-}
-
-// canonicalJSONValue returns the canonical JSON serialization of v.
-func canonicalJSONValue(v any) (string, error) {
-	var buf bytes.Buffer
-
-	if err := json.NewEncoder(&buf).Encode(v); err != nil {
-		return "", fmt.Errorf("failed to encode as JSON: %w", err)
-	}
-	return canonicalJSON(&buf)
 }

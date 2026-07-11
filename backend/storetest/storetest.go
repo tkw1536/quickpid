@@ -92,7 +92,7 @@ func RunAuthKeyLifecycle(t *testing.T, newBackend func() backend.AuthenticationB
 
 	expires := "2027-01-01T00:00:00Z"
 	rawKey := TestAPIKey("lifecyclekey000000000000000")
-	created, err := b.CreateKey(ctx, apikey.Default, "alice", "key-1", rawKey, api.IssueKeyRequest{
+	created, err := b.CreateKey(ctx, apikey.Default, "alice", "key-1", rawKey, api.KeyIssueRequest{
 		Comment:   "laptop",
 		ExpiresAt: &expires,
 	}, now)
@@ -123,7 +123,7 @@ func RunAuthKeyLifecycle(t *testing.T, newBackend func() backend.AuthenticationB
 	}
 
 	updatedComment := "desktop"
-	updated, err := b.UpdateKey(ctx, apikey.Default, "alice", "key-1", api.UpdateKeyRequest{Comment: &updatedComment}, now)
+	updated, err := b.UpdateKey(ctx, apikey.Default, "alice", "key-1", api.KeyUpdateRequest{Comment: &updatedComment}, now)
 	if err != nil {
 		t.Fatalf("UpdateKey() error = %v", err)
 	}
@@ -169,10 +169,10 @@ func RunAuthNotFoundErrors(t *testing.T, newBackend func() backend.Authenticatio
 	if err := b.DeleteUser(ctx, "missing"); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("DeleteUser() error = %v, want ErrUserNotFound", err)
 	}
-	if _, err := b.UpdateUser(ctx, "missing", api.UpdateUserRequest{}); !errors.Is(err, backend.ErrUserNotFound) {
+	if _, err := b.UpdateUser(ctx, "missing", api.UserUpdateRequest{}); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("UpdateUser() error = %v, want ErrUserNotFound", err)
 	}
-	if _, err := b.CreateKey(ctx, apikey.Default, "missing", "key-1", "secret", api.IssueKeyRequest{Comment: "x"}, now); !errors.Is(err, backend.ErrUserNotFound) {
+	if _, err := b.CreateKey(ctx, apikey.Default, "missing", "key-1", "secret", api.KeyIssueRequest{Comment: "x"}, now); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("CreateKey() error = %v, want ErrUserNotFound", err)
 	}
 
@@ -219,7 +219,7 @@ func RunAuthListKeysSorted(t *testing.T, newBackend func() backend.Authenticatio
 	}
 	for _, id := range []string{"key-b", "key-a", "key-c"} {
 		raw := TestAPIKey(strings.ReplaceAll(id, "-", ""))
-		if _, err := b.CreateKey(ctx, apikey.Default, "alice", id, raw, api.IssueKeyRequest{Comment: id}, now); err != nil {
+		if _, err := b.CreateKey(ctx, apikey.Default, "alice", id, raw, api.KeyIssueRequest{Comment: id}, now); err != nil {
 			t.Fatalf("CreateKey(%q) error = %v", id, err)
 		}
 	}
@@ -291,7 +291,7 @@ func RunAuthSuperuser(t *testing.T, newBackend func() backend.AuthenticationBack
 	}
 
 	superuser := false
-	updated, err := b.UpdateUser(ctx, "admin", api.UpdateUserRequest{Superuser: &superuser})
+	updated, err := b.UpdateUser(ctx, "admin", api.UserUpdateRequest{Superuser: &superuser})
 	if err != nil {
 		t.Fatalf("UpdateUser() error = %v", err)
 	}

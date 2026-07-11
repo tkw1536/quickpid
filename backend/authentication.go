@@ -33,13 +33,13 @@ type AuthenticationBackend interface {
 
 	// UpdateUser updates fields on an existing user account.
 	// Should return [ErrUserNotFound] if the user does not exist.
-	UpdateUser(ctx context.Context, username string, req api.UpdateUserRequest) (*api.UserInfo, error)
+	UpdateUser(ctx context.Context, username string, req api.UserUpdateRequest) (*api.UserInfo, error)
 
 	// Creates a new API key for the given user.
 	// format describes how key should be validated and transformed into its stored representation.
 	// key is the full raw API key; only a secure hash of it should be stored by the backend.
 	// Should return [ErrUserNotFound] if the user does not exist.
-	CreateKey(ctx context.Context, format apikey.Format, username, keyID string, key string, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error)
+	CreateKey(ctx context.Context, format apikey.Format, username, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error)
 
 	// ListKeys lists API keys for the given user, ordered ascending by id.
 	// Should return [ErrUserNotFound] if the user does not exist.
@@ -53,7 +53,7 @@ type AuthenticationBackend interface {
 	// UpdateKey updates metadata for an existing API key.
 	// Should return [ErrUserNotFound] if the user does not exist.
 	// Should return [ErrKeyNotFound] if the key does not exist.
-	UpdateKey(ctx context.Context, format apikey.Format, username, keyID string, req api.UpdateKeyRequest, now func() time.Time) (*api.APIKeyInfo, error)
+	UpdateKey(ctx context.Context, format apikey.Format, username, keyID string, req api.KeyUpdateRequest, now func() time.Time) (*api.APIKeyInfo, error)
 
 	// Revokes an API key and returns its final metadata.
 	// Should return [ErrUserNotFound] if the user does not exist.

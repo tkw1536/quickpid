@@ -469,7 +469,7 @@ func createUserWithKey(t *testing.T, auth backend.AuthenticationBackend, usernam
 	}
 
 	rawKey := strings.Repeat("a", 32-len(username)) + username
-	if _, err := auth.CreateKey(ctx, apikey.Default, username, "key-1", rawKey, api.IssueKeyRequest{Comment: "test"}, now); err != nil {
+	if _, err := auth.CreateKey(ctx, apikey.Default, username, "key-1", rawKey, api.KeyIssueRequest{Comment: "test"}, now); err != nil {
 		t.Fatalf("CreateKey(%q) error = %v", username, err)
 	}
 	return rawKey

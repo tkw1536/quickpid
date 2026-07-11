@@ -94,7 +94,7 @@ func (s *Store) DeleteUser(ctx context.Context, username string) error {
 	return err
 }
 
-func (s *Store) UpdateUser(ctx context.Context, username string, req api.UpdateUserRequest) (*api.UserInfo, error) {
+func (s *Store) UpdateUser(ctx context.Context, username string, req api.UserUpdateRequest) (*api.UserInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.UserInfo, error) {
 		row, err := findUser(tx, username)
 		if err != nil {
@@ -111,7 +111,7 @@ func (s *Store) UpdateUser(ctx context.Context, username string, req api.UpdateU
 	})
 }
 
-func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username, keyID string, key string, req api.IssueKeyRequest, now func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
@@ -192,7 +192,7 @@ func (s *Store) GetKey(ctx context.Context, _ apikey.Format, username, keyID str
 	})
 }
 
-func (s *Store) UpdateKey(ctx context.Context, _ apikey.Format, username, keyID string, req api.UpdateKeyRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) UpdateKey(ctx context.Context, _ apikey.Format, username, keyID string, req api.KeyUpdateRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err

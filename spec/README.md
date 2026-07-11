@@ -107,9 +107,11 @@ Fields may be omitted in case they are not relevant for the test case.
   - **`name`** (string): step identifier.
   - **`config`** (object, optional), representing configuration and expected "randomness" values to be used by the server.
     Each option is optional.
-    - **`namespaceIDs`** and **`pids`** (string arrays): IDs the server should generate in order.
+    - **`namespaceIDs`**, **`pids`**, **`apiKeyIDs`**, and **`apiKeys`** (string arrays): IDs and secrets the server should generate in order when creating namespaces, resources, or issuing API keys.
     - **`now`** (RFC3339 timestamp string): The current time for the request.
     - **`infoEnabled`** (boolean): If the general endpoint `/resolver` should be enabled or not.
+    - **`anonymous`** (boolean, optional): If anonymous resolver mode should be enabled for this step. Default is false.
+    - **`ensureRootUser`** (boolean): If set, runs the same root-user bootstrap as server startup before this step (empty store only). Pair with **`apiKeyIDs`**, **`apiKeys`**, and **`now`** so the issued root key is deterministic.
   - **`limits`** (object, optional): Determines limits to be set by the server.
     Each field is numeric, and an omitted field implies no limit should be applied, or a suitable default may be used.
     - **`MaxBodyBytes`**
@@ -121,7 +123,9 @@ Fields may be omitted in case they are not relevant for the test case.
   - **`request`** (object):
     An object representing the request to send to the server.
     - **`method`** and **`path`** (strings);
-    - optional **`headers`**, an array of two-element arrays **`[name, value]`** (strings);
+    - optional **`headers`**, an array of two-element arrays **`[name, value]`** (strings).
+      Use an `Authorization` header with `Bearer <api-key>` when the request must be authenticated.
+      Keys in auth tests are explicit in each step's **`headers`**, or set up via **`ensureRootUser`** and subsequent HTTP requests (for example `POST /user/` and `POST /user/key`).
     - optional **`body`**, a **JSON string** whose UTF-8 text is the raw HTTP request body (valid JSON, invalid JSON, or other bytes as the case requires).
       If there is no body, **`body`** is omitted.
   - **`response`** (object, optional):

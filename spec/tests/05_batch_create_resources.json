@@ -8,7 +8,8 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -35,7 +36,8 @@
           "xjc-cjy",
           "8zk-pwt"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -69,7 +71,8 @@
     {
       "name": "tooManyItems",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "limits": {
         "MaxBodyBytes": 0,
@@ -94,7 +97,8 @@
     {
       "name": "namespaceMissing",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -111,7 +115,8 @@
     {
       "name": "tooLargeBody",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "limits": {
         "MaxBodyBytes": 256,
@@ -136,7 +141,8 @@
     {
       "name": "emptyBody",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -152,7 +158,8 @@
     {
       "name": "malformedJSON",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -169,7 +176,8 @@
     {
       "name": "invalidNamespaceID",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -189,7 +197,8 @@
         "pids": [
           "bee-eee"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -208,7 +217,8 @@
           "bee-eee",
           "bee-eee"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "limits": {
         "MaxBodyBytes": 0,

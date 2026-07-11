@@ -4,7 +4,9 @@
   "steps": [
     {
       "name": "empty",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/resources/count"
@@ -22,7 +24,8 @@
         "namespaceIDs": [
           "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -48,7 +51,8 @@
         "pids": [
           "aaa-bbb"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -65,7 +69,8 @@
         "pids": [
           "ccc-ddd"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -78,7 +83,9 @@
     },
     {
       "name": "count_after_two",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/resources/count"
@@ -96,7 +103,8 @@
         "namespaceIDs": [
           "b2c3d4e5-f6a7-8901-bcde-f12345678901"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -122,7 +130,8 @@
         "pids": [
           "eee-fff"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -135,7 +144,9 @@
     },
     {
       "name": "count_across_namespaces",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/resources/count"

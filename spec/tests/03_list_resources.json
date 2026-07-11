@@ -4,7 +4,9 @@
   "steps": [
     {
       "name": "namespaceMissing",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/missing-ns/resources"
@@ -22,7 +24,8 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -44,7 +47,9 @@
     },
     {
       "name": "empty",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources"
@@ -64,7 +69,8 @@
         "pids": [
           "xjc-cjy"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -81,7 +87,8 @@
         "pids": [
           "8zk-pwt"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -98,7 +105,8 @@
         "pids": [
           "6ez-s5t"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -115,7 +123,8 @@
         "pids": [
           "7yy-3dz"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -132,7 +141,8 @@
         "pids": [
           "nqs-vxz"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -146,7 +156,8 @@
     {
       "name": "pagination_defaultLimit",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "limits": {
         "MaxBodyBytes": 0,
@@ -190,7 +201,9 @@
     },
     {
       "name": "pagination_clampMaxLimit",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "limits": {
         "MaxBodyBytes": 0,
         "DefaultPageLimit": 0,
@@ -210,7 +223,8 @@
     {
       "name": "pagination_offsetPastEnd",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",
@@ -227,7 +241,9 @@
     },
     {
       "name": "pagination_limit_zero",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?limit=0"
@@ -244,7 +260,8 @@
     {
       "name": "tagOmitted",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",
@@ -257,11 +274,12 @@
     {
       "name": "tagFilter",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",
-        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=alpha\u0026limit=999"
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=alpha&limit=999"
       },
       "response": {
         "code": 200
@@ -270,7 +288,8 @@
     {
       "name": "tagNoMatch",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",
@@ -288,11 +307,12 @@
     {
       "name": "tagEmptyMeansEmptyString",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",
-        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=\u0026limit=999"
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=&limit=999"
       },
       "response": {
         "code": 200
@@ -301,7 +321,8 @@
     {
       "name": "invalidNamespaceID_uppercase",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",
@@ -317,7 +338,8 @@
     {
       "name": "invalidQuery_deleted",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",

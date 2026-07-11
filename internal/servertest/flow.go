@@ -1,18 +1,16 @@
 //spellchecker:words servertest
 package servertest
 
-//spellchecker:words context slices strings testing time github bicpid backend storetest internal apikey httpfixture server service
+//spellchecker:words context fmt slices testing time github bicpid backend internal apikey httpfixture server service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"slices"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/storetest"
 	"github.com/tkw1536/bicpid/internal/apikey"
 	"github.com/tkw1536/bicpid/internal/httpfixture"
 	"github.com/tkw1536/bicpid/pid"
@@ -20,11 +18,19 @@ import (
 	"github.com/tkw1536/bicpid/service"
 )
 
-const servertestUsername = "servertest"
+type stepConfig struct {
+	NamespaceIDs []string  `json:"namespaceIDs,omitzero"`
+	PIDs         []string  `json:"pids,omitzero"`
+	APIKeyIDs    []string  `json:"apiKeyIDs,omitzero"`
+	APIKeys      []string  `json:"apiKeys,omitzero"`
+	Now          time.Time `json:"now,omitzero"`
+	InfoEnabled  bool      `json:"infoEnabled"`
+	Anonymous    bool      `json:"anonymous,omitzero"`
 
-const servertestKeyID = "test"
-
-var servertestAPIKey = storetest.TestAPIKey("servertest")
+	// EnsureRootUser runs [service.Service.EnsureRootUser] before this step when the store is empty.
+	// Use with apiKeyIDs/apiKeys/now so the bootstrap key is deterministic.
+	EnsureRootUser bool `json:"ensureRootUser,omitzero"`
+}
 
 // flow describes an HTTP test flow in terms.
 type flow struct {
@@ -37,12 +43,7 @@ type flow struct {
 	Steps []struct {
 		Name string `json:"name"`
 
-		Config struct {
-			NamespaceIDs []string  `json:"namespaceIDs,omitzero"`
-			PIDs         []string  `json:"pids,omitzero"`
-			Now          time.Time `json:"now,omitzero"`
-			InfoEnabled  bool      `json:"infoEnabled"`
-		} `json:"config"`
+		Config stepConfig `json:"config"`
 
 		Limits service.Limits `json:"limits,omitzero"`
 
@@ -53,35 +54,31 @@ type flow struct {
 func (f flow) Run(t *testing.T, s backend.Store) {
 	t.Helper()
 
-	if err := bootstrapServertestAuth(context.Background(), s); err != nil {
-		t.Fatalf("bootstrapServertestAuth() error = %v", err)
-	}
-
 	var runtime testRuntime
 	svc := service.New(s, s, s, &runtime, service.Options{})
 	handler := server.NewServer(server.Options{}, svc, nil)
 
-	for _, s := range f.Steps {
-
-		// setup server options for this step
+	for _, step := range f.Steps {
 		handler.SetOptions(server.Options{
-			Limits:      s.Limits,
-			InfoEnabled: s.Config.InfoEnabled,
+			Limits:      step.Limits,
+			InfoEnabled: step.Config.InfoEnabled,
+			Anonymous:   step.Config.Anonymous,
 		})
 
-		// update the runtime for this handler
-		runtime.now = s.Config.Now
-		runtime.namespaceIDs = slices.Clone(s.Config.NamespaceIDs)
-		runtime.pids = slices.Clone(s.Config.PIDs)
+		runtime.now = step.Config.Now
+		runtime.namespaceIDs = slices.Clone(step.Config.NamespaceIDs)
+		runtime.pids = slices.Clone(step.Config.PIDs)
+		runtime.apiKeyIDs = slices.Clone(step.Config.APIKeyIDs)
+		runtime.apiKeys = slices.Clone(step.Config.APIKeys)
 
-		t.Run(s.Name, func(t *testing.T) {
+		t.Run(step.Name, func(t *testing.T) {
 			runtime.t = t
 
-			fix := s.Fixture
-			if !fix.Request.SkipAuth {
-				fix.Request.Headers = withBearerToken(fix.Request.Headers, servertestAPIKey)
+			if err := applyStepSetup(context.Background(), svc, step.Config); err != nil {
+				t.Fatalf("applyStepSetup() error = %v", err)
 			}
-			fix.Run(t, handler)
+
+			step.Fixture.Run(t, handler)
 
 			if !runtime.now.IsZero() && !runtime.usedNow {
 				t.Errorf("now: %s was not used (this is an error in the testcases themselves)", runtime.now)
@@ -92,33 +89,23 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 			if runtime.pids != nil && !runtime.usedPIDs {
 				t.Errorf("pids: %v was not used (this is an error in the testcases themselves)", runtime.pids)
 			}
+			if runtime.apiKeyIDs != nil && !runtime.usedAPIKeyIDs {
+				t.Errorf("apiKeyIDs: %v was not used (this is an error in the testcases themselves)", runtime.apiKeyIDs)
+			}
+			if runtime.apiKeys != nil && !runtime.usedAPIKeys {
+				t.Errorf("apiKeys: %v was not used (this is an error in the testcases themselves)", runtime.apiKeys)
+			}
 
 			runtime.t = nil
 		})
 	}
 }
 
-func bootstrapServertestAuth(ctx context.Context, s backend.Store) error {
-	now := storetest.FixedNow()
-	if _, err := s.CreateUser(ctx, api.UserCreateRequest{
-		Username:  servertestUsername,
-		Superuser: true,
-	}, now); err != nil {
-		return err
+func applyStepSetup(ctx context.Context, svc *service.Service, cfg stepConfig) error {
+	if cfg.EnsureRootUser {
+		return svc.EnsureRootUser(ctx, slog.New(slog.DiscardHandler))
 	}
-	_, err := s.CreateKey(ctx, apikey.Default, servertestUsername, servertestKeyID, servertestAPIKey, api.IssueKeyRequest{
-		Comment: "servertest",
-	}, now)
-	return err
-}
-
-func withBearerToken(headers [][2]string, token string) [][2]string {
-	for _, header := range headers {
-		if strings.EqualFold(header[0], "Authorization") {
-			return headers
-		}
-	}
-	return append([][2]string{{"Authorization", "Bearer " + token}}, headers...)
+	return nil
 }
 
 // testRuntime is a [service.Runtime] used during testing.
@@ -133,6 +120,12 @@ type testRuntime struct {
 
 	pids     []string
 	usedPIDs bool
+
+	apiKeyIDs     []string
+	usedAPIKeyIDs bool
+
+	apiKeys     []string
+	usedAPIKeys bool
 }
 
 func (r *testRuntime) NewNamespaceID() (string, error) {
@@ -146,6 +139,32 @@ func (r *testRuntime) NewNamespaceID() (string, error) {
 	id := r.namespaceIDs[0]
 	r.namespaceIDs = r.namespaceIDs[1:]
 	return id, nil
+}
+
+func (r *testRuntime) NewAPIKeyID() (string, error) {
+	r.usedAPIKeyIDs = true
+	if r.apiKeyIDs == nil {
+		r.t.Fatalf("apiKeyIDs: is not set (this is an error in the testcases themselves)")
+	}
+	if len(r.apiKeyIDs) == 0 {
+		return "", fmt.Errorf("no more API key IDs configured")
+	}
+	id := r.apiKeyIDs[0]
+	r.apiKeyIDs = r.apiKeyIDs[1:]
+	return id, nil
+}
+
+func (r *testRuntime) NewAPIKey(_ apikey.Format) (string, error) {
+	r.usedAPIKeys = true
+	if r.apiKeys == nil {
+		r.t.Fatalf("apiKeys: is not set (this is an error in the testcases themselves)")
+	}
+	if len(r.apiKeys) == 0 {
+		return "", fmt.Errorf("no more API keys configured")
+	}
+	key := r.apiKeys[0]
+	r.apiKeys = r.apiKeys[1:]
+	return key, nil
 }
 
 func (r *testRuntime) NewPID(format pid.Format) (string, error) {

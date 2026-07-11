@@ -8,7 +8,8 @@
         "namespaceIDs": [
           "fake-namespace-id"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -30,7 +31,9 @@
     },
     {
       "name": "emptyBody",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces"
@@ -44,7 +47,9 @@
     },
     {
       "name": "trailingJSON",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
@@ -59,7 +64,9 @@
     },
     {
       "name": "tooLargeBody",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "limits": {
         "MaxBodyBytes": 256,
         "DefaultPageLimit": 0,
@@ -82,7 +89,9 @@
     },
     {
       "name": "malformedJSON",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
@@ -97,7 +106,9 @@
     },
     {
       "name": "invalidPatternInBody",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
@@ -113,7 +124,8 @@
     {
       "name": "badIDGeneration_error",
       "config": {
-        "namespaceIDs": []
+        "namespaceIDs": [],
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -133,7 +145,8 @@
         "namespaceIDs": [
           "fake-namespace-id"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "limits": {
         "MaxBodyBytes": 0,
@@ -163,7 +176,8 @@
           "fake-namespace-id",
           "another-one"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "limits": {
         "MaxBodyBytes": 0,

@@ -12,6 +12,7 @@ import (
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/backend/memory"
 	"github.com/tkw1536/bicpid/backend/storetest"
+	"github.com/tkw1536/bicpid/internal/apikey"
 	"github.com/tkw1536/bicpid/pid"
 )
 
@@ -19,9 +20,11 @@ type fixedRuntime struct {
 	now time.Time
 }
 
-func (r *fixedRuntime) NewNamespaceID() (string, error)   { return "test-ns", nil }
-func (r *fixedRuntime) NewPID(pid.Format) (string, error) { return "aaa-bbb", nil }
-func (r *fixedRuntime) Now() time.Time                    { return r.now }
+func (r *fixedRuntime) NewNamespaceID() (string, error)         { return "test-ns", nil }
+func (r *fixedRuntime) NewPID(pid.Format) (string, error)       { return "aaa-bbb", nil }
+func (r *fixedRuntime) Now() time.Time                          { return r.now }
+func (r *fixedRuntime) NewAPIKeyID() (string, error)            { return "api-key-id", nil }
+func (r *fixedRuntime) NewAPIKey(apikey.Format) (string, error) { return "api-key", nil }
 
 func newTestService(t *testing.T) (*Service, backend.Store) {
 	t.Helper()

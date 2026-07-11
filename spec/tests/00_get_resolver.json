@@ -17,8 +17,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/resolver",
-        "skipAuth": true
+        "path": "/resolver"
       },
       "response": {
         "code": 200,
@@ -37,8 +36,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/resolver",
-        "skipAuth": true
+        "path": "/resolver"
       },
       "response": {
         "code": 404,

@@ -49,11 +49,6 @@ func (s *Service) Options() Options {
 	return s.opts
 }
 
-//go:fix inline
-func (s *Service) anonymousMode() bool {
-	return s.Options().Anonymous
-}
-
 // GetResolverInfo returns information about the resolver.
 //
 // It can return the following errors:

@@ -1,0 +1,126 @@
+{
+  "name": "auth_anonymous_mode",
+  "comment": "Anonymous mode allows resolver access without auth but disables user management.",
+  "steps": [
+    {
+      "name": "create_namespace_anonymous",
+      "config": {
+        "anonymous": true,
+        "namespaceIDs": [
+          "d1000000-0000-4000-8000-000000000001"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"anon-ns\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "d1000000-0000-4000-8000-000000000001",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "anon-ns"
+        }
+      }
+    },
+    {
+      "name": "list_namespaces_anonymous",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "items": [
+            {
+              "date_created": "2020-01-02T03:04:05Z",
+              "id": "d1000000-0000-4000-8000-000000000001",
+              "pid_format": {
+                "characters": "full",
+                "pattern": "***-***"
+              },
+              "tag": "anon-ns"
+            }
+          ],
+          "offset": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "count_resources_anonymous",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/resources/count"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 0
+        }
+      }
+    },
+    {
+      "name": "get_current_user_disabled",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    },
+    {
+      "name": "create_user_disabled",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"alice\"}"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    },
+    {
+      "name": "get_permission_disabled",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/d1000000-0000-4000-8000-000000000001/permissions/owner"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

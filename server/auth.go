@@ -46,7 +46,7 @@ func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, user *api.User
 }
 
 func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.IssueKeyResponse, api.Error, error) {
-	var req api.IssueKeyRequest
+	var req api.KeyIssueRequest
 	if specError, err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, specError, err
 	}
@@ -55,7 +55,7 @@ func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, user *api.User
 }
 
 func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.RevokeKeyResponse, api.Error, error) {
-	var req api.RevokeKeyRequest
+	var req api.KeyRevokeRequest
 	if specError, err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, specError, err
 	}
@@ -64,7 +64,7 @@ func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, user *api.Use
 }
 
 func (h *Server) updateCurrentUser(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.UserInfo, api.Error, error) {
-	var req api.UpdateUserRequest
+	var req api.UserUpdateRequest
 	if specError, err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, specError, err
 	}

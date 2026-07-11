@@ -1120,7 +1120,10 @@ paths:
 
     post:
       operationId: issueKey
-      summary: Issue a new API key for the currently authenticated user.
+      summary: Issue a new API key.
+      description: |
+        Issues a new API key for the authenticated user.
+        A superuser may set `username` in the request body to issue a key for another account.
       tags:
         - keys
       requestBody:
@@ -1156,6 +1159,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to issue a key for the requested account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
@@ -1797,6 +1806,7 @@ components:
       type: object
       required:
         - comment
+        - expires_at
       properties:
         comment:
           description: A human-readable comment describing the purpose of this key.
@@ -1804,10 +1814,16 @@ components:
         expires_at:
           description: |
             Optional expiration time for the key.
-            If omitted, the key does not expire.
+            If null, the key does not expire.
           type: string
           format: date-time
           nullable: true
+        username:
+          description: |
+            Username of the account to issue the key for.
+            If omitted, a key is issued for the authenticated user.
+            Issuing a key for another user requires superuser privileges.
+          type: string
     IssueKeyResponse:
       description: |
         A newly issued API key.

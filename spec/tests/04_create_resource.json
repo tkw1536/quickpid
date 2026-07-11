@@ -8,7 +8,8 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -34,7 +35,8 @@
         "pids": [
           "xjc-cjy"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -60,7 +62,8 @@
         "pids": [
           "8zk-pwt"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -86,7 +89,8 @@
         "namespaceIDs": [
           "31d0952d-8d73-4119-8e95-b5f19d6f9df7"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -100,7 +104,8 @@
     {
       "name": "namespaceMissing",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -117,7 +122,8 @@
     {
       "name": "invalidNamespace",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -134,7 +140,8 @@
     {
       "name": "tooLargeBody",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "limits": {
         "MaxBodyBytes": 256,
@@ -159,7 +166,8 @@
     {
       "name": "emptyBody",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -175,7 +183,8 @@
     {
       "name": "malformedJSON",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -193,7 +202,8 @@
       "name": "badIDGeneration_runtimeExhausted",
       "config": {
         "pids": [],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -213,7 +223,8 @@
         "pids": [
           "ccc-ddd"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -232,7 +243,8 @@
           "ccc-ddd",
           "ccc-ddd"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "limits": {
         "MaxBodyBytes": 0,

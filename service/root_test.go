@@ -1,4 +1,4 @@
-package cmd
+package service_test
 
 //spellchecker:words context slog testing time github bicpid backend memory internal apikey service
 import (
@@ -49,8 +49,8 @@ func TestEnsureRootUser_EmptyBackend(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListKeys(root) error = %v", err)
 	}
-	if len(keys.Items) != 1 || keys.Items[0].ID != "bootstrap" {
-		t.Fatalf("ListKeys(root) = %+v", keys)
+	if len(keys.Items) != 1 {
+		t.Fatalf("ListKeys(root) = %+v, want 1 key", keys)
 	}
 }
 

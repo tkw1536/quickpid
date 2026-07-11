@@ -30,7 +30,7 @@ func (s *Store) GetNamespacePermission(ctx context.Context, namespace, username 
 }
 
 func (s *Store) SetNamespacePermission(ctx context.Context, namespace, username string, level api.PermissionLevel) error {
-	if !api.IsValidPermissionLevel(level) {
+	if !(level.Validate() == nil) {
 		return backend.ErrInvalidPermissionLevel
 	}
 

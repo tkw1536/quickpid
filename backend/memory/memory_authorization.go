@@ -23,7 +23,7 @@ func (s *Store) GetNamespacePermission(_ context.Context, namespace, username st
 }
 
 func (s *Store) SetNamespacePermission(_ context.Context, namespace, username string, level api.PermissionLevel) error {
-	if !api.IsValidPermissionLevel(level) {
+	if !(level.Validate() == nil) {
 		return backend.ErrInvalidPermissionLevel
 	}
 

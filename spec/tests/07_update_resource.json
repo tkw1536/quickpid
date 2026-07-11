@@ -8,7 +8,8 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -34,7 +35,8 @@
         "pids": [
           "xjc-cjy"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -48,7 +50,8 @@
     {
       "name": "success_allFields",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -71,7 +74,8 @@
     {
       "name": "partial_urlOnly",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -94,7 +98,8 @@
     {
       "name": "partial_setMetadataNull",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -117,7 +122,8 @@
     {
       "name": "partial_setMetadataString",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -140,7 +146,8 @@
     {
       "name": "partial_deletedOnly",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -163,7 +170,8 @@
     {
       "name": "emptyUpdate_noChanges",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -186,7 +194,8 @@
     {
       "name": "emptyBody",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -202,7 +211,8 @@
     {
       "name": "malformedJSON",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -219,7 +229,8 @@
     {
       "name": "invalidNamespaceID",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -236,7 +247,8 @@
     {
       "name": "namespaceNotFound",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -253,7 +265,8 @@
     {
       "name": "resourceNotFound",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -270,7 +283,8 @@
     {
       "name": "invalidPID",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "PATCH",
@@ -287,7 +301,8 @@
     {
       "name": "tooLargeBody",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "limits": {
         "MaxBodyBytes": 256,

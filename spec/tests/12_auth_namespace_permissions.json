@@ -1,0 +1,683 @@
+{
+  "name": "auth_namespace_permissions",
+  "comment": "Namespace permission levels gate resolver operations over HTTP.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root"
+        }
+      }
+    },
+    {
+      "name": "create_owner",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"owner\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "owner"
+        }
+      }
+    },
+    {
+      "name": "create_editor",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "editor"
+        }
+      }
+    },
+    {
+      "name": "create_contributor",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"contributor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "contributor"
+        }
+      }
+    },
+    {
+      "name": "create_reader",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"reader\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "reader"
+        }
+      }
+    },
+    {
+      "name": "create_outsider",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"outsider\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "outsider"
+        }
+      }
+    },
+    {
+      "name": "issue_owner_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "owner-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "owner",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "owner-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+        }
+      }
+    },
+    {
+      "name": "issue_editor_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "editor-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"editor\", \"username\": \"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "editor",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "editor-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+        }
+      }
+    },
+    {
+      "name": "issue_contributor_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "contributor-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaacontributor"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"contributor\", \"username\": \"contributor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "contributor",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "contributor-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaacontributor"
+        }
+      }
+    },
+    {
+      "name": "issue_reader_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "reader-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaareader"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"reader\", \"username\": \"reader\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "reader",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "reader-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaareader"
+        }
+      }
+    },
+    {
+      "name": "issue_outsider_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "outsider-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaoutsider"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"outsider\", \"username\": \"outsider\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "outsider",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "outsider-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaoutsider"
+        }
+      }
+    },
+    {
+      "name": "verify_owner_key",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": false,
+          "username": "owner"
+        }
+      }
+    },
+    {
+      "name": "owner_creates_namespace",
+      "config": {
+        "namespaceIDs": [
+          "c1000000-0000-4000-8000-000000000001"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"perm-ns\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "c1000000-0000-4000-8000-000000000001",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "perm-ns"
+        }
+      }
+    },
+    {
+      "name": "owner_grants_editor",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/editor",
+        "body": "{\"level\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "level": "editor",
+          "username": "editor"
+        }
+      }
+    },
+    {
+      "name": "owner_grants_contributor",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/contributor",
+        "body": "{\"level\":\"contributor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "level": "contributor",
+          "username": "contributor"
+        }
+      }
+    },
+    {
+      "name": "owner_creates_resource",
+      "config": {
+        "pids": [
+          "aaa-bbb"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/resources",
+        "body": "{\"url\":\"https://example.com/existing\",\"metadata\":\"seed\",\"tag\":\"seed\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "seed",
+          "pid": "aaa-bbb",
+          "tag": "seed",
+          "url": "https://example.com/existing"
+        }
+      }
+    },
+    {
+      "name": "get_namespace_unauthorized",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    },
+    {
+      "name": "outsider_create_resource_forbidden",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/resources",
+        "body": "{\"url\":\"https://example.com/nope\",\"metadata\":\"x\",\"tag\":\"x\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaoutsider"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "contributor_get_namespace_forbidden",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaacontributor"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "reader_get_namespace_ok",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaareader"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "c1000000-0000-4000-8000-000000000001",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "perm-ns"
+        }
+      }
+    },
+    {
+      "name": "contributor_create_resource_ok",
+      "config": {
+        "pids": [
+          "ccc-ddd"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/resources",
+        "body": "{\"url\":\"https://example.com/new\",\"metadata\":\"new\",\"tag\":\"new\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaacontributor"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "new",
+          "pid": "ccc-ddd",
+          "tag": "new",
+          "url": "https://example.com/new"
+        }
+      }
+    },
+    {
+      "name": "contributor_get_resource_forbidden",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/resources/aaa-bbb",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaacontributor"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "reader_get_resource_ok",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/resources/aaa-bbb",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaareader"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "seed",
+          "pid": "aaa-bbb",
+          "tag": "seed",
+          "url": "https://example.com/existing"
+        }
+      }
+    },
+    {
+      "name": "editor_list_permissions_forbidden",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "owner_list_permissions_ok",
+      "config": {},
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "items": [
+            {
+              "level": "contributor",
+              "username": "contributor"
+            },
+            {
+              "level": "editor",
+              "username": "editor"
+            },
+            {
+              "level": "manager",
+              "username": "owner"
+            }
+          ],
+          "offset": 0,
+          "total": 3
+        }
+      }
+    },
+    {
+      "name": "editor_grant_manager_forbidden",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/reader",
+        "body": "{\"level\":\"manager\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    }
+  ]
+}

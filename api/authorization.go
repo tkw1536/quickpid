@@ -2,6 +2,7 @@ package api
 
 //spellchecker:words github bicpid internal strict
 import (
+	"errors"
 	"fmt"
 
 	"github.com/tkw1536/bicpid/internal/strict"
@@ -11,19 +12,21 @@ import (
 type PermissionLevel string
 
 const (
-	PermissionLevelNone         PermissionLevel = "none"
+	PermissionLevelNone        PermissionLevel = "none"
 	PermissionLevelContributor PermissionLevel = "contributor"
-	PermissionLevelEditor       PermissionLevel = "editor"
-	PermissionLevelManager      PermissionLevel = "manager"
+	PermissionLevelEditor      PermissionLevel = "editor"
+	PermissionLevelManager     PermissionLevel = "manager"
 )
 
-// IsValidPermissionLevel reports whether level is a known permission level.
-func IsValidPermissionLevel(level PermissionLevel) bool {
+var errInvalidPermissionLevel = errors.New("invalid permission level")
+
+// Valid reports whether the level is a known permission level.
+func (level PermissionLevel) Validate() error {
 	switch level {
 	case PermissionLevelNone, PermissionLevelContributor, PermissionLevelEditor, PermissionLevelManager:
-		return true
+		return nil
 	default:
-		return false
+		return errInvalidPermissionLevel
 	}
 }
 
@@ -50,7 +53,7 @@ func (r *SetNamespacePermissionRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("missing required field: level")
 	}
 	r.Level = PermissionLevel(decoded.Level.Value)
-	if !IsValidPermissionLevel(r.Level) {
+	if !(r.Level.Validate() == nil) {
 		return fmt.Errorf("invalid permission level: %q", r.Level)
 	}
 	return nil

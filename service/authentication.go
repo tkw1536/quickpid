@@ -4,8 +4,8 @@ package service
 //spellchecker:words context crypto rand errors slog github bicpid backend internal apikey
 import (
 	"context"
-	"crypto/rand"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/tkw1536/bicpid/api"
@@ -16,7 +16,7 @@ import (
 // Authenticate looks up the username for a valid API key.
 // It returns errUnauthorized when the key is missing or invalid.
 func (s *Service) Authenticate(ctx context.Context, apiKey string) (string, error) {
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		return "", errUnauthorized
 	}
 	if apiKey == "" {
@@ -36,7 +36,7 @@ func (s *Service) Authenticate(ctx context.Context, apiKey string) (string, erro
 // CurrentUser authenticates an API key and returns the corresponding user account.
 // It returns errUnauthorized when the key is missing, invalid, or the user no longer exists.
 func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo, error) {
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		return nil, errUnauthorized
 	}
 	caller, err := s.Authenticate(ctx, apiKey)
@@ -55,7 +55,7 @@ func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo
 
 // GetUser returns the user account for caller.
 func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, api.Error, error) {
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		return nil, "", errForbidden
 	}
 	user, err := s.authentication.GetUser(ctx, caller)
@@ -70,7 +70,7 @@ func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, ap
 
 // CreateUser creates a new user account. Caller must be a superuser.
 func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.UserCreateRequest) (*api.UserInfo, api.Error, error) {
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		return nil, "", errForbidden
 	}
 	if err := requireSuperuser(caller); err != nil {
@@ -92,7 +92,7 @@ func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.
 
 // ListUsers lists all user accounts. Caller must be a superuser.
 func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params api.ListUsersParams) (*api.PaginatedUsersResponse, api.Error, error) {
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		return nil, "", errForbidden
 	}
 	if err := requireSuperuser(caller); err != nil {
@@ -108,7 +108,7 @@ func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params ap
 
 // ListKeys lists API keys for caller.
 func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, api.Error, error) {
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		return nil, "", errForbidden
 	}
 	page, err := s.authentication.ListKeys(ctx, s.apiKeyFormat(), caller.Username, params)
@@ -121,17 +121,25 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, params api
 	return page, "", nil
 }
 
-// IssueKey issues a new API key for caller.
-func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, req api.IssueKeyRequest) (*api.IssueKeyResponse, api.Error, error) {
-	if s.anonymousMode() {
+// IssueKey issues a new API key for caller or another user when caller is a superuser.
+func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, req api.KeyIssueRequest) (*api.IssueKeyResponse, api.Error, error) {
+	if s.Options().Anonymous {
 		return nil, "", errForbidden
 	}
-	keyID, err := s.runtime.NewNamespaceID()
+	target := caller.Username
+	if req.Username != nil {
+		target = *req.Username
+	}
+	if target != caller.Username && !caller.Superuser {
+		return nil, "", errForbidden
+	}
+
+	keyID, err := s.runtime.NewAPIKeyID()
 	if err != nil {
 		return nil, api.BadIDGeneration, err
 	}
 
-	issued, err := s.createIssuedKey(ctx, caller.Username, keyID, req)
+	issued, err := s.createIssuedKey(ctx, target, keyID, req)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -141,9 +149,9 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, req api.Is
 	return issued, "", nil
 }
 
-func (s *Service) createIssuedKey(ctx context.Context, username, keyID string, req api.IssueKeyRequest) (*api.IssueKeyResponse, error) {
+func (s *Service) createIssuedKey(ctx context.Context, username, keyID string, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
 	format := s.apiKeyFormat()
-	rawKey, err := format.Generate(rand.Reader)
+	rawKey, err := s.runtime.NewAPIKey(format)
 	if err != nil {
 		return nil, err
 	}
@@ -155,8 +163,8 @@ func (s *Service) createIssuedKey(ctx context.Context, username, keyID string, r
 }
 
 // RevokeKey revokes an API key for caller.
-func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, req api.RevokeKeyRequest) (*api.RevokeKeyResponse, api.Error, error) {
-	if s.anonymousMode() {
+func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, req api.KeyRevokeRequest) (*api.RevokeKeyResponse, api.Error, error) {
+	if s.Options().Anonymous {
 		return nil, "", errForbidden
 	}
 	info, err := s.authentication.RevokeKey(ctx, s.apiKeyFormat(), caller.Username, req.ID)
@@ -170,8 +178,8 @@ func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, req api.R
 }
 
 // UpdateUser updates caller's account or another user when caller is a superuser.
-func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, req api.UpdateUserRequest) (*api.UserInfo, api.Error, error) {
-	if s.anonymousMode() {
+func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, req api.UserUpdateRequest) (*api.UserInfo, api.Error, error) {
+	if s.Options().Anonymous {
 		return nil, "", errForbidden
 	}
 	target := caller.Username
@@ -228,11 +236,10 @@ func mapAuthBackendError(err error) (api.Error, bool) {
 
 const rootUsername = "root"
 
-const rootKeyID = "bootstrap"
-
-// EnsureRootUser creates a root superuser with a bootstrap API key when no accounts exist.
+// EnsureRootUser ensures that there is a user named "root" in the system.
+// If there is no such user, it creates a new root user with superuser privileges, and generates and logs out an API key.
 func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error {
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		return nil
 	}
 	page, err := s.authentication.ListUsers(ctx, api.ListUsersParams{Limit: 1})
@@ -251,10 +258,14 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 		return nil
 	}
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create root superuser: %w", err)
 	}
 
-	issued, err := s.createIssuedKey(ctx, rootUsername, rootKeyID, api.IssueKeyRequest{
+	rootKeyID, err := s.runtime.NewAPIKeyID()
+	if err != nil {
+		return fmt.Errorf("failed to generate bootstrap API key: %w", err)
+	}
+	issued, err := s.createIssuedKey(ctx, rootUsername, rootKeyID, api.KeyIssueRequest{
 		Comment: "bootstrap",
 	})
 	if err != nil {

@@ -4,7 +4,9 @@
   "steps": [
     {
       "name": "invalid_namespace_id",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/BADUPPER"
@@ -18,7 +20,9 @@
     },
     {
       "name": "not_found",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/ffffffff-ffff-ffff-ffff-ffffffffffff"
@@ -36,7 +40,8 @@
         "namespaceIDs": [
           "e9e8e7e6-d5c4-b3a2-9108-76543210fedc"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -58,7 +63,9 @@
     },
     {
       "name": "get_matches_create",
-      "config": {},
+      "config": {
+        "anonymous": true
+      },
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/e9e8e7e6-d5c4-b3a2-9108-76543210fedc"

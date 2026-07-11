@@ -38,16 +38,16 @@ type UserInfo struct {
 	Superuser bool   `json:"superuser"`
 }
 
-// UpdateUserRequest updates fields on an existing user account.
+// UserUpdateRequest updates fields on an existing user account.
 //
 // A nil pointer indicates that no update should be performed on that field.
 // When username is omitted, the authenticated user account is updated.
-type UpdateUserRequest struct {
+type UserUpdateRequest struct {
 	Username  *string `json:"username"`
 	Superuser *bool   `json:"superuser"`
 }
 
-func (r *UpdateUserRequest) UnmarshalJSON(data []byte) error {
+func (r *UserUpdateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Username  strict.Optional[strict.String] `json:"username"`
 		Superuser strict.Optional[strict.Bool]   `json:"superuser"`
@@ -83,16 +83,21 @@ type PaginatedAPIKeysResponse struct {
 	Items  []APIKeyInfo `json:"items"`
 }
 
-// IssueKeyRequest is the JSON body for issueKey.
-type IssueKeyRequest struct {
+// KeyIssueRequest is the JSON body for issueKey.
+//
+// When username is omitted, a key is issued for the authenticated user.
+// A superuser may set username to issue a key for another account.
+type KeyIssueRequest struct {
 	Comment   string  `json:"comment"`
 	ExpiresAt *string `json:"expires_at"`
+	Username  *string `json:"username"`
 }
 
-func (r *IssueKeyRequest) UnmarshalJSON(data []byte) error {
+func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Comment   strict.Optional[strict.String] `json:"comment"`
 		ExpiresAt strict.Optional[*string]       `json:"expires_at"`
+		Username  strict.Optional[strict.String] `json:"username"`
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
@@ -105,6 +110,7 @@ func (r *IssueKeyRequest) UnmarshalJSON(data []byte) error {
 	if decoded.ExpiresAt.Present {
 		r.ExpiresAt = decoded.ExpiresAt.Value
 	}
+	r.Username = strict.OptionalStringToPointer(decoded.Username)
 	return nil
 }
 
@@ -114,12 +120,12 @@ type IssueKeyResponse struct {
 	Key string `json:"key"`
 }
 
-// RevokeKeyRequest is the JSON body for revokeKey.
-type RevokeKeyRequest struct {
+// KeyRevokeRequest is the JSON body for revokeKey.
+type KeyRevokeRequest struct {
 	ID string `json:"id"`
 }
 
-func (r *RevokeKeyRequest) UnmarshalJSON(data []byte) error {
+func (r *KeyRevokeRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		ID strict.Optional[strict.String] `json:"id"`
 	}
@@ -139,15 +145,15 @@ type RevokeKeyResponse struct {
 	APIKeyInfo
 }
 
-// UpdateKeyRequest updates metadata for an existing API key.
+// KeyUpdateRequest updates metadata for an existing API key.
 //
 // A nil pointer indicates that no update should be performed on that field.
-type UpdateKeyRequest struct {
+type KeyUpdateRequest struct {
 	Comment   *string  `json:"comment"`
 	ExpiresAt **string `json:"expires_at"`
 }
 
-func (r *UpdateKeyRequest) UnmarshalJSON(data []byte) error {
+func (r *KeyUpdateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Comment   strict.Optional[strict.String] `json:"comment"`
 		ExpiresAt strict.Optional[*string]       `json:"expires_at"`

@@ -8,7 +8,8 @@
         "namespaceIDs": [
           "46c14e5d-c048-4159-a26a-f37bc0110c85"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -34,7 +35,8 @@
         "pids": [
           "xjc-cjy"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
@@ -48,7 +50,8 @@
     {
       "name": "success",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",
@@ -70,7 +73,8 @@
     {
       "name": "resourceNotFound",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",
@@ -86,7 +90,8 @@
     {
       "name": "invalidNamespace",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",
@@ -102,7 +107,8 @@
     {
       "name": "invalidPID",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",
@@ -118,7 +124,8 @@
     {
       "name": "namespaceNotFound",
       "config": {
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "GET",

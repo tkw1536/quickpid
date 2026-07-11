@@ -76,7 +76,7 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.UserInfo, para
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError]
 func (s *Service) GetNamespace(ctx context.Context, caller *api.UserInfo, namespace string) (*api.NamespaceResponse, api.Error, error) {
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		if err := ValidateNamespaceID(namespace); err != nil {
 			return nil, api.InvalidNamespaceID, err
 		}
@@ -104,7 +104,7 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.UserInfo, namesp
 // - [api.Forbidden]
 // - [api.DatabaseError]
 func (s *Service) CountAllResources(ctx context.Context, caller *api.UserInfo) (*api.ResourceCountResponse, api.Error, error) {
-	if !s.anonymousMode() {
+	if !s.Options().Anonymous {
 		if err := requireSuperuser(caller); err != nil {
 			return nil, "", err
 		}
@@ -131,7 +131,7 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.UserInfo, req
 	s.mu.RUnlock()
 
 	var owner *string
-	if !s.anonymousMode() {
+	if !s.Options().Anonymous {
 		if err := s.requireAuthenticated(caller); err != nil {
 			return nil, "", err
 		}
@@ -169,7 +169,7 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.UserInfo, req
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError]
 func (s *Service) ListResources(ctx context.Context, caller *api.UserInfo, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, api.Error, error) {
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		if err := ValidateNamespaceID(params.Namespace); err != nil {
 			return nil, api.InvalidNamespaceID, err
 		}
@@ -201,7 +201,7 @@ func (s *Service) ListResources(ctx context.Context, caller *api.UserInfo, param
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy]
 func (s *Service) CreateResource(ctx context.Context, caller *api.UserInfo, namespace string, req api.ResourceCreateRequest) (*api.ResourceResponse, api.Error, error) {
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		if err := ValidateNamespaceID(namespace); err != nil {
 			return nil, api.InvalidNamespaceID, err
 		}
@@ -250,7 +250,7 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo
 		return nil, api.ItemLimitExceeded, fmt.Errorf("%d > %d", len(reqs), maxBatch)
 	}
 
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		if err := ValidateNamespaceID(namespace); err != nil {
 			return nil, api.InvalidNamespaceID, err
 		}
@@ -293,7 +293,7 @@ func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespa
 	if err := ValidatePID(resourcePID); err != nil {
 		return nil, api.InvalidPID, err
 	}
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		if err := ValidateNamespaceID(namespace); err != nil {
 			return nil, api.InvalidNamespaceID, err
 		}
@@ -332,7 +332,7 @@ func (s *Service) UpdateResource(ctx context.Context, caller *api.UserInfo, name
 	if err := ValidatePID(resourcePID); err != nil {
 		return nil, api.InvalidPID, err
 	}
-	if s.anonymousMode() {
+	if s.Options().Anonymous {
 		if err := ValidateNamespaceID(namespace); err != nil {
 			return nil, api.InvalidNamespaceID, err
 		}
