@@ -381,6 +381,28 @@
           "total": 1
         }
       }
+    },
+    {
+      "name": "get_namespace",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c00420c4-1461-4824-a2cc-34e3d04524d4"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "c00420c4-1461-4824-a2cc-34e3d04524d4",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "c"
+        }
+      }
     }
   ]
 }

@@ -228,7 +228,7 @@ func TestService_AnonymousResolverMode(t *testing.T) {
 		t.Fatalf("GetResource() url = %q, want https://example.com/anon", got.URL)
 	}
 
-	count, specError, err := svc.CountAllResources(ctx, nil)
+	count, specError, err := svc.CountAllResources(ctx)
 	if err != nil || specError != "" {
 		t.Fatalf("CountAllResources(nil) = %v, %q, %v", count, specError, err)
 	}

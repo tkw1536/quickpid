@@ -113,15 +113,8 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.UserInfo, namesp
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.DatabaseError]
-func (s *Service) CountAllResources(ctx context.Context, caller *api.UserInfo) (*api.ResourceCountResponse, api.Error, error) {
-	if !s.Options().Anonymous {
-		if err := requireSuperuser(caller); err != nil {
-			return nil, "", err
-		}
-	}
+func (s *Service) CountAllResources(ctx context.Context) (*api.ResourceCountResponse, api.Error, error) {
 	n, err := s.resolver.CountAllResources(ctx)
 	if err != nil {
 		return nil, api.DatabaseError, err
@@ -134,7 +127,6 @@ func (s *Service) CountAllResources(ctx context.Context, caller *api.UserInfo) (
 // It can return the following errors:
 //
 // - [api.Unauthorized]
-// - [api.UserNotFound]
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy]
@@ -163,7 +155,10 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.UserInfo, req
 			return out, "", nil
 		}
 		if errors.Is(err, backend.ErrUserNotFound) {
-			return nil, api.UserNotFound, err
+			// This SHOULD NEVER happen as we received the username from a user object.
+			// But a race condition between a concurrent delete user call or data corruption might trigger this.
+			// So we consider this a database error.
+			return nil, api.DatabaseError, fmt.Errorf("%w: %w", errExistingUserNotFound, err)
 		}
 		if !errors.Is(err, backend.ErrDuplicateNamespaceID) {
 			return nil, api.DatabaseError, err

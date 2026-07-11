@@ -358,6 +358,92 @@
           "total": 2
         }
       }
+    },
+    {
+      "name": "get_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/b1000000-0000-4000-8000-000000000002"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    },
+    {
+      "name": "get_ns_b_as_alice_forbidden",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/b1000000-0000-4000-8000-000000000002",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "get_ns_a_as_alice_ok",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/a1000000-0000-4000-8000-000000000001",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "a1000000-0000-4000-8000-000000000001",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "ns-a"
+        }
+      }
+    },
+    {
+      "name": "get_ns_a_as_admin",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/a1000000-0000-4000-8000-000000000001",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaadmin"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "a1000000-0000-4000-8000-000000000001",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "ns-a"
+        }
+      }
     }
   ]
 }

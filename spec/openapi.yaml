@@ -57,14 +57,13 @@ paths:
     get:
       operationId: listNamespaces
       summary: List namespaces available on the resolver.
-      description: A filterable list of namespaces.
       description: |
         This endpoint returns a list of namespaces available on the server.
         They can be additionally filtered by several parameters.
 
         In anonymous mode, the initial list of namespaces includes all namespaces.
         
-        In authenticated mode, only namespaces the current user has explicit access to are returned.
+        In authenticated mode, only namespaces the current user has access to are returned.
         This is defined by having a permission that is not "none" for a namespace.
         If the authenticated user is a superuser, all namespaces are returned.
       tags:
@@ -136,9 +135,12 @@ paths:
       operationId: createNamespace
       summary: Creates a new namespace.
       description: |
-        Creates a new namespace with a server-assigned id.
-        When authentication is required, the authenticated user becomes the namespace owner
-        and receives manager permissions for that namespace automatically.
+        This endpoint creates a new namespace with a server-assigned id.
+
+        In anonymous mode, namespaces can be created by any user.
+        
+        In authenticated mode, any user can create a namespace.
+        The authenticated user automatically receives namespace 'manager' permissions for the new namespace.
       tags:
         - namespaces
 
@@ -168,6 +170,12 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
@@ -195,6 +203,11 @@ paths:
     get:
       operationId: countAllResources
       summary: Return the total number of resources (issued PIDs) stored across all namespaces.
+      description: |
+        This endpoint returns the total number of resources (issued PIDs) across all namespaces.
+        This includes soft-deleted resources.
+        This endpoint never requires authentication.
+      security: []
       tags:
         - resources
       responses:
@@ -218,6 +231,13 @@ paths:
     get:
       operationId: getNamespace
       summary: Retrieve a single namespace by id.
+      description: |
+        This endpoint returns a single namespace by id.
+        
+        In authenticated mode, only namespaces the current user has access to can be accessed.
+        This is defined by having a permission that is not "none" for a namespace.
+        If the authenticated user is a superuser, all namespaces can be accessed.
+      security: []
       tags:
         - namespaces
       parameters:
@@ -241,6 +261,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to access this namespace.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace does not exist.
           content:

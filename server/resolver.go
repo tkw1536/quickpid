@@ -42,8 +42,8 @@ func (h *Server) getNamespaceDetail(w http.ResponseWriter, r *http.Request, user
 	return h.svc.GetNamespace(r.Context(), user, namespace)
 }
 
-func (h *Server) countAllResources(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.ResourceCountResponse, api.Error, error) {
-	return h.svc.CountAllResources(r.Context(), user)
+func (h *Server) countAllResources(w http.ResponseWriter, r *http.Request) (*api.ResourceCountResponse, api.Error, error) {
+	return h.svc.CountAllResources(r.Context())
 }
 
 func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespaceResponse, api.Error, error) {

@@ -25,7 +25,7 @@ func permissionRank(level api.PermissionLevel) int {
 	}
 }
 
-// canReadNamespace checks if the given user can read
+// canReadNamespace checks if the given user can read namespace metadata.
 func canReadNamespace(level api.PermissionLevel) bool {
 	switch level {
 	case api.PermissionLevelNone, api.PermissionLevelEditor, api.PermissionLevelManager:

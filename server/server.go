@@ -68,7 +68,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /resolver/resources/count", lowlevel.HandleOptionalUser(
+	h.mux.Handle("GET /resolver/resources/count", lowlevel.HandleNoAuth(
 		h.authHandler,
 		h.countAllResources,
 		http.StatusOK,
