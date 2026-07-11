@@ -185,6 +185,7 @@ func (main *mainCmd) parseFlags() error {
 	flag.IntVar(&main.limits.MaxBatchItems, "max-batch-items", main.limits.MaxBatchItems, "maximum number of items in a batch")
 	flag.IntVar(&main.limits.MaxNamespaceIDAttempts, "max-namespace-id-attempts", main.limits.MaxNamespaceIDAttempts, "maximum number of attempts to allocate a namespace ID")
 	flag.IntVar(&main.limits.MaxPIDAttempts, "max-pid-attempts", main.limits.MaxPIDAttempts, "maximum number of attempts to allocate a PID")
+	flag.IntVar(&main.limits.MaxAPIKeyAttempts, "max-api-key-attempts", main.limits.MaxAPIKeyAttempts, "maximum number of attempts to issue an API key")
 
 	flag.StringVar(&main.logLevel, "log-level", main.logLevel, "log level: none, error, warn, info, debug")
 	flag.BoolVar(&main.logJSON, "log-json", main.logJSON, "output logs as json")

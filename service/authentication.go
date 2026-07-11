@@ -122,6 +122,13 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, params api
 }
 
 // IssueKey issues a new API key for caller or another user when caller is a superuser.
+//
+// It can return the following errors:
+//
+// - [api.Forbidden]
+// - [api.BadIDGeneration]
+// - [api.DatabaseError]
+// - [api.InsufficientEntropy]
 func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, req api.KeyIssueRequest) (*api.IssueKeyResponse, api.Error, error) {
 	if s.Options().Anonymous {
 		return nil, "", errForbidden
@@ -134,32 +141,49 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, req api.Ke
 		return nil, "", errForbidden
 	}
 
-	keyID, err := s.runtime.NewAPIKeyID()
+	issued, specError, err := s.issueAPIKey(ctx, target, req)
 	if err != nil {
-		return nil, api.BadIDGeneration, err
-	}
-
-	issued, err := s.createIssuedKey(ctx, target, keyID, req)
-	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
-	}
-	if err != nil {
-		return nil, api.DatabaseError, err
 	}
 	return issued, "", nil
 }
 
-func (s *Service) createIssuedKey(ctx context.Context, username, keyID string, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
+// issueAPIKey issues a new API key, retrying when storage reports [backend.ErrKeyCollision].
+//
+// It can return the following errors:
+//
+// - [api.BadIDGeneration]
+// - [api.DatabaseError]
+// - [api.InsufficientEntropy]
+func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyIssueRequest) (*api.IssueKeyResponse, api.Error, error) {
+	s.mu.RLock()
+	maxAttempts := s.opts.Limits.MaxAPIKeyAttempts
+	s.mu.RUnlock()
+
 	format := s.apiKeyFormat()
-	rawKey, err := s.runtime.NewAPIKey(format)
-	if err != nil {
-		return nil, err
+	for range maxAttempts {
+		keyID, err := s.runtime.NewAPIKeyID()
+		if err != nil {
+			return nil, api.BadIDGeneration, err
+		}
+
+		rawKey, err := s.runtime.NewAPIKey(format)
+		if err != nil {
+			return nil, api.BadIDGeneration, err
+		}
+
+		info, err := s.authentication.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
+		if err == nil {
+			return &api.IssueKeyResponse{APIKeyInfo: *info, Key: rawKey}, "", nil
+		}
+		if specError, ok := mapAuthBackendError(err); ok {
+			return nil, specError, err
+		}
+		if !errors.Is(err, backend.ErrKeyCollision) {
+			return nil, api.DatabaseError, err
+		}
 	}
-	info, err := s.authentication.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
-	if err != nil {
-		return nil, err
-	}
-	return &api.IssueKeyResponse{APIKeyInfo: *info, Key: rawKey}, nil
+	return nil, api.InsufficientEntropy, fmt.Errorf("%w: gave up api key generation after %d attempts", errInsufficientEntropy, maxAttempts)
 }
 
 // RevokeKey revokes an API key for caller.
@@ -261,11 +285,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 		return fmt.Errorf("failed to create root superuser: %w", err)
 	}
 
-	rootKeyID, err := s.runtime.NewAPIKeyID()
-	if err != nil {
-		return fmt.Errorf("failed to generate bootstrap API key: %w", err)
-	}
-	issued, err := s.createIssuedKey(ctx, rootUsername, rootKeyID, api.KeyIssueRequest{
+	issued, _, err := s.issueAPIKey(ctx, rootUsername, api.KeyIssueRequest{
 		Comment: "bootstrap",
 	})
 	if err != nil {

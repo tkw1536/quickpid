@@ -3,6 +3,7 @@ package memory
 
 //spellchecker:words context sort time github bicpid backend internal apikey
 import (
+	"bytes"
 	"context"
 	"sort"
 	"time"
@@ -112,6 +113,16 @@ func (s *Store) CreateKey(_ context.Context, format apikey.Format, username, key
 	hashed, err := format.Hash(key)
 	if err != nil {
 		return nil, err
+	}
+	if user.keys[keyID] != nil {
+		return nil, backend.ErrKeyCollision
+	}
+	for _, otherUser := range s.users {
+		for _, existing := range otherUser.keys {
+			if existing.prefix == hashed.Prefix && bytes.Equal(existing.digest, hashed.Digest) {
+				return nil, backend.ErrKeyCollision
+			}
+		}
 	}
 	user.keys[keyID] = &keyRecord{
 		info:   info,

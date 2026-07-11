@@ -16,51 +16,63 @@ import (
 // See [authentication.NewInMemoryBackend] and [authentication.NewGormBackend] for implementations.
 type AuthenticationBackend interface {
 	// CreateUser creates a new user account.
+	//
 	// Should return [ErrDuplicateUsername] if the username is already in use.
 	CreateUser(ctx context.Context, req api.UserCreateRequest, now func() time.Time) (*api.UserInfo, error)
 
 	// Gets a user account.
+	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	GetUser(ctx context.Context, username string) (*api.UserInfo, error)
 
 	// ListUsers lists all user accounts, ordered ascending by username.
+	//
 	// Has no specific error conditions.
 	ListUsers(ctx context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error)
 
 	// DeleteUser removes a user and all associated API keys.
+	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	DeleteUser(ctx context.Context, username string) error
 
 	// UpdateUser updates fields on an existing user account.
+	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	UpdateUser(ctx context.Context, username string, req api.UserUpdateRequest) (*api.UserInfo, error)
 
 	// Creates a new API key for the given user.
 	// format describes how key should be validated and transformed into its stored representation.
 	// key is the full raw API key; only a secure hash of it should be stored by the backend.
+	//
 	// Should return [ErrUserNotFound] if the user does not exist.
+	// Should return [ErrKeyCollision] if the key could not be created due to a collision with an existing key.
 	CreateKey(ctx context.Context, format apikey.Format, username, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error)
 
 	// ListKeys lists API keys for the given user, ordered ascending by id.
+	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	ListKeys(ctx context.Context, format apikey.Format, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error)
 
 	// Gets an API key for the given user.
+	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	// Should return [ErrKeyNotFound] if the key does not exist.
 	GetKey(ctx context.Context, format apikey.Format, username, keyID string) (*api.APIKeyInfo, error)
 
 	// UpdateKey updates metadata for an existing API key.
+	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	// Should return [ErrKeyNotFound] if the key does not exist.
 	UpdateKey(ctx context.Context, format apikey.Format, username, keyID string, req api.KeyUpdateRequest, now func() time.Time) (*api.APIKeyInfo, error)
 
 	// Revokes an API key and returns its final metadata.
+	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	// Should return [ErrKeyNotFound] if the key does not exist.
 	RevokeKey(ctx context.Context, format apikey.Format, username, keyID string) (*api.APIKeyInfo, error)
 
 	// Looks up the username for a valid API key.
+	//
 	// Should return [ErrInvalidKey] if no matching key exists.
 	LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, error)
 
@@ -73,4 +85,5 @@ var (
 	ErrUserNotFound      = errors.New("user not found")
 	ErrKeyNotFound       = errors.New("key not found")
 	ErrInvalidKey        = errors.New("invalid key")
+	ErrKeyCollision      = errors.New("api key collides with existing key")
 )

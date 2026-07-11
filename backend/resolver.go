@@ -14,8 +14,6 @@ import (
 //
 //spellchecker:words context errors time github bicpid
 type ResolverBackend interface {
-	Shutdowner
-
 	// Lists all available namespaces, ordered ascending by namespace id.
 	// Has no specific error conditions.
 	ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error)
@@ -40,11 +38,13 @@ type ResolverBackend interface {
 	CountAllResources(ctx context.Context) (int64, error)
 
 	// Gets a resource by the given namespace and pid.
+	//
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrResourceNotFound] if the resource is not found.
 	GetResource(ctx context.Context, namespace, pid string) (*api.ResourceResponse, error)
 
 	// Creates a new resource in the given namespace with the given pid.
+	//
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrPIDAllocationFailed] if the pid is already in use.
 	CreateResource(ctx context.Context, namespace, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error)
@@ -72,5 +72,5 @@ var (
 	ErrNamespaceNotFound = errors.New("namespace not found")
 	ErrResourceNotFound  = errors.New("resource not found")
 
-	ErrPIDAllocationFailed = errors.New("could not allocate unique pid") // ???
+	ErrPIDAllocationFailed = errors.New("could not allocate unique pid")
 )

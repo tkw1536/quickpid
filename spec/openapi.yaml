@@ -8,8 +8,8 @@ info:
     url: https://creativecommons.org/licenses/by-sa/4.0/
 
 tags:
-  - name: resolver
-    description: Generic Limits information 
+  - name: quickpid
+    description: Generic information about the server.
   - name: namespaces
     description: Operations related to namespaces.
   - name: resources
@@ -28,9 +28,14 @@ paths:
   /resolver:
     get:
       operationId: getResolverInfo
-      summary: Return information regarding the resolvers' limits and other configuration.
+      summary: Return information regarding the API's limits and other configuration.
+      description: |
+        This endpoint returns internal limits and configuration information.
+        Even if authentication is enabled, this endpoint will never require authentication. 
+        An implementation MAY refuse to expose any information, in which case a 404 response is expected.
+      security: []
       tags:
-        - resolver
+        - quickpid
       responses:
         '200':
           description: Limits successfully retrieved.
@@ -49,6 +54,8 @@ paths:
     get:
       operationId: listNamespaces
       summary: List namespaces available on the resolver.
+      description: |
+        A filterable list of namespaces
       tags:
         - namespaces
 
@@ -1448,6 +1455,12 @@ components:
           type: integer
           format: int64
           minimum: 0
+        authentication:
+          descriptions: |
+            If present, parts of the API require authentication via an API key.
+            Support for other authentication methods may be added in the future.
+          type: boolean
+          const: true
     NamespaceCreateRequest:
       description: |
         Namespace to be created. The server assigns an opaque id.

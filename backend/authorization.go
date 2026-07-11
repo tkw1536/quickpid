@@ -14,18 +14,24 @@ import (
 // See [memory.NewStore] and [gorm.NewStore] for implementations.
 type AuthorizationBackend interface {
 	// Gets the permission level for a username in a namespace.
-	// Returns [api.PermissionLevelNone] if no explicit permission is stored.
+	//
+	// Should return [api.PermissionLevelNone] if no explicit permission is stored.
 	GetNamespacePermission(ctx context.Context, namespace, username string) (api.PermissionLevel, error)
 
 	// Sets or updates the permission level for a username in a namespace.
 	// Setting [api.PermissionLevelNone] should remove any explicit permission record.
+	//
+	// Should return [ErrInvalidPermissionLevel] if the permission level is invalid.
+	// Should return [ErrUserNotFound] if the user does not exist.
 	SetNamespacePermission(ctx context.Context, namespace, username string, level api.PermissionLevel) error
 
 	// Deletes an explicit permission record.
+	//
 	// Should return [ErrPermissionNotFound] if no explicit permission exists.
 	DeleteNamespacePermission(ctx context.Context, namespace, username string) error
 
 	// Lists users with explicit non-none permissions in a namespace, ordered ascending by username.
+	//
 	// Has no specific error conditions.
 	ListNamespacePermissions(ctx context.Context, namespace string, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error)
 

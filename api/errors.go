@@ -12,8 +12,8 @@ type Error string
 
 const (
 	DatabaseError       Error = "database_error"       // An internal problem with the database
-	BadIDGeneration     Error = "bad_id_generation"    // Server failed to generate a valid namespace id or pid
-	InsufficientEntropy Error = "insufficient_entropy" // Insufficient entropy for namespace or pid generation
+	BadIDGeneration     Error = "bad_id_generation"    // Server failed to generate a valid api key, namespace id or pid
+	InsufficientEntropy Error = "insufficient_entropy" // Insufficient entropy for api, namespace or pid generation
 
 	BodyMissing      Error = "body_missing"       // request body was missing (but it was required)
 	BodySizeExceeded Error = "body_size_exceeded" // request body size limit exceeded

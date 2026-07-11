@@ -67,5 +67,6 @@ func (s *Service) GetResolverInfo() (*api.InfoResponse, api.Error, error) {
 		DefaultPageLimit: int64(opts.Limits.DefaultPageLimit),
 		MaxPageLimit:     int64(opts.Limits.MaxPageLimit),
 		MaxBatchItems:    int64(opts.Limits.MaxBatchItems),
+		Authentication:   !opts.Anonymous,
 	}, "", nil
 }

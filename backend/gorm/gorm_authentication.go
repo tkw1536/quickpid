@@ -133,6 +133,9 @@ func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username, k
 			Digest:    hashed.Digest,
 		}
 		if err := tx.Create(&row).Error; err != nil {
+			if isUniqueConstraintError(err) {
+				return nil, backend.ErrKeyCollision
+			}
 			return nil, err
 		}
 		info := row.toSpec()

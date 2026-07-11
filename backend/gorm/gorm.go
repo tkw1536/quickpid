@@ -103,6 +103,9 @@ func isUniqueConstraintError(err error) bool {
 		return true
 	}
 
+	// HACK HACK HACK: We shouldn't be checking the string error message here.
+	// But there isn't a nice way to do this, as some gorm drivers don't handle this properly.
+	// TODO: Investigate if we can handle this better for our own drivers.
 	msg := strings.ToLower(err.Error())
 	return strings.Contains(msg, "unique constraint failed") ||
 		strings.Contains(msg, "duplicate") ||

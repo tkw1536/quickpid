@@ -32,6 +32,7 @@ type Limits struct {
 
 	MaxNamespaceIDAttempts int // maximum number of attempts to allocate a namespace ID, must be at least 1.
 	MaxPIDAttempts         int // maximum number of attempts to allocate a PID, must be at least 1.
+	MaxAPIKeyAttempts      int // maximum number of attempts to issue an API key, must be at least 1.
 }
 
 const (
@@ -41,6 +42,7 @@ const (
 	defaultMaxBatchItems          = 100
 	defaultMaxNamespaceIDAttempts = 100
 	defaultMaxPIDAttempts         = 100
+	defaultMaxAPIKeyAttempts      = 100
 )
 
 // DefaultLimits returns a new Limits struct with default values.
@@ -52,6 +54,7 @@ func DefaultLimits() Limits {
 		MaxBatchItems:          defaultMaxBatchItems,
 		MaxNamespaceIDAttempts: defaultMaxNamespaceIDAttempts,
 		MaxPIDAttempts:         defaultMaxPIDAttempts,
+		MaxAPIKeyAttempts:      defaultMaxAPIKeyAttempts,
 	}
 }
 
@@ -78,6 +81,9 @@ func (o Limits) WithValidValues() Limits {
 	}
 	if o.MaxPIDAttempts < 1 {
 		o.MaxPIDAttempts = 1
+	}
+	if o.MaxAPIKeyAttempts < 1 {
+		o.MaxAPIKeyAttempts = 1
 	}
 
 	return o
