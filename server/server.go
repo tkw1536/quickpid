@@ -64,6 +64,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		[]api.Error{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
+			api.UserNotFound,
 			api.DatabaseError,
 		},
 	))

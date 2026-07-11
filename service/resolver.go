@@ -47,6 +47,8 @@ func mapCapabilityError(err error) (api.Error, error) {
 	return api.DatabaseError, err
 }
 
+var errExistingUserNotFound = errors.New("existing user not found")
+
 // ListNamespaces lists namespaces.
 //
 // It can return the following errors:
@@ -59,7 +61,18 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.UserInfo, para
 			return nil, "", err
 		}
 	}
-	out, err := s.resolver.ListNamespaces(ctx, params)
+
+	var user *string
+	if caller != nil && !caller.Superuser {
+		user = new(caller.Username)
+	}
+	out, err := s.resolver.ListNamespaces(ctx, user, params)
+	if errors.Is(err, backend.ErrUserNotFound) {
+		// This SHOULD NEVER happen as we received the username from a user object.
+		// But a race condition between a concurrent delete user call or data corruption might trigger this.
+		// So we consider this a database error.
+		return nil, api.DatabaseError, fmt.Errorf("%w: %w", errExistingUserNotFound, err)
+	}
 	if err != nil {
 		return nil, api.DatabaseError, err
 	}

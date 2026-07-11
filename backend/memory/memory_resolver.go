@@ -11,14 +11,29 @@ import (
 	"github.com/tkw1536/bicpid/backend"
 )
 
-func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+func (s *Store) ListNamespaces(_ context.Context, user *string, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	if user != nil {
+		if _, exists := s.users[*user]; !exists {
+			return nil, backend.ErrUserNotFound
+		}
+	}
+
 	all := make([]api.NamespaceResponse, 0, len(s.namespaces))
-	for _, ns := range s.namespaces {
+	for id, ns := range s.namespaces {
 		if params.Tag != nil && ns.Tag != *params.Tag {
 			continue
+		}
+		if user != nil {
+			byUser, ok := s.permissions[id]
+			if !ok {
+				continue
+			}
+			if _, ok := byUser[*user]; !ok {
+				continue
+			}
 		}
 		all = append(all, ns)
 	}

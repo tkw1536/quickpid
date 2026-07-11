@@ -14,9 +14,11 @@ import (
 //
 //spellchecker:words context errors time github bicpid
 type ResolverBackend interface {
-	// Lists all available namespaces, ordered ascending by namespace id.
-	// Has no specific error conditions.
-	ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error)
+	// Lists all available namespaces that the given user has some access to and that are ordered ascending by namespace id.
+	// User may be omitted in which case all namespaces should be considered.
+	//
+	// Should return [ErrUserNotFound] if owner does not exist.
+	ListNamespaces(ctx context.Context, user *string, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error)
 
 	// Creates a new namespace and grants manager permissions for the owner.
 	// If owner is nil, no new manager permissions are granted.

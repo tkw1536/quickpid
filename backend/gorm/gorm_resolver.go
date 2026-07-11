@@ -12,11 +12,21 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+func (s *Store) ListNamespaces(ctx context.Context, user *string, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
+		if user != nil {
+			if err := ensureUserExists(tx, *user); err != nil {
+				return nil, err
+			}
+		}
+
 		q := tx.Model(&namespaceRow{})
+		if user != nil {
+			q = q.Joins("INNER JOIN authz_namespace_permissions ON authz_namespace_permissions.namespace = namespaces.id").
+				Where("authz_namespace_permissions.username = ?", *user)
+		}
 		if params.Tag != nil {
-			q = q.Where("tag = ?", *params.Tag)
+			q = q.Where("namespaces.tag = ?", *params.Tag)
 		}
 
 		var total int64
@@ -35,7 +45,7 @@ func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesPar
 		}
 
 		var rows []namespaceRow
-		if err := q.Order("id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
+		if err := q.Order("namespaces.id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		items := make([]api.NamespaceResponse, len(rows))

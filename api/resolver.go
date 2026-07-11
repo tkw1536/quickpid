@@ -160,9 +160,6 @@ type ListNamespacesParams struct {
 
 	Limit  int
 	Offset int
-
-	// TODO: Add an option to filter by user access.
-	// Which should only ever be set automatically.
 }
 
 // InfoResponse provides information about the resolver.

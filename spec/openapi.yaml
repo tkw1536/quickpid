@@ -31,8 +31,11 @@ paths:
       summary: Return information regarding the API's limits and other configuration.
       description: |
         This endpoint returns internal limits and configuration information.
-        Even if authentication is enabled, this endpoint will never require authentication. 
         An implementation MAY refuse to expose any information, in which case a 404 response is expected.
+
+        The endpoint (if enabled) crucially also returns if the server requires authentication or if it is in "anonymous" mode.
+        In anonymous mode, no authentication is required for any of the other endpoints, and no authorization checks are performed.
+        This is intended for use cases where the API runs behind a separate system which handles authentication and authorizaton on it's own.
       security: []
       tags:
         - quickpid
@@ -54,8 +57,16 @@ paths:
     get:
       operationId: listNamespaces
       summary: List namespaces available on the resolver.
+      description: A filterable list of namespaces.
       description: |
-        A filterable list of namespaces
+        This endpoint returns a list of namespaces available on the server.
+        They can be additionally filtered by several parameters.
+
+        In anonymous mode, the initial list of namespaces includes all namespaces.
+        
+        In authenticated mode, only namespaces the current user has explicit access to are returned.
+        This is defined by having a permission that is not "none" for a namespace.
+        If the authenticated user is a superuser, all namespaces are returned.
       tags:
         - namespaces
 
@@ -107,6 +118,12 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
         '500':
           description: Internal server error.
           content:
