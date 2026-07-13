@@ -143,9 +143,25 @@
       }
     },
     {
-      "name": "count_across_namespaces",
+      "name": "count_across_namespaces_anonymous",
       "config": {
         "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/resources/count"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 3
+        }
+      }
+    },
+    {
+      "name": "count_across_namespaces_authenticated",
+      "config": {
+        "anonymous": false
       },
       "request": {
         "method": "GET",
