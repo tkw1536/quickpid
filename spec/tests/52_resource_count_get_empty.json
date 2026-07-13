@@ -1,0 +1,22 @@
+{
+  "name": "52_resource_count_get_empty",
+  "comment": "52 resource count get empty",
+  "steps": [
+    {
+      "name": "empty",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/resources/count"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 0
+        }
+      }
+    }
+  ]
+}

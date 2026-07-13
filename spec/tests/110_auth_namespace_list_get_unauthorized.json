@@ -1,0 +1,20 @@
+{
+  "name": "110_auth_namespace_list_get_unauthorized",
+  "comment": "110 auth namespace list get unauthorized",
+  "steps": [
+    {
+      "name": "list_namespaces_unauthorized",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

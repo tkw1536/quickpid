@@ -1,0 +1,22 @@
+{
+  "name": "101_namespace_get_not_found",
+  "comment": "101 namespace get not found",
+  "steps": [
+    {
+      "name": "not_found",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/ffffffff-ffff-ffff-ffff-ffffffffffff"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "namespace_not_found"
+        }
+      }
+    }
+  ]
+}

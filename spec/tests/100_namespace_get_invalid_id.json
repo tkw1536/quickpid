@@ -1,0 +1,22 @@
+{
+  "name": "100_namespace_get_invalid_id",
+  "comment": "100 namespace get invalid id",
+  "steps": [
+    {
+      "name": "invalid_namespace_id",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/BADUPPER"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_namespace_id"
+        }
+      }
+    }
+  ]
+}

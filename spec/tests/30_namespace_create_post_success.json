@@ -1,0 +1,33 @@
+{
+  "name": "30_namespace_create_post_success",
+  "comment": "30 namespace create post success",
+  "steps": [
+    {
+      "name": "success",
+      "config": {
+        "namespaceIDs": [
+          "fake-namespace-id"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"flow-tag\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "fake-namespace-id",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "flow-tag"
+        }
+      }
+    }
+  ]
+}

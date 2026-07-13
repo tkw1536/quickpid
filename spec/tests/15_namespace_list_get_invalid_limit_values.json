@@ -1,0 +1,38 @@
+{
+  "name": "15_namespace_list_get_invalid_limit_values",
+  "comment": "15 namespace list get invalid limit values",
+  "steps": [
+    {
+      "name": "invalidQuery_limit_-1",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces?limit=-1"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_query_parameter"
+        }
+      }
+    },
+    {
+      "name": "invalidQuery_limit_abc",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces?limit=abc"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_query_parameter"
+        }
+      }
+    }
+  ]
+}

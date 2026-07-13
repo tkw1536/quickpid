@@ -1,0 +1,33 @@
+{
+  "name": "160_anonymous_namespace_create_post_allowed",
+  "comment": "160 anonymous namespace create post allowed",
+  "steps": [
+    {
+      "name": "create_namespace_anonymous",
+      "config": {
+        "anonymous": true,
+        "namespaceIDs": [
+          "d1000000-0000-4000-8000-000000000001"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"anon-ns\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "d1000000-0000-4000-8000-000000000001",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "anon-ns"
+        }
+      }
+    }
+  ]
+}

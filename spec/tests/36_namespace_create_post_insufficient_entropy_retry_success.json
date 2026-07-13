@@ -1,0 +1,70 @@
+{
+  "name": "36_namespace_create_post_insufficient_entropy_retry_success",
+  "comment": "36 namespace create post insufficient entropy retry success",
+  "steps": [
+    {
+      "name": "success",
+      "config": {
+        "namespaceIDs": [
+          "fake-namespace-id"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"flow-tag\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "fake-namespace-id",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "flow-tag"
+        }
+      }
+    },
+    {
+      "name": "insufficientEntropy_success",
+      "config": {
+        "namespaceIDs": [
+          "fake-namespace-id",
+          "fake-namespace-id",
+          "another-one"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "limits": {
+        "MaxBodyBytes": 0,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 3,
+        "MaxPIDAttempts": 0
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"t2\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "another-one",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "t2"
+        }
+      }
+    }
+  ]
+}

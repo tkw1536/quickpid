@@ -1,0 +1,24 @@
+{
+  "name": "34_namespace_create_post_bad_id_generation",
+  "comment": "34 namespace create post bad id generation",
+  "steps": [
+    {
+      "name": "badIDGeneration_error",
+      "config": {
+        "namespaceIDs": [],
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"t\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 500,
+        "body": {
+          "error": "bad_id_generation"
+        }
+      }
+    }
+  ]
+}

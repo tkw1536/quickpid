@@ -1,0 +1,24 @@
+{
+  "name": "10_namespace_list_get_empty",
+  "comment": "10 namespace list get empty",
+  "steps": [
+    {
+      "name": "empty",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "items": [],
+          "offset": 0,
+          "total": 0
+        }
+      }
+    }
+  ]
+}

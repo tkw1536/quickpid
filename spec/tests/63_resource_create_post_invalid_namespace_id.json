@@ -1,0 +1,23 @@
+{
+  "name": "63_resource_create_post_invalid_namespace_id",
+  "comment": "63 resource create post invalid namespace id",
+  "steps": [
+    {
+      "name": "invalidNamespace",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/bad.ns/resources",
+        "body": "{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_namespace_id"
+        }
+      }
+    }
+  ]
+}

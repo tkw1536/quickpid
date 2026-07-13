@@ -1,0 +1,23 @@
+{
+  "name": "33_namespace_create_post_invalid_pid_pattern",
+  "comment": "33 namespace create post invalid pid pattern",
+  "steps": [
+    {
+      "name": "invalidPatternInBody",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"t\",\"pid_format\":{\"pattern\":\"!!not-a-valid-pattern!!\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "body_invalid_json"
+        }
+      }
+    }
+  ]
+}

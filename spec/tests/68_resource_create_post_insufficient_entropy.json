@@ -1,0 +1,82 @@
+{
+  "name": "68_resource_create_post_insufficient_entropy",
+  "comment": "68 resource create post insufficient entropy",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"create-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "create-res"
+        }
+      }
+    },
+    {
+      "name": "seed_pidCollision",
+      "config": {
+        "pids": [
+          "ccc-ddd"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/collision-seed\",\"metadata\":null,\"tag\":\"t\"}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "insufficientEntropy_duplicatePID",
+      "config": {
+        "pids": [
+          "ccc-ddd",
+          "ccc-ddd",
+          "ccc-ddd"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "limits": {
+        "MaxBodyBytes": 0,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 0,
+        "MaxPIDAttempts": 3
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/collision-retry\",\"metadata\":null,\"tag\":\"t\"}"
+      },
+      "response": {
+        "code": 503,
+        "body": {
+          "error": "insufficient_entropy"
+        }
+      }
+    }
+  ]
+}

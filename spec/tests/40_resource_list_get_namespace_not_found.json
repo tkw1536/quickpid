@@ -1,0 +1,22 @@
+{
+  "name": "40_resource_list_get_namespace_not_found",
+  "comment": "40 resource list get namespace not found",
+  "steps": [
+    {
+      "name": "namespaceMissing",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/missing-ns/resources"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "namespace_not_found"
+        }
+      }
+    }
+  ]
+}

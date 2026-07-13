@@ -1,0 +1,72 @@
+{
+  "name": "69_resource_batch_create_post_success",
+  "comment": "69 resource batch create post success",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"batch-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "batch-res"
+        }
+      }
+    },
+    {
+      "name": "success",
+      "config": {
+        "pids": [
+          "xjc-cjy",
+          "8zk-pwt"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
+        "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"batch\"},{\"url\":\"https://b2\",\"metadata\":null,\"tag\":\"\"}]"
+      },
+      "response": {
+        "code": 201,
+        "body": [
+          {
+            "date_created": "2020-01-02T03:04:05Z",
+            "date_updated": "2020-01-02T03:04:05Z",
+            "deleted": false,
+            "metadata": "b1@batch",
+            "pid": "xjc-cjy",
+            "tag": "batch",
+            "url": "https://b1"
+          },
+          {
+            "date_created": "2020-01-02T03:04:05Z",
+            "date_updated": "2020-01-02T03:04:05Z",
+            "deleted": false,
+            "metadata": null,
+            "pid": "8zk-pwt",
+            "tag": "",
+            "url": "https://b2"
+          }
+        ]
+      }
+    }
+  ]
+}

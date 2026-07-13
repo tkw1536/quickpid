@@ -1,0 +1,22 @@
+{
+  "name": "02_resolver_info_get_unavailable",
+  "comment": "02 resolver info get unavailable",
+  "steps": [
+    {
+      "name": "info_unavailable",
+      "config": {
+        "infoEnabled": false
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "info_unavailable"
+        }
+      }
+    }
+  ]
+}

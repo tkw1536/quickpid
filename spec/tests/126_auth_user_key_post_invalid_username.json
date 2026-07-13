@@ -1,0 +1,112 @@
+{
+  "name": "126_auth_user_key_post_invalid_username",
+  "comment": "126 auth user key post invalid username",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root"
+        }
+      }
+    },
+    {
+      "name": "create_servertest",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"servertest\",\"superuser\":true}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": true,
+          "username": "servertest"
+        }
+      }
+    },
+    {
+      "name": "issue_servertest_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "servertest-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaservertest"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"servertest\", \"username\": \"servertest\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "servertest",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "servertest-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaservertest"
+        }
+      }
+    },
+    {
+      "name": "issue_key_invalid_username",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\":\"new key\", \"username\":\"BADUPPER\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaservertest"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_username"
+        }
+      }
+    }
+  ]
+}

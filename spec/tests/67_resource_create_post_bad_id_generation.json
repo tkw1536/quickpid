@@ -1,0 +1,52 @@
+{
+  "name": "67_resource_create_post_bad_id_generation",
+  "comment": "67 resource create post bad id generation",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"create-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "create-res"
+        }
+      }
+    },
+    {
+      "name": "badIDGeneration_runtimeExhausted",
+      "config": {
+        "pids": [],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/e\",\"metadata\":null,\"tag\":\"t\"}"
+      },
+      "response": {
+        "code": 500,
+        "body": {
+          "error": "bad_id_generation"
+        }
+      }
+    }
+  ]
+}

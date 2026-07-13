@@ -1,0 +1,263 @@
+{
+  "name": "156_permissions_editor_cannot_escalate_or_delete",
+  "comment": "156 permissions editor cannot escalate or delete",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root"
+        }
+      }
+    },
+    {
+      "name": "create_owner",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"owner\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "owner"
+        }
+      }
+    },
+    {
+      "name": "create_editor",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "editor"
+        }
+      }
+    },
+    {
+      "name": "create_reader",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"reader\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "reader"
+        }
+      }
+    },
+    {
+      "name": "issue_owner_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "owner-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "owner",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "owner-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+        }
+      }
+    },
+    {
+      "name": "issue_editor_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "editor-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"editor\", \"username\": \"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "editor",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "editor-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+        }
+      }
+    },
+    {
+      "name": "owner_creates_namespace",
+      "config": {
+        "namespaceIDs": [
+          "c1000000-0000-4000-8000-000000000001"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"perm-ns\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "c1000000-0000-4000-8000-000000000001",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "perm-ns"
+        }
+      }
+    },
+    {
+      "name": "owner_grants_editor",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/editor",
+        "body": "{\"level\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "level": "editor",
+          "username": "editor"
+        }
+      }
+    },
+    {
+      "name": "editor_grant_manager_forbidden",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/reader",
+        "body": "{\"level\":\"manager\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "editor_delete_reader_forbidden",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/reader",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    }
+  ]
+}

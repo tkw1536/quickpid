@@ -1,0 +1,22 @@
+{
+  "name": "51_resource_list_get_invalid_deleted_query",
+  "comment": "51 resource list get invalid deleted query",
+  "steps": [
+    {
+      "name": "invalidQuery_deleted",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?deleted=maybe"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_query_parameter"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "name": "112_auth_user_get_current_user_requires_valid_auth",
+  "comment": "112 auth user get current user requires valid auth",
+  "steps": [
+    {
+      "name": "get_current_user_unauthorized",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user/"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    },
+    {
+      "name": "invalid_bearer_token",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer invalidtoken0000000000000000"
+          ]
+        ]
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    },
+    {
+      "name": "get_current_user_unauthorized",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user/"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

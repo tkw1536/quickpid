@@ -1,0 +1,40 @@
+{
+  "name": "32_namespace_create_post_body_invalid_json",
+  "comment": "32 namespace create post body invalid json",
+  "steps": [
+    {
+      "name": "trailingJSON",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"x\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}} {\"tag\":\"y\"}"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "body_invalid_json"
+        }
+      }
+    },
+    {
+      "name": "malformedJSON",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "body_invalid_json"
+        }
+      }
+    }
+  ]
+}

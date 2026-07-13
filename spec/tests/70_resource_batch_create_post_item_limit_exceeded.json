@@ -1,0 +1,59 @@
+{
+  "name": "70_resource_batch_create_post_item_limit_exceeded",
+  "comment": "70 resource batch create post item limit exceeded",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"batch-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "batch-res"
+        }
+      }
+    },
+    {
+      "name": "tooManyItems",
+      "config": {
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "limits": {
+        "MaxBodyBytes": 0,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 2,
+        "MaxNamespaceIDAttempts": 0,
+        "MaxPIDAttempts": 0
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
+        "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"\"},{\"url\":\"https://b2\",\"metadata\":\"b2@batch\",\"tag\":\"\"},{\"url\":\"https://b3\",\"metadata\":\"b3@batch\",\"tag\":\"\"}]"
+      },
+      "response": {
+        "code": 422,
+        "body": {
+          "error": "item_limit_exceeded"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "37_namespace_create_post_hex_pattern_lowercase",
+  "comment": "37 namespace create post hex pattern lowercase",
+  "steps": [
+    {
+      "name": "hexPattern_isLowercaseHex",
+      "config": {
+        "namespaceIDs": [
+          "31d0952d-8d73-4119-8e95-b5f19d6f9df7"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"hex-res\",\"pid_format\":{\"pattern\":\"********-****-****-****-************\",\"characters\":\"hex\"}}"
+      },
+      "response": {
+        "code": 201
+      }
+    }
+  ]
+}

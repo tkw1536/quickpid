@@ -1,0 +1,38 @@
+{
+  "name": "16_namespace_list_get_invalid_offset_values",
+  "comment": "16 namespace list get invalid offset values",
+  "steps": [
+    {
+      "name": "invalidQuery_offset_-1",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces?offset=-1"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_query_parameter"
+        }
+      }
+    },
+    {
+      "name": "invalidQuery_offset_abc",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces?offset=abc"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_query_parameter"
+        }
+      }
+    }
+  ]
+}

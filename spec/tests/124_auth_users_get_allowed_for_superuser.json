@@ -1,0 +1,182 @@
+{
+  "name": "124_auth_users_get_allowed_for_superuser",
+  "comment": "124 auth users get allowed for superuser",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root"
+        }
+      }
+    },
+    {
+      "name": "create_alice",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"alice\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "alice"
+        }
+      }
+    },
+    {
+      "name": "create_servertest",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"servertest\",\"superuser\":true}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": true,
+          "username": "servertest"
+        }
+      }
+    },
+    {
+      "name": "issue_servertest_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "servertest-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaservertest"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"servertest\", \"username\": \"servertest\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "servertest",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "servertest-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaservertest"
+        }
+      }
+    },
+    {
+      "name": "create_user_superuser",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"bob\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaservertest"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "bob"
+        }
+      }
+    },
+    {
+      "name": "list_users_superuser",
+      "config": {},
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "GET",
+        "path": "/users/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaservertest"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "items": [
+            {
+              "superuser": false,
+              "username": "alice"
+            },
+            {
+              "superuser": false,
+              "username": "bob"
+            },
+            {
+              "superuser": true,
+              "username": "root"
+            },
+            {
+              "superuser": true,
+              "username": "servertest"
+            }
+          ],
+          "offset": 0,
+          "total": 4
+        }
+      }
+    }
+  ]
+}

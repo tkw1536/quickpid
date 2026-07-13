@@ -1,0 +1,23 @@
+{
+  "name": "62_resource_create_post_namespace_not_found",
+  "comment": "62 resource create post namespace not found",
+  "steps": [
+    {
+      "name": "namespaceMissing",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/absent-ns/resources",
+        "body": "{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "namespace_not_found"
+        }
+      }
+    }
+  ]
+}

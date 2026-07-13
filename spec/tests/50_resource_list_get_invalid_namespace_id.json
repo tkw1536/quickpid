@@ -1,0 +1,22 @@
+{
+  "name": "50_resource_list_get_invalid_namespace_id",
+  "comment": "50 resource list get invalid namespace id",
+  "steps": [
+    {
+      "name": "invalidNamespaceID_uppercase",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/BADUPPER/resources"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_namespace_id"
+        }
+      }
+    }
+  ]
+}
