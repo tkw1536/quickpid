@@ -36,7 +36,7 @@ const (
 
 	InfoUnavailable Error = "info_unavailable" // Info is unavailable (possibly for security reasons)
 
-	AnonymousModeUnavailable Error = "anonymous_mode_unavailable" // Route is not available in anonymous mode
+	UnavailableInAnonymousMode Error = "unavailable_in_anonymous_mode" // Route is not available in anonymous mode
 
 	DuplicateUsername Error = "duplicate_username" // Username is already in use
 	UserNotFound      Error = "user_not_found"     // User not found
@@ -74,7 +74,7 @@ var codes = map[Error]int{
 
 	InfoUnavailable: http.StatusNotFound,
 
-	AnonymousModeUnavailable: http.StatusNotFound,
+	UnavailableInAnonymousMode: http.StatusNotFound,
 
 	DuplicateUsername: http.StatusConflict,
 	UserNotFound:      http.StatusNotFound,

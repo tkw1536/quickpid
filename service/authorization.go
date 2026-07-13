@@ -78,7 +78,7 @@ func canManagePermissions(level api.PermissionLevel) bool {
 
 func (s *Service) requireAuthEnabled() (api.Error, error) {
 	if s.Options().Anonymous {
-		return api.AnonymousModeUnavailable, errAnonymousModeUnavailable
+		return api.UnavailableInAnonymousMode, errUnavailableInAnonymousMode
 	}
 	return "", nil
 }

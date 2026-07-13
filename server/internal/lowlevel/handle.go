@@ -62,14 +62,14 @@ func handle[T any](
 	}
 }
 
-var errAnonymousModeUnavailable = errors.New("unavailable in anonymous mode")
+var errUnavailableInAnonymousMode = errors.New("unavailable in anonymous mode")
 
 // resolveAuth resolves the caller according to the given auth configuration.
 //
 // It returns nil values when auth is disabled or optional auth is not supplied.
 func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*string, *api.UserInfo, api.Error, error) {
 	if auth.requirement == authRequirementAuthMode && h.auth.AnonymousMode() {
-		return nil, nil, api.AnonymousModeUnavailable, errAnonymousModeUnavailable
+		return nil, nil, api.UnavailableInAnonymousMode, errUnavailableInAnonymousMode
 	}
 
 	if auth.requirement == authRequirementNone {

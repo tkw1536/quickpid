@@ -1,6 +1,6 @@
 {
   "name": "anonymous_permissions_put_unavailable",
-  "comment": "In anonymous mode, PUT namespace permission returns 404 anonymous_mode_unavailable.",
+  "comment": "In anonymous mode, PUT namespace permission returns 404 unavailable_in_anonymous_mode.",
   "steps": [
     {
       "name": "create_namespace_anonymous",
@@ -42,7 +42,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "anonymous_mode_unavailable"
+          "error": "unavailable_in_anonymous_mode"
         }
       }
     }

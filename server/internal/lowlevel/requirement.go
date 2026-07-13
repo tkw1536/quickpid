@@ -43,7 +43,7 @@ func requiredUserAuth() authConfig {
 }
 
 // requiredUserAuthManagement requires valid credentials in authenticated mode and
-// returns anonymous_mode_unavailable in anonymous mode before checking credentials.
+// returns unavailable_in_anonymous_mode in anonymous mode before checking credentials.
 func requiredUserAuthManagement() authConfig {
 	return authConfig{requirement: authRequirementAuthMode, loadUser: true}
 }

@@ -8,7 +8,7 @@ var (
 	errUnauthorized = errors.New("unauthorized")
 	errForbidden    = errors.New("forbidden")
 
-	errAnonymousModeUnavailable = errors.New("anonymous mode unavailable")
+	errUnavailableInAnonymousMode = errors.New("anonymous mode unavailable")
 
 	errInsufficientEntropy = errors.New("insufficient entropy")
 	errBadPID              = errors.New("bad pid generated")
@@ -33,7 +33,7 @@ func IsForbidden(err error) bool {
 	return errors.Is(err, errForbidden)
 }
 
-// IsAnonymousModeUnavailable reports whether err indicates that the operation is unavailable in anonymous mode.
-func IsAnonymousModeUnavailable(err error) bool {
-	return errors.Is(err, errAnonymousModeUnavailable)
+// IsUnavailableInAnonymousMode reports whether err indicates that the operation is unavailable in anonymous mode.
+func IsUnavailableInAnonymousMode(err error) bool {
+	return errors.Is(err, errUnavailableInAnonymousMode)
 }

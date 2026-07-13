@@ -309,13 +309,13 @@ func TestService_AnonymousDisablesUserAndPermissionManagement(t *testing.T) {
 		t.Fatalf("CurrentUser() error = %v, want unauthorized", err)
 	}
 
-	if _, specError, err := svc.CreateUser(ctx, userInfo("owner"), api.UserCreateRequest{Username: "alice"}); !IsAnonymousModeUnavailable(err) || specError != api.AnonymousModeUnavailable {
+	if _, specError, err := svc.CreateUser(ctx, userInfo("owner"), api.UserCreateRequest{Username: "alice"}); !IsUnavailableInAnonymousMode(err) || specError != api.UnavailableInAnonymousMode {
 		t.Fatalf("CreateUser() = %q, %v, want anonymous mode unavailable", specError, err)
 	}
-	if _, specError, err := svc.ListUsers(ctx, userInfo("owner"), api.ListUsersParams{Limit: 10}); !IsAnonymousModeUnavailable(err) || specError != api.AnonymousModeUnavailable {
+	if _, specError, err := svc.ListUsers(ctx, userInfo("owner"), api.ListUsersParams{Limit: 10}); !IsUnavailableInAnonymousMode(err) || specError != api.UnavailableInAnonymousMode {
 		t.Fatalf("ListUsers() = %q, %v, want anonymous mode unavailable", specError, err)
 	}
-	if _, specError, err := svc.GetNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner"); !IsAnonymousModeUnavailable(err) || specError != api.AnonymousModeUnavailable {
+	if _, specError, err := svc.GetNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner"); !IsUnavailableInAnonymousMode(err) || specError != api.UnavailableInAnonymousMode {
 		t.Fatalf("GetNamespacePermission() = %q, %v, want anonymous mode unavailable", specError, err)
 	}
 }

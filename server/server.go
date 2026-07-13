@@ -195,7 +195,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Unauthorized,
 		api.Forbidden,
 		api.NamespaceNotFound,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/permissions/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.getNamespacePermission, http.StatusOK, []api.Error{
@@ -204,7 +204,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Unauthorized,
 		api.Forbidden,
 		api.NamespaceNotFound,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 	h.mux.Handle("PUT /resolver/namespaces/{namespace}/permissions/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.setNamespacePermission, http.StatusOK, []api.Error{
@@ -217,7 +217,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Unauthorized,
 		api.Forbidden,
 		api.NamespaceNotFound,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/permissions/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.deleteNamespacePermission, http.StatusNoContent, []api.Error{
@@ -227,7 +227,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Forbidden,
 		api.NamespaceNotFound,
 		api.PermissionNotFound,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 
@@ -237,7 +237,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Unauthorized,
 		api.Forbidden,
 		api.UserNotFound,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 	}))
 	h.mux.Handle("PATCH /user/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.updateCurrentUser, http.StatusOK, []api.Error{
 		api.BodySizeExceeded,
@@ -248,7 +248,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Unauthorized,
 		api.Forbidden,
 		api.UserNotFound,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 	h.mux.Handle("POST /user/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.createUser, http.StatusCreated, []api.Error{
@@ -259,7 +259,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Unauthorized,
 		api.Forbidden,
 		api.DuplicateUsername,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 	h.mux.Handle("GET /users/autocomplete", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.autocompleteUsers, http.StatusOK, []api.Error{
@@ -267,14 +267,14 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.InvalidUsername,
 		api.Unauthorized,
 		api.Forbidden,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 	h.mux.Handle("GET /users/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listUsers, http.StatusOK, []api.Error{
 		api.InvalidQueryParameter,
 		api.Unauthorized,
 		api.Forbidden,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 	h.mux.Handle("GET /user/key", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listKeys, http.StatusOK, []api.Error{
@@ -283,7 +283,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Unauthorized,
 		api.Forbidden,
 		api.UserNotFound,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 	h.mux.Handle("POST /user/key", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.issueKey, http.StatusCreated, []api.Error{
@@ -296,7 +296,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Forbidden,
 		api.UserNotFound,
 		api.BadIDGeneration,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 	h.mux.Handle("POST /user/key/revoke", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.revokeKey, http.StatusOK, []api.Error{
@@ -309,7 +309,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Forbidden,
 		api.KeyNotFound,
 		api.UserNotFound,
-		api.AnonymousModeUnavailable,
+		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
 

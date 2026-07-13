@@ -281,7 +281,7 @@ func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 	handler.ServeHTTP(httptest.NewRecorder(), req)
 }
 
-func TestHandleRequiredUserInAuthModeAnonymousModeUnavailable(t *testing.T) {
+func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 	t.Parallel()
 
 	var currentUserCalled bool
@@ -299,7 +299,7 @@ func TestHandleRequiredUserInAuthModeAnonymousModeUnavailable(t *testing.T) {
 			return struct{}{}, "", nil
 		},
 		http.StatusOK,
-		[]api.Error{api.Unauthorized, api.AnonymousModeUnavailable, api.DatabaseError},
+		[]api.Error{api.Unauthorized, api.UnavailableInAnonymousMode, api.DatabaseError},
 	)
 
 	rec := runHandler(handler, "any-token")
@@ -311,7 +311,7 @@ func TestHandleRequiredUserInAuthModeAnonymousModeUnavailable(t *testing.T) {
 	}
 	if err := (httpfixture.Response{
 		Code: http.StatusNotFound,
-		Body: []byte(`{"error":"anonymous_mode_unavailable"}`),
+		Body: []byte(`{"error":"unavailable_in_anonymous_mode"}`),
 	}).Compare(rec); err != nil {
 		t.Fatalf("response = %v", err)
 	}

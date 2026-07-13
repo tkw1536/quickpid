@@ -370,7 +370,7 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
-                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error.
           content:
@@ -433,7 +433,7 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
-                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error.
           content:
@@ -507,7 +507,7 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
-                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
@@ -574,7 +574,7 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
                   - $ref: '#/components/schemas/ErrorPermissionNotFound'
-                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error.
           content:
@@ -1130,7 +1130,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
                   - $ref: '#/components/schemas/ErrorUserNotFound'
         '500':
           description: Internal server error.
@@ -1208,7 +1208,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
                   - $ref: '#/components/schemas/ErrorUserNotFound'
         '413':
           description: Request body exceeds the configured maximum size.
@@ -1277,7 +1277,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '409':
           description: The username is already in use.
           content:
@@ -1357,7 +1357,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error.
           content:
@@ -1446,7 +1446,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error.
           content:
@@ -1533,7 +1533,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
                   - $ref: '#/components/schemas/ErrorUserNotFound'
         '500':
           description: Internal server error.
@@ -1610,7 +1610,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
                   - $ref: '#/components/schemas/ErrorUserNotFound'
         '413':
           description: Request body exceeds the configured maximum size.
@@ -1696,7 +1696,7 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorKeyNotFound'
                   - $ref: '#/components/schemas/ErrorUserNotFound'
-                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
@@ -1896,7 +1896,7 @@ components:
           description: |
             Resolver configuration info is unavailable.
             The resolver may choose to hide this information for security reasons.
-    ErrorAnonymousModeUnavailable:
+    ErrorUnavailableInAnonymousMode:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
         - type: object
@@ -1904,7 +1904,7 @@ components:
             error:
               type: string
               enum:
-                - anonymous_mode_unavailable
+                - unavailable_in_anonymous_mode
           description: This route is not available while the server is in anonymous mode.
     ErrorUnauthorized:
       allOf:

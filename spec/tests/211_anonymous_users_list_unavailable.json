@@ -1,6 +1,6 @@
 {
   "name": "anonymous_users_list_unavailable",
-  "comment": "In anonymous mode, GET /users/ returns 404 anonymous_mode_unavailable.",
+  "comment": "In anonymous mode, GET /users/ returns 404 unavailable_in_anonymous_mode.",
   "steps": [
     {
       "name": "list_disabled",
@@ -14,7 +14,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "anonymous_mode_unavailable"
+          "error": "unavailable_in_anonymous_mode"
         }
       }
     }

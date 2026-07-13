@@ -1,6 +1,6 @@
 {
   "name": "226_anonymous_users_autocomplete_unavailable",
-  "comment": "In anonymous mode, GET /users/autocomplete returns 404 anonymous_mode_unavailable.",
+  "comment": "In anonymous mode, GET /users/autocomplete returns 404 unavailable_in_anonymous_mode.",
   "steps": [
     {
       "name": "anonymous_unavailable",
@@ -14,7 +14,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "anonymous_mode_unavailable"
+          "error": "unavailable_in_anonymous_mode"
         }
       }
     }
