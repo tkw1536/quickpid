@@ -24,7 +24,7 @@ func fixedNow() func() time.Time {
 }
 
 func testService(store backend.Store) *service.Service {
-	return service.New(store, store, store, service.NewRuntime(), service.Options{})
+	return service.New(store, service.NewRuntime(), service.Options{})
 }
 
 func TestEnsureRootUser_EmptyBackend(t *testing.T) {
@@ -122,7 +122,7 @@ func TestEnsureRootUser_AnonymousModeSkipsBootstrap(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
 	auth := memory.NewStore()
-	svc := service.New(auth, auth, auth, service.NewRuntime(), service.Options{Anonymous: true})
+	svc := service.New(auth, service.NewRuntime(), service.Options{Anonymous: true})
 
 	if err := svc.EnsureRootUser(ctx, testLogger()); err != nil {
 		t.Fatalf("EnsureRootUser() error = %v", err)

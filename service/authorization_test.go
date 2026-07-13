@@ -63,7 +63,7 @@ func newTestService(t *testing.T) (*Service, backend.Store) {
 		t.Fatalf("SetNamespacePermission(reader) error = %v", err)
 	}
 
-	return New(store, store, store, runtime, Options{}), store
+	return New(store, runtime, Options{}), store
 }
 
 func newAnonymousTestService(t *testing.T) (*Service, backend.Store) {
@@ -71,7 +71,7 @@ func newAnonymousTestService(t *testing.T) (*Service, backend.Store) {
 	store := memory.NewStore()
 	now := storetest.FixedNow()
 	runtime := &fixedRuntime{now: now()}
-	return New(store, store, store, runtime, Options{Anonymous: true}), store
+	return New(store, runtime, Options{Anonymous: true}), store
 }
 
 func userInfo(username string) *api.UserInfo {

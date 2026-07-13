@@ -132,8 +132,6 @@ func (main *mainCmd) run() int {
 
 	svc := service.New(
 		store,
-		store,
-		store,
 		service.NewRuntime(),
 		service.Options{
 			Limits:      main.limits,

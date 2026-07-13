@@ -75,7 +75,7 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.UserInfo, para
 	if caller != nil && !caller.Superuser {
 		user = new(caller.Username)
 	}
-	out, err := s.resolver.ListNamespaces(ctx, user, params)
+	out, err := s.store.ListNamespaces(ctx, user, params)
 	if errors.Is(err, backend.ErrUserNotFound) {
 		// This SHOULD NEVER happen as we received the username from a user object.
 		// But a race condition between a concurrent delete user call or data corruption might trigger this.
@@ -108,7 +108,7 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.UserInfo, namesp
 			return nil, specError, mapped
 		}
 	}
-	out, err := s.resolver.GetNamespace(ctx, namespace)
+	out, err := s.store.GetNamespace(ctx, namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.NamespaceNotFound, err
 	}
@@ -124,7 +124,7 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.UserInfo, namesp
 //
 // - [api.DatabaseError]
 func (s *Service) CountAllResources(ctx context.Context) (*api.ResourceCountResponse, api.Error, error) {
-	n, err := s.resolver.CountAllResources(ctx)
+	n, err := s.store.CountAllResources(ctx)
 	if err != nil {
 		return nil, api.DatabaseError, err
 	}
@@ -159,7 +159,7 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.UserInfo, req
 		if !namespaceIDRE.MatchString(name) {
 			return nil, api.BadIDGeneration, fmt.Errorf("%w: %q is not a valid namespace id", errBadNamespaceID, name)
 		}
-		out, err := s.resolver.CreateNamespace(ctx, name, req, owner, s.runtime.Now)
+		out, err := s.store.CreateNamespace(ctx, name, req, owner, s.runtime.Now)
 		if err == nil {
 			return out, "", nil
 		}
@@ -196,7 +196,7 @@ func (s *Service) ListResources(ctx context.Context, caller *api.UserInfo, param
 			return nil, specError, mapped
 		}
 	}
-	out, err := s.resolver.ListResources(ctx, params)
+	out, err := s.store.ListResources(ctx, params)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.NamespaceNotFound, err
 	}
@@ -229,7 +229,7 @@ func (s *Service) CreateResource(ctx context.Context, caller *api.UserInfo, name
 		}
 	}
 
-	ns, err := s.resolver.GetNamespace(ctx, namespace)
+	ns, err := s.store.GetNamespace(ctx, namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.NamespaceNotFound, err
 	}
@@ -238,7 +238,7 @@ func (s *Service) CreateResource(ctx context.Context, caller *api.UserInfo, name
 	}
 
 	out, specError, err := s.allocatePID(ns.PIDFormat, func(pid string) (*api.ResourceResponse, error) {
-		return s.resolver.CreateResource(ctx, namespace, pid, req, s.runtime.Now)
+		return s.store.CreateResource(ctx, namespace, pid, req, s.runtime.Now)
 	})
 	if err != nil {
 		return nil, specError, err
@@ -278,7 +278,7 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo
 		}
 	}
 
-	ns, err := s.resolver.GetNamespace(ctx, namespace)
+	ns, err := s.store.GetNamespace(ctx, namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.NamespaceNotFound, err
 	}
@@ -287,7 +287,7 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo
 	}
 
 	out, specError, err := s.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []string) ([]api.ResourceResponse, error) {
-		return s.resolver.BatchCreateResources(ctx, namespace, pids, reqs, s.runtime.Now)
+		return s.store.BatchCreateResources(ctx, namespace, pids, reqs, s.runtime.Now)
 	})
 	if err != nil {
 		return nil, specError, err
@@ -318,7 +318,7 @@ func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespa
 		return nil, api.InvalidNamespaceID, err
 	}
 
-	out, err := s.resolver.GetResource(ctx, namespace, resourcePID)
+	out, err := s.store.GetResource(ctx, namespace, resourcePID)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.NamespaceNotFound, err
 	}
@@ -389,7 +389,7 @@ func (s *Service) UpdateResource(ctx context.Context, caller *api.UserInfo, name
 		}
 	}
 
-	out, err := s.resolver.UpdateResource(ctx, namespace, resourcePID, req, s.runtime.Now)
+	out, err := s.store.UpdateResource(ctx, namespace, resourcePID, req, s.runtime.Now)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.NamespaceNotFound, err
 	}

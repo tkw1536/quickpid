@@ -13,22 +13,18 @@ import (
 //
 // The zero value is not ready to use; use [New] instead.
 type Service struct {
-	mu             sync.RWMutex
-	opts           Options
-	runtime        Runtime
-	resolver       backend.ResolverBackend
-	authentication backend.AuthenticationBackend
-	authorization  backend.AuthorizationBackend
+	mu      sync.RWMutex
+	opts    Options
+	runtime Runtime
+	store   backend.Store
 }
 
 // New returns a new Service.
-func New(resolver backend.ResolverBackend, auth backend.AuthenticationBackend, authorization backend.AuthorizationBackend, runtime Runtime, opts Options) *Service {
+func New(store backend.Store, runtime Runtime, opts Options) *Service {
 	return &Service{
-		opts:           opts.withValidValues(),
-		runtime:        runtime,
-		resolver:       resolver,
-		authentication: auth,
-		authorization:  authorization,
+		opts:    opts.withValidValues(),
+		runtime: runtime,
+		store:   store,
 	}
 }
 

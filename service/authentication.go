@@ -24,7 +24,7 @@ func (s *Service) Authenticate(ctx context.Context, apiKey string) (string, erro
 		return "", errUnauthorized
 	}
 
-	username, err := s.authentication.LookupUserByKey(ctx, s.apiKeyFormat(), apiKey)
+	username, err := s.store.LookupUserByKey(ctx, s.apiKeyFormat(), apiKey)
 	if errors.Is(err, backend.ErrInvalidKey) {
 		return "", errUnauthorized
 	}
@@ -44,7 +44,7 @@ func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo
 	if err != nil {
 		return nil, err
 	}
-	user, err := s.authentication.GetUser(ctx, caller)
+	user, err := s.store.GetUser(ctx, caller)
 	if errors.Is(err, backend.ErrUserNotFound) {
 		return nil, errUnauthorized
 	}
@@ -63,7 +63,7 @@ func (s *Service) GetUserAccount(ctx context.Context, caller *api.UserInfo, targ
 	if err != nil {
 		return nil, "", err
 	}
-	user, err := s.authentication.GetUser(ctx, username)
+	user, err := s.store.GetUser(ctx, username)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -78,7 +78,7 @@ func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, ap
 	if specError, err := s.requireAuthEnabled(); err != nil {
 		return nil, specError, err
 	}
-	user, err := s.authentication.GetUser(ctx, caller)
+	user, err := s.store.GetUser(ctx, caller)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -103,7 +103,7 @@ func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.
 		return nil, "", errForbidden
 	}
 
-	user, err := s.authentication.CreateUser(ctx, req, s.runtime.Now)
+	user, err := s.store.CreateUser(ctx, req, s.runtime.Now)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -122,7 +122,7 @@ func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params ap
 		return nil, "", err
 	}
 
-	page, err := s.authentication.ListUsers(ctx, params)
+	page, err := s.store.ListUsers(ctx, params)
 	if err != nil {
 		return nil, api.DatabaseError, err
 	}
@@ -138,7 +138,7 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *st
 	if err != nil {
 		return nil, "", err
 	}
-	page, err := s.authentication.ListKeys(ctx, s.apiKeyFormat(), username, params)
+	page, err := s.store.ListKeys(ctx, s.apiKeyFormat(), username, params)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -174,7 +174,7 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *st
 		}
 	}
 
-	if _, err := s.authentication.GetUser(ctx, username); err != nil {
+	if _, err := s.store.GetUser(ctx, username); err != nil {
 		if specError, ok := mapAuthBackendError(err); ok {
 			return nil, specError, err
 		}
@@ -212,7 +212,7 @@ func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyI
 			return nil, api.BadIDGeneration, err
 		}
 
-		info, err := s.authentication.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
+		info, err := s.store.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
 		if err == nil {
 			return &api.IssueKeyResponse{APIKeyInfo: *info, Key: rawKey}, "", nil
 		}
@@ -235,7 +235,7 @@ func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, target *s
 	if err != nil {
 		return nil, "", err
 	}
-	info, err := s.authentication.RevokeKey(ctx, s.apiKeyFormat(), username, req.ID)
+	info, err := s.store.RevokeKey(ctx, s.apiKeyFormat(), username, req.ID)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -257,7 +257,7 @@ func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, target s
 		return nil, "", errForbidden
 	}
 
-	user, err := s.authentication.UpdateUser(ctx, target, req)
+	user, err := s.store.UpdateUser(ctx, target, req)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -312,7 +312,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 	if s.Options().Anonymous {
 		return nil
 	}
-	page, err := s.authentication.ListUsers(ctx, api.ListUsersParams{Limit: 1})
+	page, err := s.store.ListUsers(ctx, api.ListUsersParams{Limit: 1})
 	if err != nil {
 		return err
 	}
@@ -320,7 +320,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 		return nil
 	}
 
-	_, err = s.authentication.CreateUser(ctx, api.UserCreateRequest{
+	_, err = s.store.CreateUser(ctx, api.UserCreateRequest{
 		Username:  rootUsername,
 		Superuser: true,
 	}, s.runtime.Now)

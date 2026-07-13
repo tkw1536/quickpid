@@ -21,13 +21,7 @@ import (
 
 func testHandler(t *testing.T, store backend.Store) *Server {
 	t.Helper()
-	svc := service.New(
-		store,
-		store,
-		store,
-		service.NewRuntime(),
-		service.Options{},
-	)
+	svc := service.New(store, service.NewRuntime(), service.Options{})
 	return NewServer(
 		Options{DisableSwaggerUI: true},
 		svc,
@@ -37,13 +31,7 @@ func testHandler(t *testing.T, store backend.Store) *Server {
 
 func testAnonymousHandler(t *testing.T, store backend.Store) *Server {
 	t.Helper()
-	svc := service.New(
-		store,
-		store,
-		store,
-		service.NewRuntime(),
-		service.Options{Anonymous: true},
-	)
+	svc := service.New(store, service.NewRuntime(), service.Options{Anonymous: true})
 	return NewServer(
 		Options{DisableSwaggerUI: true, Anonymous: true},
 		svc,

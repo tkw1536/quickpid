@@ -260,13 +260,7 @@ func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 	t.Parallel()
 
 	store := memory.NewStore()
-	svc := service.New(
-		store,
-		store,
-		store,
-		service.NewRuntime(),
-		service.Options{},
-	)
+	svc := service.New(store, service.NewRuntime(), service.Options{})
 	key := createUserWithKey(t, store, "alice", false)
 
 	h := lowlevel.NewAuthHandler(svc, nil)

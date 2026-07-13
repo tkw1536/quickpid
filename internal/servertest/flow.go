@@ -55,7 +55,7 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 	t.Helper()
 
 	var runtime testRuntime
-	svc := service.New(s, s, s, &runtime, service.Options{})
+	svc := service.New(s, &runtime, service.Options{})
 	handler := server.NewServer(server.Options{}, svc, nil)
 
 	for _, step := range f.Steps {
