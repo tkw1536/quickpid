@@ -22,6 +22,8 @@ var (
 	errOffsetInvalid           = errors.New("invalid offset")
 	errOffsetMustBeNonNegative = errors.New("offset must be non-negative")
 	errDeletedInvalid          = errors.New("invalid deleted query parameter")
+	errMissingUsernameQuery    = errors.New("missing username query parameter")
+	errSuperuserInvalid        = errors.New("invalid superuser query parameter")
 )
 
 // decodeJSON decodes the request body into v.
@@ -131,4 +133,56 @@ func (*Server) getUsername(r *http.Request) (username string, specError api.Erro
 		return "", api.InvalidUsername, err
 	}
 	return username, "", nil
+}
+
+// parseOptionalUsernameQuery parses an optional username query parameter.
+//
+// It can return the following errors:
+//
+// - [api.InvalidUsername]
+func (*Server) parseOptionalUsernameQuery(r *http.Request) (target *string, specError api.Error, err error) {
+	query := r.URL.Query()
+	if !query.Has("username") {
+		return nil, "", nil
+	}
+	username := query.Get("username")
+	if err := service.ValidateUsername(username); err != nil {
+		return nil, api.InvalidUsername, err
+	}
+	return &username, "", nil
+}
+
+// parseRequiredUsernameQuery parses a required username query parameter.
+//
+// It can return the following errors:
+//
+// - [api.InvalidQueryParameter]
+// - [api.InvalidUsername]
+func (*Server) parseRequiredUsernameQuery(r *http.Request) (username string, specError api.Error, err error) {
+	query := r.URL.Query()
+	if !query.Has("username") {
+		return "", api.InvalidQueryParameter, errMissingUsernameQuery
+	}
+	username = query.Get("username")
+	if err := service.ValidateUsername(username); err != nil {
+		return "", api.InvalidUsername, err
+	}
+	return username, "", nil
+}
+
+// parseSuperuserQuery parses an optional superuser filter query parameter.
+//
+// It can return the following errors:
+//
+// - [api.InvalidQueryParameter]
+func (*Server) parseSuperuserQuery(r *http.Request) (superuser *bool, specError api.Error, err error) {
+	query := r.URL.Query()
+	if !query.Has("superuser") {
+		return nil, "", nil
+	}
+	parsed, err := strconv.ParseBool(query.Get("superuser"))
+	if err != nil {
+		return nil, api.InvalidQueryParameter, fmt.Errorf("%w: %w", errSuperuserInvalid, err)
+	}
+	return &parsed, "", nil
 }

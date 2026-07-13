@@ -23,6 +23,7 @@ func (s *Store) CreateUser(_ context.Context, req api.UserCreateRequest, _ func(
 	s.users[req.Username] = &userRecord{
 		superuser: req.Superuser,
 		keys:      make(map[string]*keyRecord),
+		revoked:   make(map[string]*api.APIKeyInfo),
 	}
 	return s.users[req.Username].toSpec(req.Username), nil
 }
@@ -44,6 +45,9 @@ func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.P
 
 	all := make([]api.UserInfo, 0, len(s.users))
 	for username, user := range s.users {
+		if params.Superuser != nil && user.superuser != *params.Superuser {
+			continue
+		}
 		all = append(all, *user.toSpec(username))
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i].Username < all[j].Username })
@@ -207,11 +211,15 @@ func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username, keyID st
 	if err != nil {
 		return nil, err
 	}
+	if revoked, ok := user.revoked[keyID]; ok {
+		return cloneAPIKeyInfo(revoked), nil
+	}
 	key, ok := user.keys[keyID]
 	if !ok {
 		return nil, backend.ErrKeyNotFound
 	}
 	info := cloneAPIKeyInfo(&key.info)
+	user.revoked[keyID] = info
 	delete(user.keys, keyID)
 	return info, nil
 }

@@ -18,6 +18,9 @@ var (
 	errInvalidNamespaceID = errors.New("invalid namespace id")
 	errInvalidPID         = errors.New("invalid pid")
 	errInvalidUsername    = errors.New("invalid username")
+
+	errExpiresAtInPast = errors.New("expires_at is in the past")
+	errResourceGone    = errors.New("resource gone")
 )
 
 // IsUnauthorized reports whether err indicates a missing or invalid API key.

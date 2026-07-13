@@ -36,6 +36,7 @@ type Store struct {
 type userRecord struct {
 	superuser bool
 	keys      map[string]*keyRecord
+	revoked   map[string]*api.APIKeyInfo
 }
 
 func (u *userRecord) toSpec(username string) *api.UserInfo {

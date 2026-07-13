@@ -1,12 +1,13 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context crypto rand errors slog github bicpid backend internal apikey
+//spellchecker:words context crypto rand errors slog time github bicpid backend internal apikey
 import (
 	"context"
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
@@ -51,6 +52,25 @@ func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo
 		return nil, err
 	}
 	return user, nil
+}
+
+// GetUserAccount returns the caller's account or another user's when caller is a superuser.
+func (s *Service) GetUserAccount(ctx context.Context, caller *api.UserInfo, target *string) (*api.UserInfo, api.Error, error) {
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
+	}
+	username, err := resolveTargetUsername(caller, target)
+	if err != nil {
+		return nil, "", err
+	}
+	user, err := s.authentication.GetUser(ctx, username)
+	if specError, ok := mapAuthBackendError(err); ok {
+		return nil, specError, err
+	}
+	if err != nil {
+		return nil, api.DatabaseError, err
+	}
+	return user, "", nil
 }
 
 // GetUser returns the user account for caller.
@@ -109,12 +129,16 @@ func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params ap
 	return page, "", nil
 }
 
-// ListKeys lists API keys for caller.
-func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, api.Error, error) {
+// ListKeys lists API keys for the caller or another user when caller is a superuser.
+func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, api.Error, error) {
 	if specError, err := s.requireAuthEnabled(); err != nil {
 		return nil, specError, err
 	}
-	page, err := s.authentication.ListKeys(ctx, s.apiKeyFormat(), caller.Username, params)
+	username, err := resolveTargetUsername(caller, target)
+	if err != nil {
+		return nil, "", err
+	}
+	page, err := s.authentication.ListKeys(ctx, s.apiKeyFormat(), username, params)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -132,22 +156,32 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, params api
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy]
-func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, req api.KeyIssueRequest) (*api.IssueKeyResponse, api.Error, error) {
+func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *string, req api.KeyIssueRequest) (*api.IssueKeyResponse, api.Error, error) {
 	if specError, err := s.requireAuthEnabled(); err != nil {
 		return nil, specError, err
 	}
-	target := caller.Username
-	if req.Username != nil {
-		if err := ValidateUsername(*req.Username); err != nil {
-			return nil, api.InvalidUsername, err
-		}
-		target = *req.Username
+	username, err := resolveTargetUsername(caller, target)
+	if err != nil {
+		return nil, "", err
 	}
-	if target != caller.Username && !caller.Superuser {
-		return nil, "", errForbidden
+	if req.ExpiresAt != nil {
+		expiresAt, err := time.Parse(time.RFC3339, *req.ExpiresAt)
+		if err != nil {
+			return nil, api.InvalidQueryParameter, err
+		}
+		if !expiresAt.After(s.runtime.Now()) {
+			return nil, api.InvalidQueryParameter, errExpiresAtInPast
+		}
 	}
 
-	issued, specError, err := s.issueAPIKey(ctx, target, req)
+	if _, err := s.authentication.GetUser(ctx, username); err != nil {
+		if specError, ok := mapAuthBackendError(err); ok {
+			return nil, specError, err
+		}
+		return nil, api.DatabaseError, err
+	}
+
+	issued, specError, err := s.issueAPIKey(ctx, username, req)
 	if err != nil {
 		return nil, specError, err
 	}
@@ -192,12 +226,16 @@ func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyI
 	return nil, api.InsufficientEntropy, fmt.Errorf("%w: gave up api key generation after %d attempts", errInsufficientEntropy, maxAttempts)
 }
 
-// RevokeKey revokes an API key for caller.
-func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, req api.KeyRevokeRequest) (*api.RevokeKeyResponse, api.Error, error) {
+// RevokeKey revokes an API key for the caller or another user when caller is a superuser.
+func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, target *string, req api.KeyRevokeRequest) (*api.RevokeKeyResponse, api.Error, error) {
 	if specError, err := s.requireAuthEnabled(); err != nil {
 		return nil, specError, err
 	}
-	info, err := s.authentication.RevokeKey(ctx, s.apiKeyFormat(), caller.Username, req.ID)
+	username, err := resolveTargetUsername(caller, target)
+	if err != nil {
+		return nil, "", err
+	}
+	info, err := s.authentication.RevokeKey(ctx, s.apiKeyFormat(), username, req.ID)
 	if specError, ok := mapAuthBackendError(err); ok {
 		return nil, specError, err
 	}
@@ -207,26 +245,15 @@ func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, req api.K
 	return &api.RevokeKeyResponse{APIKeyInfo: *info}, "", nil
 }
 
-// UpdateUser updates caller's account or another user when caller is a superuser.
-func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, req api.UserUpdateRequest) (*api.UserInfo, api.Error, error) {
+// UpdateUser updates a user account. Caller must be a superuser and cannot update their own account.
+func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, target string, req api.UserUpdateRequest) (*api.UserInfo, api.Error, error) {
 	if specError, err := s.requireAuthEnabled(); err != nil {
 		return nil, specError, err
 	}
-	target := caller.Username
-	if req.Username != nil {
-		if err := ValidateUsername(*req.Username); err != nil {
-			return nil, api.InvalidUsername, err
-		}
-		target = *req.Username
+	if err := requireSuperuser(caller); err != nil {
+		return nil, "", err
 	}
-
-	// only own account can be updated, or the user needs to be a superuser.
-	if target != caller.Username && !caller.Superuser {
-		return nil, "", errForbidden
-	}
-
-	// cannot change superuser flag, unless the current user is a superuser.
-	if req.Superuser != nil && !caller.Superuser {
+	if target == caller.Username {
 		return nil, "", errForbidden
 	}
 
@@ -238,6 +265,16 @@ func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, req api.
 		return nil, api.DatabaseError, err
 	}
 	return user, "", nil
+}
+
+func resolveTargetUsername(caller *api.UserInfo, target *string) (string, error) {
+	if target == nil {
+		return caller.Username, nil
+	}
+	if *target != caller.Username && !caller.Superuser {
+		return "", errForbidden
+	}
+	return *target, nil
 }
 
 func requireSuperuser(user *api.UserInfo) error {

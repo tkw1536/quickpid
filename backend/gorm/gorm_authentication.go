@@ -39,8 +39,12 @@ func (s *Store) GetUser(ctx context.Context, username string) (*api.UserInfo, er
 
 func (s *Store) ListUsers(ctx context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedUsersResponse, error) {
+		q := tx.Model(&userRow{})
+		if params.Superuser != nil {
+			q = q.Where("superuser = ?", *params.Superuser)
+		}
 		var total int64
-		if err := tx.Model(&userRow{}).Count(&total).Error; err != nil {
+		if err := q.Count(&total).Error; err != nil {
 			return nil, err
 		}
 
@@ -55,7 +59,7 @@ func (s *Store) ListUsers(ctx context.Context, params api.ListUsersParams) (*api
 		}
 
 		var rows []userRow
-		if err := tx.Order("username ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
+		if err := q.Order("username ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		items := make([]api.UserInfo, len(rows))
@@ -149,7 +153,7 @@ func (s *Store) ListKeys(ctx context.Context, _ apikey.Format, username string, 
 			return nil, err
 		}
 
-		q := tx.Model(&apiKeyRow{}).Where("username = ?", username)
+		q := tx.Model(&apiKeyRow{}).Where("username = ? AND revoked = ?", username, false)
 		var total int64
 		if err := q.Count(&total).Error; err != nil {
 			return nil, err
@@ -224,12 +228,16 @@ func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username, keyID 
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
 		}
-		row, err := findKey(tx, username, keyID)
+		row, err := findKeyIncludingRevoked(tx, username, keyID)
 		if err != nil {
 			return nil, err
 		}
 		info := row.toSpec()
-		if err := tx.Delete(&row).Error; err != nil {
+		if row.Revoked {
+			return &info, nil
+		}
+		row.Revoked = true
+		if err := tx.Save(&row).Error; err != nil {
 			return nil, err
 		}
 		return &info, nil
@@ -248,6 +256,9 @@ func (s *Store) LookupUserByKey(ctx context.Context, format apikey.Format, key s
 			return "", err
 		}
 		for _, row := range rows {
+			if row.Revoked {
+				continue
+			}
 			if format.Verify(key, apikey.Stored{Prefix: row.Prefix, Digest: row.Digest}) {
 				return row.Username, nil
 			}

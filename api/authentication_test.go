@@ -102,24 +102,21 @@ func TestUserCreateRequest_UnmarshalJSON(t *testing.T) {
 func TestUserUpdateRequest_UnmarshalJSON(t *testing.T) {
 	t.Parallel()
 
-	t.Run("username", func(t *testing.T) {
+	t.Run("username_in_body_is_rejected", func(t *testing.T) {
 		t.Parallel()
 
 		tests := []struct {
 			name      string
 			body      string
-			wantErr   bool
 			wantErrIn []string
-			want      api.UserUpdateRequest
 		}{
-			{name: "absent", body: `{}`, want: api.UserUpdateRequest{Username: nil, Superuser: nil}},
-			{name: "string", body: `{"username":"alice"}`, want: api.UserUpdateRequest{Username: new("alice"), Superuser: nil}},
-			{name: "emptyString", body: `{"username":""}`, want: api.UserUpdateRequest{Username: new(""), Superuser: nil}},
-			{name: "null_isError", body: `{"username":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "number_isError", body: `{"username":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "bool_isError", body: `{"username":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "object_isError", body: `{"username":{}}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "unknownField_isError", body: `{"username":"alice","unknown":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"}},
+			{name: "string", body: `{"username":"alice"}`, wantErrIn: []string{"unknown field", "username"}},
+			{name: "emptyString", body: `{"username":""}`, wantErrIn: []string{"unknown field", "username"}},
+			{name: "null", body: `{"username":null}`, wantErrIn: []string{"unknown field", "username"}},
+			{name: "number", body: `{"username":123}`, wantErrIn: []string{"unknown field", "username"}},
+			{name: "bool", body: `{"username":true}`, wantErrIn: []string{"unknown field", "username"}},
+			{name: "object", body: `{"username":{}}`, wantErrIn: []string{"unknown field", "username"}},
+			{name: "unknownField", body: `{"username":"alice","unknown":123}`, wantErrIn: []string{"unknown field"}},
 		}
 
 		for _, tt := range tests {
@@ -128,22 +125,14 @@ func TestUserUpdateRequest_UnmarshalJSON(t *testing.T) {
 
 				var req api.UserUpdateRequest
 				err := json.Unmarshal([]byte(tt.body), &req)
-				if (err != nil) != tt.wantErr {
-					t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
+				if err == nil {
+					t.Fatalf("error: got nil want error")
 				}
-				if err != nil {
-					if len(tt.wantErrIn) > 0 {
-						es := err.Error()
-						for _, wantIn := range tt.wantErrIn {
-							if !strings.Contains(es, wantIn) {
-								t.Fatalf("error: got %q want substring %q", es, wantIn)
-							}
-						}
+				es := err.Error()
+				for _, wantIn := range tt.wantErrIn {
+					if !strings.Contains(es, wantIn) {
+						t.Fatalf("error: got %q want substring %q", es, wantIn)
 					}
-					return
-				}
-				if !reflect.DeepEqual(req, tt.want) {
-					t.Fatalf("req: got %+v want %+v", req, tt.want)
 				}
 			})
 		}
@@ -159,9 +148,9 @@ func TestUserUpdateRequest_UnmarshalJSON(t *testing.T) {
 			wantErrIn []string
 			want      api.UserUpdateRequest
 		}{
-			{name: "absent", body: `{}`, want: api.UserUpdateRequest{Username: nil, Superuser: nil}},
-			{name: "true", body: `{"superuser":true}`, want: api.UserUpdateRequest{Username: nil, Superuser: new(true)}},
-			{name: "false", body: `{"superuser":false}`, want: api.UserUpdateRequest{Username: nil, Superuser: new(false)}},
+			{name: "absent", body: `{}`, want: api.UserUpdateRequest{Superuser: nil}},
+			{name: "true", body: `{"superuser":true}`, want: api.UserUpdateRequest{Superuser: new(true)}},
+			{name: "false", body: `{"superuser":false}`, want: api.UserUpdateRequest{Superuser: new(false)}},
 			{name: "null_isError", body: `{"superuser":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "number_isError", body: `{"superuser":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "string_isError", body: `{"superuser":"yes"}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
@@ -213,18 +202,13 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 			want: api.KeyIssueRequest{
 				Comment:   "dev key",
 				ExpiresAt: nil,
-				Username:  nil,
 			},
 		},
 		{
-			name:    "ok_allFields",
-			body:    `{"comment":"dev key","expires_at":"2026-12-31T00:00:00Z","username":"alice"}`,
-			wantErr: false,
-			want: api.KeyIssueRequest{
-				Comment:   "dev key",
-				ExpiresAt: new("2026-12-31T00:00:00Z"),
-				Username:  new("alice"),
-			},
+			name:      "fail_usernameInBody",
+			body:      `{"comment":"dev key","expires_at":"2026-12-31T00:00:00Z","username":"alice"}`,
+			wantErr:   true,
+			wantErrIn: []string{"unknown field", "username"},
 		},
 		{
 			name:      "fail_nullBody",
@@ -234,7 +218,7 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			name:      "fail_missingComment",
-			body:      `{"username":"alice"}`,
+			body:      `{}`,
 			wantErr:   true,
 			wantErrIn: []string{"missing required field", "comment"},
 		},
@@ -257,14 +241,13 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 			want: api.KeyIssueRequest{
 				Comment:   "dev key",
 				ExpiresAt: nil,
-				Username:  nil,
 			},
 		},
 		{
 			name:      "fail_usernameNull",
 			body:      `{"comment":"dev key","username":null}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields"},
+			wantErrIn: []string{"unknown field", "username"},
 		},
 	}
 

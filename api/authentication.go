@@ -41,29 +41,27 @@ type UserInfo struct {
 // UserUpdateRequest updates fields on an existing user account.
 //
 // A nil pointer indicates that no update should be performed on that field.
-// When username is omitted, the authenticated user account is updated.
+// The target account is selected with the username query parameter, not the request body.
 type UserUpdateRequest struct {
-	Username  *string `json:"username"`
-	Superuser *bool   `json:"superuser"`
+	Superuser *bool `json:"superuser"`
 }
 
 func (r *UserUpdateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
-		Username  strict.Optional[strict.String] `json:"username"`
-		Superuser strict.Optional[strict.Bool]   `json:"superuser"`
+		Superuser strict.Optional[strict.Bool] `json:"superuser"`
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
-	r.Username = strict.OptionalStringToPointer(decoded.Username)
 	r.Superuser = strict.OptionalBoolToPointer(decoded.Superuser)
 	return nil
 }
 
 type ListUsersParams struct {
-	Limit  int
-	Offset int
+	Superuser *bool
+	Limit     int
+	Offset    int
 }
 
 type PaginatedUsersResponse struct {
@@ -85,19 +83,16 @@ type PaginatedAPIKeysResponse struct {
 
 // KeyIssueRequest is the JSON body for issueKey.
 //
-// When username is omitted, a key is issued for the authenticated user.
-// A superuser may set username to issue a key for another account.
+// The target account is selected with the username query parameter, not the request body.
 type KeyIssueRequest struct {
 	Comment   string  `json:"comment"`
 	ExpiresAt *string `json:"expires_at"`
-	Username  *string `json:"username"`
 }
 
 func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Comment   strict.Optional[strict.String] `json:"comment"`
 		ExpiresAt strict.Optional[*string]       `json:"expires_at"`
-		Username  strict.Optional[strict.String] `json:"username"`
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
@@ -110,7 +105,6 @@ func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 	if decoded.ExpiresAt.Present {
 		r.ExpiresAt = decoded.ExpiresAt.Value
 	}
-	r.Username = strict.OptionalStringToPointer(decoded.Username)
 	return nil
 }
 

@@ -139,9 +139,9 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 	rootKey := createUserWithKey(t, auth, "root", true)
 	h := testHandler(t, auth)
 
-	t.Run("non-superuser cannot set superuser", func(t *testing.T) {
+	t.Run("non-superuser cannot patch", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPatch, "/user/", strings.NewReader(`{"superuser":true}`))
+		req := httptest.NewRequest(http.MethodPatch, "/user/?username=alice", strings.NewReader(`{"superuser":true}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -150,7 +150,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 
 	t.Run("non-superuser cannot update another user", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPatch, "/user/", strings.NewReader(`{"username":"root"}`))
+		req := httptest.NewRequest(http.MethodPatch, "/user/?username=root", strings.NewReader(`{}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -159,7 +159,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 
 	t.Run("superuser can update another user", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPatch, "/user/", strings.NewReader(`{"username":"alice","superuser":true}`))
+		req := httptest.NewRequest(http.MethodPatch, "/user/?username=alice", strings.NewReader(`{"superuser":true}`))
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -178,20 +178,17 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 	})
 }
 
-func TestUpdateCurrentUser_AllowedSelfUpdate(t *testing.T) {
+func TestUpdateCurrentUser_ForbiddenSelfUpdate(t *testing.T) {
 	auth := memory.NewStore()
-	aliceKey := createUserWithKey(t, auth, "alice", false)
+	rootKey := createUserWithKey(t, auth, "root", true)
 	h := testHandler(t, auth)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPatch, "/user/", strings.NewReader(`{}`))
-	req.Header.Set("Authorization", "Bearer "+aliceKey)
+	req := httptest.NewRequest(http.MethodPatch, "/user/?username=root", strings.NewReader(`{}`))
+	req.Header.Set("Authorization", "Bearer "+rootKey)
 	req.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d, body = %s", rec.Code, http.StatusOK, rec.Body.String())
-	}
+	assertForbiddenJSON(t, rec)
 }
 
 func TestCreateUser_RequiresSuperuser(t *testing.T) {

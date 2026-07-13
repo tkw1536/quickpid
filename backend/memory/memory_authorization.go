@@ -14,6 +14,9 @@ func (s *Store) GetNamespacePermission(_ context.Context, namespace, username st
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	if _, ok := s.namespaces[namespace]; !ok {
+		return api.PermissionLevelNone, backend.ErrNamespaceNotFound
+	}
 	if byUser, ok := s.permissions[namespace]; ok {
 		if level, ok := byUser[username]; ok {
 			return level, nil

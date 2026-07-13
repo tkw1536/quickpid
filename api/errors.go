@@ -29,6 +29,10 @@ const (
 
 	NamespaceNotFound Error = "namespace_not_found" // Namespace not found
 	ResourceNotFound  Error = "resource_not_found"  // Resource not found
+	ResourceGone      Error = "resource_gone"       // Resource exists but has been deleted
+
+	PermissionNotFound     Error = "permission_not_found"     // Permission record not found
+	InvalidPermissionLevel Error = "invalid_permission_level" // Permission level is not allowed for this operation
 
 	InfoUnavailable Error = "info_unavailable" // Info is unavailable (possibly for security reasons)
 
@@ -63,6 +67,10 @@ var codes = map[Error]int{
 
 	NamespaceNotFound: http.StatusNotFound,
 	ResourceNotFound:  http.StatusNotFound,
+	ResourceGone:      http.StatusGone,
+
+	PermissionNotFound:     http.StatusNotFound,
+	InvalidPermissionLevel: http.StatusBadRequest,
 
 	InfoUnavailable: http.StatusNotFound,
 

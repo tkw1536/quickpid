@@ -314,11 +314,8 @@ func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespa
 		if err := ValidateNamespaceID(namespace); err != nil {
 			return nil, api.InvalidNamespaceID, err
 		}
-	} else {
-		if err := s.requireNamespaceCapability(ctx, caller, namespace, canReadNamespace); err != nil {
-			specError, mapped := mapCapabilityError(err)
-			return nil, specError, mapped
-		}
+	} else if err := ValidateNamespaceID(namespace); err != nil {
+		return nil, api.InvalidNamespaceID, err
 	}
 
 	out, err := s.resolver.GetResource(ctx, namespace, resourcePID)
@@ -330,6 +327,38 @@ func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespa
 	}
 	if err != nil {
 		return nil, api.DatabaseError, err
+	}
+
+	if s.Options().Anonymous {
+		return out, "", nil
+	}
+
+	if out.Deleted {
+		if caller == nil {
+			return nil, api.ResourceGone, errResourceGone
+		}
+		if caller.Superuser {
+			return out, "", nil
+		}
+		level, err := s.effectivePermission(ctx, caller, namespace)
+		if errors.Is(err, backend.ErrNamespaceNotFound) {
+			return nil, api.NamespaceNotFound, err
+		}
+		if err != nil {
+			return nil, api.DatabaseError, err
+		}
+		if canReadDeletedResource(level) {
+			return out, "", nil
+		}
+		return nil, api.ResourceGone, errResourceGone
+	}
+
+	if caller == nil {
+		return nil, "", errUnauthorized
+	}
+	if err := s.requireNamespaceCapability(ctx, caller, namespace, canReadResource); err != nil {
+		specError, mapped := mapCapabilityError(err)
+		return nil, specError, mapped
 	}
 	return out, "", nil
 }

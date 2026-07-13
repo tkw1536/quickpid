@@ -139,7 +139,7 @@
           "contributor-key"
         ],
         "apiKeys": [
-          "aaaaaaaaaaaaaaaaaaaaaaaaaacontrib"
+          "aaaaaaaaaaaaaaaaaaaaacontributor"
         ]
       },
       "request": {
@@ -160,7 +160,7 @@
           "created_at": "2026-07-05T12:00:00Z",
           "expires_at": null,
           "id": "contributor-key",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaacontrib"
+          "key": "aaaaaaaaaaaaaaaaaaaaacontributor"
         }
       }
     },
@@ -260,7 +260,7 @@
         "headers": [
           [
             "Authorization",
-            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaacontrib"
+            "Bearer aaaaaaaaaaaaaaaaaaaaacontributor"
           ]
         ]
       },

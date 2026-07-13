@@ -40,7 +40,7 @@
           "root-key-2"
         ],
         "apiKeys": [
-          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot2"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaroot2"
         ]
       },
       "request": {
@@ -61,7 +61,7 @@
           "created_at": "2026-07-05T12:00:00Z",
           "expires_at": null,
           "id": "root-key-2",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot2"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaroot2"
         }
       }
     },

@@ -35,6 +35,21 @@ func canReadNamespace(level api.PermissionLevel) bool {
 	}
 }
 
+// canReadResource checks if the given user can read a non-deleted resource.
+func canReadResource(level api.PermissionLevel) bool {
+	switch level {
+	case api.PermissionLevelNone, api.PermissionLevelEditor, api.PermissionLevelManager:
+		return true
+	default:
+		return false
+	}
+}
+
+// canReadDeletedResource checks if the given user can read a deleted resource.
+func canReadDeletedResource(level api.PermissionLevel) bool {
+	return canListResources(level)
+}
+
 func canCreateResource(level api.PermissionLevel) bool {
 	switch level {
 	case api.PermissionLevelContributor, api.PermissionLevelEditor, api.PermissionLevelManager:
@@ -104,9 +119,11 @@ func (s *Service) requireNamespaceCapability(ctx context.Context, caller *api.Us
 }
 
 func mapAuthorizationBackendError(err error) (api.Error, bool) {
-	if errors.Is(err, backend.ErrPermissionNotFound) || errors.Is(err, backend.ErrInvalidPermissionLevel) {
-		// if the permission was not found, or it does not exist, return forbidden.
-		return api.Forbidden, true
+	if errors.Is(err, backend.ErrInvalidPermissionLevel) {
+		return api.InvalidPermissionLevel, true
+	}
+	if errors.Is(err, backend.ErrPermissionNotFound) {
+		return api.PermissionNotFound, true
 	}
 	return "", false
 }
@@ -195,6 +212,9 @@ func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.UserIn
 	if username == caller.Username && !caller.Superuser {
 		return nil, "", errForbidden
 	}
+	if req.Level == api.PermissionLevelNone {
+		return nil, api.InvalidPermissionLevel, backend.ErrInvalidPermissionLevel
+	}
 
 	if err := s.authorization.SetNamespacePermission(ctx, namespace, username, req.Level); err != nil {
 		if specError, ok := mapAuthorizationBackendError(err); ok {
@@ -223,6 +243,11 @@ func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.Use
 	}
 	if err := ValidateUsername(username); err != nil {
 		return api.InvalidUsername, err
+	}
+	if _, err := s.resolver.GetNamespace(ctx, namespace); errors.Is(err, backend.ErrNamespaceNotFound) {
+		return api.NamespaceNotFound, err
+	} else if err != nil {
+		return api.DatabaseError, err
 	}
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
 		if errors.Is(err, errForbidden) || errors.Is(err, errUnauthorized) {

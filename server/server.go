@@ -167,6 +167,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.Forbidden,
 			api.NamespaceNotFound,
 			api.ResourceNotFound,
+			api.ResourceGone,
 			api.DatabaseError,
 		},
 	))
@@ -212,6 +213,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.BodyInvalidJSON,
 		api.InvalidNamespaceID,
 		api.InvalidUsername,
+		api.InvalidPermissionLevel,
 		api.Unauthorized,
 		api.Forbidden,
 		api.NamespaceNotFound,
@@ -224,18 +226,24 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.Unauthorized,
 		api.Forbidden,
 		api.NamespaceNotFound,
+		api.PermissionNotFound,
 		api.AnonymousModeUnavailable,
 		api.DatabaseError,
 	}))
 
 	h.mux.Handle("GET /user/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.getCurrentUserHTTP, http.StatusOK, []api.Error{
+		api.InvalidQueryParameter,
+		api.InvalidUsername,
 		api.Unauthorized,
+		api.Forbidden,
+		api.UserNotFound,
 		api.AnonymousModeUnavailable,
 	}))
 	h.mux.Handle("PATCH /user/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.updateCurrentUser, http.StatusOK, []api.Error{
 		api.BodySizeExceeded,
 		api.BodyMissing,
 		api.BodyInvalidJSON,
+		api.InvalidQueryParameter,
 		api.InvalidUsername,
 		api.Unauthorized,
 		api.Forbidden,
@@ -263,7 +271,9 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	}))
 	h.mux.Handle("GET /user/key", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listKeys, http.StatusOK, []api.Error{
 		api.InvalidQueryParameter,
+		api.InvalidUsername,
 		api.Unauthorized,
+		api.Forbidden,
 		api.UserNotFound,
 		api.AnonymousModeUnavailable,
 		api.DatabaseError,
@@ -272,8 +282,10 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.BodySizeExceeded,
 		api.BodyMissing,
 		api.BodyInvalidJSON,
+		api.InvalidQueryParameter,
 		api.InvalidUsername,
 		api.Unauthorized,
+		api.Forbidden,
 		api.UserNotFound,
 		api.BadIDGeneration,
 		api.AnonymousModeUnavailable,
@@ -283,7 +295,10 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.BodySizeExceeded,
 		api.BodyMissing,
 		api.BodyInvalidJSON,
+		api.InvalidQueryParameter,
+		api.InvalidUsername,
 		api.Unauthorized,
+		api.Forbidden,
 		api.KeyNotFound,
 		api.UserNotFound,
 		api.AnonymousModeUnavailable,

@@ -34,7 +34,9 @@
     },
     {
       "name": "past_expiry",
-      "config": {},
+      "config": {
+        "now": "2026-07-05T12:00:00Z"
+      },
       "request": {
         "method": "POST",
         "path": "/user/key",
