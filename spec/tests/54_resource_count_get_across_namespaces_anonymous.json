@@ -1,6 +1,6 @@
 {
   "name": "54_resource_count_get_across_namespaces_anonymous",
-  "comment": "54 resource count get across namespaces anonymous",
+  "comment": "GET /resolver/resources/count works without authentication and counts resources in all namespaces.",
   "steps": [
     {
       "name": "create_namespace_a",

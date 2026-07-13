@@ -1,6 +1,6 @@
 {
   "name": "82_resource_patch_full_update",
-  "comment": "82 resource patch full update",
+  "comment": "PATCH can update all mutable resource fields at once and returns the full updated resource.",
   "steps": [
     {
       "name": "create_namespace",

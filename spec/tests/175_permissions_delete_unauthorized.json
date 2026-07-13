@@ -1,0 +1,47 @@
+{
+  "name": "permissions_delete_unauthorized",
+  "comment": "DELETE namespace permission without authentication returns 401 unauthorized.",
+  "steps": [
+    {
+      "name": "create_ns_anon",
+      "config": {
+        "anonymous": true,
+        "namespaceIDs": [
+          "c1000000-0000-4000-8000-000000000001"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"p\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "c1000000-0000-4000-8000-000000000001",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "p"
+        }
+      }
+    },
+    {
+      "name": "delete_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/reader"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

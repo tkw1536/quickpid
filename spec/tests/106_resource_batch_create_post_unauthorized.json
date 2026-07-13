@@ -1,0 +1,48 @@
+{
+  "name": "resource_batch_create_post_unauthorized",
+  "comment": "In authenticated mode, batch create without credentials returns 401 unauthorized.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "b1000000-0000-4000-8000-000000000002"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"res-ns\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "b1000000-0000-4000-8000-000000000002",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "res-ns"
+        }
+      }
+    },
+    {
+      "name": "batch_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/b1000000-0000-4000-8000-000000000002/resources:batch",
+        "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}]"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

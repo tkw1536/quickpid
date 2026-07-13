@@ -1,6 +1,6 @@
 {
   "name": "146_permissions_namespace_get_reader_allowed",
-  "comment": "146 permissions namespace get reader allowed",
+  "comment": "A user with namespace access can GET the namespace metadata.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -89,8 +89,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",
@@ -122,8 +122,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"reader\", \"username\": \"reader\"}",
+        "path": "/user/key?username=reader",
+        "body": "{\"comment\": \"reader\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

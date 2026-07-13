@@ -1,6 +1,6 @@
 {
   "name": "60_resource_create_post_success",
-  "comment": "60 resource create post success",
+  "comment": "POST /resolver/namespaces/{namespace}/resources creates a resource and returns 201 with a generated PID.",
   "steps": [
     {
       "name": "create_namespace",

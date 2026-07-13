@@ -1,6 +1,6 @@
 {
   "name": "111_auth_namespace_get_unauthorized",
-  "comment": "111 auth namespace get unauthorized",
+  "comment": "In authenticated mode, getting a namespace with an invalid or missing token returns 401 unauthorized.",
   "steps": [
     {
       "name": "create_namespace_for_later_steps",

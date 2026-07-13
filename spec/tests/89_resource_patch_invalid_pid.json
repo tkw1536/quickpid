@@ -1,6 +1,6 @@
 {
   "name": "89_resource_patch_invalid_pid",
-  "comment": "89 resource patch invalid pid",
+  "comment": "An invalid PID on PATCH returns 400 invalid_pid.",
   "steps": [
     {
       "name": "create_namespace",

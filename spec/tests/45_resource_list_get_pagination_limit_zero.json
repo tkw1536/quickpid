@@ -1,6 +1,6 @@
 {
   "name": "45_resource_list_get_pagination_limit_zero",
-  "comment": "45 resource list get pagination limit zero",
+  "comment": "limit=0 on resource listing returns empty items with a valid total.",
   "steps": [
     {
       "name": "create_namespace",

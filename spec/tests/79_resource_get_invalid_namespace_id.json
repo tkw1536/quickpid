@@ -1,6 +1,6 @@
 {
   "name": "79_resource_get_invalid_namespace_id",
-  "comment": "79 resource get invalid namespace id",
+  "comment": "An invalid namespace id on resource get returns 400 invalid_namespace_id.",
   "steps": [
     {
       "name": "create_namespace",

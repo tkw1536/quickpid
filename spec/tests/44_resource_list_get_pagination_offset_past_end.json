@@ -1,6 +1,6 @@
 {
   "name": "44_resource_list_get_pagination_offset_past_end",
-  "comment": "44 resource list get pagination offset past end",
+  "comment": "An offset past the end of the resource list returns empty items with a valid total.",
   "steps": [
     {
       "name": "create_namespace",

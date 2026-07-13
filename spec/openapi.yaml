@@ -25,6 +25,9 @@ tags:
 servers:
   - url: /api/v2
 
+security:
+  - apiKey: []
+
 paths:
   /resolver:
     get:
@@ -87,8 +90,9 @@ paths:
           description: |
             Maximum number of items to return.
             If omitted, a default value is applied.
-            The maximum possible value may be clamped, and values larger than it may be silently truncated.
-            If the value is a negative integer, a '400' response may be returned.
+            If the value exceeds the configured maximum, it is clamped to that maximum.
+            A value of 0 returns an empty items array with a valid total.
+            Negative values or non-integers return a 400 response.
           schema:
             type: integer
             minimum: 0
@@ -98,7 +102,7 @@ paths:
           description: |
             Number of items to skip before starting to collect the result set.
             If omitted, the value is treated as 0.
-            If the value is negative or not an integer, a '400' response may be returned.
+            Negative values or non-integers return a 400 response.
           schema:
             type: integer
             minimum: 0
@@ -149,8 +153,7 @@ paths:
         required: true
         description: |
           A namespace to create.
-          A limit on the maximum request body size MAY be enforced.
-          If such a limit is exceeded, a '413' response is returned.
+          If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
             schema:
@@ -234,11 +237,16 @@ paths:
       summary: Retrieve a single namespace by id.
       description: |
         This endpoint returns a single namespace by id.
-        
-        In authenticated mode, only namespaces the current user has access to can be accessed.
+
+        In anonymous mode, this route is accessible without authentication.
+
+        In authenticated mode, API-key authentication is required.
+        Only namespaces the current user has access to can be accessed.
         This is defined by having a permission that is not "none" for a namespace.
         If the authenticated user is a superuser, all namespaces can be accessed.
-      security: []
+
+        If the namespace exists but the caller lacks required access, a 403 response is returned.
+        If the namespace does not exist, a 404 response is returned.
       tags:
         - namespaces
       parameters:
@@ -257,13 +265,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
-          description: Invalid namespace id or username.
+          description: Invalid namespace id.
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
-                  - $ref: '#/components/schemas/ErrorInvalidUsername'
+                $ref: '#/components/schemas/ErrorInvalidNamespaceID'
         '401':
           description: Authentication is required or the bearer token is invalid.
           content:
@@ -271,7 +277,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
-          description: The authenticated user is not allowed to access this namespace.
+          description: The namespace exists but the authenticated user is not allowed to access it.
           content:
             application/json:
               schema:
@@ -311,12 +317,22 @@ paths:
         - name: limit
           in: query
           required: false
+          description: |
+            Maximum number of items to return.
+            If omitted, a default value is applied.
+            If the value exceeds the configured maximum, it is clamped to that maximum.
+            A value of 0 returns an empty items array with a valid total.
+            Negative values or non-integers return a 400 response.
           schema:
             type: integer
             minimum: 0
         - name: offset
           in: query
           required: false
+          description: |
+            Number of items to skip before starting to collect the result set.
+            If omitted, the value is treated as 0.
+            Negative values or non-integers return a 400 response.
           schema:
             type: integer
             minimum: 0
@@ -368,9 +384,10 @@ paths:
       summary: Get a user's permission level in a namespace.
       description: |
         Retrieves the permission level of a specific user in a namespace.
+        If no explicit permission record exists, the response returns `level: none`.
 
         In anonymous mode, the route returns HTTP 404.
-        In authenticated mode, callers may read their own permission; reading another user's permission requires the manager level.
+        In authenticated mode, callers may read their own permission; reading another user's permission requires the manager level or being a superuser.
       tags:
         - permissions
       parameters:
@@ -428,7 +445,8 @@ paths:
       operationId: setNamespacePermission
       summary: Set a user's permission level in a namespace.
       description: |
-        Sets the permission leve of a specific user in a namespace.
+        Sets the permission level of a specific user in a namespace.
+        The `none` level cannot be set via this endpoint; use DELETE to remove an explicit permission.
 
         In anonymous mode, the route returns HTTP 404.
         In authenticated mode, the caller must have manager permissions for the namespace, or be a superuser.
@@ -568,6 +586,16 @@ paths:
     get:
       operationId: listResources
       summary: List resources within a namespace.
+      description: |
+        Returns a paginated list of resources within the namespace, ordered by pid in increasing order.
+
+        In anonymous mode, this route is accessible without authentication and without permission checks.
+
+        In authenticated mode, the caller must have editor or manager permission for the namespace, or be a superuser.
+        If the namespace exists but the caller lacks required access, a 403 response is returned.
+        If the namespace does not exist, a 404 response is returned.
+
+        Deleted resources are included according to the `deleted` query filter.
       tags:
         - resources
 
@@ -595,6 +623,7 @@ paths:
             If true, return only deleted resources.
             If false, return only non-deleted resources.
             If omitted, resources of both deletion states are included.
+            Invalid values return a 400 response.
           in: query
           required: false
           schema:
@@ -605,8 +634,9 @@ paths:
           description: |
             Maximum number of items to return.
             If omitted, a default value is applied.
-            The maximum possible value MAY be clamped.
-            Negative values or non-integers yield a '400' response.
+            If the value exceeds the configured maximum, it is clamped to that maximum.
+            A value of 0 returns an empty items array with a valid total.
+            Negative values or non-integers return a 400 response.
           schema:
             type: integer
             minimum: 0
@@ -616,7 +646,7 @@ paths:
           description: |
             Number of items to skip before starting to collect the result set.
             If omitted, the value is treated as 0.
-            If the value is negative or not an integer, a '400' response may be returned.
+            Negative values or non-integers return a 400 response.
           schema:
             type: integer
             minimum: 0
@@ -636,6 +666,18 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The namespace exists but the authenticated user is not allowed to list resources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace does not exist.
           content:
@@ -655,7 +697,14 @@ paths:
       operationId: createResource
       summary: Create a resource within a namespace.
       description: |
+        Creates a new resource within the namespace.
         A new PID is generated, unique within the namespace, and returned with the response.
+
+        In anonymous mode, this route is accessible without authentication and without permission checks.
+
+        In authenticated mode, the caller must have contributor, editor, or manager permission for the namespace, or be a superuser.
+        If the namespace exists but the caller lacks required access, a 403 response is returned.
+        If the namespace does not exist, a 404 response is returned.
       tags:
         - resources
 
@@ -690,6 +739,18 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The namespace exists but the authenticated user is not allowed to create resources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
@@ -723,10 +784,19 @@ paths:
   /resolver/namespaces/{namespace}/resources:batch:
     post:
       operationId: batchCreateResources
-      summary: |
-        Create several resources within a namespace.
-        This is equivalent to calling the 'createResource' operation repeatedly.
-        If a single resource fails to be created, the entire batch operation fails.
+      summary: Create several resources within a namespace.
+      description: |
+        Creates multiple resources in a single request.
+        This is equivalent to calling the createResource operation repeatedly.
+
+        An empty request body `[]` returns 201 with an empty array.
+        The operation is all-or-nothing: if any item fails to be created, none are created and no partial persistence occurs.
+
+        In anonymous mode, this route is accessible without authentication and without permission checks.
+
+        In authenticated mode, the caller must have contributor, editor, or manager permission for the namespace, or be a superuser.
+        If the namespace exists but the caller lacks required access, a 403 response is returned.
+        If the namespace does not exist, a 404 response is returned.
       tags:
         - resources
 
@@ -742,10 +812,9 @@ paths:
         required: true
         description: |
           A list of resources to create.
-          Limits on how many resources can be created in a single request MAY be enforced.
-          Such limits can take the form of a maximum number of resources, a maximum body size, or both.
-          If the maximum number of resources is exceeded, a '422' response is returned.
-          If the maximum body size is exceeded, a '413' response is returned.
+          Limits on the maximum number of resources and maximum body size are enforced.
+          If the maximum number of resources is exceeded, a 422 response is returned.
+          If the maximum body size is exceeded, a 413 response is returned.
         content:
           application/json:
             schema:
@@ -772,6 +841,18 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The namespace exists but the authenticated user is not allowed to create resources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
@@ -812,60 +893,22 @@ paths:
   /resolver/namespaces/{namespace}/resources/{pid}:
     get:
       operationId: getResource
-      summary: |
-        Retrieve a resource by PID within a namespace.
-      tags:
-        - resources
+      summary: Retrieve a resource by PID within a namespace.
+      description: |
+        Retrieves a single resource by PID within a namespace.
 
-      parameters:
-        - name: namespace 
-          in: path
-          required: true
-          description: |
-            Server-assigned namespace id.
-          schema:
-            $ref: '#/components/schemas/NamespaceId'
-        - name: pid
-          in: path
-          required: true
-          schema:
-            $ref: '#/components/schemas/PID'
+        In anonymous mode, this route is accessible without authentication and without permission checks.
 
-      responses:
-        '200':
-          description: Resource retrieved successfully.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResourceResponse'
-        '400':
-          description: Invalid namespace id or PID in the path.
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
-                  - $ref: '#/components/schemas/ErrorInvalidPID'
-        '404':
-          description: Namespace or resource does not exist.
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
-                  - $ref: '#/components/schemas/ErrorResourceNotFound'
-        '500':
-          description: Internal server error.
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+        In authenticated mode, non-deleted resources may be read by any user, authenticated or not.
+        Users without the `contributor` permission (or being unauthenticated entirely) cannot read non-deleted resources.
 
-    patch:
-      operationId: updateResource
-      summary: |
-        Updates a specific resource identified by a PID in a namespace.
+        Deleted resources require authentication and at least `editor` permission for the namespace, or superuser privileges.
+        Such callers receive the full resource object with `deleted: true`.
+        Unauthorized callers receive 410 Gone, confirming the resource existed without returning resource data.
+
+        If the namespace or resource exists but the caller lacks required access to a non-deleted resource, a 403 response is returned.
+        If the namespace or resource does not exist, a 404 response is returned.
+        If a user tries to access a deleted resource but does not have permission to do so, a 410 response is returned.
       tags:
         - resources
 
@@ -881,17 +924,100 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/PID'
+
+      responses:
+        '200':
+          description: |
+            Resource retrieved successfully.
+            For deleted resources, the full object is returned only to authenticated callers with at least `editor` permission or superuser privileges.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceResponse'
+        '400':
+          description: Invalid namespace id or PID in the path.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorInvalidPID'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The namespace or resource exists but the authenticated user is not allowed to read it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: Namespace or resource does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                  - $ref: '#/components/schemas/ErrorResourceNotFound'
+        '410':
+          description: |
+            The resource exists but has been deleted.
+            Returned to unauthenticated callers in authenticated mode, confirming the resource existed without returning resource data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResourceGone'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
+    patch:
+      operationId: updateResource
+      summary: Update a resource by PID within a namespace.
+      description: |
+        Updates a resource using patch semantics.
+        Omitted fields are not changed.
+        Deleted resources may be modified.
+        Setting `deleted` to `false` undeletes the resource.
+
+        In anonymous mode, this route is accessible without authentication and without permission checks.
+
+        In authenticated mode, the caller must have editor or manager permission for the namespace, or be a superuser.
+        If the namespace or resource exists but the caller lacks required access, a 403 response is returned.
+        If the namespace or resource does not exist, a 404 response is returned.
+      tags:
+        - resources
+
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          description: |
+            Server-assigned namespace id.
+          schema:
+            $ref: '#/components/schemas/NamespaceId'
+        - name: pid
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/PID'
       requestBody:
         description: |
           The new contents of the resource to update.
-          The resource update request uses patch semantics: If a field is omitted, it is not be changed.
+          The resource update request uses patch semantics: if a field is omitted, it is not changed.
           Regardless of the presence or absence of a field, all fields will always be returned in the response.
 
           Note that empty updates are permitted, and will simply return the current resource contents as is (provided they exist).
 
-          A limit on the maximum request body size may be enforced.
-          If such a limit is exceeded, a '413' response is returned.
+          If the configured maximum request body size is exceeded, a 413 response is returned.
         required: true
         content:
           application/json:
@@ -914,6 +1040,18 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
                   - $ref: '#/components/schemas/ErrorInvalidPID'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The namespace or resource exists but the authenticated user is not allowed to update it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace or resource does not exist.
           content:
@@ -940,11 +1078,25 @@ paths:
   /user/:
     get:
       operationId: getCurrentUser
-      summary: Return information about the currently authenticated user.
+      summary: Return information about a user account.
       description: |
+        Returns information about a user account.
+
+        When not set, the currently authenticated user is returned.
+        The `username` parameter may be used by superusers to retrieve information about another user account, including their own.
+
         In anonymous mode, the route returns HTTP 404.
       tags:
         - user
+      parameters:
+        - name: username
+          in: query
+          required: false
+          description: |
+            When not set, the currently authenticated user is returned.
+            Superusers may set this parameter to retrieve information about another user account, including their own.
+          schema:
+            $ref: '#/components/schemas/Username'
       responses:
         '200':
           description: User information successfully retrieved.
@@ -952,18 +1104,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserInfo'
+        '400':
+          description: Invalid query parameter.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+                  - $ref: '#/components/schemas/ErrorInvalidUsername'
         '401':
           description: Authentication is required or the bearer token is invalid.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
-        '404':
-          description: The server is in anonymous mode.
+        '403':
+          description: Only superusers may set the `username` parameter.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: The server is in anonymous mode, or the requested user does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
         '500':
           description: Internal server error.
           content:
@@ -973,18 +1141,32 @@ paths:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
     patch:
-      operationId: updateCurrentUser
-      summary: Update the currently authenticated user account.
+      operationId: updateUser
+      summary: Update a user account.
       description: |
+        Updates fields on a user account.
+
         In anonymous mode, the route returns HTTP 404.
+        In authenticated mode, this route requires superuser privileges.
+
+        The `username` parameter must be set to the username of the account to update.
+        It is not permitted to update one's own account.
       tags:
         - user
+      parameters:
+        - name: username
+          in: query
+          required: true
+          description: |
+            When not set, the currently authenticated user is the update target.
+            Superusers may set this parameter to select another user account to update, including their own.
+          schema:
+            $ref: '#/components/schemas/Username'
       requestBody:
         required: true
         description: |
           Fields to update on the user account.
-          A limit on the maximum request body size MAY be enforced.
-          If such a limit is exceeded, a '413' response is returned.
+          If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
             schema:
@@ -997,7 +1179,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserInfo'
         '400':
-          description: Invalid request body.
+          description: Invalid request body or username.
           content:
             application/json:
               schema:
@@ -1005,6 +1187,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
                   - $ref: '#/components/schemas/ErrorInvalidUsername'
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required or the bearer token is invalid.
           content:
@@ -1012,17 +1195,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
-          description: The authenticated user is not allowed to perform this update.
+          description: |
+            The authenticated user is not allowed to perform this update.
+            This includes attempts to update one's own account and use of the `username` parameter without superuser privileges.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The server is in anonymous mode.
+          description: The server is in anonymous mode, or the user does not exist.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
@@ -1042,15 +1229,17 @@ paths:
       operationId: createUser
       summary: Create a new user account.
       description: |
+        Creates a new user account.
+
         In anonymous mode, the route returns HTTP 404.
+        In authenticated mode, this route requires superuser privileges.
       tags:
         - user
       requestBody:
         required: true
         description: |
           A user account to create.
-          A limit on the maximum request body size MAY be enforced.
-          If such a limit is exceeded, a '413' response is returned.
+          If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
             schema:
@@ -1078,7 +1267,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
-          description: The authenticated user is not allowed to create user accounts.
+          description: The authenticated user is not allowed to create user accounts or set superuser privileges.
           content:
             application/json:
               schema:
@@ -1116,18 +1305,37 @@ paths:
       operationId: listUsers
       summary: List all user accounts.
       description: |
+        Returns a paginated list of user accounts.
+
+        The `superuser` query parameter may be used to filter results by superuser status.
+        When not set, users of all superuser states are included.
+
         In anonymous mode, the route returns HTTP 404.
+        In authenticated mode, the caller must be authenticated as a valid user.
+        Unauthenticated callers or callers with invalid credentials receive 401 or 403, respectively.
       tags:
         - user
       parameters:
+        - name: superuser
+          in: query
+          required: false
+          description: |
+            Filter users by superuser status.
+            When true, only superusers are returned.
+            When false, only non-superusers are returned.
+            When not set, users of all superuser states are included.
+            Invalid values return a 400 response.
+          schema:
+            type: boolean
         - name: limit
           in: query
           required: false
           description: |
             Maximum number of items to return.
             If omitted, a default value is applied.
-            The maximum possible value may be clamped, and values larger than it may be silently truncated.
-            If the value is a negative integer, a '400' response may be returned.
+            If the value exceeds the configured maximum, it is clamped to that maximum.
+            A value of 0 returns an empty items array with a valid total.
+            Negative values or non-integers return a 400 response.
           schema:
             type: integer
             minimum: 0
@@ -1137,7 +1345,7 @@ paths:
           description: |
             Number of items to skip before starting to collect the result set.
             If omitted, the value is treated as 0.
-            If the value is negative or not an integer, a '400' response may be returned.
+            Negative values or non-integers return a 400 response.
           schema:
             type: integer
             minimum: 0
@@ -1150,14 +1358,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedUsersResponse'
         '400':
-          description: Invalid query parameter (e.g. limit or offset).
+          description: Invalid query parameter (e.g. limit, offset, or superuser).
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
-          description: Authentication is required or the bearer token is invalid.
+          description: Authentication is required, the bearer token is invalid, or the authenticated user does not exist.
           content:
             application/json:
               schema:
@@ -1185,20 +1393,34 @@ paths:
   /user/key:
     get:
       operationId: listKeys
-      summary: List API keys for the currently authenticated user.
+      summary: List API keys for a user account.
       description: |
+        Returns a paginated list of API keys.
+
+        When not set, the currently authenticated user's keys are returned.
+        The `username` parameter may be used by superusers to list keys for another user account, including their own.
+
         In anonymous mode, the route returns HTTP 404.
       tags:
         - keys
       parameters:
+        - name: username
+          in: query
+          required: false
+          description: |
+            When not set, the currently authenticated user's keys are returned.
+            Superusers may set this parameter to list keys for another user account, including their own.
+          schema:
+            $ref: '#/components/schemas/Username'
         - name: limit
           in: query
           required: false
           description: |
             Maximum number of items to return.
             If omitted, a default value is applied.
-            The maximum possible value may be clamped, and values larger than it may be silently truncated.
-            If the value is a negative integer, a '400' response may be returned.
+            If the value exceeds the configured maximum, it is clamped to that maximum.
+            A value of 0 returns an empty items array with a valid total.
+            Negative values or non-integers return a 400 response.
           schema:
             type: integer
             minimum: 0
@@ -1208,7 +1430,7 @@ paths:
           description: |
             Number of items to skip before starting to collect the result set.
             If omitted, the value is treated as 0.
-            If the value is negative or not an integer, a '400' response may be returned.
+            Negative values or non-integers return a 400 response.
           schema:
             type: integer
             minimum: 0
@@ -1221,24 +1443,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAPIKeysResponse'
         '400':
-          description: Invalid query parameter (e.g. limit or offset).
+          description: Invalid query parameter (e.g. limit, offset, or username).
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+                  - $ref: '#/components/schemas/ErrorInvalidUsername'
         '401':
           description: Authentication is required or the bearer token is invalid.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
-        '404':
-          description: The server is in anonymous mode.
+        '403':
+          description: Only superusers may set the `username` parameter.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: The server is in anonymous mode, or the requested user does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
         '500':
           description: Internal server error.
           content:
@@ -1251,18 +1482,28 @@ paths:
       operationId: issueKey
       summary: Issue a new API key.
       description: |
-        Issues a new API key for the authenticated user.
-        A superuser may set `username` in the request body to issue a key for another account.
+        Issues a new API key.
+
+        When not set, a key is issued for the currently authenticated user.
+        The `username` parameter may be used by superusers to issue a key for another user account, including their own.
 
         In anonymous mode, the route returns HTTP 404.
       tags:
         - keys
+      parameters:
+        - name: username
+          in: query
+          required: false
+          description: |
+            When not set, a key is issued for the currently authenticated user.
+            Superusers may set this parameter to issue a key for another user account, including their own.
+          schema:
+            $ref: '#/components/schemas/Username'
       requestBody:
         required: true
         description: |
           Metadata for the API key to issue.
-          A limit on the maximum request body size MAY be enforced.
-          If such a limit is exceeded, a '413' response is returned.
+          If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
             schema:
@@ -1277,7 +1518,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/IssueKeyResponse'
         '400':
-          description: Invalid request body.
+          description: Invalid request body, query parameter, or expires_at value in the past.
           content:
             application/json:
               schema:
@@ -1285,6 +1526,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
                   - $ref: '#/components/schemas/ErrorInvalidUsername'
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required or the bearer token is invalid.
           content:
@@ -1292,17 +1534,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
-          description: The authenticated user is not allowed to issue a key for the requested account.
+          description: Only superusers may set the `username` parameter.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The server is in anonymous mode.
+          description: The server is in anonymous mode, or the requested user does not exist.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
@@ -1321,49 +1565,72 @@ paths:
   /user/key/revoke:
     post:
       operationId: revokeKey
-      summary: Revoke an API key belonging to the currently authenticated user.
+      summary: Revoke an API key for a user account.
       description: |
+        Revokes an API key.
+        This operation is idempotent: revoking an already-revoked key returns 200.
+
+        When not set, the currently authenticated user's keys are targeted.
+        The `username` parameter may be used by superusers to revoke a key for another user account, including their own.
+
         In anonymous mode, the route returns HTTP 404.
       tags:
         - keys
+      parameters:
+        - name: username
+          in: query
+          required: false
+          description: |
+            When not set, the currently authenticated user's keys are targeted.
+            Superusers may set this parameter to revoke a key for another user account, including their own.
+          schema:
+            $ref: '#/components/schemas/Username'
       requestBody:
         required: true
         description: |
           Identifies the API key to revoke.
-          A limit on the maximum request body size MAY be enforced.
-          If such a limit is exceeded, a '413' response is returned.
+          If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/RevokeKeyRequest'
       responses:
         '200':
-          description: API key revoked successfully.
+          description: API key revoked successfully, including when the key was already revoked.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RevokeKeyResponse'
         '400':
-          description: Invalid request body.
+          description: Invalid request body or query parameter.
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+                  - $ref: '#/components/schemas/ErrorInvalidUsername'
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required or the bearer token is invalid.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: Only superusers may set the `username` parameter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The API key does not exist, does not belong to the current user, or the server is in anonymous mode.
+          description: The API key does not exist, does not belong to the requested user, the requested user does not exist, or the server is in anonymous mode.
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorKeyNotFound'
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
                   - $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
         '413':
           description: Request body exceeds the configured maximum size.
@@ -1381,6 +1648,14 @@ paths:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
 components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      description: |
+        API key passed as a bearer token in the Authorization header.
+        Required in authenticated mode unless the operation description states otherwise.
+
   schemas:
     ErrorResponse:
       description: |
@@ -1461,7 +1736,7 @@ components:
               type: string
               enum:
                 - body_invalid_json
-          description: The request body was not valid JSON or did not match the expected shape.
+          description: The request body was not valid JSON, did not match the expected shape, or contained unknown fields.
     ErrorInvalidQueryParameter:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -1532,6 +1807,18 @@ components:
               enum:
                 - resource_not_found
           description: The resource does not exist.
+    ErrorResourceGone:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - resource_gone
+          description: |
+            The resource exists but has been deleted.
+            Returned without resource data to confirm prior existence.
     ErrorInfoUnavailable:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -1593,7 +1880,7 @@ components:
           minimum: 0
         default_page_limit:
           description: |
-            Maximum number of items per page.
+            Default number of items per page.
           type: integer
           format: int64
           minimum: 0
@@ -1619,6 +1906,7 @@ components:
       description: |
         Namespace to be created. The server assigns an opaque id.
       type: object
+      additionalProperties: false
       required:
         - tag
         - pid_format
@@ -1659,6 +1947,7 @@ components:
         PIDs are generated by replacing each `*` in the pattern with a random character from the selected character set.
         The pattern may only contain `*`, `-`, and `_`.
       type: object
+      additionalProperties: false
       required:
         - pattern
         - characters
@@ -1764,6 +2053,7 @@ components:
             $ref: '#/components/schemas/ResourceResponse'
     ResourceCreateRequest:
       type: object
+      additionalProperties: false
       required:
         - url
         - tag
@@ -1841,6 +2131,7 @@ components:
         A request to update a resource.
         Fields that are omitted will not be changed.
       type: object
+      additionalProperties: false
       properties:
         url:
           description: |
@@ -1870,6 +2161,16 @@ components:
               enum:
                 - duplicate_username
           description: The username is already in use.
+    ErrorUserNotFound:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - user_not_found
+          description: The user does not exist.
     ErrorKeyNotFound:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -1883,6 +2184,7 @@ components:
     UserCreateRequest:
       description: A user account to create.
       type: object
+      additionalProperties: false
       required:
         - username
       properties:
@@ -1891,7 +2193,9 @@ components:
           allOf:
             - $ref: '#/components/schemas/Username'
         superuser:
-          description: Whether the new account should have superuser privileges.
+          description: |
+            Whether the new account should have superuser privileges.
+            Only superusers may set this field to true.
           type: boolean
           default: false
     UserCreateResponse:
@@ -1915,23 +2219,15 @@ components:
     UpdateUserRequest:
       description: Fields to update on a user account.
       type: object
+      additionalProperties: false
       properties:
-        username:
-          description: |
-            Username of the account to update.
-            If omitted, the authenticated user account is updated.
-            Updating another user's account requires superuser privileges.
-          allOf:
-            - $ref: '#/components/schemas/Username'
         superuser:
-          description: |
-            Whether the account should have superuser privileges.
-            Changing this field requires superuser privileges.
+          description: Whether the account should have superuser privileges.
           type: boolean
     PaginatedUsersResponse:
       description: |
         A single page of user responses.
-        The 'total' field is the total number of users, ignoring 'limit' and 'offset'.
+        The 'total' field is the total number of users after applying the superuser filter (if any), ignoring 'limit' and 'offset'.
         The 'offset' field is the effective offset used to produce this response.
       type: object
       required:
@@ -1956,7 +2252,7 @@ components:
     PaginatedAPIKeysResponse:
       description: |
         A single page of API key responses.
-        The 'total' field is the total number of API keys for the user, ignoring 'limit' and 'offset'.
+        The 'total' field is the total number of API keys for the selected user after applying any username filter, ignoring 'limit' and 'offset'.
         The 'offset' field is the effective offset used to produce this response.
       type: object
       required:
@@ -1981,6 +2277,7 @@ components:
     IssueKeyRequest:
       description: Metadata for an API key to issue.
       type: object
+      additionalProperties: false
       required:
         - comment
         - expires_at
@@ -1992,16 +2289,10 @@ components:
           description: |
             Optional expiration time for the key.
             If null, the key does not expire.
+            If set, the value must be in the future; past values return a 400 response.
           type: string
           format: date-time
           nullable: true
-        username:
-          description: |
-            Username of the account to issue the key for.
-            If omitted, a key is issued for the authenticated user.
-            Issuing a key for another user requires superuser privileges.
-          allOf:
-            - $ref: '#/components/schemas/Username'
     IssueKeyResponse:
       description: |
         A newly issued API key.
@@ -2020,6 +2311,7 @@ components:
     RevokeKeyRequest:
       description: Identifies an API key to revoke.
       type: object
+      additionalProperties: false
       required:
         - id
       properties:
@@ -2061,6 +2353,17 @@ components:
           type: string
           format: date-time
           nullable: true
+    AssignablePermissionLevel:
+      description: |
+        Permission level that can be assigned via PUT.
+        The `none` level cannot be assigned; use DELETE to remove an explicit permission.
+      type: string
+      enum:
+        - none
+        - contributor
+        - editor
+        - manager
+
     PermissionLevel:
       description: |
         Permission level for a user within a namespace.
@@ -2092,11 +2395,12 @@ components:
     SetNamespacePermissionRequest:
       description: Request to set a user's permission level in a namespace.
       type: object
+      additionalProperties: false
       required:
         - level
       properties:
         level:
-          $ref: '#/components/schemas/PermissionLevel'
+          $ref: '#/components/schemas/AssignablePermissionLevel'
     PaginatedNamespacePermissionsResponse:
       description: Paginated list of namespace permissions.
       type: object
@@ -2134,4 +2438,4 @@ components:
               type: string
               enum:
                 - invalid_permission_level
-          description: The permission level is not valid.
+          description: The permission level is not valid or is not assignable via PUT.

@@ -1,6 +1,6 @@
 {
   "name": "162_anonymous_resource_count_get_allowed",
-  "comment": "162 anonymous resource count get allowed",
+  "comment": "In anonymous mode, the global resource count endpoint works without authentication.",
   "steps": [
     {
       "name": "create_namespace_anonymous",

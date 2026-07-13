@@ -1,6 +1,6 @@
 {
   "name": "156_permissions_editor_cannot_escalate_or_delete",
-  "comment": "156 permissions editor cannot escalate or delete",
+  "comment": "Editors cannot grant manager permission or delete permission records (403 forbidden).",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -111,8 +111,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",
@@ -144,8 +144,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"editor\", \"username\": \"editor\"}",
+        "path": "/user/key?username=editor",
+        "body": "{\"comment\": \"editor\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

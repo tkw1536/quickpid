@@ -1,6 +1,6 @@
 {
   "name": "83_resource_patch_partial_update_semantics",
-  "comment": "83 resource patch partial update semantics",
+  "comment": "PATCH uses partial-update semantics: omitted fields are unchanged, empty bodies are allowed, and deleted can be set.",
   "steps": [
     {
       "name": "create_namespace",

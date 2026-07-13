@@ -1,6 +1,6 @@
 {
   "name": "84_resource_patch_body_missing",
-  "comment": "84 resource patch body missing",
+  "comment": "PATCH without a request body returns 400 body_missing.",
   "steps": [
     {
       "name": "create_namespace",

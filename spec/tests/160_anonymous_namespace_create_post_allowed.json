@@ -1,6 +1,6 @@
 {
   "name": "160_anonymous_namespace_create_post_allowed",
-  "comment": "160 anonymous namespace create post allowed",
+  "comment": "In anonymous mode, namespaces can be created without authentication.",
   "steps": [
     {
       "name": "create_namespace_anonymous",

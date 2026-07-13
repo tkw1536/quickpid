@@ -1,0 +1,23 @@
+{
+  "name": "anonymous_user_post_unavailable",
+  "comment": "In anonymous mode, POST /user/ returns 404 anonymous_mode_unavailable.",
+  "steps": [
+    {
+      "name": "create_user_disabled",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"alice\"}"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "anonymous_mode_unavailable"
+        }
+      }
+    }
+  ]
+}

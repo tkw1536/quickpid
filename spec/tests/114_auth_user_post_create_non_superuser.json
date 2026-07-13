@@ -1,6 +1,6 @@
 {
   "name": "114_auth_user_post_create_non_superuser",
-  "comment": "114 auth user post create non superuser",
+  "comment": "A superuser can create a regular (non-superuser) account via POST /user/.",
   "steps": [
     {
       "name": "bootstrap_root",

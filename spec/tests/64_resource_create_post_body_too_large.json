@@ -1,6 +1,6 @@
 {
   "name": "64_resource_create_post_body_too_large",
-  "comment": "64 resource create post body too large",
+  "comment": "A request body exceeding max_body_bytes on resource create returns 413 body_size_exceeded.",
   "steps": [
     {
       "name": "create_namespace",

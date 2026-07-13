@@ -1,6 +1,6 @@
 {
   "name": "13_namespace_list_get_pagination_offset_past_end",
-  "comment": "13 namespace list get pagination offset past end",
+  "comment": "An offset past the end of the namespace list returns an empty items array while total still reflects all matching namespaces.",
   "steps": [
     {
       "name": "create_a",

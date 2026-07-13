@@ -1,6 +1,6 @@
 {
   "name": "38_auth_namespace_create_post_unauthorized",
-  "comment": "38 auth namespace create post unauthorized",
+  "comment": "In authenticated mode, POST /resolver/namespaces without credentials returns 401 unauthorized.",
   "steps": [
     {
       "name": "create_namespace_unauthorized",
@@ -9,21 +9,6 @@
         "method": "POST",
         "path": "/resolver/namespaces",
         "body": "{\"tag\":\"no-auth\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
-      },
-      "response": {
-        "code": 401,
-        "body": {
-          "error": "unauthorized"
-        }
-      }
-    },
-    {
-      "name": "create_unauthenticated",
-      "config": {},
-      "request": {
-        "method": "POST",
-        "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"flow-tag\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 401,

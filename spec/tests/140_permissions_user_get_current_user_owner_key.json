@@ -1,6 +1,6 @@
 {
   "name": "140_permissions_user_get_current_user_owner_key",
-  "comment": "140 permissions user get current user owner key",
+  "comment": "A namespace owner's issued API key authenticates correctly on GET /user/.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

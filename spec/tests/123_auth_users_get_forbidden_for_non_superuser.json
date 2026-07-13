@@ -1,6 +1,6 @@
 {
   "name": "123_auth_users_get_forbidden_for_non_superuser",
-  "comment": "123 auth users get forbidden for non superuser",
+  "comment": "Listing all users requires superuser privileges; non-superusers receive 403 forbidden.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"alice\", \"username\": \"alice\"}",
+        "path": "/user/key?username=alice",
+        "body": "{\"comment\": \"alice\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

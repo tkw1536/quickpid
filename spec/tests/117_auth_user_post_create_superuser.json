@@ -1,6 +1,6 @@
 {
   "name": "117_auth_user_post_create_superuser",
-  "comment": "117 auth user post create superuser",
+  "comment": "A superuser can create another superuser account via POST /user/.",
   "steps": [
     {
       "name": "bootstrap_root",

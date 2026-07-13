@@ -1,6 +1,6 @@
 {
   "name": "115_auth_user_key_post_issue_for_existing_user",
-  "comment": "115 auth user key post issue for existing user",
+  "comment": "A superuser can issue an API key for another user via POST /user/key?username=....",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"alice\", \"username\": \"alice\"}",
+        "path": "/user/key?username=alice",
+        "body": "{\"comment\": \"alice\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

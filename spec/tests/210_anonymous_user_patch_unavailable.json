@@ -1,0 +1,23 @@
+{
+  "name": "anonymous_user_patch_unavailable",
+  "comment": "In anonymous mode, PATCH /user/ returns 404 anonymous_mode_unavailable.",
+  "steps": [
+    {
+      "name": "patch_disabled",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/user/?username=alice",
+        "body": "{}"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "anonymous_mode_unavailable"
+        }
+      }
+    }
+  ]
+}

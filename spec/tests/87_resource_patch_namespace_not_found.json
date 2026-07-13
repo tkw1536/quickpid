@@ -1,6 +1,6 @@
 {
   "name": "87_resource_patch_namespace_not_found",
-  "comment": "87 resource patch namespace not found",
+  "comment": "PATCH against a missing namespace returns 404 namespace_not_found.",
   "steps": [
     {
       "name": "create_namespace",

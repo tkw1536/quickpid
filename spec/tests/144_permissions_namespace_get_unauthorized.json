@@ -1,6 +1,6 @@
 {
   "name": "144_permissions_namespace_get_unauthorized",
-  "comment": "144 permissions namespace get unauthorized",
+  "comment": "Getting a namespace without valid authentication returns 401 unauthorized.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

@@ -1,6 +1,6 @@
 {
   "name": "48_resource_list_get_filter_tag_no_match",
-  "comment": "48 resource list get filter tag no match",
+  "comment": "A tag filter with no matching resources returns an empty items array and total 0.",
   "steps": [
     {
       "name": "create_namespace",

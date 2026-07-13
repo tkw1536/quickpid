@@ -1,0 +1,65 @@
+{
+  "name": "auth_user_patch_body_too_large",
+  "comment": "A PATCH /user/ body exceeding max_body_bytes returns 413 body_size_exceeded.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root"
+        }
+      }
+    },
+    {
+      "name": "too_large",
+      "config": {},
+      "limits": {
+        "MaxBodyBytes": 16,
+        "DefaultPageLimit": 0,
+        "MaxPageLimit": 0,
+        "MaxBatchItems": 0,
+        "MaxNamespaceIDAttempts": 0,
+        "MaxPIDAttempts": 0
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/user/?username=root",
+        "body": "{\"superuser\":false,\"extra\":\"xxxxxxxx\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 413,
+        "body": {
+          "error": "body_size_exceeded"
+        }
+      }
+    }
+  ]
+}

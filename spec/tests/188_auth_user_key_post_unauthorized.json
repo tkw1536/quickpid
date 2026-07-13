@@ -1,0 +1,21 @@
+{
+  "name": "auth_user_key_post_unauthorized",
+  "comment": "POST /user/key without authentication returns 401 unauthorized.",
+  "steps": [
+    {
+      "name": "issue_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\":\"k\",\"expires_at\":null}"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

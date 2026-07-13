@@ -1,6 +1,6 @@
 {
   "name": "148_permissions_resource_post_contributor_allowed",
-  "comment": "148 permissions resource post contributor allowed",
+  "comment": "A user with contributor permission can create resources in the namespace.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -89,8 +89,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",
@@ -122,8 +122,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"contributor\", \"username\": \"contributor\"}",
+        "path": "/user/key?username=contributor",
+        "body": "{\"comment\": \"contributor\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

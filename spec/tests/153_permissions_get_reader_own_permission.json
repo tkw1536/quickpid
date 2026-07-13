@@ -1,6 +1,6 @@
 {
   "name": "153_permissions_get_reader_own_permission",
-  "comment": "153 permissions get reader own permission",
+  "comment": "A user can read their own permission level in a namespace.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -89,8 +89,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",
@@ -122,8 +122,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"reader\", \"username\": \"reader\"}",
+        "path": "/user/key?username=reader",
+        "body": "{\"comment\": \"reader\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

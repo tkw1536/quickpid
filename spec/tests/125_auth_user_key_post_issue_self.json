@@ -1,6 +1,6 @@
 {
   "name": "125_auth_user_key_post_issue_self",
-  "comment": "125 auth user key post issue self",
+  "comment": "An authenticated user can issue a new API key for their own account.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"alice\", \"username\": \"alice\"}",
+        "path": "/user/key?username=alice",
+        "body": "{\"comment\": \"alice\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",
@@ -101,7 +101,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\":\"new key\"}",
+        "body": "{\"comment\": \"new key\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

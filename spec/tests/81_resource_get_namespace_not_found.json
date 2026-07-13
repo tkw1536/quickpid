@@ -1,6 +1,6 @@
 {
   "name": "81_resource_get_namespace_not_found",
-  "comment": "81 resource get namespace not found",
+  "comment": "GET for a resource in a missing namespace returns 404 namespace_not_found.",
   "steps": [
     {
       "name": "create_namespace",

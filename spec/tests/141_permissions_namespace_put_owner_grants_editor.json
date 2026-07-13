@@ -1,6 +1,6 @@
 {
   "name": "141_permissions_namespace_put_owner_grants_editor",
-  "comment": "141 permissions namespace put owner grants editor",
+  "comment": "A namespace manager can grant editor permission to another user.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -89,8 +89,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

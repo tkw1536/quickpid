@@ -1,0 +1,57 @@
+{
+  "name": "auth_user_key_post_user_not_found",
+  "comment": "POST /user/key?username=... for a non-existent user returns 404 user_not_found.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root"
+        }
+      }
+    },
+    {
+      "name": "missing_user",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/key?username=nobody",
+        "body": "{\"comment\":\"k\",\"expires_at\":null}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "user_not_found"
+        }
+      }
+    }
+  ]
+}

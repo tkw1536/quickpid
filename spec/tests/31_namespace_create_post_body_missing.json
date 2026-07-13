@@ -1,6 +1,6 @@
 {
   "name": "31_namespace_create_post_body_missing",
-  "comment": "31 namespace create post body missing",
+  "comment": "POST /resolver/namespaces without a request body returns 400 body_missing.",
   "steps": [
     {
       "name": "emptyBody",

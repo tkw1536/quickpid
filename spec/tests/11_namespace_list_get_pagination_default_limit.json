@@ -1,6 +1,6 @@
 {
   "name": "11_namespace_list_get_pagination_default_limit",
-  "comment": "11 namespace list get pagination default limit",
+  "comment": "GET /resolver/namespaces without a limit uses the configured default page size and returns the first page sorted by namespace id.",
   "steps": [
     {
       "name": "create_a",

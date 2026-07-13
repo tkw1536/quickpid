@@ -1,6 +1,6 @@
 {
   "name": "14_namespace_list_get_pagination_limit_zero",
-  "comment": "14 namespace list get pagination limit zero",
+  "comment": "limit=0 returns an empty items array with a valid total count.",
   "steps": [
     {
       "name": "create_a",

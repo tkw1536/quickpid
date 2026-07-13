@@ -1,6 +1,6 @@
 {
   "name": "12_namespace_list_get_pagination_clamp_max_limit",
-  "comment": "12 namespace list get pagination clamp max limit",
+  "comment": "A limit query value above the configured maximum is clamped to max_page_limit rather than rejected.",
   "steps": [
     {
       "name": "create_a",

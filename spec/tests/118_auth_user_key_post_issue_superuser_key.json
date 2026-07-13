@@ -1,6 +1,6 @@
 {
   "name": "118_auth_user_key_post_issue_superuser_key",
-  "comment": "118 auth user key post issue superuser key",
+  "comment": "A superuser can issue an API key for another superuser account.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"servertest\", \"username\": \"servertest\"}",
+        "path": "/user/key?username=servertest",
+        "body": "{\"comment\": \"servertest\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

@@ -1,6 +1,6 @@
 {
   "name": "154_permissions_owner_cannot_modify_own_permission",
-  "comment": "154 permissions owner cannot modify own permission",
+  "comment": "A namespace manager cannot change or remove their own permission (403 forbidden); only superusers can.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

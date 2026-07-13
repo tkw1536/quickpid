@@ -1,6 +1,6 @@
 {
   "name": "122_auth_user_post_create_invalid_username",
-  "comment": "122 auth user post create invalid username",
+  "comment": "POST /user/ with an invalid username returns 400 invalid_username.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"servertest\", \"username\": \"servertest\"}",
+        "path": "/user/key?username=servertest",
+        "body": "{\"comment\": \"servertest\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

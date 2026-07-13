@@ -1,0 +1,22 @@
+{
+  "name": "anonymous_user_get_unavailable",
+  "comment": "In anonymous mode, GET /user/ returns 404 anonymous_mode_unavailable.",
+  "steps": [
+    {
+      "name": "get_current_user_disabled",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "anonymous_mode_unavailable"
+        }
+      }
+    }
+  ]
+}

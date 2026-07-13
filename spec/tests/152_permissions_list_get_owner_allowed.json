@@ -1,6 +1,6 @@
 {
   "name": "152_permissions_list_get_owner_allowed",
-  "comment": "152 permissions list get owner allowed",
+  "comment": "A namespace manager can list explicit permissions in the namespace.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -111,8 +111,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

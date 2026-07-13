@@ -1,6 +1,6 @@
 {
   "name": "63_resource_create_post_invalid_namespace_id",
-  "comment": "63 resource create post invalid namespace id",
+  "comment": "An invalid namespace id in the create-resource path returns 400 invalid_namespace_id.",
   "steps": [
     {
       "name": "invalidNamespace",

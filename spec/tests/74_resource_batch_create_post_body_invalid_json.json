@@ -1,6 +1,6 @@
 {
   "name": "74_resource_batch_create_post_body_invalid_json",
-  "comment": "74 resource batch create post body invalid json",
+  "comment": "Malformed JSON on batch create returns 400 body_invalid_json.",
   "steps": [
     {
       "name": "create_namespace",

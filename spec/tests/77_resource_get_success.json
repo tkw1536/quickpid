@@ -1,6 +1,6 @@
 {
   "name": "77_resource_get_success",
-  "comment": "77 resource get success",
+  "comment": "GET /resolver/namespaces/{namespace}/resources/{pid} returns the resource when it exists.",
   "steps": [
     {
       "name": "create_namespace",

@@ -1,6 +1,6 @@
 {
   "name": "22_namespace_list_get_superuser_sees_all",
-  "comment": "22 namespace list get superuser sees all",
+  "comment": "Superusers listing namespaces see every namespace regardless of explicit permissions.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -89,8 +89,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"admin\", \"username\": \"admin\"}",
+        "path": "/user/key?username=admin",
+        "body": "{\"comment\": \"admin\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

@@ -1,6 +1,6 @@
 {
   "name": "150_permissions_resource_get_reader_allowed",
-  "comment": "150 permissions resource get reader allowed",
+  "comment": "A user with namespace access can read a non-deleted resource by PID.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -89,8 +89,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",
@@ -122,8 +122,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"reader\", \"username\": \"reader\"}",
+        "path": "/user/key?username=reader",
+        "body": "{\"comment\": \"reader\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

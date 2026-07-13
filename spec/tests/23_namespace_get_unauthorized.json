@@ -1,6 +1,6 @@
 {
   "name": "23_namespace_get_unauthorized",
-  "comment": "23 namespace get unauthorized",
+  "comment": "In authenticated mode, GET /resolver/namespaces/{id} without credentials returns 401 unauthorized.",
   "steps": [
     {
       "name": "create_namespace_for_later_steps",

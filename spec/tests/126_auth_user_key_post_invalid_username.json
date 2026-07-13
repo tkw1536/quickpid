@@ -1,6 +1,6 @@
 {
   "name": "126_auth_user_key_post_invalid_username",
-  "comment": "126 auth user key post invalid username",
+  "comment": "POST /user/key with an invalid username query parameter returns 400 invalid_username.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"servertest\", \"username\": \"servertest\"}",
+        "path": "/user/key?username=servertest",
+        "body": "{\"comment\": \"servertest\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",
@@ -92,8 +92,8 @@
       "config": {},
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\":\"new key\", \"username\":\"BADUPPER\"}",
+        "path": "/user/key?username=BADUPPER",
+        "body": "{\"comment\": \"new key\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

@@ -1,6 +1,6 @@
 {
   "name": "01_resolver_info_get_enabled_anonymous",
-  "comment": "01 resolver info get enabled anonymous",
+  "comment": "When the resolver info endpoint is enabled in anonymous mode, GET /resolver returns limits and does not advertise authentication.",
   "steps": [
     {
       "name": "info_ok_anonymous",

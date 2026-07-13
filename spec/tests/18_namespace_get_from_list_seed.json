@@ -1,6 +1,6 @@
 {
   "name": "18_namespace_get_from_list_seed",
-  "comment": "18 namespace get from list seed",
+  "comment": "A namespace returned by the list endpoint can be retrieved individually by id and matches the list entry.",
   "steps": [
     {
       "name": "create_a",

@@ -1,6 +1,6 @@
 {
   "name": "42_resource_list_get_pagination_default_limit",
-  "comment": "42 resource list get pagination default limit",
+  "comment": "Resource listing without a limit uses the configured default page size.",
   "steps": [
     {
       "name": "create_namespace",

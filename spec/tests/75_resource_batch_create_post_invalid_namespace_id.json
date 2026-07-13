@@ -1,6 +1,6 @@
 {
   "name": "75_resource_batch_create_post_invalid_namespace_id",
-  "comment": "75 resource batch create post invalid namespace id",
+  "comment": "An invalid namespace id in the batch path returns 400 invalid_namespace_id.",
   "steps": [
     {
       "name": "invalidNamespaceID",

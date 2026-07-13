@@ -1,6 +1,6 @@
 {
   "name": "16_namespace_list_get_invalid_offset_values",
-  "comment": "16 namespace list get invalid offset values",
+  "comment": "Negative or non-integer offset values on GET /resolver/namespaces return 400 invalid_query_parameter.",
   "steps": [
     {
       "name": "invalidQuery_offset_-1",

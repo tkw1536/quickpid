@@ -1,6 +1,6 @@
 {
   "name": "113_auth_user_get_current_user_root",
-  "comment": "113 auth user get current user root",
+  "comment": "GET /user/ with the bootstrap root API key returns the root superuser account.",
   "steps": [
     {
       "name": "bootstrap_root",

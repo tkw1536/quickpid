@@ -1,6 +1,6 @@
 {
   "name": "43_resource_list_get_pagination_clamp_max_limit",
-  "comment": "43 resource list get pagination clamp max limit",
+  "comment": "A limit above max_page_limit on resource listing is clamped to the maximum.",
   "steps": [
     {
       "name": "create_namespace",

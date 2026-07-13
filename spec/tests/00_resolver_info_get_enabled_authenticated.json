@@ -1,6 +1,6 @@
 {
   "name": "00_resolver_info_get_enabled_authenticated",
-  "comment": "00 resolver info get enabled authenticated",
+  "comment": "When the resolver info endpoint is enabled in authenticated mode, GET /resolver returns limits and indicates that API-key authentication is required.",
   "steps": [
     {
       "name": "info_ok_auth",

@@ -1,6 +1,6 @@
 {
   "name": "52_resource_count_get_empty",
-  "comment": "52 resource count get empty",
+  "comment": "GET /resolver/resources/count returns total 0 when no resources exist.",
   "steps": [
     {
       "name": "empty",

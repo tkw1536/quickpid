@@ -1,6 +1,6 @@
 {
   "name": "53_resource_count_get_after_two_resources",
-  "comment": "53 resource count get after two resources",
+  "comment": "GET /resolver/resources/count reflects the number of resources created, including across namespaces.",
   "steps": [
     {
       "name": "create_namespace_a",

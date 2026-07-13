@@ -1,6 +1,6 @@
 {
   "name": "41_resource_list_get_empty",
-  "comment": "41 resource list get empty",
+  "comment": "GET /resolver/namespaces/{namespace}/resources on an empty namespace returns an empty paginated list.",
   "steps": [
     {
       "name": "create_namespace",

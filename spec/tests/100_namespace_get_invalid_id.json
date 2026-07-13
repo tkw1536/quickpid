@@ -1,6 +1,6 @@
 {
   "name": "100_namespace_get_invalid_id",
-  "comment": "100 namespace get invalid id",
+  "comment": "An invalid namespace id format returns 400 invalid_namespace_id.",
   "steps": [
     {
       "name": "invalid_namespace_id",

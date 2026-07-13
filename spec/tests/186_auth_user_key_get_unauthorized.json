@@ -1,0 +1,20 @@
+{
+  "name": "auth_user_key_get_unauthorized",
+  "comment": "GET /user/key without authentication returns 401 unauthorized.",
+  "steps": [
+    {
+      "name": "list_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user/key"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

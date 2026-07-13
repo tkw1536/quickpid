@@ -1,6 +1,6 @@
 {
   "name": "116_auth_user_get_current_user_non_superuser_key",
-  "comment": "116 auth user get current user non superuser key",
+  "comment": "An issued API key authenticates as the corresponding non-superuser on GET /user/.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"alice\", \"username\": \"alice\"}",
+        "path": "/user/key?username=alice",
+        "body": "{\"comment\": \"alice\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

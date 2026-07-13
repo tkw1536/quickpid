@@ -1,6 +1,6 @@
 {
   "name": "149_permissions_resource_get_contributor_forbidden",
-  "comment": "149 permissions resource get contributor forbidden",
+  "comment": "A contributor cannot read individual resources by PID (403 forbidden).",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -89,8 +89,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",
@@ -122,8 +122,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"contributor\", \"username\": \"contributor\"}",
+        "path": "/user/key?username=contributor",
+        "body": "{\"comment\": \"contributor\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

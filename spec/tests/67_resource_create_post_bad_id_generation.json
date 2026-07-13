@@ -1,6 +1,6 @@
 {
   "name": "67_resource_create_post_bad_id_generation",
-  "comment": "67 resource create post bad id generation",
+  "comment": "If PID generation yields an invalid value, resource create returns 500 bad_id_generation.",
   "steps": [
     {
       "name": "create_namespace",

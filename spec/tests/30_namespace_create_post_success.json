@@ -1,6 +1,6 @@
 {
   "name": "30_namespace_create_post_success",
-  "comment": "30 namespace create post success",
+  "comment": "POST /resolver/namespaces with a valid body creates a namespace and returns 201 with the server-assigned id.",
   "steps": [
     {
       "name": "success",

@@ -1,6 +1,6 @@
 {
   "name": "157_permissions_owner_delete_contributor",
-  "comment": "157 permissions owner delete contributor",
+  "comment": "A namespace manager can remove another user's explicit permission (DELETE returns 204).",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -89,8 +89,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

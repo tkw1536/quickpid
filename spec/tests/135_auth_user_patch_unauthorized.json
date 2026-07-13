@@ -1,0 +1,21 @@
+{
+  "name": "auth_user_patch_unauthorized",
+  "comment": "PATCH /user/ without authentication returns 401 unauthorized.",
+  "steps": [
+    {
+      "name": "patch_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "PATCH",
+        "path": "/user/?username=alice",
+        "body": "{}"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

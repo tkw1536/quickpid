@@ -1,6 +1,6 @@
 {
   "name": "10_namespace_list_get_empty",
-  "comment": "10 namespace list get empty",
+  "comment": "With no namespaces stored, GET /resolver/namespaces returns an empty paginated list (total 0, items []).",
   "steps": [
     {
       "name": "empty",

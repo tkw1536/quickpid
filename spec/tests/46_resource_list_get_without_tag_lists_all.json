@@ -1,6 +1,6 @@
 {
   "name": "46_resource_list_get_without_tag_lists_all",
-  "comment": "46 resource list get without tag lists all",
+  "comment": "Omitting the tag filter includes resources of all tags in the namespace.",
   "steps": [
     {
       "name": "create_namespace",

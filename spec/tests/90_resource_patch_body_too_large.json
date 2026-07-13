@@ -1,6 +1,6 @@
 {
   "name": "90_resource_patch_body_too_large",
-  "comment": "90 resource patch body too large",
+  "comment": "A PATCH body exceeding max_body_bytes returns 413 body_size_exceeded.",
   "steps": [
     {
       "name": "create_namespace",

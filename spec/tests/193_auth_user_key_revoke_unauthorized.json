@@ -1,0 +1,21 @@
+{
+  "name": "auth_user_key_revoke_unauthorized",
+  "comment": "POST /user/key/revoke without authentication returns 401 unauthorized.",
+  "steps": [
+    {
+      "name": "revoke_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/key/revoke",
+        "body": "{\"id\":\"k\"}"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

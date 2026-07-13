@@ -1,6 +1,6 @@
 {
   "name": "80_resource_get_invalid_pid",
-  "comment": "80 resource get invalid pid",
+  "comment": "An invalid PID in the path returns 400 invalid_pid.",
   "steps": [
     {
       "name": "create_namespace",

@@ -1,6 +1,6 @@
 {
   "name": "155_permissions_root_can_modify_own_permission",
-  "comment": "155 permissions root can modify own permission",
+  "comment": "A superuser who is also a namespace manager may remove their own explicit permission.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

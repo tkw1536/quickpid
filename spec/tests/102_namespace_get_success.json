@@ -1,6 +1,6 @@
 {
   "name": "102_namespace_get_success",
-  "comment": "102 namespace get success",
+  "comment": "A created namespace can be retrieved by id and matches the create response.",
   "steps": [
     {
       "name": "create_namespace",

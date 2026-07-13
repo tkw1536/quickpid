@@ -1,6 +1,6 @@
 {
   "name": "112_auth_user_get_current_user_requires_valid_auth",
-  "comment": "112 auth user get current user requires valid auth",
+  "comment": "GET /user/ without valid authentication returns 401 unauthorized.",
   "steps": [
     {
       "name": "get_current_user_unauthorized",

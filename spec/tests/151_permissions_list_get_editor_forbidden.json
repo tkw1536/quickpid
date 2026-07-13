@@ -1,6 +1,6 @@
 {
   "name": "151_permissions_list_get_editor_forbidden",
-  "comment": "151 permissions list get editor forbidden",
+  "comment": "Editors cannot list namespace permissions; only managers and superusers can (403 forbidden).",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -89,8 +89,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",
@@ -122,8 +122,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"editor\", \"username\": \"editor\"}",
+        "path": "/user/key?username=editor",
+        "body": "{\"comment\": \"editor\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

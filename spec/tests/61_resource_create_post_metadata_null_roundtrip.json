@@ -1,6 +1,6 @@
 {
   "name": "61_resource_create_post_metadata_null_roundtrip",
-  "comment": "61 resource create post metadata null roundtrip",
+  "comment": "metadata may be null on create and is returned as null in the response.",
   "steps": [
     {
       "name": "create_namespace",

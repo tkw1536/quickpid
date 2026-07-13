@@ -1,6 +1,6 @@
 {
   "name": "124_auth_users_get_allowed_for_superuser",
-  "comment": "124 auth users get allowed for superuser",
+  "comment": "A superuser can list all user accounts via GET /users/.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -89,8 +89,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"servertest\", \"username\": \"servertest\"}",
+        "path": "/user/key?username=servertest",
+        "body": "{\"comment\": \"servertest\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

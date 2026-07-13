@@ -1,6 +1,6 @@
 {
   "name": "86_resource_patch_invalid_namespace_id",
-  "comment": "86 resource patch invalid namespace id",
+  "comment": "An invalid namespace id on resource PATCH returns 400 invalid_namespace_id.",
   "steps": [
     {
       "name": "create_namespace",

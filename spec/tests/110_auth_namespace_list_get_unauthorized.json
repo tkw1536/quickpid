@@ -1,6 +1,6 @@
 {
   "name": "110_auth_namespace_list_get_unauthorized",
-  "comment": "110 auth namespace list get unauthorized",
+  "comment": "In authenticated mode, listing namespaces with an invalid or missing token returns 401 unauthorized.",
   "steps": [
     {
       "name": "list_namespaces_unauthorized",

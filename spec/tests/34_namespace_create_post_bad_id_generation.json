@@ -1,6 +1,6 @@
 {
   "name": "34_namespace_create_post_bad_id_generation",
-  "comment": "34 namespace create post bad id generation",
+  "comment": "If namespace id generation produces an invalid id, POST /resolver/namespaces returns 500 bad_id_generation.",
   "steps": [
     {
       "name": "badIDGeneration_error",

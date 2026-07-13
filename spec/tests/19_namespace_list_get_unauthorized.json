@@ -1,6 +1,6 @@
 {
   "name": "19_namespace_list_get_unauthorized",
-  "comment": "19 namespace list get unauthorized",
+  "comment": "In authenticated mode, GET /resolver/namespaces without credentials returns 401 unauthorized.",
   "steps": [
     {
       "name": "list_unauthenticated",

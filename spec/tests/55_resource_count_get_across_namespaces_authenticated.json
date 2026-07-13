@@ -1,6 +1,6 @@
 {
   "name": "55_resource_count_get_across_namespaces_authenticated",
-  "comment": "55 resource count get across namespaces authenticated",
+  "comment": "GET /resolver/resources/count works in authenticated mode and counts resources across all namespaces.",
   "steps": [
     {
       "name": "create_namespace_a",

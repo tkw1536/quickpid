@@ -1,6 +1,6 @@
 {
   "name": "72_resource_batch_create_post_body_too_large",
-  "comment": "72 resource batch create post body too large",
+  "comment": "A batch request body exceeding max_body_bytes returns 413 body_size_exceeded.",
   "steps": [
     {
       "name": "create_namespace",

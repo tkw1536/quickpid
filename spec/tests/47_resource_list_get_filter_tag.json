@@ -1,6 +1,6 @@
 {
   "name": "47_resource_list_get_filter_tag",
-  "comment": "47 resource list get filter tag",
+  "comment": "The tag query parameter filters resources within a namespace to those with the given tag.",
   "steps": [
     {
       "name": "create_namespace",

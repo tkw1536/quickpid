@@ -1,6 +1,6 @@
 {
   "name": "88_resource_patch_resource_not_found",
-  "comment": "88 resource patch resource not found",
+  "comment": "PATCH for a non-existent PID returns 404 resource_not_found.",
   "steps": [
     {
       "name": "create_namespace",

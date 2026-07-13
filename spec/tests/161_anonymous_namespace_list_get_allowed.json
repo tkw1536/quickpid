@@ -1,6 +1,6 @@
 {
   "name": "161_anonymous_namespace_list_get_allowed",
-  "comment": "161 anonymous namespace list get allowed",
+  "comment": "In anonymous mode, namespaces can be listed without authentication.",
   "steps": [
     {
       "name": "create_namespace_anonymous",

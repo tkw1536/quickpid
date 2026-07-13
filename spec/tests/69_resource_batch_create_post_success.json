@@ -1,6 +1,6 @@
 {
   "name": "69_resource_batch_create_post_success",
-  "comment": "69 resource batch create post success",
+  "comment": "POST .../resources:batch with multiple items creates all resources and returns 201 with an array of responses.",
   "steps": [
     {
       "name": "create_namespace",

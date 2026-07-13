@@ -1,6 +1,6 @@
 {
   "name": "39_auth_namespace_create_post_grants_manager_to_creator",
-  "comment": "39 auth namespace create post grants manager to creator",
+  "comment": "In authenticated mode, the user who creates a namespace automatically receives manager permission for it.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

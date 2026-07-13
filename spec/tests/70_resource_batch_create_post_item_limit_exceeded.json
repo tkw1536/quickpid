@@ -1,6 +1,6 @@
 {
   "name": "70_resource_batch_create_post_item_limit_exceeded",
-  "comment": "70 resource batch create post item limit exceeded",
+  "comment": "A batch larger than max_batch_items returns 422 item_limit_exceeded.",
   "steps": [
     {
       "name": "create_namespace",

@@ -1,6 +1,6 @@
 {
   "name": "15_namespace_list_get_invalid_limit_values",
-  "comment": "15 namespace list get invalid limit values",
+  "comment": "Negative or non-integer limit values on GET /resolver/namespaces return 400 invalid_query_parameter.",
   "steps": [
     {
       "name": "invalidQuery_limit_-1",

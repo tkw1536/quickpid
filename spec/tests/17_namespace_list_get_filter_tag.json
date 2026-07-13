@@ -1,6 +1,6 @@
 {
   "name": "17_namespace_list_get_filter_tag",
-  "comment": "17 namespace list get filter tag",
+  "comment": "The tag query parameter filters the namespace list to namespaces with that tag.",
   "steps": [
     {
       "name": "create_a",

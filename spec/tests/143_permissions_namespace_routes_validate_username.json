@@ -1,6 +1,6 @@
 {
   "name": "143_permissions_namespace_routes_validate_username",
-  "comment": "143 permissions namespace routes validate username",
+  "comment": "Invalid usernames in permission route paths return 400 invalid_username for GET, PUT, and DELETE.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"owner\", \"username\": \"owner\"}",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

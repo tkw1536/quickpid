@@ -1,6 +1,6 @@
 {
   "name": "119_auth_user_get_current_user_superuser_key",
-  "comment": "119 auth user get current user superuser key",
+  "comment": "An issued superuser API key authenticates correctly on GET /user/.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,8 +67,8 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"servertest\", \"username\": \"servertest\"}",
+        "path": "/user/key?username=servertest",
+        "body": "{\"comment\": \"servertest\",\"expires_at\": null}",
         "headers": [
           [
             "Authorization",

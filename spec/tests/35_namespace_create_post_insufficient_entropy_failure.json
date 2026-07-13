@@ -1,6 +1,6 @@
 {
   "name": "35_namespace_create_post_insufficient_entropy_failure",
-  "comment": "35 namespace create post insufficient entropy failure",
+  "comment": "If namespace id generation exhausts retries, POST /resolver/namespaces returns 503 insufficient_entropy.",
   "steps": [
     {
       "name": "success",
