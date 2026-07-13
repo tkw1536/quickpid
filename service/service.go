@@ -49,6 +49,11 @@ func (s *Service) Options() Options {
 	return s.opts
 }
 
+// AnonymousMode reports whether the service runs without authentication.
+func (s *Service) AnonymousMode() bool {
+	return s.Options().Anonymous
+}
+
 // GetResolverInfo returns information about the resolver.
 //
 // It can return the following errors:

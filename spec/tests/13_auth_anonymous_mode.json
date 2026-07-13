@@ -83,9 +83,9 @@
         "path": "/user/"
       },
       "response": {
-        "code": 401,
+        "code": 404,
         "body": {
-          "error": "unauthorized"
+          "error": "anonymous_mode_unavailable"
         }
       }
     },
@@ -100,9 +100,9 @@
         "body": "{\"username\":\"alice\"}"
       },
       "response": {
-        "code": 401,
+        "code": 404,
         "body": {
-          "error": "unauthorized"
+          "error": "anonymous_mode_unavailable"
         }
       }
     },
@@ -116,9 +116,25 @@
         "path": "/resolver/namespaces/d1000000-0000-4000-8000-000000000001/permissions/owner"
       },
       "response": {
-        "code": 401,
+        "code": 404,
         "body": {
-          "error": "unauthorized"
+          "error": "anonymous_mode_unavailable"
+        }
+      }
+    },
+    {
+      "name": "list_permissions_disabled",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/d1000000-0000-4000-8000-000000000001/permissions"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "anonymous_mode_unavailable"
         }
       }
     }

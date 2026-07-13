@@ -127,8 +127,8 @@ func (*Server) getPID(r *http.Request) (pid string, specError api.Error, err err
 // getUsername gets the username from the request path.
 func (*Server) getUsername(r *http.Request) (username string, specError api.Error, err error) {
 	username = r.PathValue("username")
-	if username == "" {
-		return "", api.InvalidQueryParameter, errors.New("missing username")
+	if err := service.ValidateUsername(username); err != nil {
+		return "", api.InvalidUsername, err
 	}
 	return username, "", nil
 }

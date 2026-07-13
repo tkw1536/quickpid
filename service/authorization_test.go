@@ -168,6 +168,67 @@ func TestService_SetNamespacePermissionCannotEscalate(t *testing.T) {
 	}
 }
 
+func TestService_SetNamespacePermissionSelfRules(t *testing.T) {
+	svc, store := newTestService(t)
+	ctx := context.Background()
+
+	_, specError, err := svc.SetNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner", api.SetNamespacePermissionRequest{
+		Level: api.PermissionLevelEditor,
+	})
+	if !errors.Is(err, errForbidden) || specError != "" {
+		t.Fatalf("owner modify own permission = %q, %v, want forbidden", specError, err)
+	}
+
+	level, err := store.GetNamespacePermission(ctx, "test-ns", "owner")
+	if err != nil {
+		t.Fatalf("GetNamespacePermission(owner) error = %v", err)
+	}
+	if level != api.PermissionLevelManager {
+		t.Fatalf("owner level after forbidden update = %q, want manager", level)
+	}
+
+	perm, specError, err := svc.SetNamespacePermission(ctx, &api.UserInfo{Username: "owner", Superuser: true}, "test-ns", "owner", api.SetNamespacePermissionRequest{
+		Level: api.PermissionLevelEditor,
+	})
+	if err != nil || specError != "" {
+		t.Fatalf("superuser modify own permission = %v, %q, %v", perm, specError, err)
+	}
+	if perm.Level != api.PermissionLevelEditor {
+		t.Fatalf("superuser level = %q, want editor", perm.Level)
+	}
+}
+
+func TestService_DeleteNamespacePermissionSelfRules(t *testing.T) {
+	svc, store := newTestService(t)
+	ctx := context.Background()
+
+	specError, err := svc.DeleteNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner")
+	if !errors.Is(err, errForbidden) || specError != "" {
+		t.Fatalf("owner delete own permission = %q, %v, want forbidden", specError, err)
+	}
+
+	level, err := store.GetNamespacePermission(ctx, "test-ns", "owner")
+	if err != nil {
+		t.Fatalf("GetNamespacePermission(owner) error = %v", err)
+	}
+	if level != api.PermissionLevelManager {
+		t.Fatalf("owner level after forbidden delete = %q, want manager", level)
+	}
+
+	specError, err = svc.DeleteNamespacePermission(ctx, &api.UserInfo{Username: "owner", Superuser: true}, "test-ns", "owner")
+	if err != nil || specError != "" {
+		t.Fatalf("superuser delete own permission = %q, %v", specError, err)
+	}
+
+	level, err = store.GetNamespacePermission(ctx, "test-ns", "owner")
+	if err != nil {
+		t.Fatalf("GetNamespacePermission(owner) error = %v", err)
+	}
+	if level != api.PermissionLevelNone {
+		t.Fatalf("owner level after delete = %q, want none", level)
+	}
+}
+
 func TestService_Unauthenticated(t *testing.T) {
 	svc, _ := newTestService(t)
 	ctx := context.Background()
@@ -248,13 +309,13 @@ func TestService_AnonymousDisablesUserAndPermissionManagement(t *testing.T) {
 		t.Fatalf("CurrentUser() error = %v, want unauthorized", err)
 	}
 
-	if _, specError, err := svc.CreateUser(ctx, userInfo("owner"), api.UserCreateRequest{Username: "alice"}); !errors.Is(err, errForbidden) || specError != "" {
-		t.Fatalf("CreateUser() = %q, %v, want forbidden", specError, err)
+	if _, specError, err := svc.CreateUser(ctx, userInfo("owner"), api.UserCreateRequest{Username: "alice"}); !IsAnonymousModeUnavailable(err) || specError != api.AnonymousModeUnavailable {
+		t.Fatalf("CreateUser() = %q, %v, want anonymous mode unavailable", specError, err)
 	}
-	if _, specError, err := svc.ListUsers(ctx, userInfo("owner"), api.ListUsersParams{Limit: 10}); !errors.Is(err, errForbidden) || specError != "" {
-		t.Fatalf("ListUsers() = %q, %v, want forbidden", specError, err)
+	if _, specError, err := svc.ListUsers(ctx, userInfo("owner"), api.ListUsersParams{Limit: 10}); !IsAnonymousModeUnavailable(err) || specError != api.AnonymousModeUnavailable {
+		t.Fatalf("ListUsers() = %q, %v, want anonymous mode unavailable", specError, err)
 	}
-	if _, specError, err := svc.GetNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner"); !errors.Is(err, errForbidden) || specError != "" {
-		t.Fatalf("GetNamespacePermission() = %q, %v, want forbidden", specError, err)
+	if _, specError, err := svc.GetNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner"); !IsAnonymousModeUnavailable(err) || specError != api.AnonymousModeUnavailable {
+		t.Fatalf("GetNamespacePermission() = %q, %v, want anonymous mode unavailable", specError, err)
 	}
 }

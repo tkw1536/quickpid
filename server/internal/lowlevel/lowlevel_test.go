@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel_test
 
-//spellchecker:words context errors slog http httptest strings testing time github bicpid backend memory internal apikey server lowlevel service
+//spellchecker:words context errors slog http httptest strings testing time github bicpid backend memory internal apikey server lowlevel service httpfixture
 import (
 	"context"
 	"errors"
@@ -16,6 +16,7 @@ import (
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/backend/memory"
 	"github.com/tkw1536/bicpid/internal/apikey"
+	"github.com/tkw1536/bicpid/internal/httpfixture"
 	"github.com/tkw1536/bicpid/server/internal/lowlevel"
 	"github.com/tkw1536/bicpid/service"
 )
@@ -286,6 +287,42 @@ func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 	handler.ServeHTTP(httptest.NewRecorder(), req)
 }
 
+func TestHandleRequiredUserInAuthModeAnonymousModeUnavailable(t *testing.T) {
+	t.Parallel()
+
+	var currentUserCalled bool
+	h := lowlevel.NewAuthHandler(&mockAuthService{
+		anonymousMode: true,
+		currentUser: func(context.Context, string) (*api.UserInfo, error) {
+			currentUserCalled = true
+			return nil, unauthorizedError{}
+		},
+	}, nil)
+	handler := lowlevel.HandleRequiredUserInAuthMode(
+		h,
+		func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, api.Error, error) {
+			t.Fatal("handler must not be called in anonymous mode")
+			return struct{}{}, "", nil
+		},
+		http.StatusOK,
+		[]api.Error{api.Unauthorized, api.AnonymousModeUnavailable, api.DatabaseError},
+	)
+
+	rec := runHandler(handler, "any-token")
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+	if currentUserCalled {
+		t.Fatal("CurrentUser was called, want anonymous-mode gate before auth")
+	}
+	if err := (httpfixture.Response{
+		Code: http.StatusNotFound,
+		Body: []byte(`{"error":"anonymous_mode_unavailable"}`),
+	}).Compare(rec); err != nil {
+		t.Fatalf("response = %v", err)
+	}
+}
+
 func TestAuthHandlerLog(t *testing.T) {
 	t.Parallel()
 
@@ -327,8 +364,13 @@ type scenario struct {
 }
 
 type mockAuthService struct {
-	authenticate func(context.Context, string) (string, error)
-	currentUser  func(context.Context, string) (*api.UserInfo, error)
+	anonymousMode bool
+	authenticate  func(context.Context, string) (string, error)
+	currentUser   func(context.Context, string) (*api.UserInfo, error)
+}
+
+func (m *mockAuthService) AnonymousMode() bool {
+	return m.anonymousMode
 }
 
 func (m *mockAuthService) Authenticate(ctx context.Context, apiKey string) (string, error) {

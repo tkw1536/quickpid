@@ -55,8 +55,8 @@ func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo
 
 // GetUser returns the user account for caller.
 func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, api.Error, error) {
-	if s.Options().Anonymous {
-		return nil, "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
 	}
 	user, err := s.authentication.GetUser(ctx, caller)
 	if specError, ok := mapAuthBackendError(err); ok {
@@ -70,11 +70,14 @@ func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, ap
 
 // CreateUser creates a new user account. Caller must be a superuser.
 func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.UserCreateRequest) (*api.UserInfo, api.Error, error) {
-	if s.Options().Anonymous {
-		return nil, "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
 	}
 	if err := requireSuperuser(caller); err != nil {
 		return nil, "", err
+	}
+	if err := ValidateUsername(req.Username); err != nil {
+		return nil, api.InvalidUsername, err
 	}
 	if req.Superuser && !caller.Superuser {
 		return nil, "", errForbidden
@@ -92,8 +95,8 @@ func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.
 
 // ListUsers lists all user accounts. Caller must be a superuser.
 func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params api.ListUsersParams) (*api.PaginatedUsersResponse, api.Error, error) {
-	if s.Options().Anonymous {
-		return nil, "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
 	}
 	if err := requireSuperuser(caller); err != nil {
 		return nil, "", err
@@ -108,8 +111,8 @@ func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params ap
 
 // ListKeys lists API keys for caller.
 func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, api.Error, error) {
-	if s.Options().Anonymous {
-		return nil, "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
 	}
 	page, err := s.authentication.ListKeys(ctx, s.apiKeyFormat(), caller.Username, params)
 	if specError, ok := mapAuthBackendError(err); ok {
@@ -130,11 +133,14 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, params api
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy]
 func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, req api.KeyIssueRequest) (*api.IssueKeyResponse, api.Error, error) {
-	if s.Options().Anonymous {
-		return nil, "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
 	}
 	target := caller.Username
 	if req.Username != nil {
+		if err := ValidateUsername(*req.Username); err != nil {
+			return nil, api.InvalidUsername, err
+		}
 		target = *req.Username
 	}
 	if target != caller.Username && !caller.Superuser {
@@ -188,8 +194,8 @@ func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyI
 
 // RevokeKey revokes an API key for caller.
 func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, req api.KeyRevokeRequest) (*api.RevokeKeyResponse, api.Error, error) {
-	if s.Options().Anonymous {
-		return nil, "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
 	}
 	info, err := s.authentication.RevokeKey(ctx, s.apiKeyFormat(), caller.Username, req.ID)
 	if specError, ok := mapAuthBackendError(err); ok {
@@ -203,11 +209,14 @@ func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, req api.K
 
 // UpdateUser updates caller's account or another user when caller is a superuser.
 func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, req api.UserUpdateRequest) (*api.UserInfo, api.Error, error) {
-	if s.Options().Anonymous {
-		return nil, "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
 	}
 	target := caller.Username
 	if req.Username != nil {
+		if err := ValidateUsername(*req.Username); err != nil {
+			return nil, api.InvalidUsername, err
+		}
 		target = *req.Username
 	}
 

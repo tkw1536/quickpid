@@ -14,6 +14,7 @@ const (
 	authRequirementNone authRequirement = iota
 	authRequirementOptional
 	authRequirementRequired
+	authRequirementAuthMode
 )
 
 // authNone disables authentication entirely.
@@ -39,4 +40,10 @@ func optionalUserAuth() authConfig {
 // requiredUserAuth requires valid credentials and loads the full user object.
 func requiredUserAuth() authConfig {
 	return authConfig{requirement: authRequirementRequired, loadUser: true}
+}
+
+// requiredUserAuthManagement requires valid credentials in authenticated mode and
+// returns anonymous_mode_unavailable in anonymous mode before checking credentials.
+func requiredUserAuthManagement() authConfig {
+	return authConfig{requirement: authRequirementAuthMode, loadUser: true}
 }

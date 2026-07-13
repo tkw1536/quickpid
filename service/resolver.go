@@ -16,6 +16,7 @@ import (
 var (
 	namespaceIDRE = regexp.MustCompile(`^[a-z0-9_-]+$`)
 	pidRE         = regexp.MustCompile(`^[a-z0-9_-]+$`)
+	usernameRE    = regexp.MustCompile(`^[a-z0-9_-]+$`)
 )
 
 // ValidateNamespaceID reports whether id is a valid namespace identifier.
@@ -30,6 +31,14 @@ func ValidateNamespaceID(id string) error {
 func ValidatePID(id string) error {
 	if !pidRE.MatchString(id) {
 		return errInvalidPID
+	}
+	return nil
+}
+
+// ValidateUsername reports whether username is a valid username.
+func ValidateUsername(username string) error {
+	if !usernameRE.MatchString(username) {
+		return errInvalidUsername
 	}
 	return nil
 }

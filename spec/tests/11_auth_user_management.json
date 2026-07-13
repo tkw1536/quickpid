@@ -242,6 +242,27 @@
       }
     },
     {
+      "name": "create_user_invalid_username",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"BADUPPER\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaservertest"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_username"
+        }
+      }
+    },
+    {
       "name": "list_users_forbidden_non_superuser",
       "config": {},
       "request": {
@@ -342,6 +363,27 @@
       }
     },
     {
+      "name": "issue_key_invalid_username",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\":\"new key\", \"username\":\"BADUPPER\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaservertest"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_username"
+        }
+      }
+    },
+    {
       "name": "get_current_user_with_issued_key",
       "config": {},
       "request": {
@@ -359,6 +401,27 @@
         "body": {
           "superuser": false,
           "username": "alice"
+        }
+      }
+    },
+    {
+      "name": "update_current_user_invalid_username",
+      "config": {},
+      "request": {
+        "method": "PATCH",
+        "path": "/user/",
+        "body": "{\"username\":\"BADUPPER\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_username"
         }
       }
     },

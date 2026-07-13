@@ -405,6 +405,67 @@
       }
     },
     {
+      "name": "get_permission_invalid_username",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/BADUPPER",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_username"
+        }
+      }
+    },
+    {
+      "name": "set_permission_invalid_username",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/BADUPPER",
+        "body": "{\"level\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_username"
+        }
+      }
+    },
+    {
+      "name": "delete_permission_invalid_username",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/BADUPPER",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_username"
+        }
+      }
+    },
+    {
       "name": "owner_creates_resource",
       "config": {
         "pids": [
@@ -659,6 +720,107 @@
       }
     },
     {
+      "name": "reader_get_own_permission_ok",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/reader",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaareader"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "level": "none",
+          "username": "reader"
+        }
+      }
+    },
+    {
+      "name": "owner_set_own_permission_forbidden",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/owner",
+        "body": "{\"level\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "owner_delete_own_permission_forbidden",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/owner",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "root_set_own_permission_ok",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/root",
+        "body": "{\"level\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "level": "editor",
+          "username": "root"
+        }
+      }
+    },
+    {
+      "name": "root_delete_own_permission_ok",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/root",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 204
+      }
+    },
+    {
       "name": "editor_grant_manager_forbidden",
       "config": {},
       "request": {
@@ -676,6 +838,108 @@
         "code": 403,
         "body": {
           "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "editor_delete_reader_forbidden",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/reader",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "owner_delete_contributor_ok",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/contributor",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 204
+      }
+    },
+    {
+      "name": "list_permissions_anonymous_unavailable",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "anonymous_mode_unavailable"
+        }
+      }
+    },
+    {
+      "name": "get_permission_anonymous_unavailable",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/reader"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "anonymous_mode_unavailable"
+        }
+      }
+    },
+    {
+      "name": "set_permission_anonymous_unavailable",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/reader",
+        "body": "{\"level\":\"editor\"}"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "anonymous_mode_unavailable"
+        }
+      }
+    },
+    {
+      "name": "delete_permission_anonymous_unavailable",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/reader"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "anonymous_mode_unavailable"
         }
       }
     }

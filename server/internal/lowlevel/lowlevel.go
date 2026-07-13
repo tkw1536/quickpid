@@ -25,6 +25,9 @@ type AuthService interface {
 
 	// CurrentUser resolves the authenticated user from an API key.
 	CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo, error)
+
+	// AnonymousMode reports whether authentication is disabled for resolver operations.
+	AnonymousMode() bool
 }
 
 // NewAuthHandler creates a new [AuthHandler].
@@ -104,6 +107,28 @@ func HandleRequiredUser[T any](
 	return handle(
 		h,
 		requiredUserAuth(),
+		func(w http.ResponseWriter, r *http.Request, _ *string, user *api.UserInfo) (T, api.Error, error) {
+			if user == nil {
+				panic("never reached: required user authentication returned nil user")
+			}
+			return impl(w, r, user)
+		},
+		successCode,
+		allowedErrors,
+	)
+}
+
+// HandleRequiredUserInAuthMode wraps an auth-management endpoint that requires authentication
+// when the server is not in anonymous mode.
+func HandleRequiredUserInAuthMode[T any](
+	h *AuthHandler,
+	impl func(http.ResponseWriter, *http.Request, *api.UserInfo) (T, api.Error, error),
+	successCode int,
+	allowedErrors []api.Error,
+) http.HandlerFunc {
+	return handle(
+		h,
+		requiredUserAuthManagement(),
 		func(w http.ResponseWriter, r *http.Request, _ *string, user *api.UserInfo) (T, api.Error, error) {
 			if user == nil {
 				panic("never reached: required user authentication returned nil user")

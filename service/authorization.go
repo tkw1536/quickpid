@@ -61,6 +61,13 @@ func canManagePermissions(level api.PermissionLevel) bool {
 	return level == api.PermissionLevelManager
 }
 
+func (s *Service) requireAuthEnabled() (api.Error, error) {
+	if s.Options().Anonymous {
+		return api.AnonymousModeUnavailable, errAnonymousModeUnavailable
+	}
+	return "", nil
+}
+
 func (s *Service) requireAuthenticated(caller *api.UserInfo) error {
 	if caller == nil {
 		return errUnauthorized
@@ -108,14 +115,17 @@ func mapAuthorizationBackendError(err error) (api.Error, bool) {
 //
 // Callers may read their own permission; reading another user's permission requires manager.
 func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.UserInfo, namespace, username string) (*api.NamespacePermission, api.Error, error) {
-	if s.Options().Anonymous {
-		return nil, "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
 	}
 	if err := s.requireAuthenticated(caller); err != nil {
 		return nil, "", err
 	}
 	if err := ValidateNamespaceID(namespace); err != nil {
 		return nil, api.InvalidNamespaceID, err
+	}
+	if err := ValidateUsername(username); err != nil {
+		return nil, api.InvalidUsername, err
 	}
 
 	if username != caller.Username {
@@ -142,8 +152,8 @@ func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.UserIn
 
 // ListNamespacePermissions lists explicit permissions in a namespace. Caller must be a manager.
 func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.UserInfo, namespace string, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, api.Error, error) {
-	if s.Options().Anonymous {
-		return nil, "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
 	}
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
 		if errors.Is(err, errForbidden) || errors.Is(err, errUnauthorized) {
@@ -167,8 +177,11 @@ func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.User
 
 // SetNamespacePermission sets a user's permission level in a namespace. Caller must be a manager.
 func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.UserInfo, namespace, username string, req api.SetNamespacePermissionRequest) (*api.NamespacePermission, api.Error, error) {
-	if s.Options().Anonymous {
-		return nil, "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
+	}
+	if err := ValidateUsername(username); err != nil {
+		return nil, api.InvalidUsername, err
 	}
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
 		if errors.Is(err, errForbidden) || errors.Is(err, errUnauthorized) {
@@ -179,15 +192,7 @@ func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.UserIn
 		}
 		return nil, api.DatabaseError, err
 	}
-
-	callerLevel, err := s.effectivePermission(ctx, caller, namespace)
-	if err != nil {
-		if errors.Is(err, backend.ErrNamespaceNotFound) {
-			return nil, api.NamespaceNotFound, err
-		}
-		return nil, api.DatabaseError, err
-	}
-	if permissionRank(req.Level) > permissionRank(callerLevel) {
+	if username == caller.Username && !caller.Superuser {
 		return nil, "", errForbidden
 	}
 
@@ -213,8 +218,11 @@ func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.UserIn
 
 // DeleteNamespacePermission removes an explicit permission record. Caller must be a manager.
 func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.UserInfo, namespace, username string) (api.Error, error) {
-	if s.Options().Anonymous {
-		return "", errForbidden
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return specError, err
+	}
+	if err := ValidateUsername(username); err != nil {
+		return api.InvalidUsername, err
 	}
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
 		if errors.Is(err, errForbidden) || errors.Is(err, errUnauthorized) {
@@ -224,6 +232,9 @@ func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.Use
 			return api.NamespaceNotFound, err
 		}
 		return api.DatabaseError, err
+	}
+	if username == caller.Username && !caller.Superuser {
+		return "", errForbidden
 	}
 
 	if err := s.authorization.DeleteNamespacePermission(ctx, namespace, username); err != nil {

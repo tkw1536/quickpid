@@ -25,11 +25,14 @@ const (
 
 	InvalidNamespaceID Error = "invalid_namespace_id" // An invalid namespace id was sent
 	InvalidPID         Error = "invalid_pid"          // An invalid pid was sent
+	InvalidUsername    Error = "invalid_username"     // An invalid username was sent
 
 	NamespaceNotFound Error = "namespace_not_found" // Namespace not found
 	ResourceNotFound  Error = "resource_not_found"  // Resource not found
 
 	InfoUnavailable Error = "info_unavailable" // Info is unavailable (possibly for security reasons)
+
+	AnonymousModeUnavailable Error = "anonymous_mode_unavailable" // Route is not available in anonymous mode
 
 	DuplicateUsername Error = "duplicate_username" // Username is already in use
 	UserNotFound      Error = "user_not_found"     // User not found
@@ -56,11 +59,14 @@ var codes = map[Error]int{
 
 	InvalidNamespaceID: http.StatusBadRequest,
 	InvalidPID:         http.StatusBadRequest,
+	InvalidUsername:    http.StatusBadRequest,
 
 	NamespaceNotFound: http.StatusNotFound,
 	ResourceNotFound:  http.StatusNotFound,
 
 	InfoUnavailable: http.StatusNotFound,
+
+	AnonymousModeUnavailable: http.StatusNotFound,
 
 	DuplicateUsername: http.StatusConflict,
 	UserNotFound:      http.StatusNotFound,
