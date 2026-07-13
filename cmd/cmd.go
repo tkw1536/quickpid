@@ -181,6 +181,7 @@ func (main *mainCmd) parseFlags() error {
 	flag.IntVar(&main.limits.DefaultPageLimit, "default-page-limit", main.limits.DefaultPageLimit, "default number of items per page")
 	flag.IntVar(&main.limits.MaxPageLimit, "max-page-limit", main.limits.MaxPageLimit, "maximum number of items per page")
 	flag.IntVar(&main.limits.MaxBatchItems, "max-batch-items", main.limits.MaxBatchItems, "maximum number of items in a batch")
+	flag.IntVar(&main.limits.MaxAutocompleteUsers, "max-autocomplete-users", main.limits.MaxAutocompleteUsers, "maximum number of usernames returned by autocomplete")
 	flag.IntVar(&main.limits.MaxNamespaceIDAttempts, "max-namespace-id-attempts", main.limits.MaxNamespaceIDAttempts, "maximum number of attempts to allocate a namespace ID")
 	flag.IntVar(&main.limits.MaxPIDAttempts, "max-pid-attempts", main.limits.MaxPIDAttempts, "maximum number of attempts to allocate a PID")
 	flag.IntVar(&main.limits.MaxAPIKeyAttempts, "max-api-key-attempts", main.limits.MaxAPIKeyAttempts, "maximum number of attempts to issue an API key")

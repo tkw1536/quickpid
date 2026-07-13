@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Bicpid API
+  title: QuickPID API
   description: API for managing PIDs across namespaces and user accounts with API keys.
   version: 3.0.0
   license:
@@ -1300,6 +1300,72 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
+  /users/autocomplete:
+    get:
+      operationId: autocompleteUsers
+      summary: Autocomplete usernames by prefix.
+      description: |
+        Returns a list of usernames that begin with the given query prefix, sorted in increasing order.
+
+        The `query` parameter must be a valid username prefix.
+        At most the configured maximum number of usernames is returned.
+
+        In anonymous mode, the route returns HTTP 404.
+        In authenticated mode, the caller must be authenticated as a valid user.
+        Unauthenticated callers or callers with invalid credentials receive 401 or 403, respectively.
+      tags:
+        - user
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: |
+            Username prefix to match.
+            Must be a valid username.
+          schema:
+            $ref: '#/components/schemas/Username'
+      responses:
+        '200':
+          description: |
+            A list of matching usernames, sorted by username in increasing order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsernameListResponse'
+        '400':
+          description: Invalid query parameter or username prefix.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+                  - $ref: '#/components/schemas/ErrorInvalidUsername'
+        '401':
+          description: Authentication is required, the bearer token is invalid, or the authenticated user does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: The server is in anonymous mode.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorAnonymousModeUnavailable'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
   /users/:
     get:
       operationId: listUsers
@@ -1311,8 +1377,7 @@ paths:
         When not set, users of all superuser states are included.
 
         In anonymous mode, the route returns HTTP 404.
-        In authenticated mode, the caller must be authenticated as a valid user.
-        Unauthenticated callers or callers with invalid credentials receive 401 or 403, respectively.
+        In authenticated mode, this route requires superuser privileges.
       tags:
         - user
       parameters:
@@ -1902,6 +1967,19 @@ components:
             Support for other authentication methods may be added in the future.
           type: boolean
           enum: [true]
+        max_autocomplete_users:
+          description: |
+            Maximum number of usernames returned by GET /users/autocomplete.
+            Present only when the server is in authenticated mode.
+          type: integer
+          format: int64
+          minimum: 1
+    UsernameListResponse:
+      description: |
+        A list of usernames.
+      type: array
+      items:
+        $ref: '#/components/schemas/Username'
     NamespaceCreateRequest:
       description: |
         Namespace to be created. The server assigns an opaque id.

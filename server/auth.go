@@ -42,6 +42,14 @@ func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, user *api.Use
 	})
 }
 
+func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, user *api.UserInfo) ([]string, api.Error, error) {
+	query, specError, err := h.parseRequiredAutocompleteQuery(r)
+	if err != nil {
+		return nil, specError, err
+	}
+	return h.svc.AutocompleteUsers(r.Context(), user, query)
+}
+
 func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedAPIKeysResponse, api.Error, error) {
 	target, specError, err := h.parseOptionalUsernameQuery(r)
 	if err != nil {

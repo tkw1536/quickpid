@@ -1,0 +1,22 @@
+{
+  "name": "226_anonymous_users_autocomplete_unavailable",
+  "comment": "In anonymous mode, GET /users/autocomplete returns 404 anonymous_mode_unavailable.",
+  "steps": [
+    {
+      "name": "anonymous_unavailable",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/users/autocomplete?query=al"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "anonymous_mode_unavailable"
+        }
+      }
+    }
+  ]
+}

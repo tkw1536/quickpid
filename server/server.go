@@ -262,6 +262,14 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.AnonymousModeUnavailable,
 		api.DatabaseError,
 	}))
+	h.mux.Handle("GET /users/autocomplete", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.autocompleteUsers, http.StatusOK, []api.Error{
+		api.InvalidQueryParameter,
+		api.InvalidUsername,
+		api.Unauthorized,
+		api.Forbidden,
+		api.AnonymousModeUnavailable,
+		api.DatabaseError,
+	}))
 	h.mux.Handle("GET /users/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listUsers, http.StatusOK, []api.Error{
 		api.InvalidQueryParameter,
 		api.Unauthorized,

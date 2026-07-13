@@ -1,0 +1,76 @@
+{
+  "name": "222_auth_users_autocomplete_invalid_query",
+  "comment": "GET /users/autocomplete with an invalid username prefix returns 400 invalid_username.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root"
+        }
+      }
+    },
+    {
+      "name": "empty_query",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/users/autocomplete?query=",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_username"
+        }
+      }
+    },
+    {
+      "name": "uppercase_query",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/users/autocomplete?query=ALICE",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_username"
+        }
+      }
+    }
+  ]
+}

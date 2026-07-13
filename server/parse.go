@@ -23,6 +23,7 @@ var (
 	errOffsetMustBeNonNegative = errors.New("offset must be non-negative")
 	errDeletedInvalid          = errors.New("invalid deleted query parameter")
 	errMissingUsernameQuery    = errors.New("missing username query parameter")
+	errMissingQueryParameter   = errors.New("missing query query parameter")
 	errSuperuserInvalid        = errors.New("invalid superuser query parameter")
 )
 
@@ -168,6 +169,24 @@ func (*Server) parseRequiredUsernameQuery(r *http.Request) (username string, spe
 		return "", api.InvalidUsername, err
 	}
 	return username, "", nil
+}
+
+// parseRequiredAutocompleteQuery parses a required query query parameter.
+//
+// It can return the following errors:
+//
+// - [api.InvalidQueryParameter]
+// - [api.InvalidUsername]
+func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (query string, specError api.Error, err error) {
+	q := r.URL.Query()
+	if !q.Has("query") {
+		return "", api.InvalidQueryParameter, errMissingQueryParameter
+	}
+	query = q.Get("query")
+	if err := service.ValidateUsername(query); err != nil {
+		return "", api.InvalidUsername, err
+	}
+	return query, "", nil
 }
 
 // parseSuperuserQuery parses an optional superuser filter query parameter.

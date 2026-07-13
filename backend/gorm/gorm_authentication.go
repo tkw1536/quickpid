@@ -74,6 +74,23 @@ func (s *Store) ListUsers(ctx context.Context, params api.ListUsersParams) (*api
 	})
 }
 
+func (s *Store) AutocompleteUsers(ctx context.Context, query string, limit int) ([]string, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) ([]string, error) {
+		var rows []userRow
+		if err := tx.Where("username LIKE ?", query+"%").Order("username ASC").Limit(limit).Find(&rows).Error; err != nil {
+			return nil, err
+		}
+		usernames := make([]string, len(rows))
+		for i := range rows {
+			usernames[i] = rows[i].Username
+		}
+		if usernames == nil {
+			usernames = []string{}
+		}
+		return usernames, nil
+	})
+}
+
 func (s *Store) DeleteUser(ctx context.Context, username string) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}

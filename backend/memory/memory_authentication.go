@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
@@ -65,6 +66,26 @@ func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.P
 		items = []api.UserInfo{}
 	}
 	return &api.PaginatedUsersResponse{Total: total, Offset: offset, Items: items}, nil
+}
+
+func (s *Store) AutocompleteUsers(_ context.Context, query string, limit int) ([]string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	matches := make([]string, 0)
+	for username := range s.users {
+		if strings.HasPrefix(username, query) {
+			matches = append(matches, username)
+		}
+	}
+	sort.Strings(matches)
+	if len(matches) > limit {
+		matches = matches[:limit]
+	}
+	if matches == nil {
+		matches = []string{}
+	}
+	return matches, nil
 }
 
 func (s *Store) DeleteUser(_ context.Context, username string) error {

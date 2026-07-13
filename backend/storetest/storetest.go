@@ -267,6 +267,50 @@ func RunAuthListUsers(t *testing.T, newBackend func() backend.AuthenticationBack
 	}
 }
 
+// RunAuthAutocompleteUsers runs autocomplete users tests.
+func RunAuthAutocompleteUsers(t *testing.T, newBackend func() backend.AuthenticationBackend) {
+	t.Helper()
+	ctx := context.Background()
+	b := newBackend()
+	now := FixedNow()
+
+	for _, username := range []string{"alice", "alex", "bob", "carol"} {
+		if _, err := b.CreateUser(ctx, userReq(username), now); err != nil {
+			t.Fatalf("CreateUser(%q) error = %v", username, err)
+		}
+	}
+
+	usernames, err := b.AutocompleteUsers(ctx, "al", 10)
+	if err != nil {
+		t.Fatalf("AutocompleteUsers() error = %v", err)
+	}
+	want := []string{"alex", "alice"}
+	if len(usernames) != len(want) {
+		t.Fatalf("AutocompleteUsers() = %v, want %v", usernames, want)
+	}
+	for i, username := range usernames {
+		if username != want[i] {
+			t.Fatalf("AutocompleteUsers()[%d] = %q, want %q", i, username, want[i])
+		}
+	}
+
+	usernames, err = b.AutocompleteUsers(ctx, "al", 1)
+	if err != nil {
+		t.Fatalf("AutocompleteUsers() error = %v", err)
+	}
+	if len(usernames) != 1 || usernames[0] != "alex" {
+		t.Fatalf("AutocompleteUsers() with limit 1 = %v, want [alex]", usernames)
+	}
+
+	usernames, err = b.AutocompleteUsers(ctx, "zzz", 10)
+	if err != nil {
+		t.Fatalf("AutocompleteUsers() error = %v", err)
+	}
+	if len(usernames) != 0 {
+		t.Fatalf("AutocompleteUsers() = %v, want []", usernames)
+	}
+}
+
 // RunAuthSuperuser runs superuser tests.
 func RunAuthSuperuser(t *testing.T, newBackend func() backend.AuthenticationBackend) {
 	t.Helper()

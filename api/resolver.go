@@ -168,5 +168,6 @@ type InfoResponse struct {
 	DefaultPageLimit int64 `json:"default_page_limit"`
 	MaxPageLimit     int64 `json:"max_page_limit"`
 	MaxBatchItems    int64 `json:"max_batch_items"`
+	MaxAutocompleteUsers int64 `json:"max_autocomplete_users,omitzero"`
 	Authentication   bool  `json:"authentication,omitzero"`
 }

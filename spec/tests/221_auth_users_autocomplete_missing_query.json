@@ -1,0 +1,56 @@
+{
+  "name": "221_auth_users_autocomplete_missing_query",
+  "comment": "GET /users/autocomplete without the required query parameter returns 400 invalid_query_parameter.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root"
+        }
+      }
+    },
+    {
+      "name": "missing_query",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/users/autocomplete",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_query_parameter"
+        }
+      }
+    }
+  ]
+}

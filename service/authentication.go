@@ -129,6 +129,24 @@ func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params ap
 	return page, "", nil
 }
 
+// AutocompleteUsers returns usernames matching a prefix. Any authenticated caller is allowed.
+func (s *Service) AutocompleteUsers(ctx context.Context, caller *api.UserInfo, query string) ([]string, api.Error, error) {
+	if specError, err := s.requireAuthEnabled(); err != nil {
+		return nil, specError, err
+	}
+	_ = caller
+
+	s.mu.RLock()
+	limit := s.opts.Limits.MaxAutocompleteUsers
+	s.mu.RUnlock()
+
+	usernames, err := s.store.AutocompleteUsers(ctx, query, limit)
+	if err != nil {
+		return nil, api.DatabaseError, err
+	}
+	return usernames, "", nil
+}
+
 // ListKeys lists API keys for the caller or another user when caller is a superuser.
 func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, api.Error, error) {
 	if specError, err := s.requireAuthEnabled(); err != nil {

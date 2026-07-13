@@ -39,6 +39,10 @@ func TestStore_AuthListUsers(t *testing.T) {
 	storetest.RunAuthListUsers(t, func() backend.AuthenticationBackend { return newStore() })
 }
 
+func TestStore_AuthAutocompleteUsers(t *testing.T) {
+	storetest.RunAuthAutocompleteUsers(t, func() backend.AuthenticationBackend { return newStore() })
+}
+
 func TestStore_AuthSuperuser(t *testing.T) {
 	storetest.RunAuthSuperuser(t, func() backend.AuthenticationBackend { return newStore() })
 }

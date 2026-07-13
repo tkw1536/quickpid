@@ -63,11 +63,15 @@ func (s *Service) GetResolverInfo() (*api.InfoResponse, api.Error, error) {
 	if !opts.InfoEnabled {
 		return nil, api.InfoUnavailable, errSpecInfoPrivate
 	}
-	return &api.InfoResponse{
+	resp := &api.InfoResponse{
 		MaxBodyBytes:     opts.Limits.MaxBodyBytes,
 		DefaultPageLimit: int64(opts.Limits.DefaultPageLimit),
 		MaxPageLimit:     int64(opts.Limits.MaxPageLimit),
 		MaxBatchItems:    int64(opts.Limits.MaxBatchItems),
 		Authentication:   !opts.Anonymous,
-	}, "", nil
+	}
+	if !opts.Anonymous {
+		resp.MaxAutocompleteUsers = int64(opts.Limits.MaxAutocompleteUsers)
+	}
+	return resp, "", nil
 }

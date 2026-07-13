@@ -30,6 +30,11 @@ type AuthenticationBackend interface {
 	// Has no specific error conditions.
 	ListUsers(ctx context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error)
 
+	// AutocompleteUsers returns usernames with the given prefix, ordered ascending by username.
+	//
+	// Has no specific error conditions.
+	AutocompleteUsers(ctx context.Context, query string, limit int) ([]string, error)
+
 	// DeleteUser removes a user and all associated API keys.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.

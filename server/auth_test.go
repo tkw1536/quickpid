@@ -249,6 +249,57 @@ func TestListUsers_RequiresSuperuser(t *testing.T) {
 	})
 }
 
+func TestAutocompleteUsers(t *testing.T) {
+	auth := memory.NewStore()
+	aliceKey := createUserWithKey(t, auth, "alice", false)
+	rootKey := createUserWithKey(t, auth, "root", true)
+	createUserWithKey(t, auth, "alex", false)
+	h := testHandler(t, auth)
+
+	t.Run("missing query", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/users/autocomplete", nil)
+		req.Header.Set("Authorization", "Bearer "+rootKey)
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d, body = %s", rec.Code, http.StatusBadRequest, rec.Body.String())
+		}
+	})
+
+	t.Run("invalid username query", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/users/autocomplete?query=ALICE", nil)
+		req.Header.Set("Authorization", "Bearer "+rootKey)
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d, body = %s", rec.Code, http.StatusBadRequest, rec.Body.String())
+		}
+	})
+
+	t.Run("non-superuser allowed", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/users/autocomplete?query=ali", nil)
+		req.Header.Set("Authorization", "Bearer "+aliceKey)
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d, body = %s", rec.Code, http.StatusOK, rec.Body.String())
+		}
+		var usernames []string
+		if err := json.Unmarshal(rec.Body.Bytes(), &usernames); err != nil {
+			t.Fatalf("json.Unmarshal() error = %v", err)
+		}
+		want := []string{"alice"}
+		if len(usernames) != len(want) {
+			t.Fatalf("usernames = %v, want %v", usernames, want)
+		}
+		for i, username := range usernames {
+			if username != want[i] {
+				t.Fatalf("usernames[%d] = %q, want %q", i, username, want[i])
+			}
+		}
+	})
+}
+
 func TestIssueAndRevokeKey(t *testing.T) {
 	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)

@@ -118,6 +118,7 @@ Fields may be omitted in case they are not relevant for the test case.
     - **`DefaultPageLimit`**
     - **`MaxPageLimit`**
     - **`MaxBatchItems`**, 
+    - **`MaxAutocompleteUsers`**
     - **`MaxNamespaceIDAttempts`**
     - **`MaxPIDAttempts`**
   - **`request`** (object):

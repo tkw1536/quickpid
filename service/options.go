@@ -30,6 +30,8 @@ type Limits struct {
 
 	MaxBatchItems int // maximum number of items in a batch, 0 or negative means no limit.
 
+	MaxAutocompleteUsers int // maximum number of usernames returned by autocomplete, must be at least 1.
+
 	MaxNamespaceIDAttempts int // maximum number of attempts to allocate a namespace ID, must be at least 1.
 	MaxPIDAttempts         int // maximum number of attempts to allocate a PID, must be at least 1.
 	MaxAPIKeyAttempts      int // maximum number of attempts to issue an API key, must be at least 1.
@@ -40,6 +42,7 @@ const (
 	defaultDefaultPageLimit       = 100
 	defaultMaxPageLimit           = 1000
 	defaultMaxBatchItems          = 100
+	defaultMaxAutocompleteUsers   = 10
 	defaultMaxNamespaceIDAttempts = 100
 	defaultMaxPIDAttempts         = 100
 	defaultMaxAPIKeyAttempts      = 100
@@ -52,6 +55,7 @@ func DefaultLimits() Limits {
 		DefaultPageLimit:       defaultDefaultPageLimit,
 		MaxPageLimit:           defaultMaxPageLimit,
 		MaxBatchItems:          defaultMaxBatchItems,
+		MaxAutocompleteUsers:   defaultMaxAutocompleteUsers,
 		MaxNamespaceIDAttempts: defaultMaxNamespaceIDAttempts,
 		MaxPIDAttempts:         defaultMaxPIDAttempts,
 		MaxAPIKeyAttempts:      defaultMaxAPIKeyAttempts,
@@ -74,6 +78,10 @@ func (o Limits) WithValidValues() Limits {
 
 	if o.MaxBatchItems < 0 {
 		o.MaxBatchItems = 0
+	}
+
+	if o.MaxAutocompleteUsers < 1 {
+		o.MaxAutocompleteUsers = 1
 	}
 
 	if o.MaxNamespaceIDAttempts < 1 {
