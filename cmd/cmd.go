@@ -85,11 +85,7 @@ func Main(name string, preamble func(*slog.Logger) error, storeFactory func(logg
 }
 
 func (main *mainCmd) run() int {
-	if err := main.parseFlags(); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		return 2
-	}
-
+	main.parseFlags()
 	main.parseOptions()
 
 	if main.legal {
@@ -169,7 +165,7 @@ func (main *mainCmd) printStartupBanner() {
 	fmt.Println("Use -legal to view licensing information and notices.")
 }
 
-func (main *mainCmd) parseFlags() error {
+func (main *mainCmd) parseFlags() {
 	flag.StringVar(&main.listenHost, "host", main.listenHost, "host or IP to listen on")
 	flag.IntVar(&main.listenPort, "port", main.listenPort, "port to listen on")
 	flag.StringVar(&main.mountPath, "mount-path", main.mountPath, "mount path for the API")
@@ -197,8 +193,6 @@ func (main *mainCmd) parseFlags() error {
 	flag.DurationVar(&main.shutdownTimeout, "shutdown-timeout", main.shutdownTimeout, "timeout applied to backend and HTTP server shutdowns")
 
 	flag.Parse()
-
-	return nil
 }
 
 func (main *mainCmd) parseOptions() {

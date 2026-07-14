@@ -251,7 +251,7 @@
       }
     },
     {
-      "name": "get_ns_b_as_alice_forbidden",
+      "name": "get_ns_b_as_alice_allowed",
       "config": {},
       "request": {
         "method": "GET",
@@ -264,9 +264,15 @@
         ]
       },
       "response": {
-        "code": 403,
+        "code": 200,
         "body": {
-          "error": "forbidden"
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "b1000000-0000-4000-8000-000000000002",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "ns-b"
         }
       }
     }

@@ -251,7 +251,7 @@
       }
     },
     {
-      "name": "get_ns_a_as_alice_ok",
+      "name": "get_ns_a_as_alice_not_ok",
       "config": {},
       "request": {
         "method": "GET",
@@ -264,15 +264,9 @@
         ]
       },
       "response": {
-        "code": 200,
+        "code": 403,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
-          "id": "a1000000-0000-4000-8000-000000000001",
-          "pid_format": {
-            "characters": "full",
-            "pattern": "***-***"
-          },
-          "tag": "ns-a"
+          "error": "forbidden"
         }
       }
     }

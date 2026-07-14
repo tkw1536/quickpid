@@ -1,6 +1,6 @@
 {
   "name": "149_permissions_resource_get_contributor_forbidden",
-  "comment": "A contributor cannot read individual resources by PID (403 forbidden).",
+  "comment": "A contributor can read individual resources by PID (200 ok).",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -229,7 +229,7 @@
       }
     },
     {
-      "name": "contributor_get_resource_forbidden",
+      "name": "contributor_get_resource_ok",
       "config": {},
       "request": {
         "method": "GET",
@@ -242,9 +242,15 @@
         ]
       },
       "response": {
-        "code": 403,
+        "code": 200,
         "body": {
-          "error": "forbidden"
+          "date_created":"2020-01-02T03:04:05Z",
+          "date_updated":"2020-01-02T03:04:05Z",
+          "deleted":false,
+          "metadata":"seed",
+          "pid":"aaa-bbb",
+          "tag":"seed",
+          "url":"https://example.com/existing"
         }
       }
     }

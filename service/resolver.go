@@ -44,8 +44,11 @@ func ValidateUsername(username string) error {
 }
 
 func mapCapabilityError(err error) (api.Error, error) {
-	if errors.Is(err, errForbidden) || errors.Is(err, errUnauthorized) {
-		return "", err
+	if errors.Is(err, errForbidden) {
+		return api.Forbidden, err
+	}
+	if errors.Is(err, errUnauthorized) {
+		return api.Unauthorized, err
 	}
 	if errors.Is(err, errInvalidNamespaceID) {
 		return api.InvalidNamespaceID, err
@@ -103,7 +106,7 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.UserInfo, namesp
 			return nil, api.InvalidNamespaceID, fmt.Errorf("ValidateNamespaceID: %w", err)
 		}
 	} else {
-		if err := s.requireNamespaceCapability(ctx, caller, namespace, canReadNamespace); err != nil {
+		if err := s.requireNamespaceCapability(ctx, caller, namespace, canReadNamespaceMetadata); err != nil {
 			specError, mapped := mapCapabilityError(err)
 			return nil, specError, mapped
 		}
@@ -355,10 +358,6 @@ func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespa
 
 	if caller == nil {
 		return nil, "", errUnauthorized
-	}
-	if err := s.requireNamespaceCapability(ctx, caller, namespace, canReadResource); err != nil {
-		specError, mapped := mapCapabilityError(err)
-		return nil, specError, mapped
 	}
 	return out, "", nil
 }

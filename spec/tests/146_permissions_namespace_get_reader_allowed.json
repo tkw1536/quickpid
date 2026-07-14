@@ -1,5 +1,5 @@
 {
-  "name": "146_permissions_namespace_get_reader_allowed",
+  "name": "146_permissions_namespace_get_owner_allowed",
   "comment": "A user with namespace access can GET the namespace metadata.",
   "steps": [
     {
@@ -207,7 +207,7 @@
       }
     },
     {
-      "name": "reader_get_namespace_ok",
+      "name": "reader_get_namespace_forbidden",
       "config": {},
       "request": {
         "method": "GET",
@@ -220,15 +220,9 @@
         ]
       },
       "response": {
-        "code": 200,
+        "code": 403,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
-          "id": "c1000000-0000-4000-8000-000000000001",
-          "pid_format": {
-            "characters": "full",
-            "pattern": "***-***"
-          },
-          "tag": "perm-ns"
+          "error": "forbidden"
         }
       }
     }

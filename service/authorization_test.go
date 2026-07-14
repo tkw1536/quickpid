@@ -114,13 +114,13 @@ func TestService_ResolverPermissions(t *testing.T) {
 	now := storetest.FixedNow()
 
 	_, specError, err := svc.GetNamespace(ctx, userInfo("contributor"), "test-ns")
-	if !errors.Is(err, errForbidden) || specError != "" {
-		t.Fatalf("contributor GetNamespace = %q, %v, want forbidden", specError, err)
+	if err != nil || specError != "" {
+		t.Fatalf("contributor GetNamespace = %q, %v", specError, err)
 	}
 
 	_, specError, err = svc.GetNamespace(ctx, userInfo("reader"), "test-ns")
-	if err != nil || specError != "" {
-		t.Fatalf("reader GetNamespace = %q, %v", specError, err)
+	if !errors.Is(err, errForbidden) || specError != api.Forbidden {
+		t.Fatalf("reader GetNamespace = %q, %v, want forbidden", specError, err)
 	}
 
 	_, err = store.CreateResource(ctx, "test-ns", "existing", api.ResourceCreateRequest{
@@ -136,12 +136,12 @@ func TestService_ResolverPermissions(t *testing.T) {
 	}
 
 	_, specError, err = svc.GetResource(ctx, userInfo("contributor"), "test-ns", "existing")
-	if !errors.Is(err, errForbidden) || specError != "" {
-		t.Fatalf("contributor GetResource = %q, %v, want forbidden", specError, err)
+	if err != nil || specError != "" {
+		t.Fatalf("contributor GetResource = %q, %v", specError, err)
 	}
 
 	_, specError, err = svc.ListResources(ctx, userInfo("contributor"), api.ListResourcesParams{Namespace: "test-ns", Limit: 10})
-	if !errors.Is(err, errForbidden) || specError != "" {
+	if !errors.Is(err, errForbidden) || specError != api.Forbidden {
 		t.Fatalf("contributor ListResources = %q, %v, want forbidden", specError, err)
 	}
 

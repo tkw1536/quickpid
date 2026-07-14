@@ -80,7 +80,7 @@ func (format Format) IsValid(pid string) bool {
 	}
 
 	filter := make(map[rune]struct{}, len(alphabet))
-	for _, c := range []rune(alphabet) {
+	for _, c := range alphabet {
 		filter[c] = struct{}{}
 	}
 

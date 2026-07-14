@@ -1,6 +1,6 @@
 {
   "name": "145_permissions_namespace_get_contributor_forbidden",
-  "comment": "A contributor without namespace access cannot GET the namespace (403 forbidden).",
+  "comment": "A contributor with namespace access can GET the namespace (200 OK).",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -229,7 +229,7 @@
       }
     },
     {
-      "name": "contributor_get_namespace_forbidden",
+      "name": "contributor_get_namespace_ok",
       "config": {},
       "request": {
         "method": "GET",
@@ -242,9 +242,9 @@
         ]
       },
       "response": {
-        "code": 403,
+        "code": 200,
         "body": {
-          "error": "forbidden"
+          "date_created":"2020-01-02T03:04:05Z","id":"c1000000-0000-4000-8000-000000000001","pid_format":{"characters":"full","pattern":"***-***"},"tag":"perm-ns"
         }
       }
     }

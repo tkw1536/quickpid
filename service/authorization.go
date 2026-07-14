@@ -11,36 +11,13 @@ import (
 	"github.com/tkw1536/bicpid/backend"
 )
 
-func permissionRank(level api.PermissionLevel) int {
+// canReadNamespaceMetadata checks if the given user can read namespace metadata.
+func canReadNamespaceMetadata(level api.PermissionLevel) bool {
 	switch level {
+	case api.PermissionLevelContributor, api.PermissionLevelEditor, api.PermissionLevelManager:
+		return true
 	case api.PermissionLevelNone:
-		return 0
-	case api.PermissionLevelContributor:
-		return 1
-	case api.PermissionLevelEditor:
-		return 2
-	case api.PermissionLevelManager:
-		return 3
-	default:
-		return -1
-	}
-}
-
-// canReadNamespace checks if the given user can read namespace metadata.
-func canReadNamespace(level api.PermissionLevel) bool {
-	switch level {
-	case api.PermissionLevelNone, api.PermissionLevelEditor, api.PermissionLevelManager:
-		return true
-	default:
 		return false
-	}
-}
-
-// canReadResource checks if the given user can read a non-deleted resource.
-func canReadResource(level api.PermissionLevel) bool {
-	switch level {
-	case api.PermissionLevelNone, api.PermissionLevelEditor, api.PermissionLevelManager:
-		return true
 	default:
 		return false
 	}
@@ -48,13 +25,22 @@ func canReadResource(level api.PermissionLevel) bool {
 
 // canReadDeletedResource checks if the given user can read a deleted resource.
 func canReadDeletedResource(level api.PermissionLevel) bool {
-	return canListResources(level)
+	switch level {
+	case api.PermissionLevelEditor, api.PermissionLevelManager:
+		return true
+	case api.PermissionLevelContributor, api.PermissionLevelNone:
+		return false
+	default:
+		return false
+	}
 }
 
 func canCreateResource(level api.PermissionLevel) bool {
 	switch level {
 	case api.PermissionLevelContributor, api.PermissionLevelEditor, api.PermissionLevelManager:
 		return true
+	case api.PermissionLevelNone:
+		return false
 	default:
 		return false
 	}
@@ -64,6 +50,8 @@ func canListResources(level api.PermissionLevel) bool {
 	switch level {
 	case api.PermissionLevelEditor, api.PermissionLevelManager:
 		return true
+	case api.PermissionLevelNone, api.PermissionLevelContributor:
+		return false
 	default:
 		return false
 	}
