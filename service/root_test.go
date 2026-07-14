@@ -29,7 +29,7 @@ func testService(store backend.Store) *service.Service {
 }
 
 func TestEnsureRootUser_EmptyBackend(t *testing.T) {
-	t.Helper()
+	t.Parallel()
 	ctx := context.Background()
 	auth := memory.NewStore()
 	svc := testService(auth)
@@ -56,7 +56,7 @@ func TestEnsureRootUser_EmptyBackend(t *testing.T) {
 }
 
 func TestEnsureRootUser_ExistingUser(t *testing.T) {
-	t.Helper()
+	t.Parallel()
 	ctx := context.Background()
 	auth := memory.NewStore()
 
@@ -82,7 +82,7 @@ func TestEnsureRootUser_ExistingUser(t *testing.T) {
 }
 
 func TestEnsureRootUser_ExistingRootRace(t *testing.T) {
-	t.Helper()
+	t.Parallel()
 	ctx := context.Background()
 	auth := memory.NewStore()
 
@@ -97,7 +97,7 @@ func TestEnsureRootUser_ExistingRootRace(t *testing.T) {
 }
 
 func TestEnsureRootUser_Idempotent(t *testing.T) {
-	t.Helper()
+	t.Parallel()
 	ctx := context.Background()
 	auth := memory.NewStore()
 	logger := testLogger()
@@ -120,7 +120,7 @@ func TestEnsureRootUser_Idempotent(t *testing.T) {
 }
 
 func TestEnsureRootUser_AnonymousModeSkipsBootstrap(t *testing.T) {
-	t.Helper()
+	t.Parallel()
 	ctx := context.Background()
 	auth := memory.NewStore()
 	svc := service.New(auth, service.NewRuntime(), service.Options{Anonymous: true})

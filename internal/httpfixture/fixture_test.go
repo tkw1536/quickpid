@@ -17,6 +17,8 @@ import (
 )
 
 func TestRequestToRequest_EncodesBodyAsJSON(t *testing.T) {
+	t.Parallel()
+
 	req := httpfixture.Request{
 		Method: "POST",
 		Path:   "/hello",
@@ -44,6 +46,8 @@ func TestRequestToRequest_EncodesBodyAsJSON(t *testing.T) {
 }
 
 func TestResponseCompare_CodeHeadersAndBodyMatchOK(t *testing.T) {
+	t.Parallel()
+
 	rec := httptest.NewRecorder()
 	rec.Header().Add("X-Resp", "ok")
 	rec.Header().Add("X-Resp", "also-ok")
@@ -62,6 +66,8 @@ func TestResponseCompare_CodeHeadersAndBodyMatchOK(t *testing.T) {
 }
 
 func TestResponseCompare_JoinsMultipleErrors(t *testing.T) {
+	t.Parallel()
+
 	rec := httptest.NewRecorder()
 	rec.Header().Set("X-Resp", "nope")
 	rec.WriteHeader(http.StatusOK)
@@ -84,6 +90,8 @@ func TestResponseCompare_JoinsMultipleErrors(t *testing.T) {
 }
 
 func TestFixtureRun_ReportsMismatchViaTErrors(t *testing.T) {
+	t.Parallel()
+
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"ok":false}`))

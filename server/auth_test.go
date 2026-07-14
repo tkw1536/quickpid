@@ -55,9 +55,13 @@ func createUserWithKey(t *testing.T, auth backend.AuthenticationBackend, usernam
 }
 
 func TestGetCurrentUser_UnauthorizedJSON(t *testing.T) {
+	t.Parallel()
+
 	h := testHandler(t, memory.NewStore())
 
 	t.Run("missing authorization header", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/user/", nil)
 		h.ServeHTTP(rec, req)
@@ -65,6 +69,8 @@ func TestGetCurrentUser_UnauthorizedJSON(t *testing.T) {
 	})
 
 	t.Run("invalid bearer token", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/user/", nil)
 		req.Header.Set("Authorization", "Bearer invalidtoken0000000000000000")
@@ -122,12 +128,16 @@ func assertForbiddenJSON(t *testing.T, rec *httptest.ResponseRecorder) {
 }
 
 func TestUpdateCurrentUser_Forbidden(t *testing.T) {
+	t.Parallel()
+
 	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
 	rootKey := createUserWithKey(t, auth, "root", true)
 	h := testHandler(t, auth)
 
 	t.Run("non-superuser cannot patch", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPatch, "/user/?username=alice", strings.NewReader(`{"superuser":true}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
@@ -137,6 +147,8 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 	})
 
 	t.Run("non-superuser cannot update another user", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPatch, "/user/?username=root", strings.NewReader(`{}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
@@ -146,6 +158,8 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 	})
 
 	t.Run("superuser can update another user", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPatch, "/user/?username=alice", strings.NewReader(`{"superuser":true}`))
 		req.Header.Set("Authorization", "Bearer "+rootKey)
@@ -167,6 +181,8 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 }
 
 func TestUpdateCurrentUser_ForbiddenSelfUpdate(t *testing.T) {
+	t.Parallel()
+
 	auth := memory.NewStore()
 	rootKey := createUserWithKey(t, auth, "root", true)
 	h := testHandler(t, auth)
@@ -180,12 +196,15 @@ func TestUpdateCurrentUser_ForbiddenSelfUpdate(t *testing.T) {
 }
 
 func TestCreateUser_RequiresSuperuser(t *testing.T) {
+	t.Parallel()
+
 	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
 	rootKey := createUserWithKey(t, auth, "root", true)
 	h := testHandler(t, auth)
 
 	t.Run("unauthenticated", func(t *testing.T) {
+		t.Parallel()
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
 		req.Header.Set("Content-Type", "application/json")
@@ -194,6 +213,8 @@ func TestCreateUser_RequiresSuperuser(t *testing.T) {
 	})
 
 	t.Run("non-superuser forbidden", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
@@ -203,6 +224,8 @@ func TestCreateUser_RequiresSuperuser(t *testing.T) {
 	})
 
 	t.Run("superuser creates user", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
 		req.Header.Set("Authorization", "Bearer "+rootKey)
@@ -216,12 +239,16 @@ func TestCreateUser_RequiresSuperuser(t *testing.T) {
 }
 
 func TestListUsers_RequiresSuperuser(t *testing.T) {
+	t.Parallel()
+
 	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
 	rootKey := createUserWithKey(t, auth, "root", true)
 	h := testHandler(t, auth)
 
 	t.Run("non-superuser forbidden", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/users/", nil)
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
@@ -230,6 +257,8 @@ func TestListUsers_RequiresSuperuser(t *testing.T) {
 	})
 
 	t.Run("superuser lists users", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/users/", nil)
 		req.Header.Set("Authorization", "Bearer "+rootKey)
@@ -250,6 +279,8 @@ func TestListUsers_RequiresSuperuser(t *testing.T) {
 }
 
 func TestAutocompleteUsers(t *testing.T) {
+	t.Parallel()
+
 	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
 	rootKey := createUserWithKey(t, auth, "root", true)
@@ -257,6 +288,8 @@ func TestAutocompleteUsers(t *testing.T) {
 	h := testHandler(t, auth)
 
 	t.Run("missing query", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/users/autocomplete", nil)
 		req.Header.Set("Authorization", "Bearer "+rootKey)
@@ -267,6 +300,8 @@ func TestAutocompleteUsers(t *testing.T) {
 	})
 
 	t.Run("invalid username query", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/users/autocomplete?query=ALICE", nil)
 		req.Header.Set("Authorization", "Bearer "+rootKey)
@@ -277,6 +312,8 @@ func TestAutocompleteUsers(t *testing.T) {
 	})
 
 	t.Run("non-superuser allowed", func(t *testing.T) {
+		t.Parallel()
+
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/users/autocomplete?query=ali", nil)
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
@@ -301,6 +338,8 @@ func TestAutocompleteUsers(t *testing.T) {
 }
 
 func TestIssueAndRevokeKey(t *testing.T) {
+	t.Parallel()
+
 	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
 	h := testHandler(t, auth)
@@ -335,6 +374,8 @@ func TestIssueAndRevokeKey(t *testing.T) {
 }
 
 func TestResolverAnonymousMode_AllowsRequestsWithoutAuth(t *testing.T) {
+	t.Parallel()
+
 	store := memory.NewStore()
 	h := testAnonymousHandler(t, store)
 

@@ -36,7 +36,11 @@ func ExampleOptional() {
 }
 
 func TestOptional_SetClearToPointer(t *testing.T) {
+	t.Parallel()
+
 	t.Run("ToPointer_nilWhenAbsent", func(t *testing.T) {
+		t.Parallel()
+
 		var opt strict.Optional[string]
 		if got := opt.ToPointer(); got != nil {
 			t.Fatalf("ToPointer() = %v, want nil", *got)
@@ -44,6 +48,8 @@ func TestOptional_SetClearToPointer(t *testing.T) {
 	})
 
 	t.Run("ToPointer_pointsToCopy", func(t *testing.T) {
+		t.Parallel()
+
 		var opt strict.Optional[string]
 		opt.Set("a")
 
@@ -62,6 +68,8 @@ func TestOptional_SetClearToPointer(t *testing.T) {
 	})
 
 	t.Run("Clear_resetsToZeroAndAbsent", func(t *testing.T) {
+		t.Parallel()
+
 		var opt strict.Optional[int]
 		opt.Set(123)
 		opt.Clear()
@@ -76,7 +84,11 @@ func TestOptional_SetClearToPointer(t *testing.T) {
 }
 
 func TestOptional_JSON_UnmarshalDirect(t *testing.T) {
+	t.Parallel()
+
 	t.Run("setsPresentOnSuccess", func(t *testing.T) {
+		t.Parallel()
+
 		var opt strict.Optional[int]
 		if err := json.Unmarshal([]byte(`123`), &opt); err != nil {
 			t.Fatalf("unmarshal: %v", err)
@@ -90,6 +102,8 @@ func TestOptional_JSON_UnmarshalDirect(t *testing.T) {
 	})
 
 	t.Run("propagatesErrorWithContext", func(t *testing.T) {
+		t.Parallel()
+
 		var opt strict.Optional[int]
 		err := json.Unmarshal([]byte(`"not-an-int"`), &opt)
 		if err == nil {

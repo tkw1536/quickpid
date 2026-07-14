@@ -29,7 +29,7 @@ func (r *fixedRuntime) NewAPIKey(apikey.Format) (string, error) { return "api-ke
 func newTestService(t *testing.T) (*Service, backend.Store) {
 	t.Helper()
 	store := memory.NewStore()
-	ctx := context.Background()
+	ctx := t.Context()
 	now := storetest.FixedNow()
 	runtime := &fixedRuntime{now: now()}
 
@@ -79,6 +79,8 @@ func userInfo(username string) *api.UserInfo {
 }
 
 func TestService_GetNamespacePermission(t *testing.T) {
+	t.Parallel()
+
 	svc, _ := newTestService(t)
 	ctx := context.Background()
 
@@ -105,8 +107,10 @@ func TestService_GetNamespacePermission(t *testing.T) {
 }
 
 func TestService_ResolverPermissions(t *testing.T) {
+	t.Parallel()
+
 	svc, store := newTestService(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	now := storetest.FixedNow()
 
 	_, specError, err := svc.GetNamespace(ctx, userInfo("contributor"), "test-ns")
@@ -157,8 +161,10 @@ func TestService_ResolverPermissions(t *testing.T) {
 }
 
 func TestService_SetNamespacePermissionCannotEscalate(t *testing.T) {
+	t.Parallel()
+
 	svc, _ := newTestService(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, specError, err := svc.SetNamespacePermission(ctx, userInfo("editor"), "test-ns", "reader", api.SetNamespacePermissionRequest{
 		Level: api.PermissionLevelManager,
@@ -169,8 +175,10 @@ func TestService_SetNamespacePermissionCannotEscalate(t *testing.T) {
 }
 
 func TestService_SetNamespacePermissionSelfRules(t *testing.T) {
+	t.Parallel()
+
 	svc, store := newTestService(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, specError, err := svc.SetNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner", api.SetNamespacePermissionRequest{
 		Level: api.PermissionLevelEditor,
@@ -199,8 +207,10 @@ func TestService_SetNamespacePermissionSelfRules(t *testing.T) {
 }
 
 func TestService_DeleteNamespacePermissionSelfRules(t *testing.T) {
+	t.Parallel()
+
 	svc, store := newTestService(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	specError, err := svc.DeleteNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner")
 	if !errors.Is(err, errForbidden) || specError != "" {
@@ -230,8 +240,10 @@ func TestService_DeleteNamespacePermissionSelfRules(t *testing.T) {
 }
 
 func TestService_Unauthenticated(t *testing.T) {
+	t.Parallel()
+
 	svc, _ := newTestService(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, specError, err := svc.ListNamespaces(ctx, nil, api.ListNamespacesParams{})
 	if !errors.Is(err, errUnauthorized) || specError != "" {
@@ -240,8 +252,10 @@ func TestService_Unauthenticated(t *testing.T) {
 }
 
 func TestService_AnonymousResolverMode(t *testing.T) {
+	t.Parallel()
+
 	svc, store := newAnonymousTestService(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	req := api.NamespaceCreateRequest{
 		Tag:       "anon-tag",
@@ -299,8 +313,10 @@ func TestService_AnonymousResolverMode(t *testing.T) {
 }
 
 func TestService_AnonymousDisablesUserAndPermissionManagement(t *testing.T) {
+	t.Parallel()
+
 	svc, _ := newAnonymousTestService(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	if _, err := svc.Authenticate(ctx, "anything"); !errors.Is(err, errUnauthorized) {
 		t.Fatalf("Authenticate() error = %v, want unauthorized", err)
