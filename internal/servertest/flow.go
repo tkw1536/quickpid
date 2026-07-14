@@ -5,6 +5,7 @@ package servertest
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"slices"
 	"testing"
@@ -102,8 +103,11 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 }
 
 func applyStepSetup(ctx context.Context, svc *service.Service, cfg stepConfig) error {
-	if cfg.EnsureRootUser {
-		return svc.EnsureRootUser(ctx, slog.New(slog.DiscardHandler))
+	if !cfg.EnsureRootUser {
+		return nil
+	}
+	if err := svc.EnsureRootUser(ctx, slog.New(slog.DiscardHandler)); err != nil {
+		return fmt.Errorf("Service.EnsureRootUser: %w", err)
 	}
 	return nil
 }

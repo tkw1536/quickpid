@@ -46,12 +46,12 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (api.
 
 	if err := dec.Decode(v); err != nil {
 		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-			return api.BodySizeExceeded, err
+			return api.BodySizeExceeded, fmt.Errorf("json.Decode: %w", err)
 		}
 		if errors.Is(err, io.EOF) {
-			return api.BodyMissing, err
+			return api.BodyMissing, fmt.Errorf("json.Decode: %w", err)
 		}
-		return api.BodyInvalidJSON, err
+		return api.BodyInvalidJSON, fmt.Errorf("json.Decode: %w", err)
 	}
 	_, err := dec.Token()
 	if !errors.Is(err, io.EOF) || err == nil {
@@ -109,7 +109,7 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, specEr
 func (*Server) getNamespace(r *http.Request) (namespace string, specError api.Error, err error) {
 	namespace = r.PathValue("namespace")
 	if err := service.ValidateNamespaceID(namespace); err != nil {
-		return "", api.InvalidNamespaceID, err
+		return "", api.InvalidNamespaceID, fmt.Errorf("service.ValidateNamespaceID: %w", err)
 	}
 	return namespace, "", nil
 }
@@ -122,7 +122,7 @@ func (*Server) getNamespace(r *http.Request) (namespace string, specError api.Er
 func (*Server) getPID(r *http.Request) (pid string, specError api.Error, err error) {
 	pid = r.PathValue("pid")
 	if err := service.ValidatePID(pid); err != nil {
-		return "", api.InvalidPID, err
+		return "", api.InvalidPID, fmt.Errorf("service.ValidatePID: %w", err)
 	}
 	return pid, "", nil
 }
@@ -131,7 +131,7 @@ func (*Server) getPID(r *http.Request) (pid string, specError api.Error, err err
 func (*Server) getUsername(r *http.Request) (username string, specError api.Error, err error) {
 	username = r.PathValue("username")
 	if err := service.ValidateUsername(username); err != nil {
-		return "", api.InvalidUsername, err
+		return "", api.InvalidUsername, fmt.Errorf("service.ValidateUsername: %w", err)
 	}
 	return username, "", nil
 }
@@ -148,7 +148,7 @@ func (*Server) parseOptionalUsernameQuery(r *http.Request) (target *string, spec
 	}
 	username := query.Get("username")
 	if err := service.ValidateUsername(username); err != nil {
-		return nil, api.InvalidUsername, err
+		return nil, api.InvalidUsername, fmt.Errorf("service.ValidateUsername: %w", err)
 	}
 	return &username, "", nil
 }
@@ -166,7 +166,7 @@ func (*Server) parseRequiredUsernameQuery(r *http.Request) (username string, spe
 	}
 	username = query.Get("username")
 	if err := service.ValidateUsername(username); err != nil {
-		return "", api.InvalidUsername, err
+		return "", api.InvalidUsername, fmt.Errorf("service.ValidateUsername: %w", err)
 	}
 	return username, "", nil
 }
@@ -184,7 +184,7 @@ func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (query string, sp
 	}
 	query = q.Get("query")
 	if err := service.ValidateUsername(query); err != nil {
-		return "", api.InvalidUsername, err
+		return "", api.InvalidUsername, fmt.Errorf("service.ValidateUsername: %w", err)
 	}
 	return query, "", nil
 }

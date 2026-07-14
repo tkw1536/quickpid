@@ -67,13 +67,16 @@ const DefaultBatchSize = 100
 
 // Migrate migrates all tables used by [NewStore].
 func Migrate(db *gorm.DB) error {
-	return db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&namespaceRow{},
 		&resourceRow{},
 		&userRow{},
 		&apiKeyRow{},
 		&namespacePermissionRow{},
-	)
+	); err != nil {
+		return fmt.Errorf("gorm.DB.AutoMigrate: %w", err)
+	}
+	return nil
 }
 
 var (
@@ -90,7 +93,7 @@ func withTx[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
 		return err
 	}); err != nil {
 		var zero V
-		return zero, err
+		return zero, fmt.Errorf("gorm.DB.Transaction: %w", err)
 	}
 	return out, nil
 }

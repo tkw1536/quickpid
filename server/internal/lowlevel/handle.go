@@ -4,6 +4,7 @@ package lowlevel
 //spellchecker:words errors slog http time github bicpid service
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -84,20 +85,20 @@ func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*string, *a
 	if auth.loadUser {
 		user, err := h.auth.CurrentUser(r.Context(), token)
 		if service.IsUnauthorized(err) {
-			return nil, nil, api.Unauthorized, err
+			return nil, nil, api.Unauthorized, fmt.Errorf("auth.CurrentUser: %w", err)
 		}
 		if err != nil {
-			return nil, nil, api.DatabaseError, err
+			return nil, nil, api.DatabaseError, fmt.Errorf("auth.CurrentUser: %w", err)
 		}
 		return &user.Username, user, "", nil
 	}
 
 	username, err := h.auth.Authenticate(r.Context(), token)
 	if service.IsUnauthorized(err) {
-		return nil, nil, api.Unauthorized, err
+		return nil, nil, api.Unauthorized, fmt.Errorf("auth.Authenticate: %w", err)
 	}
 	if err != nil {
-		return nil, nil, api.DatabaseError, err
+		return nil, nil, api.DatabaseError, fmt.Errorf("auth.Authenticate: %w", err)
 	}
 	return &username, nil, "", nil
 }

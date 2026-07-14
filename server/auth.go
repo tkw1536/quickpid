@@ -3,6 +3,7 @@ package server
 
 //spellchecker:words http github bicpid
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/tkw1536/bicpid/api"
@@ -13,7 +14,11 @@ func (h *Server) getCurrentUserHTTP(w http.ResponseWriter, r *http.Request, user
 	if err != nil {
 		return nil, specError, err
 	}
-	return h.svc.GetUserAccount(r.Context(), user, target)
+	currentUser, specError, err := h.svc.GetUserAccount(r.Context(), user, target)
+	if err != nil {
+		return nil, specError, fmt.Errorf("svc.GetUserAccount: %w", err)
+	}
+	return currentUser, "", nil
 }
 
 func (h *Server) createUser(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.UserInfo, api.Error, error) {
@@ -22,7 +27,11 @@ func (h *Server) createUser(w http.ResponseWriter, r *http.Request, user *api.Us
 		return nil, specError, err
 	}
 
-	return h.svc.CreateUser(r.Context(), user, req)
+	createdUser, specError, err := h.svc.CreateUser(r.Context(), user, req)
+	if err != nil {
+		return nil, specError, fmt.Errorf("svc.CreateUser: %w", err)
+	}
+	return createdUser, "", nil
 }
 
 func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedUsersResponse, api.Error, error) {
@@ -35,11 +44,15 @@ func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, user *api.Use
 		return nil, specError, err
 	}
 
-	return h.svc.ListUsers(r.Context(), user, api.ListUsersParams{
+	users, specError, err := h.svc.ListUsers(r.Context(), user, api.ListUsersParams{
 		Superuser: superuser,
 		Limit:     limit,
 		Offset:    offset,
 	})
+	if err != nil {
+		return nil, specError, fmt.Errorf("svc.ListUsers: %w", err)
+	}
+	return users, "", nil
 }
 
 func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, user *api.UserInfo) ([]string, api.Error, error) {
@@ -47,7 +60,11 @@ func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, user 
 	if err != nil {
 		return nil, specError, err
 	}
-	return h.svc.AutocompleteUsers(r.Context(), user, query)
+	usernames, specError, err := h.svc.AutocompleteUsers(r.Context(), user, query)
+	if err != nil {
+		return nil, specError, fmt.Errorf("svc.AutocompleteUsers: %w", err)
+	}
+	return usernames, "", nil
 }
 
 func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedAPIKeysResponse, api.Error, error) {
@@ -60,10 +77,14 @@ func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, user *api.User
 		return nil, specError, err
 	}
 
-	return h.svc.ListKeys(r.Context(), user, target, api.ListKeysParams{
+	keys, specError, err := h.svc.ListKeys(r.Context(), user, target, api.ListKeysParams{
 		Limit:  limit,
 		Offset: offset,
 	})
+	if err != nil {
+		return nil, specError, fmt.Errorf("svc.ListKeys: %w", err)
+	}
+	return keys, "", nil
 }
 
 func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.IssueKeyResponse, api.Error, error) {
@@ -76,7 +97,11 @@ func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, user *api.User
 		return nil, specError, err
 	}
 
-	return h.svc.IssueKey(r.Context(), user, target, req)
+	response, specError, err := h.svc.IssueKey(r.Context(), user, target, req)
+	if err != nil {
+		return nil, specError, fmt.Errorf("svc.IssueKey: %w", err)
+	}
+	return response, "", nil
 }
 
 func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.RevokeKeyResponse, api.Error, error) {
@@ -89,7 +114,11 @@ func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, user *api.Use
 		return nil, specError, err
 	}
 
-	return h.svc.RevokeKey(r.Context(), user, target, req)
+	response, specError, err := h.svc.RevokeKey(r.Context(), user, target, req)
+	if err != nil {
+		return nil, specError, fmt.Errorf("svc.RevokeKey: %w", err)
+	}
+	return response, "", nil
 }
 
 func (h *Server) updateCurrentUser(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.UserInfo, api.Error, error) {
@@ -102,5 +131,9 @@ func (h *Server) updateCurrentUser(w http.ResponseWriter, r *http.Request, user 
 		return nil, specError, err
 	}
 
-	return h.svc.UpdateUser(r.Context(), user, target, req)
+	updatedUser, specError, err := h.svc.UpdateUser(r.Context(), user, target, req)
+	if err != nil {
+		return nil, specError, fmt.Errorf("svc.UpdateUser: %w", err)
+	}
+	return updatedUser, "", nil
 }

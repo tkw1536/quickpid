@@ -4,6 +4,7 @@ package service
 //spellchecker:words crypto rand time github google uuid bicpid internal apikey
 import (
 	"crypto/rand"
+	"fmt"
 	"io"
 	"time"
 
@@ -45,7 +46,7 @@ type runtime struct {
 func (r runtime) NewNamespaceID() (string, error) {
 	id, err := uuid.NewRandomFromReader(r.random)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("uuid.NewRandomFromReader: %w", err)
 	}
 	return id.String(), nil
 }
@@ -53,17 +54,25 @@ func (r runtime) NewNamespaceID() (string, error) {
 func (r runtime) NewAPIKeyID() (string, error) {
 	id, err := uuid.NewRandomFromReader(r.random)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("uuid.NewRandomFromReader: %w", err)
 	}
 	return id.String(), nil
 }
 
 func (r runtime) NewAPIKey(format apikey.Format) (string, error) {
-	return format.Generate(r.random)
+	key, err := format.Generate(r.random)
+	if err != nil {
+		return "", fmt.Errorf("api.Format.Generate: %w", err)
+	}
+	return key, nil
 }
 
 func (r runtime) NewPID(format pid.Format) (string, error) {
-	return format.Generate(r.random)
+	pid, err := format.Generate(r.random)
+	if err != nil {
+		return "", fmt.Errorf("pid.Format.Generate: %w", err)
+	}
+	return pid, nil
 }
 
 func (runtime) Now() time.Time {

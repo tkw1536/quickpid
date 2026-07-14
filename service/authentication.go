@@ -29,7 +29,7 @@ func (s *Service) Authenticate(ctx context.Context, apiKey string) (string, erro
 		return "", errUnauthorized
 	}
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("store.LookupUserByKey: %w", err)
 	}
 	return username, nil
 }
@@ -49,7 +49,7 @@ func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo
 		return nil, errUnauthorized
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("store.GetUser: %w", err)
 	}
 	return user, nil
 }
@@ -65,10 +65,10 @@ func (s *Service) GetUserAccount(ctx context.Context, caller *api.UserInfo, targ
 	}
 	user, err := s.store.GetUser(ctx, username)
 	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, err
+		return nil, specError, fmt.Errorf("store.GetUser: %w", err)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("store.GetUser: %w", err)
 	}
 	return user, "", nil
 }
@@ -80,10 +80,10 @@ func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, ap
 	}
 	user, err := s.store.GetUser(ctx, caller)
 	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, err
+		return nil, specError, fmt.Errorf("store.GetUser: %w", err)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("store.GetUser: %w", err)
 	}
 	return user, "", nil
 }
@@ -105,10 +105,10 @@ func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.
 
 	user, err := s.store.CreateUser(ctx, req, s.runtime.Now)
 	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, err
+		return nil, specError, fmt.Errorf("store.CreateUser: %w", err)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("store.CreateUser: %w", err)
 	}
 	return user, "", nil
 }
@@ -124,7 +124,7 @@ func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params ap
 
 	page, err := s.store.ListUsers(ctx, params)
 	if err != nil {
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("store.ListUsers: %w", err)
 	}
 	return page, "", nil
 }
@@ -142,7 +142,7 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller *api.UserInfo, q
 
 	usernames, err := s.store.AutocompleteUsers(ctx, query, limit)
 	if err != nil {
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("store.AutocompleteUsers: %w", err)
 	}
 	return usernames, "", nil
 }
@@ -158,10 +158,10 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *st
 	}
 	page, err := s.store.ListKeys(ctx, s.apiKeyFormat(), username, params)
 	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, err
+		return nil, specError, fmt.Errorf("store.ListKeys: %w", err)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("store.ListKeys: %w", err)
 	}
 	return page, "", nil
 }
@@ -185,7 +185,7 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *st
 	if req.ExpiresAt != nil {
 		expiresAt, err := time.Parse(time.RFC3339, *req.ExpiresAt)
 		if err != nil {
-			return nil, api.InvalidQueryParameter, err
+			return nil, api.InvalidQueryParameter, fmt.Errorf("time.Parse: %w", err)
 		}
 		if !expiresAt.After(s.runtime.Now()) {
 			return nil, api.InvalidQueryParameter, errExpiresAtInPast
@@ -194,9 +194,9 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *st
 
 	if _, err := s.store.GetUser(ctx, username); err != nil {
 		if specError, ok := mapAuthBackendError(err); ok {
-			return nil, specError, err
+			return nil, specError, fmt.Errorf("store.GetUser: %w", err)
 		}
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("store.GetUser: %w", err)
 	}
 
 	issued, specError, err := s.issueAPIKey(ctx, username, req)
@@ -222,12 +222,12 @@ func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyI
 	for range maxAttempts {
 		keyID, err := s.runtime.NewAPIKeyID()
 		if err != nil {
-			return nil, api.BadIDGeneration, err
+			return nil, api.BadIDGeneration, fmt.Errorf("runtime.NewAPIKeyID: %w", err)
 		}
 
 		rawKey, err := s.runtime.NewAPIKey(format)
 		if err != nil {
-			return nil, api.BadIDGeneration, err
+			return nil, api.BadIDGeneration, fmt.Errorf("runtime.NewAPIKey: %w", err)
 		}
 
 		info, err := s.store.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
@@ -235,10 +235,10 @@ func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyI
 			return &api.IssueKeyResponse{APIKeyInfo: *info, Key: rawKey}, "", nil
 		}
 		if specError, ok := mapAuthBackendError(err); ok {
-			return nil, specError, err
+			return nil, specError, fmt.Errorf("store.CreateKey: %w", err)
 		}
 		if !errors.Is(err, backend.ErrKeyCollision) {
-			return nil, api.DatabaseError, err
+			return nil, api.DatabaseError, fmt.Errorf("store.CreateKey: %w", err)
 		}
 	}
 	return nil, api.InsufficientEntropy, fmt.Errorf("%w: gave up api key generation after %d attempts", errInsufficientEntropy, maxAttempts)
@@ -255,10 +255,10 @@ func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, target *s
 	}
 	info, err := s.store.RevokeKey(ctx, s.apiKeyFormat(), username, req.ID)
 	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, err
+		return nil, specError, fmt.Errorf("store.RevokeKey: %w", err)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("store.RevokeKey: %w", err)
 	}
 	return &api.RevokeKeyResponse{APIKeyInfo: *info}, "", nil
 }
@@ -277,10 +277,10 @@ func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, target s
 
 	user, err := s.store.UpdateUser(ctx, target, req)
 	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, err
+		return nil, specError, fmt.Errorf("store.UpdateUser: %w", err)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("store.UpdateUser: %w", err)
 	}
 	return user, "", nil
 }
@@ -332,7 +332,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 	}
 	page, err := s.store.ListUsers(ctx, api.ListUsersParams{Limit: 1})
 	if err != nil {
-		return err
+		return fmt.Errorf("store.ListUsers: %w", err)
 	}
 	if page.Total > 0 {
 		return nil

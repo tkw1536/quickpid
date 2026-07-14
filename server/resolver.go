@@ -4,6 +4,7 @@ package server
 //spellchecker:words errors http strconv github bicpid
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -11,7 +12,11 @@ import (
 )
 
 func (h *Server) getResolverInfo(w http.ResponseWriter, r *http.Request) (*api.InfoResponse, api.Error, error) {
-	return h.svc.GetResolverInfo()
+	info, specError, err := h.svc.GetResolverInfo()
+	if err != nil {
+		return nil, specError, fmt.Errorf("store.GetResolverInfo: %w", err)
+	}
+	return info, "", nil
 }
 
 func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedNamespacesResponse, api.Error, error) {
@@ -27,11 +32,15 @@ func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, user *ap
 		tag = &v
 	}
 
-	return h.svc.ListNamespaces(r.Context(), user, api.ListNamespacesParams{
+	namespaces, specError, err := h.svc.ListNamespaces(r.Context(), user, api.ListNamespacesParams{
 		Tag:    tag,
 		Limit:  limit,
 		Offset: offset,
 	})
+	if err != nil {
+		return nil, specError, fmt.Errorf("store.ListNamespaces: %w", err)
+	}
+	return namespaces, "", nil
 }
 
 func (h *Server) getNamespaceDetail(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespaceResponse, api.Error, error) {
@@ -39,11 +48,19 @@ func (h *Server) getNamespaceDetail(w http.ResponseWriter, r *http.Request, user
 	if err != nil {
 		return nil, specError, err
 	}
-	return h.svc.GetNamespace(r.Context(), user, namespace)
+	res, specError, err := h.svc.GetNamespace(r.Context(), user, namespace)
+	if err != nil {
+		return nil, specError, fmt.Errorf("store.GetNamespace: %w", err)
+	}
+	return res, "", nil
 }
 
 func (h *Server) countAllResources(w http.ResponseWriter, r *http.Request) (*api.ResourceCountResponse, api.Error, error) {
-	return h.svc.CountAllResources(r.Context())
+	count, specError, err := h.svc.CountAllResources(r.Context())
+	if err != nil {
+		return nil, specError, fmt.Errorf("store.CountAllResources: %w", err)
+	}
+	return count, "", nil
 }
 
 func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespaceResponse, api.Error, error) {
@@ -51,7 +68,11 @@ func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, user *a
 	if specError, err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, specError, err
 	}
-	return h.svc.CreateNamespace(r.Context(), user, req)
+	namespace, specError, err := h.svc.CreateNamespace(r.Context(), user, req)
+	if err != nil {
+		return nil, specError, fmt.Errorf("store.CreateNamespace: %w", err)
+	}
+	return namespace, "", nil
 }
 
 func (h *Server) listResources(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedResourcesResponse, api.Error, error) {
@@ -81,13 +102,17 @@ func (h *Server) listResources(w http.ResponseWriter, r *http.Request, user *api
 		return nil, specError, err
 	}
 
-	return h.svc.ListResources(r.Context(), user, api.ListResourcesParams{
+	resources, specError, err := h.svc.ListResources(r.Context(), user, api.ListResourcesParams{
 		Namespace: namespace,
 		Tag:       tag,
 		Deleted:   deleted,
 		Limit:     limit,
 		Offset:    offset,
 	})
+	if err != nil {
+		return nil, specError, fmt.Errorf("store.ListResources: %w", err)
+	}
+	return resources, "", nil
 }
 
 func (h *Server) createResource(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.ResourceResponse, api.Error, error) {
@@ -101,7 +126,11 @@ func (h *Server) createResource(w http.ResponseWriter, r *http.Request, user *ap
 		return nil, specError, err
 	}
 
-	return h.svc.CreateResource(r.Context(), user, namespace, req)
+	resource, specError, err := h.svc.CreateResource(r.Context(), user, namespace, req)
+	if err != nil {
+		return nil, specError, fmt.Errorf("store.CreateResource: %w", err)
+	}
+	return resource, "", nil
 }
 
 func (h *Server) batchCreateResources(w http.ResponseWriter, r *http.Request, user *api.UserInfo) ([]api.ResourceResponse, api.Error, error) {
@@ -115,7 +144,11 @@ func (h *Server) batchCreateResources(w http.ResponseWriter, r *http.Request, us
 		return nil, specError, err
 	}
 
-	return h.svc.BatchCreateResources(r.Context(), user, namespace, reqs)
+	resources, specError, err := h.svc.BatchCreateResources(r.Context(), user, namespace, reqs)
+	if err != nil {
+		return nil, specError, fmt.Errorf("store.BatchCreateResources: %w", err)
+	}
+	return resources, "", nil
 }
 
 func (h *Server) getResource(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.ResourceResponse, api.Error, error) {
@@ -128,7 +161,11 @@ func (h *Server) getResource(w http.ResponseWriter, r *http.Request, user *api.U
 		return nil, specError, err
 	}
 
-	return h.svc.GetResource(r.Context(), user, namespace, resourcePID)
+	resource, specError, err := h.svc.GetResource(r.Context(), user, namespace, resourcePID)
+	if err != nil {
+		return nil, specError, fmt.Errorf("store.GetResource: %w", err)
+	}
+	return resource, "", nil
 }
 
 func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.ResourceResponse, api.Error, error) {
@@ -146,5 +183,9 @@ func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, user *ap
 		return nil, specError, err
 	}
 
-	return h.svc.UpdateResource(r.Context(), user, namespace, resourcePID, req)
+	resource, specError, err := h.svc.UpdateResource(r.Context(), user, namespace, resourcePID, req)
+	if err != nil {
+		return nil, specError, fmt.Errorf("store.UpdateResource: %w", err)
+	}
+	return resource, "", nil
 }

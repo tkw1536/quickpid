@@ -5,6 +5,7 @@ package memory
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -137,7 +138,7 @@ func (s *Store) CreateKey(_ context.Context, format apikey.Format, username, key
 	}
 	hashed, err := format.Hash(key)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("apikey.Format.Hash: %w", err)
 	}
 	if user.keys[keyID] != nil {
 		return nil, backend.ErrKeyCollision

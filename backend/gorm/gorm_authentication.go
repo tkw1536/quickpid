@@ -4,6 +4,7 @@ package gorm
 //spellchecker:words context time github bicpid backend internal apikey gorm
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
@@ -137,7 +138,7 @@ func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username, k
 
 		hashed, err := format.Hash(key)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("apikey.Format.Hash: %w", err)
 		}
 
 		createdAt := now().UTC()

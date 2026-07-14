@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 var (
@@ -20,7 +21,7 @@ func (s *String) UnmarshalJSON(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	tok, err := dec.Token()
 	if err != nil {
-		return err
+		return fmt.Errorf("Decoder.Token: %w", err)
 	}
 
 	str, ok := tok.(string)
@@ -38,7 +39,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	tok, err := dec.Token()
 	if err != nil {
-		return err
+		return fmt.Errorf("decoder.Token: %w", err)
 	}
 
 	boolean, ok := tok.(bool)

@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
@@ -94,7 +95,11 @@ func (s *Service) effectivePermission(ctx context.Context, caller *api.UserInfo,
 	if caller.Superuser {
 		return api.PermissionLevelManager, nil
 	}
-	return s.store.GetNamespacePermission(ctx, namespace, caller.Username)
+	level, err := s.store.GetNamespacePermission(ctx, namespace, caller.Username)
+	if err != nil {
+		return level, fmt.Errorf("Store.GetNamespacePermission: %w", err)
+	}
+	return level, nil
 }
 
 func (s *Service) requireNamespaceCapability(ctx context.Context, caller *api.UserInfo, namespace string, allowed func(api.PermissionLevel) bool) error {
@@ -159,10 +164,10 @@ func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.UserIn
 
 	level, err := s.store.GetNamespacePermission(ctx, namespace, username)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, api.NamespaceNotFound, err
+		return nil, api.NamespaceNotFound, fmt.Errorf("Store.GetNamespacePermission: %w", err)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("Store.GetNamespacePermission: %w", err)
 	}
 	return &api.NamespacePermission{Username: username, Level: level}, "", nil
 }
@@ -174,20 +179,20 @@ func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.User
 	}
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
 		if errors.Is(err, errForbidden) || errors.Is(err, errUnauthorized) {
-			return nil, "", err
+			return nil, "", fmt.Errorf("Store.requireNamespaceCapability: %w", err)
 		}
 		if errors.Is(err, backend.ErrNamespaceNotFound) {
-			return nil, api.NamespaceNotFound, err
+			return nil, api.NamespaceNotFound, fmt.Errorf("Store.requireNamespaceCapability: %w", err)
 		}
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("Store.requireNamespaceCapability: %w", err)
 	}
 
 	page, err := s.store.ListNamespacePermissions(ctx, namespace, params)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, api.NamespaceNotFound, err
+		return nil, api.NamespaceNotFound, fmt.Errorf("Store.ListNamespacePermissions: %w", err)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("Store.ListNamespacePermissions: %w", err)
 	}
 	return page, "", nil
 }
@@ -218,20 +223,20 @@ func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.UserIn
 
 	if err := s.store.SetNamespacePermission(ctx, namespace, username, req.Level); err != nil {
 		if specError, ok := mapAuthorizationBackendError(err); ok {
-			return nil, specError, err
+			return nil, specError, fmt.Errorf("Store.SetNamespacePermission: %w", err)
 		}
 		if errors.Is(err, backend.ErrNamespaceNotFound) {
-			return nil, api.NamespaceNotFound, err
+			return nil, api.NamespaceNotFound, fmt.Errorf("Store.SetNamespacePermission: %w", err)
 		}
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("Store.SetNamespacePermission: %w", err)
 	}
 
 	level, err := s.store.GetNamespacePermission(ctx, namespace, username)
 	if err != nil {
 		if errors.Is(err, backend.ErrNamespaceNotFound) {
-			return nil, api.NamespaceNotFound, err
+			return nil, api.NamespaceNotFound, fmt.Errorf("Store.GetNamespacePermission: %w", err)
 		}
-		return nil, api.DatabaseError, err
+		return nil, api.DatabaseError, fmt.Errorf("Store.GetNamespacePermission: %w", err)
 	}
 	return &api.NamespacePermission{Username: username, Level: level}, "", nil
 }
@@ -245,9 +250,9 @@ func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.Use
 		return api.InvalidUsername, err
 	}
 	if _, err := s.store.GetNamespace(ctx, namespace); errors.Is(err, backend.ErrNamespaceNotFound) {
-		return api.NamespaceNotFound, err
+		return api.NamespaceNotFound, fmt.Errorf("Store.GetNamespace: %w", err)
 	} else if err != nil {
-		return api.DatabaseError, err
+		return api.DatabaseError, fmt.Errorf("Store.GetNamespace: %w", err)
 	}
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
 		if errors.Is(err, errForbidden) || errors.Is(err, errUnauthorized) {
@@ -264,9 +269,9 @@ func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.Use
 
 	if err := s.store.DeleteNamespacePermission(ctx, namespace, username); err != nil {
 		if specError, ok := mapAuthorizationBackendError(err); ok {
-			return specError, err
+			return specError, fmt.Errorf("Store.DeleteNamespacePermission: %w", err)
 		}
-		return api.DatabaseError, err
+		return api.DatabaseError, fmt.Errorf("Store.DeleteNamespacePermission: %w", err)
 	}
 	return "", nil
 }

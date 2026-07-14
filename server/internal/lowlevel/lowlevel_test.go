@@ -5,6 +5,7 @@ package lowlevel_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -268,7 +269,10 @@ func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 		h,
 		func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, api.Error, error) {
 			_, specError, err := svc.CreateUser(r.Context(), user, api.UserCreateRequest{Username: "bob", Superuser: true})
-			return struct{}{}, specError, err
+			if err != nil {
+				return struct{}{}, specError, fmt.Errorf("svc.CreateUser: %w", err)
+			}
+			return struct{}{}, "", nil
 		},
 		http.StatusOK,
 		[]api.Error{api.Unauthorized, api.DatabaseError},
