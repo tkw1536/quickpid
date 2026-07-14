@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words slog http time github bicpid service
+//spellchecker:words errors slog http time github bicpid service
 import (
 	"errors"
 	"log/slog"

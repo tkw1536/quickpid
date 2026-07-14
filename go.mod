@@ -1,6 +1,6 @@
 module github.com/tkw1536/bicpid
 
-go 1.26
+go 1.26.5
 
 require (
 	github.com/glebarez/sqlite v1.11.0
@@ -37,6 +37,7 @@ require (
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/vearutop/statigz v1.5.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
+	go.tkw01536.de/go-check-spellchecker v0.0.0-20260714080545-f80096cce4f2 // indirect
 	go.tkw01536.de/gogenlicense v1.8.0 // indirect
 	golang.org/x/mod v0.37.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
@@ -51,4 +52,7 @@ require (
 	modernc.org/sqlite v1.50.0 // indirect
 )
 
-tool go.tkw01536.de/gogenlicense/cmd/gogenlicense
+tool (
+	go.tkw01536.de/go-check-spellchecker/cmd/go-check-spellchecker
+	go.tkw01536.de/gogenlicense/cmd/gogenlicense
+)

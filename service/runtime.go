@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words crypto rand time github google uuid bicpid
+//spellchecker:words crypto rand time github google uuid bicpid internal apikey
 import (
 	"crypto/rand"
 	"io"

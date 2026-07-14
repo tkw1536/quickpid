@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors testing time github bicpid backend memory storetest
+//spellchecker:words context errors testing time github bicpid backend memory storetest internal apikey
 import (
 	"context"
 	"errors"

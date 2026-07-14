@@ -1,3 +1,4 @@
+//spellchecker:words service
 package service_test
 
 //spellchecker:words context slog testing time github bicpid backend memory internal apikey service

@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context crypto rand errors slog time github bicpid backend internal apikey
+//spellchecker:words context errors slog time github bicpid backend internal apikey
 import (
 	"context"
 	"errors"

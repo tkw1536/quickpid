@@ -117,6 +117,8 @@ github.com/vearutop/statigz v1.5.0 h1:FuWwZiT82yBw4xbWdWIawiP2XFTyEPhIo8upRxiKLq
 github.com/vearutop/statigz v1.5.0/go.mod h1:oHmjFf3izfCO804Di1ZjB666P3fAlVzJEx2k6jNt/Gk=
 go.opencensus.io v0.24.0 h1:y73uSU6J157QMP2kn2r30vwW1A2W2WFwSCGnAVxeaD0=
 go.opencensus.io v0.24.0/go.mod h1:vNK8G9p7aAivkbmorf4v+7Hgx+Zs0yY+0fOtgBfjQKo=
+go.tkw01536.de/go-check-spellchecker v0.0.0-20260714080545-f80096cce4f2 h1:gtdpQjr6jnIfG3FLRiYVHbzoKPEMkEYj4gz7Yl9inoI=
+go.tkw01536.de/go-check-spellchecker v0.0.0-20260714080545-f80096cce4f2/go.mod h1:SQqVsVyE+t1zHh5NCsIH4iCzNouEQbs5GNkaU6Q4wqU=
 go.tkw01536.de/gogenlicense v1.8.0 h1:bqnd4O3vAFrhOPi5UvPPB9xpS1pvE9HNI6zi6TMMJEA=
 go.tkw01536.de/gogenlicense v1.8.0/go.mod h1:sLY11OPYl5p4uQBB+hc2LUIlojRSwEgWF2SzdUvkexI=
 go.tkw01536.de/pkglib v0.0.0-20260703071639-6b0b0b91646c h1:VABUYjKMIfirt10WdJqt4EE/BEqhVqT2KPGIoteDFeE=

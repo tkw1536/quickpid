@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel_test
 
-//spellchecker:words context errors slog http httptest strings testing time github bicpid backend memory internal apikey server lowlevel service httpfixture
+//spellchecker:words context errors slog http httptest strings testing time github bicpid backend memory internal apikey httpfixture server lowlevel service
 import (
 	"context"
 	"errors"

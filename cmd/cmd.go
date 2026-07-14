@@ -49,7 +49,7 @@ type mainCmd struct {
 	logger *slog.Logger
 }
 
-//go:generate go tool gogenlicense -m -n notices
+//go:generate go tool gogenlicense -skip-no-license -m -n notices
 
 // Main is the main entry point using the given store factory.
 //

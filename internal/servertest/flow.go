@@ -1,7 +1,7 @@
 //spellchecker:words servertest
 package servertest
 
-//spellchecker:words context fmt slices testing time github bicpid backend internal apikey httpfixture server service
+//spellchecker:words context slog slices testing time github bicpid backend internal apikey httpfixture server service
 import (
 	"context"
 	"fmt"

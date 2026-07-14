@@ -130,6 +130,17 @@ An example authentication file looks like:
 ```
 <!-- spellchecker:enable -->
 
+## Tools & CI
+
+The following Tool & CI are used in the project:
+
+- [go-check-spellchecker](https://github.com/tkw1536/go-check-spellchecker)
+  To maintain the `spellchecker:words` comments for imports.
+  Run with `go tool go-check-spellchecker -fix ./...`.
+- [gogenlicense](https://github.com/tkw1536/gogenlicense)
+  To update license notices.
+  Invoked automatically with `go generate ./...` 
+
 ## Future Technical Work
 
 - add [Golangci-lint](https://golangci-lint.run)
