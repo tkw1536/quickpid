@@ -132,18 +132,22 @@ type testRuntime struct {
 	usedAPIKeys bool
 }
 
+var errNoMoreNamespaceIDs = errors.New("no more namespace IDs configured")
+
 func (r *testRuntime) NewNamespaceID() (string, error) {
 	r.usedNamespaceIDs = true
 	if r.namespaceIDs == nil {
 		r.t.Fatalf("namespaceIDs: is not set (this is an error in the testcases themselves)")
 	}
 	if len(r.namespaceIDs) == 0 {
-		return "", errors.New("no more namespace IDs configured")
+		return "", errNoMoreNamespaceIDs
 	}
 	id := r.namespaceIDs[0]
 	r.namespaceIDs = r.namespaceIDs[1:]
 	return id, nil
 }
+
+var errNoMoreAPIKeyIDs = errors.New("no more API key IDs configured")
 
 func (r *testRuntime) NewAPIKeyID() (string, error) {
 	r.usedAPIKeyIDs = true
@@ -151,12 +155,14 @@ func (r *testRuntime) NewAPIKeyID() (string, error) {
 		r.t.Fatalf("apiKeyIDs: is not set (this is an error in the testcases themselves)")
 	}
 	if len(r.apiKeyIDs) == 0 {
-		return "", errors.New("no more API key IDs configured")
+		return "", errNoMoreAPIKeyIDs
 	}
 	id := r.apiKeyIDs[0]
 	r.apiKeyIDs = r.apiKeyIDs[1:]
 	return id, nil
 }
+
+var errNoMoreAPIKeys = errors.New("no more API keys configured")
 
 func (r *testRuntime) NewAPIKey(_ apikey.Format) (string, error) {
 	r.usedAPIKeys = true
@@ -164,12 +170,14 @@ func (r *testRuntime) NewAPIKey(_ apikey.Format) (string, error) {
 		r.t.Fatalf("apiKeys: is not set (this is an error in the testcases themselves)")
 	}
 	if len(r.apiKeys) == 0 {
-		return "", errors.New("no more API keys configured")
+		return "", errNoMoreAPIKeys
 	}
 	key := r.apiKeys[0]
 	r.apiKeys = r.apiKeys[1:]
 	return key, nil
 }
+
+var errNoMorePIDs = errors.New("no more PIDs configured")
 
 func (r *testRuntime) NewPID(format pid.Format) (string, error) {
 	r.usedPIDs = true
@@ -177,7 +185,7 @@ func (r *testRuntime) NewPID(format pid.Format) (string, error) {
 		r.t.Fatalf("pids: is not set (this is an error in the testcases themselves)")
 	}
 	if len(r.pids) == 0 {
-		return "", errors.New("no more PIDs configured")
+		return "", errNoMorePIDs
 	}
 	id := r.pids[0]
 	r.pids = r.pids[1:]

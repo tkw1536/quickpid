@@ -45,7 +45,7 @@ func (r *reader) nextBit() byte {
 
 	// MSB-first within the n-bit string.
 	shift := r.n - 1 - r.pos
-	bit := byte(r.i.Bit(shift))
+	bit := byte(r.i.Bit(shift)) /* #nosec G115 -- guaranteed to fit into byte  */
 
 	r.pos++
 	if r.pos >= r.n {

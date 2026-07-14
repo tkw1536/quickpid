@@ -27,6 +27,11 @@ type authProbeResponse struct {
 	User     *api.UserInfo `json:"user"`
 }
 
+var (
+	errLookupFailure = errors.New("lookup failure")
+	errUserFailure   = errors.New("user failure")
+)
+
 func TestAuthHandlerAuthVariants(t *testing.T) {
 	t.Parallel()
 
@@ -34,13 +39,11 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 		validKnownToken   = "valid-known-token"
 		validMissingToken = "valid-missing-token"
 		invalidToken      = "invalid-token"
-		lookupFailToken   = "lookup-fail-token"
+		lookupFailToken   = "lookup-fail-token" /* #nosec G101 -- hard-coded test token never talks to a real API  */
 		userFailToken     = "user-fail-token"
 	)
 
 	validUser := &api.UserInfo{Username: "alice", Superuser: true}
-	lookupFailure := errors.New("lookup failure")
-	userFailure := errors.New("user failure")
 
 	tests := []struct {
 		name string
@@ -62,7 +65,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					[]api.Error{api.DatabaseError},
 				)
 
-				rec := runHandler(handler, scenario.token)
+				rec := runHandler(t, handler, scenario.token)
 				assertStatusAndCalled(t, rec, gotCalled, http.StatusOK, true)
 			},
 		},
@@ -86,7 +89,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					[]api.Error{api.Unauthorized, api.DatabaseError},
 				)
 
-				rec := runHandler(handler, scenario.token)
+				rec := runHandler(t, handler, scenario.token)
 				wantStatus, wantCalled, wantUser := expectedUsernameOutcome(true, scenario.token, validUser)
 				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
 				if wantCalled && gotUser != wantUser {
@@ -114,7 +117,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					[]api.Error{api.Unauthorized, api.DatabaseError},
 				)
 
-				rec := runHandler(handler, scenario.token)
+				rec := runHandler(t, handler, scenario.token)
 				wantStatus, wantCalled, wantUser := expectedOptionalUsernameOutcome(scenario.token, validUser)
 				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
 				if wantCalled {
@@ -142,7 +145,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					[]api.Error{api.Unauthorized, api.DatabaseError},
 				)
 
-				rec := runHandler(handler, scenario.token)
+				rec := runHandler(t, handler, scenario.token)
 				wantStatus, wantCalled, wantUser := expectedUserOutcome(true, scenario.token, validUser)
 				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
 				if wantCalled {
@@ -174,7 +177,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					[]api.Error{api.Unauthorized, api.DatabaseError},
 				)
 
-				rec := runHandler(handler, scenario.token)
+				rec := runHandler(t, handler, scenario.token)
 				wantStatus, wantCalled, wantUser := expectedUserOutcome(false, scenario.token, validUser)
 				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
 				if wantCalled {
@@ -209,7 +212,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 							case invalidToken:
 								return "", unauthorizedError{}
 							case lookupFailToken:
-								return "", lookupFailure
+								return "", errLookupFailure
 							default:
 								return "", unauthorizedError{}
 							}
@@ -223,9 +226,9 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 							case invalidToken:
 								return nil, unauthorizedError{}
 							case lookupFailToken:
-								return nil, lookupFailure
+								return nil, errLookupFailure
 							case userFailToken:
-								return nil, userFailure
+								return nil, errUserFailure
 							default:
 								return nil, unauthorizedError{}
 							}
@@ -254,7 +257,7 @@ func TestHandleRequiredUsernamePanicsWhenUnauthorizedNotAllowed(t *testing.T) {
 	)
 
 	defer expectPanic(t)
-	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/probe", nil))
+	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/probe", nil))
 }
 
 func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
@@ -278,7 +281,7 @@ func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 		[]api.Error{api.Unauthorized, api.DatabaseError},
 	)
 
-	req := httptest.NewRequest(http.MethodPost, "/probe", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/probe", nil)
 	req.Header.Set("Authorization", "Bearer "+key)
 
 	defer expectPanic(t)
@@ -306,7 +309,7 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 		[]api.Error{api.Unauthorized, api.UnavailableInAnonymousMode, api.DatabaseError},
 	)
 
-	rec := runHandler(handler, "any-token")
+	rec := runHandler(t, handler, "any-token")
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
 	}
@@ -327,7 +330,7 @@ func TestAuthHandlerLog(t *testing.T) {
 	handler := &captureHandler{}
 	logger := slog.New(handler)
 	authHandler := lowlevel.NewAuthHandler(&mockAuthService{}, logger)
-	req := httptest.NewRequest(http.MethodGet, "/probe?x=1", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/probe?x=1", nil)
 	req.RemoteAddr = "127.0.0.1:9999"
 
 	authHandler.Log(context.Background(), req, 10*time.Millisecond, http.StatusForbidden, slog.String("error", "forbidden"))
@@ -431,9 +434,11 @@ func (*captureHandler) WithGroup(string) slog.Handler {
 	return &captureHandler{}
 }
 
-func runHandler(handler http.Handler, token string) *httptest.ResponseRecorder {
+func runHandler(t *testing.T, handler http.Handler, token string) *httptest.ResponseRecorder {
+	t.Helper()
+
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/probe", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/probe", nil)
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}

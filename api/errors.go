@@ -1,7 +1,10 @@
 package api
 
 //spellchecker:words http
-import "net/http"
+import (
+	"errors"
+	"net/http"
+)
 
 type ErrorResponse struct {
 	Error string `json:"error"`
@@ -94,3 +97,11 @@ func (e Error) HTTPCode() int {
 	}
 	return code
 }
+
+// various internal sentinel errors.
+var (
+	errMissingRequiredField    = errors.New("missing required field")
+	errInvalidPermissionLevel  = errors.New("invalid permission level")
+	errFailedToUnmarshalFields = errors.New("failed to unmarshal fields")
+	errInvalidPIDFormat        = errors.New("invalid PID format")
+)

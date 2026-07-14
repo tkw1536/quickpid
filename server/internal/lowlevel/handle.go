@@ -59,7 +59,7 @@ func handle[T any](
 		}
 
 		h.Log(r.Context(), r, duration, successCode)
-		writeJSONResponse(w, successCode, value)
+		h.writeJSONResponse(w, r, successCode, value)
 	}
 }
 
@@ -124,5 +124,5 @@ func (h *AuthHandler) writeHandledError(
 		slog.String("error", string(specError)),
 		slog.Any("cause", err),
 	)
-	writeJSONResponse(w, specError.HTTPCode(), api.ErrorResponse{Error: string(specError)})
+	h.writeJSONResponse(w, r, specError.HTTPCode(), api.ErrorResponse{Error: string(specError)})
 }

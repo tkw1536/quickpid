@@ -131,8 +131,8 @@ func TestFormat_Generate_randError(t *testing.T) {
 	if err == nil {
 		t.Fatal("Generate() error = nil, want error")
 	}
-	if !errors.Is(err, errReaderErr) {
-		t.Fatalf("Generate() error = %v, want %v", err, errReaderErr)
+	if !errors.Is(err, errReadFailed) {
+		t.Fatalf("Generate() error = %v, want %v", err, errReadFailed)
 	}
 }
 
@@ -344,12 +344,12 @@ func ExampleFormat_roundTrip() {
 	// false
 }
 
-var errReaderErr = errors.New("read failed")
+var errReadFailed = errors.New("read failed")
 
 type errReader struct{}
 
 func (errReader) Read([]byte) (int, error) {
-	return 0, errReaderErr
+	return 0, errReadFailed
 }
 
 var _ io.Reader = errReader{}

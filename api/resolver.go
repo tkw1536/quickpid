@@ -3,7 +3,6 @@ package api
 
 //spellchecker:words errors github bicpid internal strict embed
 import (
-	"errors"
 	"fmt"
 
 	"github.com/tkw1536/bicpid/internal/strict"
@@ -25,18 +24,18 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
+		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
 	if !decoded.Tag.Present {
-		return errors.New("missing required field: tag")
+		return fmt.Errorf("%w: tag", errMissingRequiredField)
 	}
 	r.Tag = string(decoded.Tag.Value)
 	if !decoded.PIDFormat.Present {
-		return errors.New("missing required field: pid_format")
+		return fmt.Errorf("%w: pid_format", errMissingRequiredField)
 	}
 	r.PIDFormat = decoded.PIDFormat.Value
 	if err := r.PIDFormat.Validate(); err != nil {
-		return fmt.Errorf("invalid pid format: %w", err)
+		return fmt.Errorf("%w: %w", errInvalidPIDFormat, err)
 	}
 
 	return nil
@@ -72,21 +71,21 @@ func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
+		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
 
 	if !decoded.URL.Present {
-		return errors.New("missing required field: url")
+		return fmt.Errorf("%w: url", errMissingRequiredField)
 	}
 	r.URL = string(decoded.URL.Value)
 
 	if !decoded.Metadata.Present {
-		return errors.New("missing required field: metadata")
+		return fmt.Errorf("%w: metadata", errMissingRequiredField)
 	}
 	r.Metadata = decoded.Metadata.Value
 
 	if !decoded.Tag.Present {
-		return errors.New("missing required field: tag")
+		return fmt.Errorf("%w: tag", errMissingRequiredField)
 	}
 	r.Tag = string(decoded.Tag.Value)
 

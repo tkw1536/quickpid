@@ -1,10 +1,9 @@
 //spellchecker:words service
-package service
+package service_test
 
 //spellchecker:words context errors testing time github bicpid backend memory storetest internal apikey
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/tkw1536/bicpid/backend/storetest"
 	"github.com/tkw1536/bicpid/internal/apikey"
 	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/bicpid/service"
 )
 
 type fixedRuntime struct {
@@ -26,7 +26,7 @@ func (r *fixedRuntime) Now() time.Time                          { return r.now }
 func (r *fixedRuntime) NewAPIKeyID() (string, error)            { return "api-key-id", nil }
 func (r *fixedRuntime) NewAPIKey(apikey.Format) (string, error) { return "api-key", nil }
 
-func newTestService(t *testing.T) (*Service, backend.Store) {
+func newTestService(t *testing.T) (*service.Service, backend.Store) {
 	t.Helper()
 	store := memory.NewStore()
 	ctx := t.Context()
@@ -63,15 +63,15 @@ func newTestService(t *testing.T) (*Service, backend.Store) {
 		t.Fatalf("SetNamespacePermission(reader) error = %v", err)
 	}
 
-	return New(store, runtime, Options{}), store
+	return service.New(store, runtime, service.Options{}), store
 }
 
-func newAnonymousTestService(t *testing.T) (*Service, backend.Store) {
+func newAnonymousTestService(t *testing.T) (*service.Service, backend.Store) {
 	t.Helper()
 	store := memory.NewStore()
 	now := storetest.FixedNow()
 	runtime := &fixedRuntime{now: now()}
-	return New(store, runtime, Options{Anonymous: true}), store
+	return service.New(store, runtime, service.Options{Anonymous: true}), store
 }
 
 func userInfo(username string) *api.UserInfo {
@@ -93,7 +93,7 @@ func TestService_GetNamespacePermission(t *testing.T) {
 	}
 
 	_, specError, err = svc.GetNamespacePermission(ctx, userInfo("reader"), "test-ns", "editor")
-	if !errors.Is(err, errForbidden) || specError != "" {
+	if !service.IsForbidden(err) || specError != "" {
 		t.Fatalf("GetNamespacePermission(other) = %q, %v, want forbidden", specError, err)
 	}
 
@@ -119,7 +119,7 @@ func TestService_ResolverPermissions(t *testing.T) {
 	}
 
 	_, specError, err = svc.GetNamespace(ctx, userInfo("reader"), "test-ns")
-	if !errors.Is(err, errForbidden) || specError != api.Forbidden {
+	if !service.IsForbidden(err) || specError != api.Forbidden {
 		t.Fatalf("reader GetNamespace = %q, %v, want forbidden", specError, err)
 	}
 
@@ -141,7 +141,7 @@ func TestService_ResolverPermissions(t *testing.T) {
 	}
 
 	_, specError, err = svc.ListResources(ctx, userInfo("contributor"), api.ListResourcesParams{Namespace: "test-ns", Limit: 10})
-	if !errors.Is(err, errForbidden) || specError != api.Forbidden {
+	if !service.IsForbidden(err) || specError != api.Forbidden {
 		t.Fatalf("contributor ListResources = %q, %v, want forbidden", specError, err)
 	}
 
@@ -155,7 +155,7 @@ func TestService_ResolverPermissions(t *testing.T) {
 	_, specError, err = svc.SetNamespacePermission(ctx, userInfo("editor"), "test-ns", "reader", api.SetNamespacePermissionRequest{
 		Level: api.PermissionLevelContributor,
 	})
-	if !errors.Is(err, errForbidden) || specError != "" {
+	if !service.IsForbidden(err) || specError != "" {
 		t.Fatalf("editor SetNamespacePermission = %q, %v, want forbidden", specError, err)
 	}
 }
@@ -169,7 +169,7 @@ func TestService_SetNamespacePermissionCannotEscalate(t *testing.T) {
 	_, specError, err := svc.SetNamespacePermission(ctx, userInfo("editor"), "test-ns", "reader", api.SetNamespacePermissionRequest{
 		Level: api.PermissionLevelManager,
 	})
-	if !errors.Is(err, errForbidden) || specError != "" {
+	if !service.IsForbidden(err) || specError != "" {
 		t.Fatalf("editor grant manager = %q, %v, want forbidden", specError, err)
 	}
 }
@@ -183,7 +183,7 @@ func TestService_SetNamespacePermissionSelfRules(t *testing.T) {
 	_, specError, err := svc.SetNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner", api.SetNamespacePermissionRequest{
 		Level: api.PermissionLevelEditor,
 	})
-	if !errors.Is(err, errForbidden) || specError != "" {
+	if !service.IsForbidden(err) || specError != "" {
 		t.Fatalf("owner modify own permission = %q, %v, want forbidden", specError, err)
 	}
 
@@ -213,7 +213,7 @@ func TestService_DeleteNamespacePermissionSelfRules(t *testing.T) {
 	ctx := t.Context()
 
 	specError, err := svc.DeleteNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner")
-	if !errors.Is(err, errForbidden) || specError != "" {
+	if !service.IsForbidden(err) || specError != "" {
 		t.Fatalf("owner delete own permission = %q, %v, want forbidden", specError, err)
 	}
 
@@ -246,7 +246,7 @@ func TestService_Unauthenticated(t *testing.T) {
 	ctx := t.Context()
 
 	_, specError, err := svc.ListNamespaces(ctx, nil, api.ListNamespacesParams{})
-	if !errors.Is(err, errUnauthorized) || specError != "" {
+	if !service.IsUnauthorized(err) || specError != "" {
 		t.Fatalf("ListNamespaces(nil) = %q, %v, want unauthorized", specError, err)
 	}
 }
@@ -318,20 +318,20 @@ func TestService_AnonymousDisablesUserAndPermissionManagement(t *testing.T) {
 	svc, _ := newAnonymousTestService(t)
 	ctx := t.Context()
 
-	if _, err := svc.Authenticate(ctx, "anything"); !errors.Is(err, errUnauthorized) {
+	if _, err := svc.Authenticate(ctx, "anything"); !service.IsUnauthorized(err) {
 		t.Fatalf("Authenticate() error = %v, want unauthorized", err)
 	}
-	if _, err := svc.CurrentUser(ctx, "anything"); !errors.Is(err, errUnauthorized) {
+	if _, err := svc.CurrentUser(ctx, "anything"); !service.IsUnauthorized(err) {
 		t.Fatalf("CurrentUser() error = %v, want unauthorized", err)
 	}
 
-	if _, specError, err := svc.CreateUser(ctx, userInfo("owner"), api.UserCreateRequest{Username: "alice"}); !IsUnavailableInAnonymousMode(err) || specError != api.UnavailableInAnonymousMode {
+	if _, specError, err := svc.CreateUser(ctx, userInfo("owner"), api.UserCreateRequest{Username: "alice"}); !service.IsUnavailableInAnonymousMode(err) || specError != api.UnavailableInAnonymousMode {
 		t.Fatalf("CreateUser() = %q, %v, want anonymous mode unavailable", specError, err)
 	}
-	if _, specError, err := svc.ListUsers(ctx, userInfo("owner"), api.ListUsersParams{Limit: 10}); !IsUnavailableInAnonymousMode(err) || specError != api.UnavailableInAnonymousMode {
+	if _, specError, err := svc.ListUsers(ctx, userInfo("owner"), api.ListUsersParams{Limit: 10}); !service.IsUnavailableInAnonymousMode(err) || specError != api.UnavailableInAnonymousMode {
 		t.Fatalf("ListUsers() = %q, %v, want anonymous mode unavailable", specError, err)
 	}
-	if _, specError, err := svc.GetNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner"); !IsUnavailableInAnonymousMode(err) || specError != api.UnavailableInAnonymousMode {
+	if _, specError, err := svc.GetNamespacePermission(ctx, userInfo("owner"), "test-ns", "owner"); !service.IsUnavailableInAnonymousMode(err) || specError != api.UnavailableInAnonymousMode {
 		t.Fatalf("GetNamespacePermission() = %q, %v, want anonymous mode unavailable", specError, err)
 	}
 }

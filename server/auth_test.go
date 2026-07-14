@@ -1,5 +1,5 @@
 //spellchecker:words server
-package server
+package server_test
 
 //spellchecker:words context encoding json http httptest strings testing time github bicpid backend memory internal apikey service
 import (
@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -16,24 +17,25 @@ import (
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/backend/memory"
 	"github.com/tkw1536/bicpid/internal/apikey"
+	"github.com/tkw1536/bicpid/server"
 	"github.com/tkw1536/bicpid/service"
 )
 
-func testHandler(t *testing.T, store backend.Store) *Server {
+func testHandler(t *testing.T, store backend.Store) *server.Server {
 	t.Helper()
 	svc := service.New(store, service.NewRuntime(), service.Options{})
-	return NewServer(
-		Options{DisableSwaggerUI: true},
+	return server.NewServer(
+		server.Options{DisableSwaggerUI: true},
 		svc,
 		nil,
 	)
 }
 
-func testAnonymousHandler(t *testing.T, store backend.Store) *Server {
+func testAnonymousHandler(t *testing.T, store backend.Store) *server.Server {
 	t.Helper()
 	svc := service.New(store, service.NewRuntime(), service.Options{Anonymous: true})
-	return NewServer(
-		Options{DisableSwaggerUI: true, Anonymous: true},
+	return server.NewServer(
+		server.Options{DisableSwaggerUI: true, Anonymous: true},
 		svc,
 		nil,
 	)
@@ -63,7 +65,7 @@ func TestGetCurrentUser_UnauthorizedJSON(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "/user/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/user/", nil)
 		h.ServeHTTP(rec, req)
 		assertUnauthorizedJSON(t, rec)
 	})
@@ -72,7 +74,7 @@ func TestGetCurrentUser_UnauthorizedJSON(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "/user/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/user/", nil)
 		req.Header.Set("Authorization", "Bearer invalidtoken0000000000000000")
 		h.ServeHTTP(rec, req)
 		assertUnauthorizedJSON(t, rec)
@@ -139,7 +141,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPatch, "/user/?username=alice", strings.NewReader(`{"superuser":true}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user/?username=alice", strings.NewReader(`{"superuser":true}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -150,7 +152,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPatch, "/user/?username=root", strings.NewReader(`{}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user/?username=root", strings.NewReader(`{}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -161,7 +163,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPatch, "/user/?username=alice", strings.NewReader(`{"superuser":true}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user/?username=alice", strings.NewReader(`{"superuser":true}`))
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -188,7 +190,7 @@ func TestUpdateCurrentUser_ForbiddenSelfUpdate(t *testing.T) {
 	h := testHandler(t, auth)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPatch, "/user/?username=root", strings.NewReader(`{}`))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user/?username=root", strings.NewReader(`{}`))
 	req.Header.Set("Authorization", "Bearer "+rootKey)
 	req.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, req)
@@ -206,7 +208,7 @@ func TestCreateUser_RequiresSuperuser(t *testing.T) {
 	t.Run("unauthenticated", func(t *testing.T) {
 		t.Parallel()
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
 		assertUnauthorizedJSON(t, rec)
@@ -216,7 +218,7 @@ func TestCreateUser_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -227,7 +229,7 @@ func TestCreateUser_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -250,7 +252,7 @@ func TestListUsers_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "/users/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users/", nil)
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		h.ServeHTTP(rec, req)
 		assertForbiddenJSON(t, rec)
@@ -260,7 +262,7 @@ func TestListUsers_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "/users/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users/", nil)
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		h.ServeHTTP(rec, req)
 
@@ -291,7 +293,7 @@ func TestAutocompleteUsers(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "/users/autocomplete", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users/autocomplete", nil)
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		h.ServeHTTP(rec, req)
 		if rec.Code != http.StatusBadRequest {
@@ -303,7 +305,7 @@ func TestAutocompleteUsers(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "/users/autocomplete?query=ALICE", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users/autocomplete?query=ALICE", nil)
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		h.ServeHTTP(rec, req)
 		if rec.Code != http.StatusBadRequest {
@@ -315,7 +317,7 @@ func TestAutocompleteUsers(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "/users/autocomplete?query=ali", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users/autocomplete?query=ali", nil)
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		h.ServeHTTP(rec, req)
 		if rec.Code != http.StatusOK {
@@ -326,13 +328,8 @@ func TestAutocompleteUsers(t *testing.T) {
 			t.Fatalf("json.Unmarshal() error = %v", err)
 		}
 		want := []string{"alice"}
-		if len(usernames) != len(want) {
+		if !reflect.DeepEqual(usernames, want) {
 			t.Fatalf("usernames = %v, want %v", usernames, want)
-		}
-		for i, username := range usernames {
-			if username != want[i] {
-				t.Fatalf("usernames[%d] = %q, want %q", i, username, want[i])
-			}
 		}
 	})
 }
@@ -345,7 +342,7 @@ func TestIssueAndRevokeKey(t *testing.T) {
 	h := testHandler(t, auth)
 
 	rec := httptest.NewRecorder()
-	issueReq := httptest.NewRequest(http.MethodPost, "/user/key", strings.NewReader(`{"comment":"new key"}`))
+	issueReq := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/key", strings.NewReader(`{"comment":"new key"}`))
 	issueReq.Header.Set("Authorization", "Bearer "+aliceKey)
 	issueReq.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, issueReq)
@@ -363,7 +360,7 @@ func TestIssueAndRevokeKey(t *testing.T) {
 	}
 
 	rec = httptest.NewRecorder()
-	revokeReq := httptest.NewRequest(http.MethodPost, "/user/key/revoke", strings.NewReader(`{"id":"`+issued.ID+`"}`))
+	revokeReq := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/key/revoke", strings.NewReader(`{"id":"`+issued.ID+`"}`))
 	revokeReq.Header.Set("Authorization", "Bearer "+aliceKey)
 	revokeReq.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, revokeReq)
@@ -380,7 +377,7 @@ func TestResolverAnonymousMode_AllowsRequestsWithoutAuth(t *testing.T) {
 	h := testAnonymousHandler(t, store)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/resolver/namespaces", strings.NewReader(`{"tag":"anon","pid_format":{"pattern":"***-***","characters":"full"}}`))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/resolver/namespaces", strings.NewReader(`{"tag":"anon","pid_format":{"pattern":"***-***","characters":"full"}}`))
 	req.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusCreated {
@@ -388,7 +385,7 @@ func TestResolverAnonymousMode_AllowsRequestsWithoutAuth(t *testing.T) {
 	}
 
 	rec = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodGet, "/resolver/namespaces", nil)
+	req = httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/resolver/namespaces", nil)
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("list namespaces status = %d, want %d, body = %s", rec.Code, http.StatusOK, rec.Body.String())

@@ -249,6 +249,8 @@ func (s *Service) CreateResource(ctx context.Context, caller *api.UserInfo, name
 	return out, "", nil
 }
 
+var errLimitExceeded = errors.New("batch create limit exceeded")
+
 // BatchCreateResources creates multiple resources in a namespace.
 //
 // It can return the following errors:
@@ -267,7 +269,7 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo
 	s.mu.RUnlock()
 
 	if maxBatch > 0 && len(reqs) > maxBatch {
-		return nil, api.ItemLimitExceeded, fmt.Errorf("%d > %d", len(reqs), maxBatch)
+		return nil, api.ItemLimitExceeded, fmt.Errorf("%w: %d > %d", errLimitExceeded, len(reqs), maxBatch)
 	}
 
 	if s.Options().Anonymous {

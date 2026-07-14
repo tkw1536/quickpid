@@ -44,7 +44,8 @@ type mainCmd struct {
 
 	noCreateRoot bool
 
-	shutdownTimeout time.Duration
+	readHeaderTimeout time.Duration
+	shutdownTimeout   time.Duration
 
 	addr   string
 	logger *slog.Logger
@@ -79,7 +80,8 @@ func Main(name string, preamble func(*slog.Logger) error, storeFactory func(logg
 
 			legal: false,
 
-			shutdownTimeout: time.Minute,
+			readHeaderTimeout: time.Minute,
+			shutdownTimeout:   time.Minute,
 		}).run(),
 	)
 }
@@ -190,6 +192,7 @@ func (main *mainCmd) parseFlags() {
 
 	flag.BoolVar(&main.noCreateRoot, "no-create-root", main.noCreateRoot, "do not automatically create a root superuser when no accounts exist")
 
+	flag.DurationVar(&main.readHeaderTimeout, "read-header-timeout", main.readHeaderTimeout, "timeout applied to reading request headers")
 	flag.DurationVar(&main.shutdownTimeout, "shutdown-timeout", main.shutdownTimeout, "timeout applied to backend and HTTP server shutdowns")
 
 	flag.Parse()
@@ -208,6 +211,8 @@ func (main *mainCmd) printLegalNotices() {
 	fmt.Print(notices)
 }
 
+var errInvalidLogLevel = errors.New("invalid log level")
+
 func (main *mainCmd) setupLogger() error {
 	var level slog.Level
 	switch strings.ToLower(main.logLevel) {
@@ -224,7 +229,7 @@ func (main *mainCmd) setupLogger() error {
 		slog.SetDefault(main.logger)
 		return nil
 	default:
-		return fmt.Errorf("invalid -log-level %q (expected none|error|warn|info|debug)", main.logLevel)
+		return fmt.Errorf("%w %q: (expected none|error|warn|info|debug)", errInvalidLogLevel, main.logLevel)
 	}
 
 	var logHandler slog.Handler
@@ -242,8 +247,9 @@ func (main *mainCmd) serve(h http.Handler) int {
 	http.Handle(main.mountPath+"/", http.StripPrefix(main.mountPath, h))
 
 	srv := &http.Server{
-		Addr:    main.addr,
-		Handler: http.DefaultServeMux,
+		Addr:              main.addr,
+		ReadHeaderTimeout: main.readHeaderTimeout,
+		Handler:           http.DefaultServeMux,
 	}
 
 	main.logger.Info(

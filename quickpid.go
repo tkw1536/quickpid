@@ -33,7 +33,8 @@ func GetTestData() fs.FS {
 const CopyrightNotice = "© Tom Wiesing. All rights reserved."
 
 // License returns the full text of the license file.
-// Deprecated: There is no license and this function returns the empty string.
+//
+// There currently is no license and this function returns the empty string.
 func License() string {
 	return ""
 }

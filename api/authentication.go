@@ -2,7 +2,6 @@ package api
 
 //spellchecker:words errors github bicpid internal strict
 import (
-	"errors"
 	"fmt"
 
 	"github.com/tkw1536/bicpid/internal/strict"
@@ -24,7 +23,7 @@ func (r *UserCreateRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 	if !decoded.Username.Present {
-		return errors.New("missing required field: username")
+		return fmt.Errorf("%w: username", errMissingRequiredField)
 	}
 	r.Username = string(decoded.Username.Value)
 	if decoded.Superuser.Present {
@@ -97,10 +96,10 @@ func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
+		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
 	if !decoded.Comment.Present {
-		return errors.New("missing required field: comment")
+		return fmt.Errorf("%w: comment", errMissingRequiredField)
 	}
 	r.Comment = string(decoded.Comment.Value)
 	if decoded.ExpiresAt.Present {
@@ -126,10 +125,10 @@ func (r *KeyRevokeRequest) UnmarshalJSON(data []byte) error {
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
+		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
 	if !decoded.ID.Present {
-		return errors.New("missing required field: id")
+		return fmt.Errorf("%w: id", errMissingRequiredField)
 	}
 	r.ID = string(decoded.ID.Value)
 	return nil

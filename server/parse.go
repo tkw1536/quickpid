@@ -12,6 +12,7 @@ import (
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/service"
+	"go.tkw01536.de/pkglib/errorsx"
 )
 
 var errTrailingJSON = errors.New("trailing json after value")
@@ -34,12 +35,21 @@ var (
 // - [api.BodySizeExceeded]
 // - [api.BodyMissing]
 // - [api.BodyInvalidJSON].
-func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (api.Error, error) {
+func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (ae api.Error, e error) {
 	var body = r.Body
 	if maxBody := h.svc.Options().Limits.MaxBodyBytes; maxBody > 0 {
 		body = http.MaxBytesReader(w, body, maxBody)
 	}
-	defer body.Close()
+	defer func() {
+		if err := body.Close(); err != nil {
+			// This usesthe Body Invalid JSON api error, which isn't entirely correct.
+			//
+			// Most likely this happens when the underlying network connection had some error;
+			// meaning the client will never see if anyways.
+			ae = api.BodyInvalidJSON
+			e = errorsx.Combine(e, fmt.Errorf("body.Close: %w", err))
+		}
+	}()
 
 	dec := json.NewDecoder(body)
 	dec.DisallowUnknownFields()

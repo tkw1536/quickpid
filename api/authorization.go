@@ -2,7 +2,6 @@ package api
 
 //spellchecker:words errors github bicpid internal strict
 import (
-	"errors"
 	"fmt"
 
 	"github.com/tkw1536/bicpid/internal/strict"
@@ -17,8 +16,6 @@ const (
 	PermissionLevelEditor      PermissionLevel = "editor"
 	PermissionLevelManager     PermissionLevel = "manager"
 )
-
-var errInvalidPermissionLevel = errors.New("invalid permission level")
 
 // Valid reports whether the level is a known permission level.
 func (level PermissionLevel) Validate() error {
@@ -47,14 +44,14 @@ func (r *SetNamespacePermissionRequest) UnmarshalJSON(data []byte) error {
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
+		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
 	if !decoded.Level.Present {
-		return errors.New("missing required field: level")
+		return fmt.Errorf("%w: level", errMissingRequiredField)
 	}
 	r.Level = PermissionLevel(decoded.Level.Value)
 	if r.Level.Validate() != nil {
-		return fmt.Errorf("invalid permission level: %q", r.Level)
+		return fmt.Errorf("%w: %q", errInvalidPermissionLevel, r.Level)
 	}
 	return nil
 }
