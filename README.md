@@ -134,6 +134,8 @@ An example authentication file looks like:
 
 The following Tool & CI are used in the project:
 
+- [golangci-lint](https://golangci-lint.run)
+  Run via `go tool golanci-lint run ./...`.
 - [go-check-spellchecker](https://github.com/tkw1536/go-check-spellchecker)
   To maintain the `spellchecker:words` comments for imports.
   Run with `go tool go-check-spellchecker -fix ./...`.

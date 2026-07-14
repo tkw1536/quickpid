@@ -27,7 +27,7 @@ func TestRequestToRequest_EncodesBodyAsJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ToRequest: %v", err)
 	}
-	if httpReq.Method != "POST" {
+	if httpReq.Method != http.MethodPost {
 		t.Fatalf("Method = %q, want %q", httpReq.Method, "POST")
 	}
 	if httpReq.URL.Path != "/hello" {
@@ -47,7 +47,7 @@ func TestResponseCompare_CodeHeadersAndBodyMatchOK(t *testing.T) {
 	rec := httptest.NewRecorder()
 	rec.Header().Add("X-Resp", "ok")
 	rec.Header().Add("X-Resp", "also-ok")
-	rec.WriteHeader(201)
+	rec.WriteHeader(http.StatusCreated)
 	_, _ = rec.Write([]byte("{\n  \"b\": 2,\n  \"a\": 1\n}\n"))
 
 	want := httpfixture.Response{
@@ -64,7 +64,7 @@ func TestResponseCompare_CodeHeadersAndBodyMatchOK(t *testing.T) {
 func TestResponseCompare_JoinsMultipleErrors(t *testing.T) {
 	rec := httptest.NewRecorder()
 	rec.Header().Set("X-Resp", "nope")
-	rec.WriteHeader(200)
+	rec.WriteHeader(http.StatusOK)
 	_, _ = rec.Write([]byte(`{"a":2}`))
 
 	want := httpfixture.Response{
@@ -85,7 +85,7 @@ func TestResponseCompare_JoinsMultipleErrors(t *testing.T) {
 
 func TestFixtureRun_ReportsMismatchViaTErrors(t *testing.T) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"ok":false}`))
 	})
 
@@ -137,7 +137,7 @@ func ExampleRequest_ToRequest() {
 func ExampleResponse_Compare() {
 	rec := httptest.NewRecorder()
 	rec.Header().Set("X-Resp", "ok")
-	rec.WriteHeader(201)
+	rec.WriteHeader(http.StatusCreated)
 	_, _ = rec.Write([]byte(`{"b":2,"a":1}`))
 
 	want := httpfixture.Response{

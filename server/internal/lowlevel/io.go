@@ -39,8 +39,8 @@ func (h *AuthHandler) Log(ctx context.Context, r *http.Request, duration time.Du
 	}
 
 	var (
-		level slog.Level = slog.LevelInfo
-		msg   string     = "unknown event"
+		level = slog.LevelInfo
+		msg   = "unknown event"
 	)
 
 	switch {

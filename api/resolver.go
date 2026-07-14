@@ -1,8 +1,9 @@
 // Package api holds type definitions for the PID Resolver API.
 package api
 
-//spellchecker:words github bicpid internal strict embed
+//spellchecker:words errors github bicpid internal strict embed
 import (
+	"errors"
 	"fmt"
 
 	"github.com/tkw1536/bicpid/internal/strict"
@@ -27,11 +28,11 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 	if !decoded.Tag.Present {
-		return fmt.Errorf("missing required field: tag")
+		return errors.New("missing required field: tag")
 	}
 	r.Tag = string(decoded.Tag.Value)
 	if !decoded.PIDFormat.Present {
-		return fmt.Errorf("missing required field: pid_format")
+		return errors.New("missing required field: pid_format")
 	}
 	r.PIDFormat = decoded.PIDFormat.Value
 	if err := r.PIDFormat.Validate(); err != nil {
@@ -75,17 +76,17 @@ func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	}
 
 	if !decoded.URL.Present {
-		return fmt.Errorf("missing required field: url")
+		return errors.New("missing required field: url")
 	}
 	r.URL = string(decoded.URL.Value)
 
 	if !decoded.Metadata.Present {
-		return fmt.Errorf("missing required field: metadata")
+		return errors.New("missing required field: metadata")
 	}
 	r.Metadata = decoded.Metadata.Value
 
 	if !decoded.Tag.Present {
-		return fmt.Errorf("missing required field: tag")
+		return errors.New("missing required field: tag")
 	}
 	r.Tag = string(decoded.Tag.Value)
 
@@ -164,10 +165,10 @@ type ListNamespacesParams struct {
 
 // InfoResponse provides information about the resolver.
 type InfoResponse struct {
-	MaxBodyBytes     int64 `json:"max_body_bytes"`
-	DefaultPageLimit int64 `json:"default_page_limit"`
-	MaxPageLimit     int64 `json:"max_page_limit"`
-	MaxBatchItems    int64 `json:"max_batch_items"`
+	MaxBodyBytes         int64 `json:"max_body_bytes"`
+	DefaultPageLimit     int64 `json:"default_page_limit"`
+	MaxPageLimit         int64 `json:"max_page_limit"`
+	MaxBatchItems        int64 `json:"max_batch_items"`
 	MaxAutocompleteUsers int64 `json:"max_autocomplete_users,omitzero"`
-	Authentication   bool  `json:"authentication,omitzero"`
+	Authentication       bool  `json:"authentication,omitzero"`
 }

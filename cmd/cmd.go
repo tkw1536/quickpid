@@ -1,8 +1,9 @@
 package cmd
 
-//spellchecker:words context flag slog http signal strconv strings syscall time github bicpid quickpid backend server service
+//spellchecker:words context errors flag slog http signal strconv strings syscall time github bicpid quickpid backend server service
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -277,7 +278,7 @@ func (main *mainCmd) serve(h http.Handler) int {
 		main.logger.Info("http server shutdown complete")
 		return 0
 	case err := <-serverErr:
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			main.logger.Error("http server exited", slog.Any("error", err))
 			return 1
 		}

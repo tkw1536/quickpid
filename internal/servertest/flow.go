@@ -1,10 +1,10 @@
 //spellchecker:words servertest
 package servertest
 
-//spellchecker:words context slog slices testing time github bicpid backend internal apikey httpfixture server service
+//spellchecker:words context errors slog slices testing time github bicpid backend internal apikey httpfixture server service
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log/slog"
 	"slices"
 	"testing"
@@ -78,7 +78,7 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 				t.Fatalf("applyStepSetup() error = %v", err)
 			}
 
-			step.Fixture.Run(t, handler)
+			step.Run(t, handler)
 
 			if !runtime.now.IsZero() && !runtime.usedNow {
 				t.Errorf("now: %s was not used (this is an error in the testcases themselves)", runtime.now)
@@ -134,7 +134,7 @@ func (r *testRuntime) NewNamespaceID() (string, error) {
 		r.t.Fatalf("namespaceIDs: is not set (this is an error in the testcases themselves)")
 	}
 	if len(r.namespaceIDs) == 0 {
-		return "", fmt.Errorf("no more namespace IDs configured")
+		return "", errors.New("no more namespace IDs configured")
 	}
 	id := r.namespaceIDs[0]
 	r.namespaceIDs = r.namespaceIDs[1:]
@@ -147,7 +147,7 @@ func (r *testRuntime) NewAPIKeyID() (string, error) {
 		r.t.Fatalf("apiKeyIDs: is not set (this is an error in the testcases themselves)")
 	}
 	if len(r.apiKeyIDs) == 0 {
-		return "", fmt.Errorf("no more API key IDs configured")
+		return "", errors.New("no more API key IDs configured")
 	}
 	id := r.apiKeyIDs[0]
 	r.apiKeyIDs = r.apiKeyIDs[1:]
@@ -160,7 +160,7 @@ func (r *testRuntime) NewAPIKey(_ apikey.Format) (string, error) {
 		r.t.Fatalf("apiKeys: is not set (this is an error in the testcases themselves)")
 	}
 	if len(r.apiKeys) == 0 {
-		return "", fmt.Errorf("no more API keys configured")
+		return "", errors.New("no more API keys configured")
 	}
 	key := r.apiKeys[0]
 	r.apiKeys = r.apiKeys[1:]
@@ -173,7 +173,7 @@ func (r *testRuntime) NewPID(format pid.Format) (string, error) {
 		r.t.Fatalf("pids: is not set (this is an error in the testcases themselves)")
 	}
 	if len(r.pids) == 0 {
-		return "", fmt.Errorf("no more PIDs configured")
+		return "", errors.New("no more PIDs configured")
 	}
 	id := r.pids[0]
 	r.pids = r.pids[1:]

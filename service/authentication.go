@@ -173,7 +173,7 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *st
 // - [api.Forbidden]
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
-// - [api.InsufficientEntropy]
+// - [api.InsufficientEntropy].
 func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *string, req api.KeyIssueRequest) (*api.IssueKeyResponse, api.Error, error) {
 	if specError, err := s.requireAuthEnabled(); err != nil {
 		return nil, specError, err
@@ -212,7 +212,7 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *st
 //
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
-// - [api.InsufficientEntropy]
+// - [api.InsufficientEntropy].
 func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyIssueRequest) (*api.IssueKeyResponse, api.Error, error) {
 	s.mu.RLock()
 	maxAttempts := s.opts.Limits.MaxAPIKeyAttempts

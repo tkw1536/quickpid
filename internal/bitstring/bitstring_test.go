@@ -10,7 +10,6 @@ import (
 )
 
 func ExampleNewReader() {
-
 	r := bitstring.NewReader()
 
 	bytes := make([]byte, 1)

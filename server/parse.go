@@ -33,9 +33,9 @@ var (
 //
 // - [api.BodySizeExceeded]
 // - [api.BodyMissing]
-// - [api.BodyInvalidJSON]
+// - [api.BodyInvalidJSON].
 func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (api.Error, error) {
-	var body io.ReadCloser = r.Body
+	var body = r.Body
 	if maxBody := h.svc.Options().Limits.MaxBodyBytes; maxBody > 0 {
 		body = http.MaxBytesReader(w, body, maxBody)
 	}
@@ -69,7 +69,7 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (api.
 //
 // It can return the following errors:
 //
-// - [api.InvalidQueryParameter]
+// - [api.InvalidQueryParameter].
 func (h *Server) parsePagination(r *http.Request) (limit int, offset int, specError api.Error, err error) {
 	query := r.URL.Query()
 	limits := h.svc.Options().Limits
@@ -105,7 +105,7 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, specEr
 //
 // It can return the following errors:
 //
-// - [api.InvalidNamespaceID]
+// - [api.InvalidNamespaceID].
 func (*Server) getNamespace(r *http.Request) (namespace string, specError api.Error, err error) {
 	namespace = r.PathValue("namespace")
 	if err := service.ValidateNamespaceID(namespace); err != nil {
@@ -118,7 +118,7 @@ func (*Server) getNamespace(r *http.Request) (namespace string, specError api.Er
 //
 // It can return the following errors:
 //
-// - [api.InvalidPID]
+// - [api.InvalidPID].
 func (*Server) getPID(r *http.Request) (pid string, specError api.Error, err error) {
 	pid = r.PathValue("pid")
 	if err := service.ValidatePID(pid); err != nil {
@@ -140,7 +140,7 @@ func (*Server) getUsername(r *http.Request) (username string, specError api.Erro
 //
 // It can return the following errors:
 //
-// - [api.InvalidUsername]
+// - [api.InvalidUsername].
 func (*Server) parseOptionalUsernameQuery(r *http.Request) (target *string, specError api.Error, err error) {
 	query := r.URL.Query()
 	if !query.Has("username") {
@@ -158,7 +158,7 @@ func (*Server) parseOptionalUsernameQuery(r *http.Request) (target *string, spec
 // It can return the following errors:
 //
 // - [api.InvalidQueryParameter]
-// - [api.InvalidUsername]
+// - [api.InvalidUsername].
 func (*Server) parseRequiredUsernameQuery(r *http.Request) (username string, specError api.Error, err error) {
 	query := r.URL.Query()
 	if !query.Has("username") {
@@ -176,7 +176,7 @@ func (*Server) parseRequiredUsernameQuery(r *http.Request) (username string, spe
 // It can return the following errors:
 //
 // - [api.InvalidQueryParameter]
-// - [api.InvalidUsername]
+// - [api.InvalidUsername].
 func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (query string, specError api.Error, err error) {
 	q := r.URL.Query()
 	if !q.Has("query") {
@@ -193,7 +193,7 @@ func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (query string, sp
 //
 // It can return the following errors:
 //
-// - [api.InvalidQueryParameter]
+// - [api.InvalidQueryParameter].
 func (*Server) parseSuperuserQuery(r *http.Request) (superuser *bool, specError api.Error, err error) {
 	query := r.URL.Query()
 	if !query.Has("superuser") {

@@ -50,10 +50,10 @@ func (r *SetNamespacePermissionRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 	if !decoded.Level.Present {
-		return fmt.Errorf("missing required field: level")
+		return errors.New("missing required field: level")
 	}
 	r.Level = PermissionLevel(decoded.Level.Value)
-	if !(r.Level.Validate() == nil) {
+	if r.Level.Validate() != nil {
 		return fmt.Errorf("invalid permission level: %q", r.Level)
 	}
 	return nil

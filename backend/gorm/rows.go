@@ -1,8 +1,9 @@
 //spellchecker:words gorm
 package gorm
 
-//spellchecker:words time github bicpid gorm
+//spellchecker:words errors time github bicpid gorm
 import (
+	"errors"
 	"time"
 
 	"github.com/tkw1536/bicpid/api"
@@ -141,7 +142,7 @@ func ensureUserExists(tx *gorm.DB, username string) error {
 func findUser(tx *gorm.DB, username string) (userRow, error) {
 	var row userRow
 	if err := tx.First(&row, "username = ?", username).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return userRow{}, errUserNotFound
 		}
 		return userRow{}, err
@@ -152,7 +153,7 @@ func findUser(tx *gorm.DB, username string) (userRow, error) {
 func findKey(tx *gorm.DB, username, keyID string) (apiKeyRow, error) {
 	var row apiKeyRow
 	if err := tx.First(&row, "username = ? AND id = ? AND revoked = ?", username, keyID, false).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return apiKeyRow{}, errKeyNotFound
 		}
 		return apiKeyRow{}, err
@@ -163,7 +164,7 @@ func findKey(tx *gorm.DB, username, keyID string) (apiKeyRow, error) {
 func findKeyIncludingRevoked(tx *gorm.DB, username, keyID string) (apiKeyRow, error) {
 	var row apiKeyRow
 	if err := tx.First(&row, "username = ? AND id = ?", username, keyID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return apiKeyRow{}, errKeyNotFound
 		}
 		return apiKeyRow{}, err

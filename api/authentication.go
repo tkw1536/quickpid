@@ -1,7 +1,8 @@
 package api
 
-//spellchecker:words github bicpid internal strict
+//spellchecker:words errors github bicpid internal strict
 import (
+	"errors"
 	"fmt"
 
 	"github.com/tkw1536/bicpid/internal/strict"
@@ -23,7 +24,7 @@ func (r *UserCreateRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 	if !decoded.Username.Present {
-		return fmt.Errorf("missing required field: username")
+		return errors.New("missing required field: username")
 	}
 	r.Username = string(decoded.Username.Value)
 	if decoded.Superuser.Present {
@@ -99,7 +100,7 @@ func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 	if !decoded.Comment.Present {
-		return fmt.Errorf("missing required field: comment")
+		return errors.New("missing required field: comment")
 	}
 	r.Comment = string(decoded.Comment.Value)
 	if decoded.ExpiresAt.Present {
@@ -128,7 +129,7 @@ func (r *KeyRevokeRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 	if !decoded.ID.Present {
-		return fmt.Errorf("missing required field: id")
+		return errors.New("missing required field: id")
 	}
 	r.ID = string(decoded.ID.Value)
 	return nil

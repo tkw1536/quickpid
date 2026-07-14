@@ -39,9 +39,8 @@ func mustBeStruct(dec *json.Decoder) error {
 // It rejects:
 // - non-object inputs (e.g. null, arrays, strings)
 // - unknown fields (like [json.Decoder.DisallowUnknownFields])
-// - trailing non-whitespace after the JSON value
+// - trailing non-whitespace after the JSON value.
 func UnmarshalStruct[T any](data []byte) (out T, err error) {
-
 	// check that it's a struct
 	bytesReader := bytes.NewReader(data)
 	if err := mustBeStruct(json.NewDecoder(bytesReader)); err != nil {

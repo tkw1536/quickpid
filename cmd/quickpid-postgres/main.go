@@ -41,7 +41,7 @@ func main() {
 
 var (
 	// spin up a temporary local postgres with something like:
-	// docker run --rm -e POSTGRES_PASSWORD=quickpid -e POSTGRES_DB=quickpid -p 5432:5432 postgres
+	// docker run --rm -e POSTGRES_PASSWORD=quickpid -e POSTGRES_DB=quickpid -p 5432:5432 postgres.
 	postgresDSN        string = cmp.Or(os.Getenv("DSN"), "host=localhost user=postgres password=quickpid dbname=quickpid port=5432 sslmode=disable")
 	disableAutoMigrate bool   = false
 )

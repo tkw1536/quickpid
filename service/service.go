@@ -54,7 +54,7 @@ func (s *Service) AnonymousMode() bool {
 //
 // It can return the following errors:
 //
-// - [api.InfoUnavailable]
+// - [api.InfoUnavailable].
 func (s *Service) GetResolverInfo() (*api.InfoResponse, api.Error, error) {
 	s.mu.RLock()
 	opts := s.opts

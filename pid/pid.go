@@ -28,12 +28,12 @@ func (f *Format) UnmarshalJSON(data []byte) error {
 	}
 
 	if !decoded.Pattern.Present {
-		return fmt.Errorf("missing required field: pattern")
+		return errors.New("missing required field: pattern")
 	}
 	f.Pattern = Pattern(decoded.Pattern.Value)
 
 	if !decoded.Characters.Present {
-		return fmt.Errorf("missing required field: characters")
+		return errors.New("missing required field: characters")
 	}
 	f.Characters = CharacterSet(decoded.Characters.Value)
 
