@@ -84,9 +84,6 @@ func (s *Store) AutocompleteUsers(ctx context.Context, query string, limit int) 
 		for i := range rows {
 			usernames[i] = rows[i].Username
 		}
-		if usernames == nil {
-			usernames = []string{}
-		}
 		return usernames, nil
 	})
 }
