@@ -97,7 +97,7 @@ func TestFixtureRun_ReportsMismatchViaTErrors(t *testing.T) {
 		_, _ = w.Write([]byte(`{"ok":false}`))
 	})
 
-	tb := &mockT{ctx: t.Context()}
+	tb := &mockT{}
 	httpfixture.Fixture{
 		Request:  httpfixture.Request{Method: "GET", Path: "/"},
 		Response: httpfixture.Response{Code: 200, Body: json.RawMessage(`{"ok":true}`)},
@@ -109,16 +109,12 @@ func TestFixtureRun_ReportsMismatchViaTErrors(t *testing.T) {
 }
 
 type mockT struct {
-	ctx  context.Context
 	errs []string
 }
 
 func (m *mockT) Helper() {}
 func (m *mockT) Context() context.Context {
-	if m.ctx == nil {
-		return context.Background()
-	}
-	return m.ctx
+	return context.Background()
 }
 func (m *mockT) Errorf(format string, args ...any) {
 	m.errs = append(m.errs, format)
