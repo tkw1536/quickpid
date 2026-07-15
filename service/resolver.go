@@ -6,42 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 
 	"github.com/tkw1536/bicpid/api"
 	"github.com/tkw1536/bicpid/backend"
 	"github.com/tkw1536/bicpid/pid"
 )
-
-var (
-	namespaceIDRE = regexp.MustCompile(`^[a-z0-9_-]+$`)
-	pidRE         = regexp.MustCompile(`^[a-z0-9_-]+$`)
-	usernameRE    = regexp.MustCompile(`^[a-z0-9_-]+$`)
-)
-
-// ValidateNamespaceID reports whether id is a valid namespace identifier.
-func ValidateNamespaceID(id string) error {
-	if !namespaceIDRE.MatchString(id) {
-		return errInvalidNamespaceID
-	}
-	return nil
-}
-
-// ValidatePID reports whether id is a valid pid.
-func ValidatePID(id string) error {
-	if !pidRE.MatchString(id) {
-		return errInvalidPID
-	}
-	return nil
-}
-
-// ValidateUsername reports whether username is a valid username.
-func ValidateUsername(username string) error {
-	if !usernameRE.MatchString(username) {
-		return errInvalidUsername
-	}
-	return nil
-}
 
 func mapCapabilityError(err error) (api.Error, error) {
 	if errors.Is(err, errForbidden) {
@@ -68,6 +37,8 @@ var errExistingUserNotFound = errors.New("existing user not found")
 // - [api.Unauthorized]
 // - [api.DatabaseError].
 func (s *Service) ListNamespaces(ctx context.Context, caller *api.UserInfo, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, api.Error, error) {
+
+	// in authenticated mode, require the caller to be authenticated.
 	if !s.Options().Anonymous {
 		if err := s.requireAuthenticated(caller); err != nil {
 			return nil, "", err

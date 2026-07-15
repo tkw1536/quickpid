@@ -137,3 +137,72 @@ func TestEnsureRootUser_AnonymousModeSkipsBootstrap(t *testing.T) {
 		t.Fatalf("ListUsers() total = %d, want 0", page.Total)
 	}
 }
+
+func TestValidateNamespaceID(t *testing.T) {
+	t.Parallel()
+	testIdentifierValidation(t, service.ValidateNamespaceID, "invalid namespace id")
+}
+
+func TestValidatePID(t *testing.T) {
+	t.Parallel()
+	testIdentifierValidation(t, service.ValidatePID, "invalid pid")
+}
+
+func TestValidateUsername(t *testing.T) {
+	t.Parallel()
+	testIdentifierValidation(t, service.ValidateUsername, "invalid username")
+}
+
+func testIdentifierValidation(t *testing.T, validate func(string) error, wantInvalidMsg string) {
+	t.Helper()
+
+	tests := []struct {
+		name    string
+		input   string
+		wantErr string
+	}{
+		{
+			name:  "valid_alphanumeric",
+			input: "abc123",
+		},
+		{
+			name:  "valid_hyphen_underscore",
+			input: "a-b_c",
+		},
+		{
+			name:    "invalid_empty",
+			input:   "",
+			wantErr: wantInvalidMsg,
+		},
+		{
+			name:    "invalid_uppercase",
+			input:   "Alice",
+			wantErr: wantInvalidMsg,
+		},
+		{
+			name:    "invalid_special_characters",
+			input:   "a.b",
+			wantErr: wantInvalidMsg,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := validate(tt.input)
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Fatalf("validate(%q) error = %v, want nil", tt.input, err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("validate(%q) error = nil, want %q", tt.input, tt.wantErr)
+			}
+			if err.Error() != tt.wantErr {
+				t.Fatalf("validate(%q) error = %q, want %q", tt.input, err.Error(), tt.wantErr)
+			}
+		})
+	}
+}

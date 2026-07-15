@@ -3,6 +3,7 @@ package service
 
 //spellchecker:words sync github bicpid backend
 import (
+	"regexp"
 	"sync"
 
 	"github.com/tkw1536/bicpid/api"
@@ -56,9 +57,7 @@ func (s *Service) AnonymousMode() bool {
 //
 // - [api.InfoUnavailable].
 func (s *Service) GetResolverInfo() (*api.InfoResponse, api.Error, error) {
-	s.mu.RLock()
-	opts := s.opts
-	s.mu.RUnlock()
+	opts := s.Options()
 
 	if !opts.InfoEnabled {
 		return nil, api.InfoUnavailable, errSpecInfoPrivate
@@ -74,4 +73,35 @@ func (s *Service) GetResolverInfo() (*api.InfoResponse, api.Error, error) {
 		resp.MaxAutocompleteUsers = int64(opts.Limits.MaxAutocompleteUsers)
 	}
 	return resp, "", nil
+}
+
+// regular expressions to validate various identifiers.
+var (
+	namespaceIDRE = regexp.MustCompile(`^[a-z0-9_-]+$`)
+	pidRE         = regexp.MustCompile(`^[a-z0-9_-]+$`)
+	usernameRE    = regexp.MustCompile(`^[a-z0-9_-]+$`)
+)
+
+// ValidateNamespaceID reports whether id is a valid namespace identifier.
+func ValidateNamespaceID(id string) error {
+	if !namespaceIDRE.MatchString(id) {
+		return errInvalidNamespaceID
+	}
+	return nil
+}
+
+// ValidatePID reports whether id is a valid pid.
+func ValidatePID(id string) error {
+	if !pidRE.MatchString(id) {
+		return errInvalidPID
+	}
+	return nil
+}
+
+// ValidateUsername reports whether username is a valid username.
+func ValidateUsername(username string) error {
+	if !usernameRE.MatchString(username) {
+		return errInvalidUsername
+	}
+	return nil
 }
