@@ -61,7 +61,7 @@ func (s *Service) GetUserAccount(ctx context.Context, caller *api.UserInfo, targ
 	}
 	username, err := resolveTargetUsername(caller, target)
 	if err != nil {
-		return nil, annotateAuthError(err)
+		return nil, err
 	}
 	user, err := s.store.GetUser(ctx, username)
 	if mapped, ok := mapAuthBackendError(err); ok {
@@ -94,7 +94,7 @@ func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.
 		return nil, err
 	}
 	if err := requireSuperuser(caller); err != nil {
-		return nil, annotateAuthError(err)
+		return nil, err
 	}
 	if err := ValidateUsername(req.Username); err != nil {
 		return nil, api.WithErrorString(err, api.InvalidUsername)
@@ -119,7 +119,7 @@ func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params ap
 		return nil, err
 	}
 	if err := requireSuperuser(caller); err != nil {
-		return nil, annotateAuthError(err)
+		return nil, err
 	}
 
 	page, err := s.store.ListUsers(ctx, params)
@@ -154,7 +154,7 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *st
 	}
 	username, err := resolveTargetUsername(caller, target)
 	if err != nil {
-		return nil, annotateAuthError(err)
+		return nil, err
 	}
 	page, err := s.store.ListKeys(ctx, s.apiKeyFormat(), username, params)
 	if mapped, ok := mapAuthBackendError(err); ok {
@@ -180,7 +180,7 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *st
 	}
 	username, err := resolveTargetUsername(caller, target)
 	if err != nil {
-		return nil, annotateAuthError(err)
+		return nil, err
 	}
 	if req.ExpiresAt != nil {
 		expiresAt, err := time.Parse(time.RFC3339, *req.ExpiresAt)
@@ -251,7 +251,7 @@ func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, target *s
 	}
 	username, err := resolveTargetUsername(caller, target)
 	if err != nil {
-		return nil, annotateAuthError(err)
+		return nil, err
 	}
 	info, err := s.store.RevokeKey(ctx, s.apiKeyFormat(), username, req.ID)
 	if mapped, ok := mapAuthBackendError(err); ok {
@@ -269,7 +269,7 @@ func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, target s
 		return nil, err
 	}
 	if err := requireSuperuser(caller); err != nil {
-		return nil, annotateAuthError(err)
+		return nil, err
 	}
 	if target == caller.Username {
 		return nil, api.WithErrorString(errForbidden, api.Forbidden)
@@ -290,35 +290,29 @@ func resolveTargetUsername(caller *api.UserInfo, target *string) (string, error)
 		return caller.Username, nil
 	}
 	if *target != caller.Username && !caller.Superuser {
-		return "", errForbidden
+		return "", api.WithErrorString(errForbidden, api.Forbidden)
 	}
 	return *target, nil
 }
 
+// requireSuperuser reports whether user is a superuser.
+//
+// It can return errors annotated with [api.Unauthorized] or [api.Forbidden].
 func requireSuperuser(user *api.UserInfo) error {
 	if user == nil {
-		return errUnauthorized
+		return api.WithErrorString(errUnauthorized, api.Unauthorized)
 	}
 	if !user.Superuser {
-		return errForbidden
+		return api.WithErrorString(errForbidden, api.Forbidden)
 	}
 	return nil
-}
-
-func annotateAuthError(err error) error {
-	if errors.Is(err, errUnauthorized) {
-		return api.WithErrorString(err, api.Unauthorized)
-	}
-	if errors.Is(err, errForbidden) {
-		return api.WithErrorString(err, api.Forbidden)
-	}
-	return err
 }
 
 func (s *Service) apiKeyFormat() apikey.Format {
 	return apikey.Default
 }
 
+// mapAuthBackendError translates backend store errors to API-annotated errors.
 func mapAuthBackendError(err error) (error, bool) {
 	switch {
 	case errors.Is(err, backend.ErrDuplicateUsername):

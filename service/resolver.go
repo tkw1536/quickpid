@@ -12,22 +12,6 @@ import (
 	"github.com/tkw1536/bicpid/pid"
 )
 
-func mapCapabilityError(err error) error {
-	if errors.Is(err, errForbidden) {
-		return api.WithErrorString(err, api.Forbidden)
-	}
-	if errors.Is(err, errUnauthorized) {
-		return api.WithErrorString(err, api.Unauthorized)
-	}
-	if errors.Is(err, errInvalidNamespaceID) {
-		return api.WithErrorString(err, api.InvalidNamespaceID)
-	}
-	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return api.WithErrorString(err, api.NamespaceNotFound)
-	}
-	return api.WithErrorString(err, api.DatabaseError)
-}
-
 var errExistingUserNotFound = errors.New("existing user not found")
 
 // ListNamespaces lists namespaces.
@@ -40,7 +24,7 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.UserInfo, para
 	// in authenticated mode, require the caller to be authenticated.
 	if !s.Options().Anonymous {
 		if err := s.requireAuthenticated(caller); err != nil {
-			return nil, api.WithErrorString(err, api.Unauthorized)
+			return nil, err
 		}
 	}
 
@@ -77,7 +61,7 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.UserInfo, namesp
 		}
 	} else {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canReadNamespaceMetadata); err != nil {
-			return nil, mapCapabilityError(err)
+			return nil, err
 		}
 	}
 	out, err := s.store.GetNamespace(ctx, namespace)
@@ -119,7 +103,7 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.UserInfo, req
 	var owner *string
 	if !s.Options().Anonymous {
 		if err := s.requireAuthenticated(caller); err != nil {
-			return nil, api.WithErrorString(err, api.Unauthorized)
+			return nil, err
 		}
 		owner = &caller.Username
 	}
@@ -164,7 +148,7 @@ func (s *Service) ListResources(ctx context.Context, caller *api.UserInfo, param
 		}
 	} else {
 		if err := s.requireNamespaceCapability(ctx, caller, params.Namespace, canListResources); err != nil {
-			return nil, mapCapabilityError(err)
+			return nil, err
 		}
 	}
 	out, err := s.store.ListResources(ctx, params)
@@ -195,7 +179,7 @@ func (s *Service) CreateResource(ctx context.Context, caller *api.UserInfo, name
 		}
 	} else {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canCreateResource); err != nil {
-			return nil, mapCapabilityError(err)
+			return nil, err
 		}
 	}
 
@@ -245,7 +229,7 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo
 		}
 	} else {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canCreateResource); err != nil {
-			return nil, mapCapabilityError(err)
+			return nil, err
 		}
 	}
 
@@ -312,11 +296,8 @@ func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespa
 			return out, nil
 		}
 		level, err := s.effectivePermission(ctx, caller, namespace)
-		if errors.Is(err, backend.ErrNamespaceNotFound) {
-			return nil, api.WithErrorString(err, api.NamespaceNotFound)
-		}
 		if err != nil {
-			return nil, api.WithErrorString(err, api.DatabaseError)
+			return nil, err
 		}
 		if canReadDeletedResource(level) {
 			return out, nil
@@ -351,7 +332,7 @@ func (s *Service) UpdateResource(ctx context.Context, caller *api.UserInfo, name
 		}
 	} else {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canUpdateResource); err != nil {
-			return nil, mapCapabilityError(err)
+			return nil, err
 		}
 	}
 

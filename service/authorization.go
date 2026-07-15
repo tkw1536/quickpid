@@ -72,45 +72,62 @@ func (s *Service) requireAuthEnabled() error {
 	return nil
 }
 
+// requireAuthenticated reports whether caller is authenticated.
+//
+// It can return errors annotated with [api.Unauthorized].
 func (s *Service) requireAuthenticated(caller *api.UserInfo) error {
 	if caller == nil {
-		return errUnauthorized
+		return api.WithErrorString(errUnauthorized, api.Unauthorized)
 	}
 	return nil
 }
 
+// effectivePermission returns the caller's permission level in namespace.
+//
+// It can return errors annotated with:
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError]
 func (s *Service) effectivePermission(ctx context.Context, caller *api.UserInfo, namespace string) (api.PermissionLevel, error) {
 	if caller.Superuser {
 		return api.PermissionLevelManager, nil
 	}
 	level, err := s.store.GetNamespacePermission(ctx, namespace, caller.Username)
+	if errors.Is(err, backend.ErrNamespaceNotFound) {
+		return level, api.WithErrorString(fmt.Errorf("Store.GetNamespacePermission: %w", err), api.NamespaceNotFound)
+	}
 	if err != nil {
-		return level, fmt.Errorf("Store.GetNamespacePermission: %w", err)
+		return level, api.WithErrorString(fmt.Errorf("Store.GetNamespacePermission: %w", err), api.DatabaseError)
 	}
 	return level, nil
 }
 
+// requireNamespaceCapability checks that caller is authenticated and has the given capability in namespace.
+//
+// It can return errors annotated with:
+// - [api.Unauthorized]
+// - [api.InvalidNamespaceID]
+// - [api.Forbidden]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError]
 func (s *Service) requireNamespaceCapability(ctx context.Context, caller *api.UserInfo, namespace string, allowed func(api.PermissionLevel) bool) error {
 	if err := s.requireAuthenticated(caller); err != nil {
 		return err
 	}
 	if err := ValidateNamespaceID(namespace); err != nil {
-		return err
+		return api.WithErrorString(err, api.InvalidNamespaceID)
 	}
 
 	level, err := s.effectivePermission(ctx, caller, namespace)
-	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return err
-	}
 	if err != nil {
 		return err
 	}
 	if !allowed(level) {
-		return errForbidden
+		return api.WithErrorString(errForbidden, api.Forbidden)
 	}
 	return nil
 }
 
+// mapAuthorizationBackendError translates backend store errors to API-annotated errors.
 func mapAuthorizationBackendError(err error) (error, bool) {
 	if errors.Is(err, backend.ErrInvalidPermissionLevel) {
 		return api.WithErrorString(err, api.InvalidPermissionLevel), true
@@ -129,7 +146,7 @@ func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.UserIn
 		return nil, err
 	}
 	if err := s.requireAuthenticated(caller); err != nil {
-		return nil, api.WithErrorString(err, api.Unauthorized)
+		return nil, err
 	}
 	if err := ValidateNamespaceID(namespace); err != nil {
 		return nil, api.WithErrorString(err, api.InvalidNamespaceID)
@@ -140,16 +157,7 @@ func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.UserIn
 
 	if username != caller.Username {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
-			if errors.Is(err, errForbidden) {
-				return nil, api.WithErrorString(err, api.Forbidden)
-			}
-			if errors.Is(err, errUnauthorized) {
-				return nil, api.WithErrorString(err, api.Unauthorized)
-			}
-			if errors.Is(err, backend.ErrNamespaceNotFound) {
-				return nil, api.WithErrorString(err, api.NamespaceNotFound)
-			}
-			return nil, api.WithErrorString(err, api.DatabaseError)
+			return nil, err
 		}
 	}
 
@@ -169,16 +177,7 @@ func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.User
 		return nil, err
 	}
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
-		if errors.Is(err, errForbidden) {
-			return nil, api.WithErrorString(fmt.Errorf("Store.requireNamespaceCapability: %w", err), api.Forbidden)
-		}
-		if errors.Is(err, errUnauthorized) {
-			return nil, api.WithErrorString(fmt.Errorf("Store.requireNamespaceCapability: %w", err), api.Unauthorized)
-		}
-		if errors.Is(err, backend.ErrNamespaceNotFound) {
-			return nil, api.WithErrorString(fmt.Errorf("Store.requireNamespaceCapability: %w", err), api.NamespaceNotFound)
-		}
-		return nil, api.WithErrorString(fmt.Errorf("Store.requireNamespaceCapability: %w", err), api.DatabaseError)
+		return nil, err
 	}
 
 	page, err := s.store.ListNamespacePermissions(ctx, namespace, params)
@@ -200,16 +199,7 @@ func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.UserIn
 		return nil, api.WithErrorString(err, api.InvalidUsername)
 	}
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
-		if errors.Is(err, errForbidden) {
-			return nil, api.WithErrorString(err, api.Forbidden)
-		}
-		if errors.Is(err, errUnauthorized) {
-			return nil, api.WithErrorString(err, api.Unauthorized)
-		}
-		if errors.Is(err, backend.ErrNamespaceNotFound) {
-			return nil, api.WithErrorString(err, api.NamespaceNotFound)
-		}
-		return nil, api.WithErrorString(err, api.DatabaseError)
+		return nil, err
 	}
 	if username == caller.Username && !caller.Superuser {
 		return nil, api.WithErrorString(errForbidden, api.Forbidden)
@@ -252,16 +242,7 @@ func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.Use
 		return api.WithErrorString(fmt.Errorf("Store.GetNamespace: %w", err), api.DatabaseError)
 	}
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
-		if errors.Is(err, errForbidden) {
-			return api.WithErrorString(err, api.Forbidden)
-		}
-		if errors.Is(err, errUnauthorized) {
-			return api.WithErrorString(err, api.Unauthorized)
-		}
-		if errors.Is(err, backend.ErrNamespaceNotFound) {
-			return api.WithErrorString(err, api.NamespaceNotFound)
-		}
-		return api.WithErrorString(err, api.DatabaseError)
+		return err
 	}
 	if username == caller.Username && !caller.Superuser {
 		return api.WithErrorString(errForbidden, api.Forbidden)
