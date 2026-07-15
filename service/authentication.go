@@ -55,84 +55,84 @@ func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo
 }
 
 // GetUserAccount returns the caller's account or another user's when caller is a superuser.
-func (s *Service) GetUserAccount(ctx context.Context, caller *api.UserInfo, target *string) (*api.UserInfo, api.Error, error) {
-	if specError, err := s.requireAuthEnabled(); err != nil {
-		return nil, specError, err
+func (s *Service) GetUserAccount(ctx context.Context, caller *api.UserInfo, target *string) (*api.UserInfo, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
 	}
 	username, err := resolveTargetUsername(caller, target)
 	if err != nil {
-		return nil, "", err
+		return nil, annotateAuthError(err)
 	}
 	user, err := s.store.GetUser(ctx, username)
-	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, fmt.Errorf("store.GetUser: %w", err)
+	if mapped, ok := mapAuthBackendError(err); ok {
+		return nil, fmt.Errorf("store.GetUser: %w", mapped)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, fmt.Errorf("store.GetUser: %w", err)
+		return nil, api.WithErrorString(fmt.Errorf("store.GetUser: %w", err), api.DatabaseError)
 	}
-	return user, "", nil
+	return user, nil
 }
 
 // GetUser returns the user account for caller.
-func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, api.Error, error) {
-	if specError, err := s.requireAuthEnabled(); err != nil {
-		return nil, specError, err
+func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
 	}
 	user, err := s.store.GetUser(ctx, caller)
-	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, fmt.Errorf("store.GetUser: %w", err)
+	if mapped, ok := mapAuthBackendError(err); ok {
+		return nil, fmt.Errorf("store.GetUser: %w", mapped)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, fmt.Errorf("store.GetUser: %w", err)
+		return nil, api.WithErrorString(fmt.Errorf("store.GetUser: %w", err), api.DatabaseError)
 	}
-	return user, "", nil
+	return user, nil
 }
 
 // CreateUser creates a new user account. Caller must be a superuser.
-func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.UserCreateRequest) (*api.UserInfo, api.Error, error) {
-	if specError, err := s.requireAuthEnabled(); err != nil {
-		return nil, specError, err
+func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.UserCreateRequest) (*api.UserInfo, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
 	}
 	if err := requireSuperuser(caller); err != nil {
-		return nil, "", err
+		return nil, annotateAuthError(err)
 	}
 	if err := ValidateUsername(req.Username); err != nil {
-		return nil, api.InvalidUsername, err
+		return nil, api.WithErrorString(err, api.InvalidUsername)
 	}
 	if req.Superuser && !caller.Superuser {
-		return nil, "", errForbidden
+		return nil, api.WithErrorString(errForbidden, api.Forbidden)
 	}
 
 	user, err := s.store.CreateUser(ctx, req, s.runtime.Now)
-	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, fmt.Errorf("store.CreateUser: %w", err)
+	if mapped, ok := mapAuthBackendError(err); ok {
+		return nil, fmt.Errorf("store.CreateUser: %w", mapped)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, fmt.Errorf("store.CreateUser: %w", err)
+		return nil, api.WithErrorString(fmt.Errorf("store.CreateUser: %w", err), api.DatabaseError)
 	}
-	return user, "", nil
+	return user, nil
 }
 
 // ListUsers lists all user accounts. Caller must be a superuser.
-func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params api.ListUsersParams) (*api.PaginatedUsersResponse, api.Error, error) {
-	if specError, err := s.requireAuthEnabled(); err != nil {
-		return nil, specError, err
+func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
 	}
 	if err := requireSuperuser(caller); err != nil {
-		return nil, "", err
+		return nil, annotateAuthError(err)
 	}
 
 	page, err := s.store.ListUsers(ctx, params)
 	if err != nil {
-		return nil, api.DatabaseError, fmt.Errorf("store.ListUsers: %w", err)
+		return nil, api.WithErrorString(fmt.Errorf("store.ListUsers: %w", err), api.DatabaseError)
 	}
-	return page, "", nil
+	return page, nil
 }
 
 // AutocompleteUsers returns usernames matching a prefix. Any authenticated caller is allowed.
-func (s *Service) AutocompleteUsers(ctx context.Context, caller *api.UserInfo, query string) ([]string, api.Error, error) {
-	if specError, err := s.requireAuthEnabled(); err != nil {
-		return nil, specError, err
+func (s *Service) AutocompleteUsers(ctx context.Context, caller *api.UserInfo, query string) ([]string, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
 	}
 	_ = caller
 
@@ -142,28 +142,28 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller *api.UserInfo, q
 
 	usernames, err := s.store.AutocompleteUsers(ctx, query, limit)
 	if err != nil {
-		return nil, api.DatabaseError, fmt.Errorf("store.AutocompleteUsers: %w", err)
+		return nil, api.WithErrorString(fmt.Errorf("store.AutocompleteUsers: %w", err), api.DatabaseError)
 	}
-	return usernames, "", nil
+	return usernames, nil
 }
 
 // ListKeys lists API keys for the caller or another user when caller is a superuser.
-func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, api.Error, error) {
-	if specError, err := s.requireAuthEnabled(); err != nil {
-		return nil, specError, err
+func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
 	}
 	username, err := resolveTargetUsername(caller, target)
 	if err != nil {
-		return nil, "", err
+		return nil, annotateAuthError(err)
 	}
 	page, err := s.store.ListKeys(ctx, s.apiKeyFormat(), username, params)
-	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, fmt.Errorf("store.ListKeys: %w", err)
+	if mapped, ok := mapAuthBackendError(err); ok {
+		return nil, fmt.Errorf("store.ListKeys: %w", mapped)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, fmt.Errorf("store.ListKeys: %w", err)
+		return nil, api.WithErrorString(fmt.Errorf("store.ListKeys: %w", err), api.DatabaseError)
 	}
-	return page, "", nil
+	return page, nil
 }
 
 // IssueKey issues a new API key for caller or another user when caller is a superuser.
@@ -174,36 +174,36 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *st
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
-func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *string, req api.KeyIssueRequest) (*api.IssueKeyResponse, api.Error, error) {
-	if specError, err := s.requireAuthEnabled(); err != nil {
-		return nil, specError, err
+func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *string, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
 	}
 	username, err := resolveTargetUsername(caller, target)
 	if err != nil {
-		return nil, "", err
+		return nil, annotateAuthError(err)
 	}
 	if req.ExpiresAt != nil {
 		expiresAt, err := time.Parse(time.RFC3339, *req.ExpiresAt)
 		if err != nil {
-			return nil, api.InvalidQueryParameter, fmt.Errorf("time.Parse: %w", err)
+			return nil, api.WithErrorString(fmt.Errorf("time.Parse: %w", err), api.InvalidQueryParameter)
 		}
 		if !expiresAt.After(s.runtime.Now()) {
-			return nil, api.InvalidQueryParameter, errExpiresAtInPast
+			return nil, api.WithErrorString(errExpiresAtInPast, api.InvalidQueryParameter)
 		}
 	}
 
 	if _, err := s.store.GetUser(ctx, username); err != nil {
-		if specError, ok := mapAuthBackendError(err); ok {
-			return nil, specError, fmt.Errorf("store.GetUser: %w", err)
+		if mapped, ok := mapAuthBackendError(err); ok {
+			return nil, fmt.Errorf("store.GetUser: %w", mapped)
 		}
-		return nil, api.DatabaseError, fmt.Errorf("store.GetUser: %w", err)
+		return nil, api.WithErrorString(fmt.Errorf("store.GetUser: %w", err), api.DatabaseError)
 	}
 
-	issued, specError, err := s.issueAPIKey(ctx, username, req)
+	issued, err := s.issueAPIKey(ctx, username, req)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
-	return issued, "", nil
+	return issued, nil
 }
 
 // issueAPIKey issues a new API key, retrying when storage reports [backend.ErrKeyCollision].
@@ -213,7 +213,7 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *st
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
-func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyIssueRequest) (*api.IssueKeyResponse, api.Error, error) {
+func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
 	s.mu.RLock()
 	maxAttempts := s.opts.Limits.MaxAPIKeyAttempts
 	s.mu.RUnlock()
@@ -222,67 +222,67 @@ func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyI
 	for range maxAttempts {
 		keyID, err := s.runtime.NewAPIKeyID()
 		if err != nil {
-			return nil, api.BadIDGeneration, fmt.Errorf("runtime.NewAPIKeyID: %w", err)
+			return nil, api.WithErrorString(fmt.Errorf("runtime.NewAPIKeyID: %w", err), api.BadIDGeneration)
 		}
 
 		rawKey, err := s.runtime.NewAPIKey(format)
 		if err != nil {
-			return nil, api.BadIDGeneration, fmt.Errorf("runtime.NewAPIKey: %w", err)
+			return nil, api.WithErrorString(fmt.Errorf("runtime.NewAPIKey: %w", err), api.BadIDGeneration)
 		}
 
 		info, err := s.store.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
 		if err == nil {
-			return &api.IssueKeyResponse{APIKeyInfo: *info, Key: rawKey}, "", nil
+			return &api.IssueKeyResponse{APIKeyInfo: *info, Key: rawKey}, nil
 		}
-		if specError, ok := mapAuthBackendError(err); ok {
-			return nil, specError, fmt.Errorf("store.CreateKey: %w", err)
+		if mapped, ok := mapAuthBackendError(err); ok {
+			return nil, fmt.Errorf("store.CreateKey: %w", mapped)
 		}
 		if !errors.Is(err, backend.ErrKeyCollision) {
-			return nil, api.DatabaseError, fmt.Errorf("store.CreateKey: %w", err)
+			return nil, api.WithErrorString(fmt.Errorf("store.CreateKey: %w", err), api.DatabaseError)
 		}
 	}
-	return nil, api.InsufficientEntropy, fmt.Errorf("%w: gave up api key generation after %d attempts", errInsufficientEntropy, maxAttempts)
+	return nil, api.WithErrorString(fmt.Errorf("%w: gave up api key generation after %d attempts", errInsufficientEntropy, maxAttempts), api.InsufficientEntropy)
 }
 
 // RevokeKey revokes an API key for the caller or another user when caller is a superuser.
-func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, target *string, req api.KeyRevokeRequest) (*api.RevokeKeyResponse, api.Error, error) {
-	if specError, err := s.requireAuthEnabled(); err != nil {
-		return nil, specError, err
+func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, target *string, req api.KeyRevokeRequest) (*api.RevokeKeyResponse, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
 	}
 	username, err := resolveTargetUsername(caller, target)
 	if err != nil {
-		return nil, "", err
+		return nil, annotateAuthError(err)
 	}
 	info, err := s.store.RevokeKey(ctx, s.apiKeyFormat(), username, req.ID)
-	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, fmt.Errorf("store.RevokeKey: %w", err)
+	if mapped, ok := mapAuthBackendError(err); ok {
+		return nil, fmt.Errorf("store.RevokeKey: %w", mapped)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, fmt.Errorf("store.RevokeKey: %w", err)
+		return nil, api.WithErrorString(fmt.Errorf("store.RevokeKey: %w", err), api.DatabaseError)
 	}
-	return &api.RevokeKeyResponse{APIKeyInfo: *info}, "", nil
+	return &api.RevokeKeyResponse{APIKeyInfo: *info}, nil
 }
 
 // UpdateUser updates a user account. Caller must be a superuser and cannot update their own account.
-func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, target string, req api.UserUpdateRequest) (*api.UserInfo, api.Error, error) {
-	if specError, err := s.requireAuthEnabled(); err != nil {
-		return nil, specError, err
+func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, target string, req api.UserUpdateRequest) (*api.UserInfo, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
 	}
 	if err := requireSuperuser(caller); err != nil {
-		return nil, "", err
+		return nil, annotateAuthError(err)
 	}
 	if target == caller.Username {
-		return nil, "", errForbidden
+		return nil, api.WithErrorString(errForbidden, api.Forbidden)
 	}
 
 	user, err := s.store.UpdateUser(ctx, target, req)
-	if specError, ok := mapAuthBackendError(err); ok {
-		return nil, specError, fmt.Errorf("store.UpdateUser: %w", err)
+	if mapped, ok := mapAuthBackendError(err); ok {
+		return nil, fmt.Errorf("store.UpdateUser: %w", mapped)
 	}
 	if err != nil {
-		return nil, api.DatabaseError, fmt.Errorf("store.UpdateUser: %w", err)
+		return nil, api.WithErrorString(fmt.Errorf("store.UpdateUser: %w", err), api.DatabaseError)
 	}
-	return user, "", nil
+	return user, nil
 }
 
 func resolveTargetUsername(caller *api.UserInfo, target *string) (string, error) {
@@ -305,20 +305,30 @@ func requireSuperuser(user *api.UserInfo) error {
 	return nil
 }
 
+func annotateAuthError(err error) error {
+	if errors.Is(err, errUnauthorized) {
+		return api.WithErrorString(err, api.Unauthorized)
+	}
+	if errors.Is(err, errForbidden) {
+		return api.WithErrorString(err, api.Forbidden)
+	}
+	return err
+}
+
 func (s *Service) apiKeyFormat() apikey.Format {
 	return apikey.Default
 }
 
-func mapAuthBackendError(err error) (api.Error, bool) {
+func mapAuthBackendError(err error) (error, bool) {
 	switch {
 	case errors.Is(err, backend.ErrDuplicateUsername):
-		return api.DuplicateUsername, true
+		return api.WithErrorString(err, api.DuplicateUsername), true
 	case errors.Is(err, backend.ErrUserNotFound):
-		return api.UserNotFound, true
+		return api.WithErrorString(err, api.UserNotFound), true
 	case errors.Is(err, backend.ErrKeyNotFound):
-		return api.KeyNotFound, true
+		return api.WithErrorString(err, api.KeyNotFound), true
 	default:
-		return "", false
+		return nil, false
 	}
 }
 
@@ -349,7 +359,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 		return fmt.Errorf("failed to create root superuser: %w", err)
 	}
 
-	issued, _, err := s.issueAPIKey(ctx, rootUsername, api.KeyIssueRequest{
+	issued, err := s.issueAPIKey(ctx, rootUsername, api.KeyIssueRequest{
 		Comment: "bootstrap",
 	})
 	if err != nil {

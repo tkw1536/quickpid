@@ -1,6 +1,6 @@
 package api
 
-//spellchecker:words errors github bicpid internal strict
+//spellchecker:words github bicpid internal strict
 import (
 	"fmt"
 

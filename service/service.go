@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words sync github bicpid backend
+//spellchecker:words regexp sync github bicpid backend
 import (
 	"regexp"
 	"sync"
@@ -56,11 +56,11 @@ func (s *Service) AnonymousMode() bool {
 // It can return the following errors:
 //
 // - [api.InfoUnavailable].
-func (s *Service) GetResolverInfo() (*api.InfoResponse, api.Error, error) {
+func (s *Service) GetResolverInfo() (*api.InfoResponse, error) {
 	opts := s.Options()
 
 	if !opts.InfoEnabled {
-		return nil, api.InfoUnavailable, errSpecInfoPrivate
+		return nil, api.WithErrorString(errSpecInfoPrivate, api.InfoUnavailable)
 	}
 	resp := &api.InfoResponse{
 		MaxBodyBytes:     opts.Limits.MaxBodyBytes,
@@ -72,7 +72,7 @@ func (s *Service) GetResolverInfo() (*api.InfoResponse, api.Error, error) {
 	if !opts.Anonymous {
 		resp.MaxAutocompleteUsers = int64(opts.Limits.MaxAutocompleteUsers)
 	}
-	return resp, "", nil
+	return resp, nil
 }
 
 // regular expressions to validate various identifiers.

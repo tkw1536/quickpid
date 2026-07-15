@@ -1,7 +1,7 @@
 // Package api holds type definitions for the PID Resolver API.
 package api
 
-//spellchecker:words errors github bicpid internal strict embed
+//spellchecker:words github bicpid internal strict embed
 import (
 	"fmt"
 

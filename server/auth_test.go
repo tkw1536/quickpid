@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server_test
 
-//spellchecker:words context encoding json http httptest strings testing time github bicpid backend memory internal apikey service
+//spellchecker:words context encoding json http httptest reflect strings testing time github bicpid backend memory internal apikey server service
 import (
 	"context"
 	"encoding/json"
@@ -100,7 +100,7 @@ func assertUnauthorizedJSON(t *testing.T, rec *httptest.ResponseRecorder) {
 	if err := json.Unmarshal(body, &resp); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v, body = %q", err, body)
 	}
-	if resp.Error != string(api.Unauthorized) {
+	if resp.Error != api.Unauthorized {
 		t.Fatalf("error = %q, want %q", resp.Error, api.Unauthorized)
 	}
 }
@@ -124,7 +124,7 @@ func assertForbiddenJSON(t *testing.T, rec *httptest.ResponseRecorder) {
 	if err := json.Unmarshal(body, &resp); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v, body = %q", err, body)
 	}
-	if resp.Error != string(api.Forbidden) {
+	if resp.Error != api.Forbidden {
 		t.Fatalf("error = %q, want %q", resp.Error, api.Forbidden)
 	}
 }

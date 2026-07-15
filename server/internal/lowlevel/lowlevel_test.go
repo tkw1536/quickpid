@@ -57,12 +57,12 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 				var gotCalled bool
 				handler := lowlevel.HandleNoAuth(
 					h,
-					func(w http.ResponseWriter, r *http.Request) (authProbeResponse, api.Error, error) {
+					func(w http.ResponseWriter, r *http.Request) (authProbeResponse, error) {
 						gotCalled = true
-						return authProbeResponse{}, "", nil
+						return authProbeResponse{}, nil
 					},
 					http.StatusOK,
-					[]api.Error{api.DatabaseError},
+					[]api.ErrorString{api.DatabaseError},
 				)
 
 				rec := runHandler(t, handler, scenario.token)
@@ -80,13 +80,13 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 				)
 				handler := lowlevel.HandleRequiredUsername(
 					h,
-					func(w http.ResponseWriter, r *http.Request, username string) (authProbeResponse, api.Error, error) {
+					func(w http.ResponseWriter, r *http.Request, username string) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = username
-						return authProbeResponse{Username: new(username)}, "", nil
+						return authProbeResponse{Username: new(username)}, nil
 					},
 					http.StatusOK,
-					[]api.Error{api.Unauthorized, api.DatabaseError},
+					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
 				rec := runHandler(t, handler, scenario.token)
@@ -108,13 +108,13 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 				)
 				handler := lowlevel.HandleOptionalUsername(
 					h,
-					func(w http.ResponseWriter, r *http.Request, username *string) (authProbeResponse, api.Error, error) {
+					func(w http.ResponseWriter, r *http.Request, username *string) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = username
-						return authProbeResponse{Username: username}, "", nil
+						return authProbeResponse{Username: username}, nil
 					},
 					http.StatusOK,
-					[]api.Error{api.Unauthorized, api.DatabaseError},
+					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
 				rec := runHandler(t, handler, scenario.token)
@@ -136,13 +136,13 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 				)
 				handler := lowlevel.HandleRequiredUser(
 					h,
-					func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (authProbeResponse, api.Error, error) {
+					func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = user
-						return authProbeResponse{Username: &user.Username, User: user}, "", nil
+						return authProbeResponse{Username: &user.Username, User: user}, nil
 					},
 					http.StatusOK,
-					[]api.Error{api.Unauthorized, api.DatabaseError},
+					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
 				rec := runHandler(t, handler, scenario.token)
@@ -164,17 +164,17 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 				)
 				handler := lowlevel.HandleOptionalUser(
 					h,
-					func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (authProbeResponse, api.Error, error) {
+					func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = user
 						var username *string
 						if user != nil {
 							username = &user.Username
 						}
-						return authProbeResponse{Username: username, User: user}, "", nil
+						return authProbeResponse{Username: username, User: user}, nil
 					},
 					http.StatusOK,
-					[]api.Error{api.Unauthorized, api.DatabaseError},
+					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
 				rec := runHandler(t, handler, scenario.token)
@@ -248,12 +248,12 @@ func TestHandleRequiredUsernamePanicsWhenUnauthorizedNotAllowed(t *testing.T) {
 	h := lowlevel.NewAuthHandler(&mockAuthService{}, nil)
 	handler := lowlevel.HandleRequiredUsername(
 		h,
-		func(w http.ResponseWriter, r *http.Request, username string) (struct{}, api.Error, error) {
+		func(w http.ResponseWriter, r *http.Request, username string) (struct{}, error) {
 			t.Fatal("impl should not be called")
-			return struct{}{}, "", nil
+			return struct{}{}, nil
 		},
 		http.StatusOK,
-		[]api.Error{api.DatabaseError},
+		[]api.ErrorString{api.DatabaseError},
 	)
 
 	defer expectPanic(t)
@@ -270,15 +270,14 @@ func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 	h := lowlevel.NewAuthHandler(svc, nil)
 	handler := lowlevel.HandleRequiredUser(
 		h,
-		func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, api.Error, error) {
-			_, specError, err := svc.CreateUser(r.Context(), user, api.UserCreateRequest{Username: "bob", Superuser: true})
-			if err != nil {
-				return struct{}{}, specError, fmt.Errorf("svc.CreateUser: %w", err)
+		func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, error) {
+			if _, err := svc.CreateUser(r.Context(), user, api.UserCreateRequest{Username: "bob", Superuser: true}); err != nil {
+				return struct{}{}, fmt.Errorf("svc.CreateUser: %w", err)
 			}
-			return struct{}{}, "", nil
+			return struct{}{}, nil
 		},
 		http.StatusOK,
-		[]api.Error{api.Unauthorized, api.DatabaseError},
+		[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 	)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/probe", nil)
@@ -301,12 +300,12 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 	}, nil)
 	handler := lowlevel.HandleRequiredUserInAuthMode(
 		h,
-		func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, api.Error, error) {
+		func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, error) {
 			t.Fatal("handler must not be called in anonymous mode")
-			return struct{}{}, "", nil
+			return struct{}{}, nil
 		},
 		http.StatusOK,
-		[]api.Error{api.Unauthorized, api.UnavailableInAnonymousMode, api.DatabaseError},
+		[]api.ErrorString{api.Unauthorized, api.UnavailableInAnonymousMode, api.DatabaseError},
 	)
 
 	rec := runHandler(t, handler, "any-token")

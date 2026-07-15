@@ -17,11 +17,11 @@ import (
 func handle[T any](
 	h *AuthHandler,
 	auth authConfig,
-	impl func(http.ResponseWriter, *http.Request, *string, *api.UserInfo) (T, api.Error, error),
+	impl func(http.ResponseWriter, *http.Request, *string, *api.UserInfo) (T, error),
 	successCode int,
-	allowedErrors []api.Error,
+	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
-	errors := make(map[api.Error]struct{}, len(allowedErrors))
+	errors := make(map[api.ErrorString]struct{}, len(allowedErrors))
 	for _, err := range allowedErrors {
 		errors[err] = struct{}{}
 	}
@@ -29,33 +29,19 @@ func handle[T any](
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		username, user, specError, err := h.resolveAuth(r, auth)
+		username, user, err := h.resolveAuth(r, auth)
 		if err != nil {
 			duration := time.Since(start)
-			h.writeHandledError(w, r, duration, specError, err, errors)
+			h.writeHandledError(w, r, duration, err, errors)
 			return
 		}
 
-		value, specError, err := impl(w, r, username, user)
+		value, err := impl(w, r, username, user)
 		duration := time.Since(start)
 
 		if err != nil {
-			switch {
-			case service.IsUnauthorized(err):
-				h.writeHandledError(w, r, duration, api.Unauthorized, err, errors)
-			case service.IsForbidden(err):
-				h.writeHandledError(w, r, duration, api.Forbidden, err, errors)
-			default:
-				if specError == "" {
-					specError = api.DatabaseError
-				}
-				h.writeHandledError(w, r, duration, specError, err, errors)
-			}
+			h.writeHandledError(w, r, duration, err, errors)
 			return
-		}
-
-		if specError != "" {
-			panic("never reached: specError != \"\", but err == nil")
 		}
 
 		h.Log(r.Context(), r, duration, successCode)
@@ -65,53 +51,69 @@ func handle[T any](
 
 var errUnavailableInAnonymousMode = errors.New("unavailable in anonymous mode")
 
+func resolveAPIError(err error) api.ErrorString {
+	if code, ok := api.GetErrorString(err); ok {
+		return code
+	}
+	switch {
+	case service.IsUnauthorized(err):
+		return api.Unauthorized
+	case service.IsForbidden(err):
+		return api.Forbidden
+	case service.IsUnavailableInAnonymousMode(err):
+		return api.UnavailableInAnonymousMode
+	default:
+		return api.DatabaseError
+	}
+}
+
 // resolveAuth resolves the caller according to the given auth configuration.
 //
 // It returns nil values when auth is disabled or optional auth is not supplied.
-func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*string, *api.UserInfo, api.Error, error) {
+func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*string, *api.UserInfo, error) {
 	if auth.requirement == authRequirementAuthMode && h.auth.AnonymousMode() {
-		return nil, nil, api.UnavailableInAnonymousMode, errUnavailableInAnonymousMode
+		return nil, nil, api.WithErrorString(errUnavailableInAnonymousMode, api.UnavailableInAnonymousMode)
 	}
 
 	if auth.requirement == authRequirementNone {
-		return nil, nil, "", nil
+		return nil, nil, nil
 	}
 
 	token := readBearerToken(r)
 	if auth.requirement == authRequirementOptional && token == "" {
-		return nil, nil, "", nil
+		return nil, nil, nil
 	}
 
 	if auth.loadUser {
 		user, err := h.auth.CurrentUser(r.Context(), token)
 		if service.IsUnauthorized(err) {
-			return nil, nil, api.Unauthorized, fmt.Errorf("auth.CurrentUser: %w", err)
+			return nil, nil, api.WithErrorString(fmt.Errorf("auth.CurrentUser: %w", err), api.Unauthorized)
 		}
 		if err != nil {
-			return nil, nil, api.DatabaseError, fmt.Errorf("auth.CurrentUser: %w", err)
+			return nil, nil, api.WithErrorString(fmt.Errorf("auth.CurrentUser: %w", err), api.DatabaseError)
 		}
-		return &user.Username, user, "", nil
+		return &user.Username, user, nil
 	}
 
 	username, err := h.auth.Authenticate(r.Context(), token)
 	if service.IsUnauthorized(err) {
-		return nil, nil, api.Unauthorized, fmt.Errorf("auth.Authenticate: %w", err)
+		return nil, nil, api.WithErrorString(fmt.Errorf("auth.Authenticate: %w", err), api.Unauthorized)
 	}
 	if err != nil {
-		return nil, nil, api.DatabaseError, fmt.Errorf("auth.Authenticate: %w", err)
+		return nil, nil, api.WithErrorString(fmt.Errorf("auth.Authenticate: %w", err), api.DatabaseError)
 	}
-	return &username, nil, "", nil
+	return &username, nil, nil
 }
 
-// writeHandledError validates that specError is declared in allowedErrors, logs it, and writes the JSON response.
+// writeHandledError validates that the error maps to a declared API error, logs it, and writes the JSON response.
 func (h *AuthHandler) writeHandledError(
 	w http.ResponseWriter,
 	r *http.Request,
 	duration time.Duration,
-	specError api.Error,
 	err error,
-	allowedErrors map[api.Error]struct{},
+	allowedErrors map[api.ErrorString]struct{},
 ) {
+	specError := resolveAPIError(err)
 	if _, ok := allowedErrors[specError]; !ok {
 		panic("implementation error: unexpected error returned")
 	}
@@ -124,5 +126,5 @@ func (h *AuthHandler) writeHandledError(
 		slog.String("error", string(specError)),
 		slog.Any("cause", err),
 	)
-	h.writeJSONResponse(w, r, specError.HTTPCode(), api.ErrorResponse{Error: string(specError)})
+	h.writeJSONResponse(w, r, specError.HTTPCode(), api.ErrorResponse{Error: specError})
 }

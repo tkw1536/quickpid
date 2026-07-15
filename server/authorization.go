@@ -9,78 +9,77 @@ import (
 	"github.com/tkw1536/bicpid/api"
 )
 
-func (h *Server) getNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespacePermission, api.Error, error) {
-	namespace, specError, err := h.getNamespace(r)
+func (h *Server) getNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespacePermission, error) {
+	namespace, err := h.getNamespace(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
-	username, specError, err := h.getUsername(r)
+	username, err := h.getUsername(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
-	permission, specError, err := h.svc.GetNamespacePermission(r.Context(), user, namespace, username)
+	permission, err := h.svc.GetNamespacePermission(r.Context(), user, namespace, username)
 	if err != nil {
-		return nil, specError, fmt.Errorf("svc.GetNamespacePermission: %w", err)
+		return nil, fmt.Errorf("svc.GetNamespacePermission: %w", err)
 	}
-	return permission, "", nil
+	return permission, nil
 }
 
-func (h *Server) listNamespacePermissions(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedNamespacePermissionsResponse, api.Error, error) {
-	namespace, specError, err := h.getNamespace(r)
+func (h *Server) listNamespacePermissions(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedNamespacePermissionsResponse, error) {
+	namespace, err := h.getNamespace(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 
-	limit, offset, specError, err := h.parsePagination(r)
+	limit, offset, err := h.parsePagination(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 
-	permissions, specError, err := h.svc.ListNamespacePermissions(r.Context(), user, namespace, api.ListNamespacePermissionsParams{
+	permissions, err := h.svc.ListNamespacePermissions(r.Context(), user, namespace, api.ListNamespacePermissionsParams{
 		Limit:  limit,
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, specError, fmt.Errorf("svc.ListNamespacePermissions: %w", err)
+		return nil, fmt.Errorf("svc.ListNamespacePermissions: %w", err)
 	}
-	return permissions, "", nil
+	return permissions, nil
 }
 
-func (h *Server) setNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespacePermission, api.Error, error) {
-	namespace, specError, err := h.getNamespace(r)
+func (h *Server) setNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespacePermission, error) {
+	namespace, err := h.getNamespace(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
-	username, specError, err := h.getUsername(r)
+	username, err := h.getUsername(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 
 	var req api.SetNamespacePermissionRequest
-	if specError, err := h.decodeJSON(w, r, &req); err != nil {
-		return nil, specError, err
+	if err := h.decodeJSON(w, r, &req); err != nil {
+		return nil, err
 	}
 
-	permission, specError, err := h.svc.SetNamespacePermission(r.Context(), user, namespace, username, req)
+	permission, err := h.svc.SetNamespacePermission(r.Context(), user, namespace, username, req)
 	if err != nil {
-		return nil, specError, fmt.Errorf("svc.SetNamespacePermission: %w", err)
+		return nil, fmt.Errorf("svc.SetNamespacePermission: %w", err)
 	}
-	return permission, "", nil
+	return permission, nil
 }
 
-func (h *Server) deleteNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, api.Error, error) {
-	namespace, specError, err := h.getNamespace(r)
+func (h *Server) deleteNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, error) {
+	namespace, err := h.getNamespace(r)
 	if err != nil {
-		return struct{}{}, specError, err
+		return struct{}{}, err
 	}
-	username, specError, err := h.getUsername(r)
+	username, err := h.getUsername(r)
 	if err != nil {
-		return struct{}{}, specError, err
+		return struct{}{}, err
 	}
 
-	specError, err = h.svc.DeleteNamespacePermission(r.Context(), user, namespace, username)
-	if err != nil {
-		return struct{}{}, specError, fmt.Errorf("svc.DeleteNamespacePermission: %w", err)
+	if err := h.svc.DeleteNamespacePermission(r.Context(), user, namespace, username); err != nil {
+		return struct{}{}, fmt.Errorf("svc.DeleteNamespacePermission: %w", err)
 	}
-	return struct{}{}, "", nil
+	return struct{}{}, nil
 }

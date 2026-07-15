@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words encoding json errors http strconv github bicpid service
+//spellchecker:words encoding json errors http strconv github bicpid service pkglib errorsx
 import (
 	"encoding/json"
 	"errors"
@@ -35,19 +35,22 @@ var (
 // - [api.BodySizeExceeded]
 // - [api.BodyMissing]
 // - [api.BodyInvalidJSON].
-func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (ae api.Error, e error) {
+func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) error {
 	var body = r.Body
 	if maxBody := h.svc.Options().Limits.MaxBodyBytes; maxBody > 0 {
 		body = http.MaxBytesReader(w, body, maxBody)
 	}
+	var decodeErr error
 	defer func() {
 		if err := body.Close(); err != nil {
 			// This usesthe Body Invalid JSON api error, which isn't entirely correct.
 			//
 			// Most likely this happens when the underlying network connection had some error;
 			// meaning the client will never see if anyways.
-			ae = api.BodyInvalidJSON
-			e = errorsx.Combine(e, fmt.Errorf("body.Close: %w", err))
+			decodeErr = api.WithErrorString(
+				errorsx.Combine(decodeErr, fmt.Errorf("body.Close: %w", err)),
+				api.BodyInvalidJSON,
+			)
 		}
 	}()
 
@@ -56,21 +59,21 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (ae a
 
 	if err := dec.Decode(v); err != nil {
 		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-			return api.BodySizeExceeded, fmt.Errorf("json.Decode: %w", err)
+			return api.WithErrorString(fmt.Errorf("json.Decode: %w", err), api.BodySizeExceeded)
 		}
 		if errors.Is(err, io.EOF) {
-			return api.BodyMissing, fmt.Errorf("json.Decode: %w", err)
+			return api.WithErrorString(fmt.Errorf("json.Decode: %w", err), api.BodyMissing)
 		}
-		return api.BodyInvalidJSON, fmt.Errorf("json.Decode: %w", err)
+		return api.WithErrorString(fmt.Errorf("json.Decode: %w", err), api.BodyInvalidJSON)
 	}
 	_, err := dec.Token()
 	if !errors.Is(err, io.EOF) || err == nil {
 		if err == nil {
 			err = errTrailingJSON
 		}
-		return api.BodyInvalidJSON, err
+		return api.WithErrorString(err, api.BodyInvalidJSON)
 	}
-	return "", nil
+	return decodeErr
 }
 
 // parsePagination parses pagination parameters from the query string.
@@ -80,7 +83,7 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (ae a
 // It can return the following errors:
 //
 // - [api.InvalidQueryParameter].
-func (h *Server) parsePagination(r *http.Request) (limit int, offset int, specError api.Error, err error) {
+func (h *Server) parsePagination(r *http.Request) (limit int, offset int, err error) {
 	query := r.URL.Query()
 	limits := h.svc.Options().Limits
 
@@ -88,10 +91,10 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, specEr
 	if query.Has("limit") {
 		limit, err = strconv.Atoi(query.Get("limit"))
 		if err != nil {
-			return 0, 0, api.InvalidQueryParameter, fmt.Errorf("%w: %w", errLimitInvalid, err)
+			return 0, 0, api.WithErrorString(fmt.Errorf("%w: %w", errLimitInvalid, err), api.InvalidQueryParameter)
 		}
 		if limit < 0 {
-			return 0, 0, api.InvalidQueryParameter, errLimitMustBeNonNegative
+			return 0, 0, api.WithErrorString(errLimitMustBeNonNegative, api.InvalidQueryParameter)
 		}
 	}
 	if limits.MaxPageLimit > 0 && limit > limits.MaxPageLimit {
@@ -102,13 +105,13 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, specEr
 	if query.Has("offset") {
 		offset, err = strconv.Atoi(query.Get("offset"))
 		if err != nil {
-			return 0, 0, api.InvalidQueryParameter, fmt.Errorf("%w: %w", errOffsetInvalid, err)
+			return 0, 0, api.WithErrorString(fmt.Errorf("%w: %w", errOffsetInvalid, err), api.InvalidQueryParameter)
 		}
 		if offset < 0 {
-			return 0, 0, api.InvalidQueryParameter, errOffsetMustBeNonNegative
+			return 0, 0, api.WithErrorString(errOffsetMustBeNonNegative, api.InvalidQueryParameter)
 		}
 	}
-	return limit, offset, "", nil
+	return limit, offset, nil
 }
 
 // getNamespace gets the namespace from the request path.
@@ -116,12 +119,12 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, specEr
 // It can return the following errors:
 //
 // - [api.InvalidNamespaceID].
-func (*Server) getNamespace(r *http.Request) (namespace string, specError api.Error, err error) {
+func (*Server) getNamespace(r *http.Request) (namespace string, err error) {
 	namespace = r.PathValue("namespace")
 	if err := service.ValidateNamespaceID(namespace); err != nil {
-		return "", api.InvalidNamespaceID, fmt.Errorf("service.ValidateNamespaceID: %w", err)
+		return "", api.WithErrorString(fmt.Errorf("service.ValidateNamespaceID: %w", err), api.InvalidNamespaceID)
 	}
-	return namespace, "", nil
+	return namespace, nil
 }
 
 // getPID gets the pid from the request path.
@@ -129,21 +132,21 @@ func (*Server) getNamespace(r *http.Request) (namespace string, specError api.Er
 // It can return the following errors:
 //
 // - [api.InvalidPID].
-func (*Server) getPID(r *http.Request) (pid string, specError api.Error, err error) {
+func (*Server) getPID(r *http.Request) (pid string, err error) {
 	pid = r.PathValue("pid")
 	if err := service.ValidatePID(pid); err != nil {
-		return "", api.InvalidPID, fmt.Errorf("service.ValidatePID: %w", err)
+		return "", api.WithErrorString(fmt.Errorf("service.ValidatePID: %w", err), api.InvalidPID)
 	}
-	return pid, "", nil
+	return pid, nil
 }
 
 // getUsername gets the username from the request path.
-func (*Server) getUsername(r *http.Request) (username string, specError api.Error, err error) {
+func (*Server) getUsername(r *http.Request) (username string, err error) {
 	username = r.PathValue("username")
 	if err := service.ValidateUsername(username); err != nil {
-		return "", api.InvalidUsername, fmt.Errorf("service.ValidateUsername: %w", err)
+		return "", api.WithErrorString(fmt.Errorf("service.ValidateUsername: %w", err), api.InvalidUsername)
 	}
-	return username, "", nil
+	return username, nil
 }
 
 // parseOptionalUsernameQuery parses an optional username query parameter.
@@ -151,16 +154,16 @@ func (*Server) getUsername(r *http.Request) (username string, specError api.Erro
 // It can return the following errors:
 //
 // - [api.InvalidUsername].
-func (*Server) parseOptionalUsernameQuery(r *http.Request) (target *string, specError api.Error, err error) {
+func (*Server) parseOptionalUsernameQuery(r *http.Request) (target *string, err error) {
 	query := r.URL.Query()
 	if !query.Has("username") {
-		return nil, "", nil
+		return nil, nil
 	}
 	username := query.Get("username")
 	if err := service.ValidateUsername(username); err != nil {
-		return nil, api.InvalidUsername, fmt.Errorf("service.ValidateUsername: %w", err)
+		return nil, api.WithErrorString(fmt.Errorf("service.ValidateUsername: %w", err), api.InvalidUsername)
 	}
-	return &username, "", nil
+	return &username, nil
 }
 
 // parseRequiredUsernameQuery parses a required username query parameter.
@@ -169,16 +172,16 @@ func (*Server) parseOptionalUsernameQuery(r *http.Request) (target *string, spec
 //
 // - [api.InvalidQueryParameter]
 // - [api.InvalidUsername].
-func (*Server) parseRequiredUsernameQuery(r *http.Request) (username string, specError api.Error, err error) {
+func (*Server) parseRequiredUsernameQuery(r *http.Request) (username string, err error) {
 	query := r.URL.Query()
 	if !query.Has("username") {
-		return "", api.InvalidQueryParameter, errMissingUsernameQuery
+		return "", api.WithErrorString(errMissingUsernameQuery, api.InvalidQueryParameter)
 	}
 	username = query.Get("username")
 	if err := service.ValidateUsername(username); err != nil {
-		return "", api.InvalidUsername, fmt.Errorf("service.ValidateUsername: %w", err)
+		return "", api.WithErrorString(fmt.Errorf("service.ValidateUsername: %w", err), api.InvalidUsername)
 	}
-	return username, "", nil
+	return username, nil
 }
 
 // parseRequiredAutocompleteQuery parses a required query query parameter.
@@ -187,16 +190,16 @@ func (*Server) parseRequiredUsernameQuery(r *http.Request) (username string, spe
 //
 // - [api.InvalidQueryParameter]
 // - [api.InvalidUsername].
-func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (query string, specError api.Error, err error) {
+func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (query string, err error) {
 	q := r.URL.Query()
 	if !q.Has("query") {
-		return "", api.InvalidQueryParameter, errMissingQueryParameter
+		return "", api.WithErrorString(errMissingQueryParameter, api.InvalidQueryParameter)
 	}
 	query = q.Get("query")
 	if err := service.ValidateUsername(query); err != nil {
-		return "", api.InvalidUsername, fmt.Errorf("service.ValidateUsername: %w", err)
+		return "", api.WithErrorString(fmt.Errorf("service.ValidateUsername: %w", err), api.InvalidUsername)
 	}
-	return query, "", nil
+	return query, nil
 }
 
 // parseSuperuserQuery parses an optional superuser filter query parameter.
@@ -204,14 +207,14 @@ func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (query string, sp
 // It can return the following errors:
 //
 // - [api.InvalidQueryParameter].
-func (*Server) parseSuperuserQuery(r *http.Request) (superuser *bool, specError api.Error, err error) {
+func (*Server) parseSuperuserQuery(r *http.Request) (superuser *bool, err error) {
 	query := r.URL.Query()
 	if !query.Has("superuser") {
-		return nil, "", nil
+		return nil, nil
 	}
 	parsed, err := strconv.ParseBool(query.Get("superuser"))
 	if err != nil {
-		return nil, api.InvalidQueryParameter, fmt.Errorf("%w: %w", errSuperuserInvalid, err)
+		return nil, api.WithErrorString(fmt.Errorf("%w: %w", errSuperuserInvalid, err), api.InvalidQueryParameter)
 	}
-	return &parsed, "", nil
+	return &parsed, nil
 }

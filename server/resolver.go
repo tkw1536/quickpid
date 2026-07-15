@@ -11,18 +11,18 @@ import (
 	"github.com/tkw1536/bicpid/api"
 )
 
-func (h *Server) getResolverInfo(w http.ResponseWriter, r *http.Request) (*api.InfoResponse, api.Error, error) {
-	info, specError, err := h.svc.GetResolverInfo()
+func (h *Server) getResolverInfo(w http.ResponseWriter, r *http.Request) (*api.InfoResponse, error) {
+	info, err := h.svc.GetResolverInfo()
 	if err != nil {
-		return nil, specError, fmt.Errorf("store.GetResolverInfo: %w", err)
+		return nil, fmt.Errorf("store.GetResolverInfo: %w", err)
 	}
-	return info, "", nil
+	return info, nil
 }
 
-func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedNamespacesResponse, api.Error, error) {
-	limit, offset, specError, err := h.parsePagination(r)
+func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedNamespacesResponse, error) {
+	limit, offset, err := h.parsePagination(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 
 	query := r.URL.Query()
@@ -32,53 +32,53 @@ func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, user *ap
 		tag = &v
 	}
 
-	namespaces, specError, err := h.svc.ListNamespaces(r.Context(), user, api.ListNamespacesParams{
+	namespaces, err := h.svc.ListNamespaces(r.Context(), user, api.ListNamespacesParams{
 		Tag:    tag,
 		Limit:  limit,
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, specError, fmt.Errorf("store.ListNamespaces: %w", err)
+		return nil, fmt.Errorf("store.ListNamespaces: %w", err)
 	}
-	return namespaces, "", nil
+	return namespaces, nil
 }
 
-func (h *Server) getNamespaceDetail(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespaceResponse, api.Error, error) {
-	namespace, specError, err := h.getNamespace(r)
+func (h *Server) getNamespaceDetail(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespaceResponse, error) {
+	namespace, err := h.getNamespace(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
-	res, specError, err := h.svc.GetNamespace(r.Context(), user, namespace)
+	res, err := h.svc.GetNamespace(r.Context(), user, namespace)
 	if err != nil {
-		return nil, specError, fmt.Errorf("store.GetNamespace: %w", err)
+		return nil, fmt.Errorf("store.GetNamespace: %w", err)
 	}
-	return res, "", nil
+	return res, nil
 }
 
-func (h *Server) countAllResources(w http.ResponseWriter, r *http.Request) (*api.ResourceCountResponse, api.Error, error) {
-	count, specError, err := h.svc.CountAllResources(r.Context())
+func (h *Server) countAllResources(w http.ResponseWriter, r *http.Request) (*api.ResourceCountResponse, error) {
+	count, err := h.svc.CountAllResources(r.Context())
 	if err != nil {
-		return nil, specError, fmt.Errorf("store.CountAllResources: %w", err)
+		return nil, fmt.Errorf("store.CountAllResources: %w", err)
 	}
-	return count, "", nil
+	return count, nil
 }
 
-func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespaceResponse, api.Error, error) {
+func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespaceResponse, error) {
 	var req api.NamespaceCreateRequest
-	if specError, err := h.decodeJSON(w, r, &req); err != nil {
-		return nil, specError, err
+	if err := h.decodeJSON(w, r, &req); err != nil {
+		return nil, err
 	}
-	namespace, specError, err := h.svc.CreateNamespace(r.Context(), user, req)
+	namespace, err := h.svc.CreateNamespace(r.Context(), user, req)
 	if err != nil {
-		return nil, specError, fmt.Errorf("store.CreateNamespace: %w", err)
+		return nil, fmt.Errorf("store.CreateNamespace: %w", err)
 	}
-	return namespace, "", nil
+	return namespace, nil
 }
 
-func (h *Server) listResources(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedResourcesResponse, api.Error, error) {
-	namespace, specError, err := h.getNamespace(r)
+func (h *Server) listResources(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedResourcesResponse, error) {
+	namespace, err := h.getNamespace(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 	query := r.URL.Query()
 
@@ -92,17 +92,17 @@ func (h *Server) listResources(w http.ResponseWriter, r *http.Request, user *api
 	if query.Has("deleted") {
 		b, err := strconv.ParseBool(query.Get("deleted"))
 		if err != nil {
-			return nil, api.InvalidQueryParameter, errors.Join(errDeletedInvalid, err)
+			return nil, api.WithErrorString(errors.Join(errDeletedInvalid, err), api.InvalidQueryParameter)
 		}
 		deleted = &b
 	}
 
-	limit, offset, specError, err := h.parsePagination(r)
+	limit, offset, err := h.parsePagination(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 
-	resources, specError, err := h.svc.ListResources(r.Context(), user, api.ListResourcesParams{
+	resources, err := h.svc.ListResources(r.Context(), user, api.ListResourcesParams{
 		Namespace: namespace,
 		Tag:       tag,
 		Deleted:   deleted,
@@ -110,82 +110,82 @@ func (h *Server) listResources(w http.ResponseWriter, r *http.Request, user *api
 		Offset:    offset,
 	})
 	if err != nil {
-		return nil, specError, fmt.Errorf("store.ListResources: %w", err)
+		return nil, fmt.Errorf("store.ListResources: %w", err)
 	}
-	return resources, "", nil
+	return resources, nil
 }
 
-func (h *Server) createResource(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.ResourceResponse, api.Error, error) {
+func (h *Server) createResource(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.ResourceResponse, error) {
 	var req api.ResourceCreateRequest
-	if specError, err := h.decodeJSON(w, r, &req); err != nil {
-		return nil, specError, err
+	if err := h.decodeJSON(w, r, &req); err != nil {
+		return nil, err
 	}
 
-	namespace, specError, err := h.getNamespace(r)
+	namespace, err := h.getNamespace(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 
-	resource, specError, err := h.svc.CreateResource(r.Context(), user, namespace, req)
+	resource, err := h.svc.CreateResource(r.Context(), user, namespace, req)
 	if err != nil {
-		return nil, specError, fmt.Errorf("store.CreateResource: %w", err)
+		return nil, fmt.Errorf("store.CreateResource: %w", err)
 	}
-	return resource, "", nil
+	return resource, nil
 }
 
-func (h *Server) batchCreateResources(w http.ResponseWriter, r *http.Request, user *api.UserInfo) ([]api.ResourceResponse, api.Error, error) {
+func (h *Server) batchCreateResources(w http.ResponseWriter, r *http.Request, user *api.UserInfo) ([]api.ResourceResponse, error) {
 	var reqs []api.ResourceCreateRequest
-	if specError, err := h.decodeJSON(w, r, &reqs); err != nil {
-		return nil, specError, err
+	if err := h.decodeJSON(w, r, &reqs); err != nil {
+		return nil, err
 	}
 
-	namespace, specError, err := h.getNamespace(r)
+	namespace, err := h.getNamespace(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 
-	resources, specError, err := h.svc.BatchCreateResources(r.Context(), user, namespace, reqs)
+	resources, err := h.svc.BatchCreateResources(r.Context(), user, namespace, reqs)
 	if err != nil {
-		return nil, specError, fmt.Errorf("store.BatchCreateResources: %w", err)
+		return nil, fmt.Errorf("store.BatchCreateResources: %w", err)
 	}
-	return resources, "", nil
+	return resources, nil
 }
 
-func (h *Server) getResource(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.ResourceResponse, api.Error, error) {
-	namespace, specError, err := h.getNamespace(r)
+func (h *Server) getResource(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.ResourceResponse, error) {
+	namespace, err := h.getNamespace(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
-	resourcePID, specError, err := h.getPID(r)
+	resourcePID, err := h.getPID(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 
-	resource, specError, err := h.svc.GetResource(r.Context(), user, namespace, resourcePID)
+	resource, err := h.svc.GetResource(r.Context(), user, namespace, resourcePID)
 	if err != nil {
-		return nil, specError, fmt.Errorf("store.GetResource: %w", err)
+		return nil, fmt.Errorf("store.GetResource: %w", err)
 	}
-	return resource, "", nil
+	return resource, nil
 }
 
-func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.ResourceResponse, api.Error, error) {
+func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.ResourceResponse, error) {
 	var req api.ResourceUpdateRequest
-	if specError, err := h.decodeJSON(w, r, &req); err != nil {
-		return nil, specError, err
+	if err := h.decodeJSON(w, r, &req); err != nil {
+		return nil, err
 	}
-	namespace, specError, err := h.getNamespace(r)
+	namespace, err := h.getNamespace(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 
-	resourcePID, specError, err := h.getPID(r)
+	resourcePID, err := h.getPID(r)
 	if err != nil {
-		return nil, specError, err
+		return nil, err
 	}
 
-	resource, specError, err := h.svc.UpdateResource(r.Context(), user, namespace, resourcePID, req)
+	resource, err := h.svc.UpdateResource(r.Context(), user, namespace, resourcePID, req)
 	if err != nil {
-		return nil, specError, fmt.Errorf("store.UpdateResource: %w", err)
+		return nil, fmt.Errorf("store.UpdateResource: %w", err)
 	}
-	return resource, "", nil
+	return resource, nil
 }

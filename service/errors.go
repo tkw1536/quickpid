@@ -2,7 +2,9 @@
 package service
 
 //spellchecker:words errors
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	errUnauthorized = errors.New("unauthorized")
