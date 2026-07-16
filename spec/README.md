@@ -3,6 +3,9 @@
 > [!WARNING]
 > See [the main README](../README.md) for a generic introduction to what a PID is and why it is needed.
 
+> [!WARNING]
+> This has not been updated with the newly customer-facing work. 
+
 ![Architectural Sketch Of The PID system](pid_arch.svg "The PID System Architecture")
 
 We propose that a PID system consists of the following components, also seen in the sketch above:
