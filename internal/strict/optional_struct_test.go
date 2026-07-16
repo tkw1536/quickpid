@@ -18,7 +18,7 @@ type MyStruct struct {
 }
 
 // PrintOptionalInfo prints the contents of the required and optional fields.
-func (ms MyStruct) PrintInfo() {
+func (ms *MyStruct) PrintInfo() {
 	if ms.Required == nil {
 		fmt.Print("Required == nil ")
 	} else {

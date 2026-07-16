@@ -53,7 +53,7 @@ var (
 )
 
 // Validate checks if the format is valid, and returns an error if not.
-func (format Format) Validate() error {
+func (format *Format) Validate() error {
 	if err := format.Characters.Validate(); err != nil {
 		return fmt.Errorf("%w: %w", errInvalidCharacterSet, err)
 	}
@@ -67,7 +67,7 @@ func (format Format) Validate() error {
 // IsValid checks if pid is of this format.
 //
 // If the format is invalid, this function returns false.
-func (format Format) IsValid(pid string) bool {
+func (format *Format) IsValid(pid string) bool {
 	if err := format.Validate(); err != nil {
 		return false
 	}
@@ -104,7 +104,7 @@ func (format Format) IsValid(pid string) bool {
 }
 
 // Generate generates a new PID according to format, using rand for randomness.
-func (format Format) Generate(rand io.Reader) (string, error) {
+func (format *Format) Generate(rand io.Reader) (string, error) {
 	if err := format.Validate(); err != nil {
 		return "", err
 	}

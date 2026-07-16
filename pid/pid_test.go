@@ -240,7 +240,8 @@ func TestFormat_Generate(t *testing.T) {
 		t.Parallel()
 
 		r := bitstring.NewReader()
-		_, err := pid.Format{Pattern: "***-***", Characters: pid.CharacterSet("nope")}.Generate(r)
+		format := pid.Format{Pattern: "***-***", Characters: pid.CharacterSet("nope")}
+		_, err := format.Generate(r)
 		if err == nil {
 			t.Fatalf("GeneratePID(invalid): got nil want error")
 		}

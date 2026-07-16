@@ -86,7 +86,7 @@ func (s *Service) requireAuthenticated(caller *api.UserInfo) error {
 //
 // It can return errors annotated with:
 // - [api.NamespaceNotFound]
-// - [api.DatabaseError]
+// - [api.DatabaseError].
 func (s *Service) effectivePermission(ctx context.Context, caller *api.UserInfo, namespace string) (api.PermissionLevel, error) {
 	if caller.Superuser {
 		return api.PermissionLevelManager, nil
@@ -108,7 +108,7 @@ func (s *Service) effectivePermission(ctx context.Context, caller *api.UserInfo,
 // - [api.InvalidNamespaceID]
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
-// - [api.DatabaseError]
+// - [api.DatabaseError].
 func (s *Service) requireNamespaceCapability(ctx context.Context, caller *api.UserInfo, namespace string, allowed func(api.PermissionLevel) bool) error {
 	if err := s.requireAuthenticated(caller); err != nil {
 		return err
