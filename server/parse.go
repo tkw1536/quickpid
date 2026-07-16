@@ -43,9 +43,9 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) error
 	var decodeErr error
 	defer func() {
 		if err := body.Close(); err != nil {
-			// This usesthe Body Invalid JSON api error, which isn't entirely correct.
+			// This uses [api.BodyInvalidJSON] which isn't entirely correct.
 			//
-			// Most likely this happens when the underlying network connection had some error;
+			// This if most likely this happens when the underlying network connection had some error;
 			// meaning the client will never see if anyways.
 			decodeErr = api.WithErrorString(
 				errorsx.Combine(decodeErr, fmt.Errorf("body.Close: %w", err)),

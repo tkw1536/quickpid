@@ -35,7 +35,7 @@ type AuthorizationBackend interface {
 	// Has no specific error conditions.
 	ListNamespacePermissions(ctx context.Context, namespace string, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error)
 
-	Shutdowner
+	WithShutdownMethod
 }
 
 // Sentinel errors to be returned by [AuthorizationBackend] implementations.

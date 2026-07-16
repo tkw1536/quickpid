@@ -91,6 +91,7 @@ func RunAuthKeyLifecycle(t *testing.T, newBackend func() backend.AuthenticationB
 	}
 
 	expires := "2027-01-01T00:00:00Z"
+	//spellchecker:words lifecyclekey
 	rawKey := TestAPIKey("lifecyclekey000000000000000")
 	created, err := b.CreateKey(ctx, apikey.Default, "alice", "key-1", rawKey, api.KeyIssueRequest{
 		Comment:   "laptop",

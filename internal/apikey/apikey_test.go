@@ -15,6 +15,8 @@ import (
 	"github.com/tkw1536/bicpid/pid"
 )
 
+//spellchecker:words abcaabbaccabbaab abca abbaccabbaab abcaabbaccabbaac cbcaabbaccabbaab
+
 func testFormat() apikey.Format {
 	return apikey.Format{
 		Length:    16,
@@ -275,7 +277,8 @@ func TestFormat_Verify(t *testing.T) {
 			wantMatch: false,
 		},
 		{
-			name:      "sameSuffixDifferentPrefix",
+			name: "sameSuffixDifferentPrefix",
+			//spellchecker:words bbcaabbaccabbaab
 			key:       "bbcaabbaccabbaab",
 			stored:    stored,
 			wantMatch: false,

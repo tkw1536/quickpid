@@ -14,7 +14,7 @@ var (
 )
 
 func ExampleWithErrorString() {
-	// wrap an underyling error and add a specific error string.
+	// wrap an underlying error and add a specific error string.
 	wrapped := api.WithErrorString(errSomethingWentWrong, api.DatabaseError)
 
 	// they are identical in terms of Error()

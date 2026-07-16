@@ -75,7 +75,7 @@ func TestGetCurrentUser_UnauthorizedJSON(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/user/", nil)
-		req.Header.Set("Authorization", "Bearer invalidtoken0000000000000000")
+		req.Header.Set("Authorization", "Bearer invalid-token-00000000000000")
 		h.ServeHTTP(rec, req)
 		assertUnauthorizedJSON(t, rec)
 	})

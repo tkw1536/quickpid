@@ -55,8 +55,18 @@ The two database implementations are based on [GORM](https://gorm.io) and approp
 Beyond the standard library, dependencies are otherwise kept to a minimum.
 All parts of the code are well-documented and include tests, which can be run with `go test`, and are checked by CI.
 
-To implement license notices, [gogenlicense](https://github.com/tkw1536/gogenlicense) is used.
-These should be updated using `go generate ./...` whenever the dependencies change.
+### Tools & CI
+
+The following tools & CI are used in the project:
+
+- [golangci-lint](https://golangci-lint.run)
+  Run via `go tool golangci-lint run ./...`.
+- [go-check-spellchecker](https://github.com/tkw1536/go-check-spellchecker)
+  To maintain the `spellchecker:words` comments for imports.
+  Run with `go tool go-check-spellchecker -fix ./...`.
+- [gogenlicense](https://github.com/tkw1536/gogenlicense)
+  To update license notices.
+  Invoked automatically with `go generate ./...`
 
 <!--
 ## Docker images
@@ -82,73 +92,9 @@ Examples:
   `docker run --rm -p 8080:8080 -e DSN='host=postgres user=postgres password=postgres dbname=quickpid port=5432 sslmode=disable' ghcr.io/tkw1536/quickpid-postgres:latest`
 -->
 
-## Authentication & Authorization
-
-Quickpid can protect write and list operations with HTTP Basic authentication.
-Authentication and authorization are loaded from a JSON file passed via
-`-basic-auth-file /path/to/auth.json`.
-
-If authentication is enabled, protected endpoints respond with an HTTP Basic
-challenge, so browsers should prompt for a username and password automatically.
-
-Permission levels are:
-
-- `none`: may read individual PID records, but may not list namespace contents or create/update resources (default)
-- `contributor`: may do everything from `none`, and may create resources and submit batch creates
-- `editor`: may do everything from `contributor`, and may also list and update resources
-
-Authorization is determined in two steps:
-
-- `superusers`: usernames listed here may create new namespaces and automatically have `editor` access to every namespace
-- `permissions`: per-namespace permission levels for individual users; users not listed for a namespace default to `none`
-
-The authentication file stores HTTP Basic credentials in `htpasswd` format under
-the `users` key. Each entry is a `username:hash` string. Hashes should be
-generated with a tool such as `htpasswd`; for example:
-
-```sh
-htpasswd -nB admin
-```
-
-An example authentication file looks like:
-
-<!-- spellchecker:disable -->
-```json
-{
-  "users": [
-    "admin:$apr1$b6C7u008$LIOlAY4ltdsPD.mbKPRjc.",
-    "editor:$2y$05$y6RJtugGZOvBPuDg/f8.7O8GqTZAvUD8nNm1ipNrS8LiAm28fbdk2"
-  ],
-  "superusers": ["admin"],
-  "permissions": {
-    "my-namespace": {
-      "editor": "editor",
-      "contributor": "contributor"
-    }
-  }
-}
-```
-<!-- spellchecker:enable -->
-
-## Tools & CI
-
-The following Tool & CI are used in the project:
-
-- [golangci-lint](https://golangci-lint.run)
-  Run via `go tool golanci-lint run ./...`.
-- [go-check-spellchecker](https://github.com/tkw1536/go-check-spellchecker)
-  To maintain the `spellchecker:words` comments for imports.
-  Run with `go tool go-check-spellchecker -fix ./...`.
-- [gogenlicense](https://github.com/tkw1536/gogenlicense)
-  To update license notices.
-  Invoked automatically with `go generate ./...` 
-
 ## Future Technical Work
 
-- add [Golangci-lint](https://golangci-lint.run)
 - use something other than uuid for namespace generation to drop dependency
-- consider adding a minimal public frontend
-- consider removing the `/resolver/` prefix
 
 ## LICENSE
 

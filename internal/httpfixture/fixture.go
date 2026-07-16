@@ -101,7 +101,7 @@ type Response struct {
 var (
 	errCodeMismatch   = errors.New("code mismatch")
 	errHeaderMismatch = errors.New("header mismatch")
-	errBodytMismatch  = errors.New("body mismatch")
+	errBodyMismatch   = errors.New("body mismatch")
 )
 
 // Compare compares the actual response against this expected response.
@@ -145,7 +145,7 @@ func (resp Response) Compare(actual *httptest.ResponseRecorder) error {
 	if resp.Body != nil {
 		wantCanon, err := canonicalJSON(bytes.NewReader(resp.Body))
 		if err != nil {
-			errs = append(errs, fmt.Errorf("%w: expected body is not valid JSON: %w", errBodytMismatch, err))
+			errs = append(errs, fmt.Errorf("%w: expected body is not valid JSON: %w", errBodyMismatch, err))
 			goto join_and_return
 		}
 		gotCanon, err := canonicalJSON(actual.Body)
@@ -154,7 +154,7 @@ func (resp Response) Compare(actual *httptest.ResponseRecorder) error {
 			goto join_and_return
 		}
 		if gotCanon != wantCanon {
-			errs = append(errs, fmt.Errorf("%w: body response mismatch\n--- got\n%s\n--- want\n%s", errBodytMismatch, gotCanon, wantCanon))
+			errs = append(errs, fmt.Errorf("%w: body response mismatch\n--- got\n%s\n--- want\n%s", errBodyMismatch, gotCanon, wantCanon))
 			goto join_and_return
 		}
 	}

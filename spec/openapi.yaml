@@ -39,7 +39,7 @@ paths:
 
         The endpoint (if enabled) crucially also returns if the server requires authentication or if it is in "anonymous" mode.
         In anonymous mode, no authentication is required for any of the other endpoints, and no authorization checks are performed.
-        This is intended for use cases where the API runs behind a separate system which handles authentication and authorizaton on it's own.
+        This is intended for use cases where the API runs behind a separate system which handles authentication and authorization on it's own.
       security: []
       tags:
         - quickpid
@@ -986,7 +986,7 @@ paths:
         Updates a resource using patch semantics.
         Omitted fields are not changed.
         Deleted resources may be modified.
-        Setting `deleted` to `false` undeletes the resource.
+        Setting `deleted` to `false` un-deletes the resource.
 
         In anonymous mode, this route is accessible without authentication and without permission checks.
 

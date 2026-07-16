@@ -72,7 +72,7 @@ type withStringError struct {
 }
 
 func (err withStringError) Error() string {
-	// we don't just call err.err.Error() here to avoid err.err == nil or panicing.
+	// we don't just call err.err.Error() here to avoid err.err == nil or panicking.
 	// that's better handled by sprintf.
 	return fmt.Sprintf("%s", err.err)
 }

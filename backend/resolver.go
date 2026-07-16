@@ -64,7 +64,7 @@ type ResolverBackend interface {
 	// Should return [ErrResourceNotFound] if the resource did not previously exist.
 	UpdateResource(ctx context.Context, namespace, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error)
 
-	Shutdowner
+	WithShutdownMethod
 }
 
 // Sentinel errors to be returned by [ResolverBackend] implementations.
