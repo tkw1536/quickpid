@@ -1,9 +1,9 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words github bicpid service
+//spellchecker:words github quickpid service
 import (
-	"github.com/tkw1536/bicpid/service"
+	"github.com/tkw1536/quickpid/service"
 )
 
 // Options represents HTTP options for the handler.

@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words flag slog github glebarez sqlite bicpid backend gorm gormstore
+//spellchecker:words flag slog github glebarez sqlite quickpid backend gorm gormstore
 import (
 	"cmp"
 	"flag"
@@ -10,9 +10,9 @@ import (
 	"os"
 
 	"github.com/glebarez/sqlite"
-	"github.com/tkw1536/bicpid/backend"
-	gormstore "github.com/tkw1536/bicpid/backend/gorm"
-	"github.com/tkw1536/bicpid/cmd"
+	"github.com/tkw1536/quickpid/backend"
+	gormstore "github.com/tkw1536/quickpid/backend/gorm"
+	"github.com/tkw1536/quickpid/cmd"
 	"gorm.io/gorm"
 )
 

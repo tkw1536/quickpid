@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words slog http sync github swaggest swgui bicpid quickpid internal openapi server lowlevel service
+//spellchecker:words slog http sync github swaggest swgui quickpid internal openapi server lowlevel service
 import (
 	"log/slog"
 	"net/http"
@@ -9,11 +9,11 @@ import (
 
 	"github.com/swaggest/swgui"
 	"github.com/swaggest/swgui/v5emb"
-	quickpid "github.com/tkw1536/bicpid"
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/internal/openapi"
-	"github.com/tkw1536/bicpid/server/internal/lowlevel"
-	"github.com/tkw1536/bicpid/service"
+	quickpid "github.com/tkw1536/quickpid"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/internal/openapi"
+	"github.com/tkw1536/quickpid/server/internal/lowlevel"
+	"github.com/tkw1536/quickpid/service"
 )
 
 // Server implements [http.Handler] for the PID resolver API and Swagger UI.

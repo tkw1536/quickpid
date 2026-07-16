@@ -1,14 +1,14 @@
 //spellchecker:words memory
 package memory_test
 
-//spellchecker:words testing github bicpid backend memory storetest internal servertest
+//spellchecker:words testing github quickpid backend memory storetest internal servertest
 import (
 	"testing"
 
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/memory"
-	"github.com/tkw1536/bicpid/backend/storetest"
-	"github.com/tkw1536/bicpid/internal/servertest"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/backend/memory"
+	"github.com/tkw1536/quickpid/backend/storetest"
+	"github.com/tkw1536/quickpid/internal/servertest"
 )
 
 func newStore() backend.Store {

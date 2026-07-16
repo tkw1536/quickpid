@@ -1,13 +1,13 @@
 //spellchecker:words gorm
 package gorm
 
-//spellchecker:words context errors github bicpid backend gorm
+//spellchecker:words context errors github quickpid backend gorm
 import (
 	"context"
 	"errors"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
 	"gorm.io/gorm"
 )
 

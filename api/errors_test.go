@@ -1,12 +1,12 @@
 package api_test
 
-//spellchecker:words errors testing github bicpid
+//spellchecker:words errors testing github quickpid
 import (
 	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/quickpid/api"
 )
 
 var (

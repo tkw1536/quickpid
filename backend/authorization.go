@@ -1,12 +1,12 @@
 //spellchecker:words backend
 package backend
 
-//spellchecker:words context errors github bicpid
+//spellchecker:words context errors github quickpid
 import (
 	"context"
 	"errors"
 
-	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/quickpid/api"
 )
 
 // AuthorizationBackend represents the backend for per-namespace permissions.

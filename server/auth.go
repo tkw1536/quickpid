@@ -1,12 +1,12 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words http github bicpid
+//spellchecker:words http github quickpid
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/quickpid/api"
 )
 
 func (h *Server) getCurrentUserHTTP(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.UserInfo, error) {

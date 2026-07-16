@@ -1,14 +1,14 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github bicpid backend
+//spellchecker:words context errors github quickpid backend
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
 )
 
 // canReadNamespaceMetadata checks if the given user can read namespace metadata.

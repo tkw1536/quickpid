@@ -1,12 +1,12 @@
 //spellchecker:words bitstring
 package bitstring_test
 
-//spellchecker:words strings github bicpid internal bitstring
+//spellchecker:words strings github quickpid internal bitstring
 import (
 	"fmt"
 	"strings"
 
-	"github.com/tkw1536/bicpid/internal/bitstring"
+	"github.com/tkw1536/quickpid/internal/bitstring"
 )
 
 func ExampleNewReader() {

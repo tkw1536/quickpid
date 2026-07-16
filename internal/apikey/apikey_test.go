@@ -1,7 +1,7 @@
 //spellchecker:words apikey
 package apikey_test
 
-//spellchecker:words crypto errors strings testing github bicpid internal apikey bitstring
+//spellchecker:words crypto errors strings testing github quickpid internal apikey bitstring
 import (
 	"crypto/sha256"
 	"errors"
@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tkw1536/bicpid/internal/apikey"
-	"github.com/tkw1536/bicpid/internal/bitstring"
-	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/internal/bitstring"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 //spellchecker:words abcaabbaccabbaab abca abbaccabbaab abcaabbaccabbaac cbcaabbaccabbaab

@@ -1,13 +1,13 @@
 package pid_test
 
-//spellchecker:words encoding json strings testing github bicpid internal bitstring
+//spellchecker:words encoding json strings testing github quickpid internal bitstring
 import (
 	"encoding/json"
 	"strings"
 	"testing"
 
-	"github.com/tkw1536/bicpid/internal/bitstring"
-	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/quickpid/internal/bitstring"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 func TestFormat_Validate(t *testing.T) {

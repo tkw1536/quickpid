@@ -1,13 +1,13 @@
 //spellchecker:words strict
 package strict_test
 
-//spellchecker:words encoding json errors github bicpid internal strict
+//spellchecker:words encoding json errors github quickpid internal strict
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/tkw1536/bicpid/internal/strict"
+	"github.com/tkw1536/quickpid/internal/strict"
 )
 
 var errRequiredMissing = errors.New("field 'required' is missing")

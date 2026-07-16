@@ -8,7 +8,7 @@ import (
 	"context"
 )
 
-// Store represents a backend for the bicpid application.
+// Store represents a backend for the quickpid application.
 type Store interface {
 	ResolverBackend
 	AuthenticationBackend

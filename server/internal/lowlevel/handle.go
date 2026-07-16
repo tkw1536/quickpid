@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words errors slog http time github bicpid service
+//spellchecker:words errors slog http time github quickpid service
 import (
 	"errors"
 	"fmt"
@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/service"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/service"
 )
 
 // handle executes the shared request flow used by all exported Handle* functions.

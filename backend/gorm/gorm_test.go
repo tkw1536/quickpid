@@ -1,15 +1,15 @@
 //spellchecker:words gorm
 package gorm_test
 
-//spellchecker:words testing github glebarez sqlite bicpid backend gorm gormstore storetest internal servertest logger
+//spellchecker:words testing github glebarez sqlite quickpid backend gorm gormstore storetest internal servertest logger
 import (
 	"testing"
 
 	"github.com/glebarez/sqlite"
-	"github.com/tkw1536/bicpid/backend"
-	gormstore "github.com/tkw1536/bicpid/backend/gorm"
-	"github.com/tkw1536/bicpid/backend/storetest"
-	"github.com/tkw1536/bicpid/internal/servertest"
+	"github.com/tkw1536/quickpid/backend"
+	gormstore "github.com/tkw1536/quickpid/backend/gorm"
+	"github.com/tkw1536/quickpid/backend/storetest"
+	"github.com/tkw1536/quickpid/internal/servertest"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )

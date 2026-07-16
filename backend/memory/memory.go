@@ -3,14 +3,14 @@
 //spellchecker:words memory
 package memory
 
-//spellchecker:words context errors sync github bicpid
+//spellchecker:words context errors sync github quickpid
 import (
 	"context"
 	"errors"
 	"fmt"
 	"sync"
 
-	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/quickpid/api"
 )
 
 // NewStore returns a new in-memory backend store.

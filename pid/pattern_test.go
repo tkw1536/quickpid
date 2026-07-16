@@ -1,10 +1,10 @@
 package pid_test
 
-//spellchecker:words testing github bicpid
+//spellchecker:words testing github quickpid
 import (
 	"testing"
 
-	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 func TestPatternValidate(t *testing.T) {

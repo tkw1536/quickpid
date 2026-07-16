@@ -1,19 +1,19 @@
 //spellchecker:words service
 package service_test
 
-//spellchecker:words context testing time github bicpid backend memory storetest internal apikey service
+//spellchecker:words context testing time github quickpid backend memory storetest internal apikey service
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/memory"
-	"github.com/tkw1536/bicpid/backend/storetest"
-	"github.com/tkw1536/bicpid/internal/apikey"
-	"github.com/tkw1536/bicpid/pid"
-	"github.com/tkw1536/bicpid/service"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/backend/memory"
+	"github.com/tkw1536/quickpid/backend/storetest"
+	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/pid"
+	"github.com/tkw1536/quickpid/service"
 )
 
 type fixedRuntime struct {

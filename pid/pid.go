@@ -1,14 +1,14 @@
 // Package pid implements generation of a PID.
 package pid
 
-//spellchecker:words errors strings github bicpid internal strict
+//spellchecker:words errors strings github quickpid internal strict
 import (
 	"errors"
 	"fmt"
 	"io"
 	"strings"
 
-	"github.com/tkw1536/bicpid/internal/strict"
+	"github.com/tkw1536/quickpid/internal/strict"
 )
 
 // Format describes the format of a PID.

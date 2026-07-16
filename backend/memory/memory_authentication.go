@@ -1,7 +1,7 @@
 //spellchecker:words memory
 package memory
 
-//spellchecker:words bytes context sort strings time github bicpid backend internal apikey
+//spellchecker:words bytes context sort strings time github quickpid backend internal apikey
 import (
 	"bytes"
 	"context"
@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/internal/apikey"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/internal/apikey"
 )
 
 func (s *Store) CreateUser(_ context.Context, req api.UserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {

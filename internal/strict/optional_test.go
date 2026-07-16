@@ -1,14 +1,14 @@
 //spellchecker:words strict
 package strict_test
 
-//spellchecker:words encoding json strings testing github bicpid internal strict
+//spellchecker:words encoding json strings testing github quickpid internal strict
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/tkw1536/bicpid/internal/strict"
+	"github.com/tkw1536/quickpid/internal/strict"
 )
 
 // Demonstrates how to use the optional field can help differentiate between missing and null fields.

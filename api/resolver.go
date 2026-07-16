@@ -1,12 +1,12 @@
 // Package api holds type definitions for the PID Resolver API.
 package api
 
-//spellchecker:words github bicpid internal strict embed
+//spellchecker:words github quickpid internal strict embed
 import (
 	"fmt"
 
-	"github.com/tkw1536/bicpid/internal/strict"
-	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/quickpid/internal/strict"
+	"github.com/tkw1536/quickpid/pid"
 
 	_ "embed"
 )

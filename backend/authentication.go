@@ -1,14 +1,14 @@
 //spellchecker:words backend
 package backend
 
-//spellchecker:words context errors time github bicpid internal apikey
+//spellchecker:words context errors time github quickpid internal apikey
 import (
 	"context"
 	"errors"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/internal/apikey"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/internal/apikey"
 )
 
 // AuthenticationBackend represents the backend for user accounts and API keys.

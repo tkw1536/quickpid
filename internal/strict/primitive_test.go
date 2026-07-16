@@ -1,12 +1,12 @@
 //spellchecker:words strict
 package strict_test
 
-//spellchecker:words encoding json github bicpid internal strict
+//spellchecker:words encoding json github quickpid internal strict
 import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/tkw1536/bicpid/internal/strict"
+	"github.com/tkw1536/quickpid/internal/strict"
 )
 
 func ExampleString() {

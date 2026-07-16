@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words crypto rand time github google uuid bicpid internal apikey
+//spellchecker:words crypto rand time github google uuid quickpid internal apikey
 import (
 	"crypto/rand"
 	"fmt"
@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkw1536/bicpid/internal/apikey"
-	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 // Runtime is used by the service to interact with specific system functions.

@@ -1,13 +1,13 @@
 //spellchecker:words memory
 package memory
 
-//spellchecker:words context sort github bicpid backend
+//spellchecker:words context sort github quickpid backend
 import (
 	"context"
 	"sort"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
 )
 
 func (s *Store) GetNamespacePermission(_ context.Context, namespace, username string) (api.PermissionLevel, error) {

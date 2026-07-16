@@ -1,15 +1,15 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github bicpid backend
+//spellchecker:words context errors github quickpid backend
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 var errExistingUserNotFound = errors.New("existing user not found")

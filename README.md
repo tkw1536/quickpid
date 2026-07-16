@@ -1,10 +1,10 @@
-# Bicpid
+# quickpid
 
-This is a fork of [github.com/tkw1536/quickpid](https://github.com/tkw1536/quickpid).
-Because it is my personal copyright, the original license is removed, and you're not allowed to use this.
+This is a branch of [github.com/tkw1536/quickpid](https://github.com/tkw1536/quickpid).
+Because it is my personal copyright, the original license is removed, and you're not allowed to use run this yet.
 
 <!--
-[![CI](https://github.com/tkw1536/bicpid/actions/workflows/go.yaml/badge.svg)](https://github.com/tkw1536/bicpid/actions/workflows/go.yaml)
+[![CI](https://github.com/tkw1536/quickpid/actions/workflows/go.yaml/badge.svg)](https://github.com/tkw1536/quickpid/actions/workflows/go.yaml)
 -->
 
 In the scientific community it is common to issue [persistent identifiers](https://en.wikipedia.org/wiki/Persistent_identifier) -- or PIDs for short -- to objects to be able to identify and refer to them unambiguously.

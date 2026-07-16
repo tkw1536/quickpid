@@ -1,11 +1,11 @@
 //spellchecker:words service
 package service_test
 
-//spellchecker:words testing github bicpid service
+//spellchecker:words testing github quickpid service
 import (
 	"testing"
 
-	"github.com/tkw1536/bicpid/service"
+	"github.com/tkw1536/quickpid/service"
 )
 
 func TestLimitsWithValidValues(t *testing.T) {

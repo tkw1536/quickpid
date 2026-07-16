@@ -1,14 +1,14 @@
 package api_test
 
-//spellchecker:words encoding json reflect strings testing github bicpid
+//spellchecker:words encoding json reflect strings testing github quickpid
 import (
 	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {

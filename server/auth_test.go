@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server_test
 
-//spellchecker:words context encoding json http httptest reflect strings testing time github bicpid backend memory internal apikey server service
+//spellchecker:words context encoding json http httptest reflect strings testing time github quickpid backend memory internal apikey server service
 import (
 	"context"
 	"encoding/json"
@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/memory"
-	"github.com/tkw1536/bicpid/internal/apikey"
-	"github.com/tkw1536/bicpid/server"
-	"github.com/tkw1536/bicpid/service"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/backend/memory"
+	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/server"
+	"github.com/tkw1536/quickpid/service"
 )
 
 func testHandler(t *testing.T, store backend.Store) *server.Server {

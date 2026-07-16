@@ -1,7 +1,7 @@
 //spellchecker:words servertest
 package servertest
 
-//spellchecker:words context errors slog slices testing time github bicpid backend internal apikey httpfixture server service
+//spellchecker:words context errors slog slices testing time github quickpid backend internal apikey httpfixture server service
 import (
 	"context"
 	"errors"
@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/internal/apikey"
-	"github.com/tkw1536/bicpid/internal/httpfixture"
-	"github.com/tkw1536/bicpid/pid"
-	"github.com/tkw1536/bicpid/server"
-	"github.com/tkw1536/bicpid/service"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/internal/httpfixture"
+	"github.com/tkw1536/quickpid/pid"
+	"github.com/tkw1536/quickpid/server"
+	"github.com/tkw1536/quickpid/service"
 )
 
 type stepConfig struct {

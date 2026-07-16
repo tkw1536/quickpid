@@ -1,18 +1,18 @@
 //spellchecker:words backend
 package backend
 
-//spellchecker:words context errors time github bicpid
+//spellchecker:words context errors time github quickpid
 import (
 	"context"
 	"errors"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/quickpid/api"
 )
 
 // ResolverBackend represents storage for the low-level PID resolver.
 //
-//spellchecker:words context errors time github bicpid
+//spellchecker:words context errors time github quickpid
 type ResolverBackend interface {
 	// Lists all available namespaces that the given user has some access to and that are ordered ascending by namespace id.
 	// User may be omitted in which case all namespaces should be considered.

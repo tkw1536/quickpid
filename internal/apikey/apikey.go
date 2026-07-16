@@ -7,7 +7,7 @@
 //spellchecker:words apikey
 package apikey
 
-//spellchecker:words crypto subtle errors github bicpid
+//spellchecker:words crypto subtle errors github quickpid
 import (
 	"crypto/sha256"
 	"crypto/subtle"
@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 // HashFunc hashes the secret (non-prefix) portion of a key.

@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words encoding json errors http strconv github bicpid service pkglib errorsx
+//spellchecker:words encoding json errors http strconv github quickpid service pkglib errorsx
 import (
 	"encoding/json"
 	"errors"
@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/service"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/service"
 	"go.tkw01536.de/pkglib/errorsx"
 )
 

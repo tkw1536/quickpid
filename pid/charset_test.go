@@ -1,13 +1,13 @@
 package pid_test
 
-//spellchecker:words bytes strings testing github bicpid
+//spellchecker:words bytes strings testing github quickpid
 import (
 	"bytes"
 	"io"
 	"strings"
 	"testing"
 
-	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 func TestCharacterSetValidate(t *testing.T) {

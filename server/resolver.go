@@ -1,14 +1,14 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words errors http strconv github bicpid
+//spellchecker:words errors http strconv github quickpid
 import (
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/quickpid/api"
 )
 
 func (h *Server) getResolverInfo(w http.ResponseWriter, r *http.Request) (*api.InfoResponse, error) {

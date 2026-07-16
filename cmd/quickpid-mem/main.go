@@ -1,13 +1,13 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words slog github bicpid backend memory
+//spellchecker:words slog github quickpid backend memory
 import (
 	"log/slog"
 
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/memory"
-	"github.com/tkw1536/bicpid/cmd"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/backend/memory"
+	"github.com/tkw1536/quickpid/cmd"
 )
 
 func main() {

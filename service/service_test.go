@@ -1,18 +1,18 @@
 //spellchecker:words service
 package service_test
 
-//spellchecker:words context slog testing time github bicpid backend memory internal apikey service
+//spellchecker:words context slog testing time github quickpid backend memory internal apikey service
 import (
 	"context"
 	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/memory"
-	"github.com/tkw1536/bicpid/internal/apikey"
-	"github.com/tkw1536/bicpid/service"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/backend/memory"
+	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/service"
 )
 
 func testLogger() *slog.Logger {

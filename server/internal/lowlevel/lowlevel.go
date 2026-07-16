@@ -1,13 +1,13 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words context slog http github bicpid
+//spellchecker:words context slog http github quickpid
 import (
 	"context"
 	"log/slog"
 	"net/http"
 
-	"github.com/tkw1536/bicpid/api"
+	"github.com/tkw1536/quickpid/api"
 )
 
 // AuthHandler executes common HTTP request handling for authenticated and unauthenticated endpoints.

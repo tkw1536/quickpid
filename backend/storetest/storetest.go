@@ -3,7 +3,7 @@
 //spellchecker:words storetest
 package storetest
 
-//spellchecker:words context errors strings testing time github bicpid backend internal apikey
+//spellchecker:words context errors strings testing time github quickpid backend internal apikey
 import (
 	"context"
 	"errors"
@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/internal/apikey"
-	"github.com/tkw1536/bicpid/pid"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/pid"
 )
 
 const TestNamespaceOwner = "test-owner"

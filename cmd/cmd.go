@@ -1,6 +1,6 @@
 package cmd
 
-//spellchecker:words context errors flag slog http signal strconv strings syscall time github bicpid quickpid backend server service
+//spellchecker:words context errors flag slog http signal strconv strings syscall time github quickpid backend server service
 import (
 	"context"
 	"errors"
@@ -16,10 +16,10 @@ import (
 	"syscall"
 	"time"
 
-	quickpid "github.com/tkw1536/bicpid"
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/server"
-	"github.com/tkw1536/bicpid/service"
+	quickpid "github.com/tkw1536/quickpid"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/server"
+	"github.com/tkw1536/quickpid/service"
 )
 
 type mainCmd struct {

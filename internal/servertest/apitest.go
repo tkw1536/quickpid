@@ -3,7 +3,7 @@
 //spellchecker:words servertest
 package servertest
 
-//spellchecker:words encoding json sort testing github bicpid quickpid backend
+//spellchecker:words encoding json sort testing github quickpid backend
 import (
 	"encoding/json"
 	"fmt"
@@ -11,8 +11,8 @@ import (
 	"sort"
 	"testing"
 
-	quickpid "github.com/tkw1536/bicpid"
-	"github.com/tkw1536/bicpid/backend"
+	quickpid "github.com/tkw1536/quickpid"
+	"github.com/tkw1536/quickpid/backend"
 )
 
 // StoreFactory creates a concrete [backend.Store] for HTTP integration tests.

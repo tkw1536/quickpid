@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel_test
 
-//spellchecker:words context errors slog http httptest strings testing time github bicpid backend memory internal apikey httpfixture server lowlevel service
+//spellchecker:words context errors slog http httptest strings testing time github quickpid backend memory internal apikey httpfixture server lowlevel service
 import (
 	"context"
 	"errors"
@@ -13,13 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
-	"github.com/tkw1536/bicpid/backend/memory"
-	"github.com/tkw1536/bicpid/internal/apikey"
-	"github.com/tkw1536/bicpid/internal/httpfixture"
-	"github.com/tkw1536/bicpid/server/internal/lowlevel"
-	"github.com/tkw1536/bicpid/service"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/backend/memory"
+	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/internal/httpfixture"
+	"github.com/tkw1536/quickpid/server/internal/lowlevel"
+	"github.com/tkw1536/quickpid/service"
 )
 
 type authProbeResponse struct {

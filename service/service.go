@@ -1,13 +1,13 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words regexp sync github bicpid backend
+//spellchecker:words regexp sync github quickpid backend
 import (
 	"regexp"
 	"sync"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
 )
 
 // Service provides high-level PID resolver and authentication operations.

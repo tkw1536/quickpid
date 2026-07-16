@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words flag slog github bicpid backend gorm gormstore driver postgres
+//spellchecker:words flag slog github quickpid backend gorm gormstore driver postgres
 import (
 	"cmp"
 	"flag"
@@ -9,9 +9,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/tkw1536/bicpid/backend"
-	gormstore "github.com/tkw1536/bicpid/backend/gorm"
-	"github.com/tkw1536/bicpid/cmd"
+	"github.com/tkw1536/quickpid/backend"
+	gormstore "github.com/tkw1536/quickpid/backend/gorm"
+	"github.com/tkw1536/quickpid/cmd"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

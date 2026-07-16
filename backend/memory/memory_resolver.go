@@ -1,14 +1,14 @@
 //spellchecker:words memory
 package memory
 
-//spellchecker:words context sort time github bicpid backend
+//spellchecker:words context sort time github quickpid backend
 import (
 	"context"
 	"sort"
 	"time"
 
-	"github.com/tkw1536/bicpid/api"
-	"github.com/tkw1536/bicpid/backend"
+	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/backend"
 )
 
 func (s *Store) ListNamespaces(_ context.Context, user *string, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
