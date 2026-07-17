@@ -138,11 +138,6 @@ func TestEnsureRootUser_AnonymousModeSkipsBootstrap(t *testing.T) {
 	}
 }
 
-func TestValidatePID(t *testing.T) {
-	t.Parallel()
-	testIdentifierValidation(t, service.ValidatePID, "invalid pid")
-}
-
 func TestValidateUsername(t *testing.T) {
 	t.Parallel()
 	testIdentifierValidation(t, service.ValidateUsername, "invalid username")

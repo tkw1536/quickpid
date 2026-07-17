@@ -77,19 +77,9 @@ func (s *Service) GetResolverInfo() (*api.InfoResponse, error) {
 
 // regular expressions to validate various identifiers.
 var (
-	pidRE      = regexp.MustCompile(`^[a-z0-9_-]+$`)
 	usernameRE = regexp.MustCompile(`^[a-z0-9_-]+$`)
 )
 
-// ValidatePID reports whether id is a valid pid.
-func ValidatePID(id string) error {
-	if !pidRE.MatchString(id) {
-		return errInvalidPID
-	}
-	return nil
-}
-
-// ValidateUsername reports whether username is a valid username.
 func ValidateUsername(username string) error {
 	if !usernameRE.MatchString(username) {
 		return errInvalidUsername
