@@ -136,20 +136,23 @@ func TestService_ResolverPermissions(t *testing.T) {
 	if !ok || code != api.Forbidden {
 		t.Fatalf("reader GetNamespace error code = %q, %v, want %q", code, ok, api.Forbidden)
 	}
-
-	_, err = store.CreateResource(ctx, testNS, "existing", api.ResourceCreateRequest{
+	existingPID, err := api.NewPID("existing")
+	if err != nil {
+		t.Fatalf("NewPID(existing) error = %v", err)
+	}
+	_, err = store.CreateResource(ctx, testNS, existingPID, api.ResourceCreateRequest{
 		URL: "https://example.com",
 	}, now)
 	if err != nil {
 		t.Fatalf("CreateResource() error = %v", err)
 	}
 
-	_, err = svc.GetResource(ctx, userInfo("reader"), testNS, "existing")
+	_, err = svc.GetResource(ctx, userInfo("reader"), testNS, existingPID)
 	if err != nil {
 		t.Fatalf("reader GetResource = %v", err)
 	}
 
-	_, err = svc.GetResource(ctx, userInfo("contributor"), testNS, "existing")
+	_, err = svc.GetResource(ctx, userInfo("contributor"), testNS, existingPID)
 	if err != nil {
 		t.Fatalf("contributor GetResource = %v", err)
 	}
@@ -313,7 +316,11 @@ func TestService_AnonymousResolverMode(t *testing.T) {
 		t.Fatalf("CreateResource() pid = %q, want aaa-bbb", created.PID)
 	}
 
-	got, err := svc.GetResource(ctx, nil, testNS, "aaa-bbb")
+	aaaBBB, err := api.NewPID("aaa-bbb")
+	if err != nil {
+		t.Fatalf("NewPID(aaa-bbb) error = %v", err)
+	}
+	got, err := svc.GetResource(ctx, nil, testNS, aaaBBB)
 	if err != nil {
 		t.Fatalf("GetResource(nil) = %v, %v", got, err)
 	}

@@ -38,3 +38,27 @@ func NewNamespaceID(value string) (*NamespaceID, error) {
 	}
 	return &NamespaceID{value: value}, nil
 }
+
+// PID represents a valid pid.
+//
+// Use [NewPID] to create a new pid.
+type PID struct {
+	value string
+}
+
+func (pid PID) String() string {
+	return pid.value
+}
+
+var (
+	pidRE         = regexp.MustCompile(`^[a-z0-9_-]+$`)
+	errInvalidPID = errors.New("invalid pid")
+)
+
+// NewPID creates a new PID.
+func NewPID(value string) (*PID, error) {
+	if !pidRE.MatchString(value) {
+		return nil, errInvalidPID
+	}
+	return &PID{value: value}, nil
+}

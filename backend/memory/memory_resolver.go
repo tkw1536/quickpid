@@ -144,7 +144,7 @@ func (s *Store) CountAllResources(_ context.Context) (int64, error) {
 	return n, nil
 }
 
-func (s *Store) CreateResource(_ context.Context, namespace *api.NamespaceID, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(_ context.Context, namespace *api.NamespaceID, pid *api.PID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -152,12 +152,12 @@ func (s *Store) CreateResource(_ context.Context, namespace *api.NamespaceID, pi
 		return nil, backend.ErrNamespaceNotFound
 	}
 	byPID := s.resources[namespace.String()]
-	if _, exists := byPID[pid]; exists {
+	if _, exists := byPID[pid.String()]; exists {
 		return nil, backend.ErrPIDAllocationFailed
 	}
 	ts := now().UTC().Format(time.RFC3339)
 	res := api.ResourceResponse{
-		PID:         pid,
+		PID:         pid.String(),
 		URL:         req.URL,
 		Metadata:    req.Metadata,
 		DateCreated: ts,
@@ -165,11 +165,11 @@ func (s *Store) CreateResource(_ context.Context, namespace *api.NamespaceID, pi
 		Tag:         req.Tag,
 		Deleted:     false,
 	}
-	byPID[pid] = res
+	byPID[pid.String()] = res
 	return &res, nil
 }
 
-func (s *Store) BatchCreateResources(_ context.Context, namespace *api.NamespaceID, pids []string, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(_ context.Context, namespace *api.NamespaceID, pids []*api.PID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -183,11 +183,11 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace *api.Namespace
 	byPID := s.resources[namespace.String()]
 	seen := make(map[string]struct{}, len(pids))
 	for _, pid := range pids {
-		if _, dup := seen[pid]; dup {
+		if _, dup := seen[pid.String()]; dup {
 			return nil, backend.ErrPIDAllocationFailed
 		}
-		seen[pid] = struct{}{}
-		if _, exists := byPID[pid]; exists {
+		seen[pid.String()] = struct{}{}
+		if _, exists := byPID[pid.String()]; exists {
 			return nil, backend.ErrPIDAllocationFailed
 		}
 	}
@@ -196,7 +196,7 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace *api.Namespace
 	ts := now().UTC().Format(time.RFC3339)
 	for i, req := range reqs {
 		res := api.ResourceResponse{
-			PID:         pids[i],
+			PID:         pids[i].String(),
 			URL:         req.URL,
 			Metadata:    req.Metadata,
 			DateCreated: ts,
@@ -204,34 +204,34 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace *api.Namespace
 			Tag:         req.Tag,
 			Deleted:     false,
 		}
-		byPID[pids[i]] = res
+		byPID[pids[i].String()] = res
 		out = append(out, res)
 	}
 	return out, nil
 }
 
-func (s *Store) GetResource(_ context.Context, namespace *api.NamespaceID, pid string) (*api.ResourceResponse, error) {
+func (s *Store) GetResource(_ context.Context, namespace *api.NamespaceID, pid *api.PID) (*api.ResourceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if _, ok := s.namespaces[namespace.String()]; !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
-	res, ok := s.resources[namespace.String()][pid]
+	res, ok := s.resources[namespace.String()][pid.String()]
 	if !ok {
 		return nil, backend.ErrResourceNotFound
 	}
 	return &res, nil
 }
 
-func (s *Store) UpdateResource(_ context.Context, namespace *api.NamespaceID, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(_ context.Context, namespace *api.NamespaceID, pid *api.PID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.namespaces[namespace.String()]; !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
-	prev, ok := s.resources[namespace.String()][pid]
+	prev, ok := s.resources[namespace.String()][pid.String()]
 	if !ok {
 		return nil, backend.ErrResourceNotFound
 	}
@@ -251,6 +251,6 @@ func (s *Store) UpdateResource(_ context.Context, namespace *api.NamespaceID, pi
 	}
 
 	res.DateUpdated = now().UTC().Format(time.RFC3339)
-	s.resources[namespace.String()][pid] = res
+	s.resources[namespace.String()][pid.String()] = res
 	return &res, nil
 }

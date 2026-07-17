@@ -177,7 +177,7 @@ func (s *Service) CreateResource(ctx context.Context, caller *api.UserInfo, name
 		return nil, api.WithErrorString(fmt.Errorf("store.GetNamespace: %w", err), api.DatabaseError)
 	}
 
-	out, err := s.allocatePID(ns.PIDFormat, func(pid string) (*api.ResourceResponse, error) {
+	out, err := s.allocatePID(ns.PIDFormat, func(pid *api.PID) (*api.ResourceResponse, error) {
 		return s.store.CreateResource(ctx, namespace, pid, req, s.runtime.Now)
 	})
 	if err != nil {
@@ -222,7 +222,7 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo
 		return nil, api.WithErrorString(fmt.Errorf("store.UpdateResource: %w", err), api.DatabaseError)
 	}
 
-	out, err := s.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []string) ([]api.ResourceResponse, error) {
+	out, err := s.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []*api.PID) ([]api.ResourceResponse, error) {
 		return s.store.BatchCreateResources(ctx, namespace, pids, reqs, s.runtime.Now)
 	})
 	if err != nil {
@@ -237,15 +237,10 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo
 //
 // - [api.Unauthorized]
 // - [api.Forbidden]
-// - [api.InvalidPID]
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound]
 // - [api.DatabaseError].
-func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, resourcePID string) (*api.ResourceResponse, error) {
-	if err := ValidatePID(resourcePID); err != nil {
-		return nil, api.WithErrorString(err, api.InvalidPID)
-	}
-
+func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, resourcePID *api.PID) (*api.ResourceResponse, error) {
 	out, err := s.store.GetResource(ctx, namespace, resourcePID)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorString(fmt.Errorf("store.UpdateResource: %w", err), api.NamespaceNotFound)
@@ -290,14 +285,10 @@ func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespa
 //
 // - [api.Unauthorized]
 // - [api.Forbidden]
-// - [api.InvalidPID]
 // - [api.DatabaseError]
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound].
-func (s *Service) UpdateResource(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, resourcePID string, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
-	if err := ValidatePID(resourcePID); err != nil {
-		return nil, api.WithErrorString(err, api.InvalidPID)
-	}
+func (s *Service) UpdateResource(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, resourcePID *api.PID, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
 	if !s.AnonymousMode() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canUpdateResource); err != nil {
 			return nil, err
@@ -324,7 +315,7 @@ func (s *Service) UpdateResource(ctx context.Context, caller *api.UserInfo, name
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
-func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]string) ([]api.ResourceResponse, error)) ([]api.ResourceResponse, error) {
+func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]*api.PID) ([]api.ResourceResponse, error)) ([]api.ResourceResponse, error) {
 	if n == 0 {
 		return []api.ResourceResponse{}, nil
 	}
@@ -334,7 +325,7 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]string) (
 	s.mu.RUnlock()
 
 	for range maxAttempts {
-		pids := make([]string, n)
+		pids := make([]*api.PID, n)
 		seen := make(map[string]struct{}, n)
 		for i := range n {
 			// Ensure uniqueness within this batch.
@@ -347,10 +338,14 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]string) (
 					continue
 				}
 				seen[candidate] = struct{}{}
-				pids[i] = candidate
+				pids[i], err = api.NewPID(candidate)
+				if err != nil {
+					return nil, api.WithErrorString(fmt.Errorf("NewPID: %w", err), api.BadIDGeneration)
+				}
 				break
 			}
-			if !format.IsValid(pids[i]) {
+
+			if !format.IsValid(pids[i].String()) {
 				return nil, api.WithErrorString(fmt.Errorf("%w: %q is not a valid pid", errBadPID, pids[i]), api.BadIDGeneration)
 			}
 		}
@@ -367,8 +362,8 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]string) (
 }
 
 // allocatePID is like allocatePIDs but for a single PID.
-func (s *Service) allocatePID(format pid.Format, insert func(string) (*api.ResourceResponse, error)) (*api.ResourceResponse, error) {
-	pids, err := s.allocatePIDs(format, 1, func(pids []string) ([]api.ResourceResponse, error) {
+func (s *Service) allocatePID(format pid.Format, insert func(*api.PID) (*api.ResourceResponse, error)) (*api.ResourceResponse, error) {
+	pids, err := s.allocatePIDs(format, 1, func(pids []*api.PID) ([]api.ResourceResponse, error) {
 		res, err := insert(pids[0])
 		if err != nil {
 			return nil, err

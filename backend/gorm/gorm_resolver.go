@@ -168,7 +168,7 @@ func (s *Store) CountAllResources(ctx context.Context) (int64, error) {
 	})
 }
 
-func (s *Store) CreateResource(ctx context.Context, namespace *api.NamespaceID, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(ctx context.Context, namespace *api.NamespaceID, pid *api.PID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
@@ -176,7 +176,7 @@ func (s *Store) CreateResource(ctx context.Context, namespace *api.NamespaceID, 
 		ts := now().UTC()
 		row := resourceRow{
 			NamespaceID: namespace.String(),
-			PID:         pid,
+			PID:         pid.String(),
 			URL:         req.URL,
 			Metadata:    req.Metadata,
 			Tag:         req.Tag,
@@ -195,7 +195,7 @@ func (s *Store) CreateResource(ctx context.Context, namespace *api.NamespaceID, 
 	})
 }
 
-func (s *Store) BatchCreateResources(ctx context.Context, namespace *api.NamespaceID, pids []string, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(ctx context.Context, namespace *api.NamespaceID, pids []*api.PID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
@@ -212,7 +212,7 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace *api.Namespa
 		for i, req := range reqs {
 			rows[i] = resourceRow{
 				NamespaceID: namespace.String(),
-				PID:         pids[i],
+				PID:         pids[i].String(),
 				URL:         req.URL,
 				Metadata:    req.Metadata,
 				Tag:         req.Tag,
@@ -237,14 +237,14 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace *api.Namespa
 	})
 }
 
-func (s *Store) GetResource(ctx context.Context, namespace *api.NamespaceID, pid string) (*api.ResourceResponse, error) {
+func (s *Store) GetResource(ctx context.Context, namespace *api.NamespaceID, pid *api.PID) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
 		}
 
 		var row resourceRow
-		if err := tx.First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid).Error; err != nil {
+		if err := tx.First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, backend.ErrResourceNotFound
 			}
@@ -255,14 +255,14 @@ func (s *Store) GetResource(ctx context.Context, namespace *api.NamespaceID, pid
 	})
 }
 
-func (s *Store) UpdateResource(ctx context.Context, namespace *api.NamespaceID, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(ctx context.Context, namespace *api.NamespaceID, pid *api.PID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
 		}
 
 		var row resourceRow
-		if err := tx.First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid).Error; err != nil {
+		if err := tx.First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, backend.ErrResourceNotFound
 			}

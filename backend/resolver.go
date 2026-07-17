@@ -43,26 +43,26 @@ type ResolverBackend interface {
 	//
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrResourceNotFound] if the resource is not found.
-	GetResource(ctx context.Context, namespace *api.NamespaceID, pid string) (*api.ResourceResponse, error)
+	GetResource(ctx context.Context, namespace *api.NamespaceID, pid *api.PID) (*api.ResourceResponse, error)
 
 	// Creates a new resource in the given namespace with the given pid.
 	//
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrPIDAllocationFailed] if the pid is already in use.
-	CreateResource(ctx context.Context, namespace *api.NamespaceID, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error)
+	CreateResource(ctx context.Context, namespace *api.NamespaceID, pid *api.PID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error)
 
 	// Creates multiple resources in the given namespace with the given pids.
 	// If the creation of a single resource fails, should roll back the entire batch.
 	//
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrPIDAllocationFailed] if one of the pids is already in use.
-	BatchCreateResources(ctx context.Context, namespace *api.NamespaceID, pids []string, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error)
+	BatchCreateResources(ctx context.Context, namespace *api.NamespaceID, pids []*api.PID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error)
 
 	// Updates a resource in the given namespace with the given pid.
 	//
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrResourceNotFound] if the resource did not previously exist.
-	UpdateResource(ctx context.Context, namespace *api.NamespaceID, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error)
+	UpdateResource(ctx context.Context, namespace *api.NamespaceID, pid *api.PID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error)
 
 	WithShutdownMethod
 }

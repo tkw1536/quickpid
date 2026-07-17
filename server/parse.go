@@ -132,10 +132,10 @@ func (*Server) getNamespace(r *http.Request) (*api.NamespaceID, error) {
 // It can return the following errors:
 //
 // - [api.InvalidPID].
-func (*Server) getPID(r *http.Request) (pid string, err error) {
-	pid = r.PathValue("pid")
-	if err := service.ValidatePID(pid); err != nil {
-		return "", api.WithErrorString(fmt.Errorf("service.ValidatePID: %w", err), api.InvalidPID)
+func (*Server) getPID(r *http.Request) (pid *api.PID, err error) {
+	pid, err = api.NewPID(r.PathValue("pid"))
+	if err != nil {
+		return nil, api.WithErrorString(fmt.Errorf("api.NewPID: %w", err), api.InvalidPID)
 	}
 	return pid, nil
 }
