@@ -22,7 +22,7 @@ var errExistingUserNotFound = errors.New("existing user not found")
 // - [api.DatabaseError].
 func (s *Service) ListNamespaces(ctx context.Context, caller *api.UserInfo, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	// in authenticated mode, require the caller to be authenticated.
-	if !s.Options().Anonymous {
+	if !s.AnonymousMode() {
 		if err := s.requireAuthenticated(caller); err != nil {
 			return nil, err
 		}
@@ -51,15 +51,10 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.UserInfo, para
 //
 // - [api.Unauthorized]
 // - [api.Forbidden]
-// - [api.InvalidNamespaceID]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) GetNamespace(ctx context.Context, caller *api.UserInfo, namespace string) (*api.NamespaceResponse, error) {
-	if s.Options().Anonymous {
-		if err := ValidateNamespaceID(namespace); err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("ValidateNamespaceID: %w", err), api.InvalidNamespaceID)
-		}
-	} else {
+func (s *Service) GetNamespace(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID) (*api.NamespaceResponse, error) {
+	if !s.AnonymousMode() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canReadNamespaceMetadata); err != nil {
 			return nil, err
 		}
@@ -101,7 +96,7 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.UserInfo, req
 	s.mu.RUnlock()
 
 	var owner *string
-	if !s.Options().Anonymous {
+	if !s.AnonymousMode() {
 		if err := s.requireAuthenticated(caller); err != nil {
 			return nil, err
 		}
@@ -112,10 +107,11 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.UserInfo, req
 		if err != nil {
 			return nil, api.WithErrorString(fmt.Errorf("Runtime.NewNamespaceID: %w", err), api.BadIDGeneration)
 		}
-		if !namespaceIDRE.MatchString(name) {
+		namespace, err := api.NewNamespaceID(name)
+		if err != nil {
 			return nil, api.WithErrorString(fmt.Errorf("%w: %q is not a valid namespace id", errBadNamespaceID, name), api.BadIDGeneration)
 		}
-		out, err := s.store.CreateNamespace(ctx, name, req, owner, s.runtime.Now)
+		out, err := s.store.CreateNamespace(ctx, namespace, req, owner, s.runtime.Now)
 		if err == nil {
 			return out, nil
 		}
@@ -138,20 +134,15 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.UserInfo, req
 //
 // - [api.Unauthorized]
 // - [api.Forbidden]
-// - [api.InvalidNamespaceID]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListResources(ctx context.Context, caller *api.UserInfo, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
-	if s.Options().Anonymous {
-		if err := ValidateNamespaceID(params.Namespace); err != nil {
-			return nil, api.WithErrorString(err, api.InvalidNamespaceID)
-		}
-	} else {
-		if err := s.requireNamespaceCapability(ctx, caller, params.Namespace, canListResources); err != nil {
+func (s *Service) ListResources(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+	if !s.AnonymousMode() {
+		if err := s.requireNamespaceCapability(ctx, caller, namespace, canListResources); err != nil {
 			return nil, err
 		}
 	}
-	out, err := s.store.ListResources(ctx, params)
+	out, err := s.store.ListResources(ctx, namespace, params)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorString(fmt.Errorf("store.UpdateResource: %w", err), api.NamespaceNotFound)
 	}
@@ -167,17 +158,12 @@ func (s *Service) ListResources(ctx context.Context, caller *api.UserInfo, param
 //
 // - [api.Unauthorized]
 // - [api.Forbidden]
-// - [api.InvalidNamespaceID]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
-func (s *Service) CreateResource(ctx context.Context, caller *api.UserInfo, namespace string, req api.ResourceCreateRequest) (*api.ResourceResponse, error) {
-	if s.Options().Anonymous {
-		if err := ValidateNamespaceID(namespace); err != nil {
-			return nil, api.WithErrorString(err, api.InvalidNamespaceID)
-		}
-	} else {
+func (s *Service) CreateResource(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, req api.ResourceCreateRequest) (*api.ResourceResponse, error) {
+	if !s.AnonymousMode() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canCreateResource); err != nil {
 			return nil, err
 		}
@@ -209,12 +195,11 @@ var errLimitExceeded = errors.New("batch create limit exceeded")
 // - [api.ItemLimitExceeded]
 // - [api.Unauthorized]
 // - [api.Forbidden]
-// - [api.InvalidNamespaceID]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
-func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo, namespace string, reqs []api.ResourceCreateRequest) ([]api.ResourceResponse, error) {
+func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, reqs []api.ResourceCreateRequest) ([]api.ResourceResponse, error) {
 	s.mu.RLock()
 	maxBatch := s.opts.Limits.MaxBatchItems
 	s.mu.RUnlock()
@@ -223,11 +208,7 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo
 		return nil, api.WithErrorString(fmt.Errorf("%w: %d > %d", errLimitExceeded, len(reqs), maxBatch), api.ItemLimitExceeded)
 	}
 
-	if s.Options().Anonymous {
-		if err := ValidateNamespaceID(namespace); err != nil {
-			return nil, api.WithErrorString(err, api.InvalidNamespaceID)
-		}
-	} else {
+	if !s.AnonymousMode() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canCreateResource); err != nil {
 			return nil, err
 		}
@@ -256,21 +237,13 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.UserInfo
 //
 // - [api.Unauthorized]
 // - [api.Forbidden]
-// - [api.InvalidNamespaceID]
 // - [api.InvalidPID]
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound]
 // - [api.DatabaseError].
-func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespace, resourcePID string) (*api.ResourceResponse, error) {
+func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, resourcePID string) (*api.ResourceResponse, error) {
 	if err := ValidatePID(resourcePID); err != nil {
 		return nil, api.WithErrorString(err, api.InvalidPID)
-	}
-	if s.Options().Anonymous {
-		if err := ValidateNamespaceID(namespace); err != nil {
-			return nil, api.WithErrorString(err, api.InvalidNamespaceID)
-		}
-	} else if err := ValidateNamespaceID(namespace); err != nil {
-		return nil, api.WithErrorString(err, api.InvalidNamespaceID)
 	}
 
 	out, err := s.store.GetResource(ctx, namespace, resourcePID)
@@ -284,7 +257,7 @@ func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespa
 		return nil, api.WithErrorString(fmt.Errorf("store.UpdateResource: %w", err), api.DatabaseError)
 	}
 
-	if s.Options().Anonymous {
+	if s.AnonymousMode() {
 		return out, nil
 	}
 
@@ -317,20 +290,15 @@ func (s *Service) GetResource(ctx context.Context, caller *api.UserInfo, namespa
 //
 // - [api.Unauthorized]
 // - [api.Forbidden]
-// - [api.InvalidNamespaceID]
 // - [api.InvalidPID]
 // - [api.DatabaseError]
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound].
-func (s *Service) UpdateResource(ctx context.Context, caller *api.UserInfo, namespace, resourcePID string, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
+func (s *Service) UpdateResource(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, resourcePID string, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
 	if err := ValidatePID(resourcePID); err != nil {
 		return nil, api.WithErrorString(err, api.InvalidPID)
 	}
-	if s.Options().Anonymous {
-		if err := ValidateNamespaceID(namespace); err != nil {
-			return nil, api.WithErrorString(err, api.InvalidNamespaceID)
-		}
-	} else {
+	if !s.AnonymousMode() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canUpdateResource); err != nil {
 			return nil, err
 		}

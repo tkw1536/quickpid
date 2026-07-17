@@ -102,12 +102,11 @@ func (h *Server) listResources(w http.ResponseWriter, r *http.Request, user *api
 		return nil, err
 	}
 
-	resources, err := h.svc.ListResources(r.Context(), user, api.ListResourcesParams{
-		Namespace: namespace,
-		Tag:       tag,
-		Deleted:   deleted,
-		Limit:     limit,
-		Offset:    offset,
+	resources, err := h.svc.ListResources(r.Context(), user, namespace, api.ListResourcesParams{
+		Tag:     tag,
+		Deleted: deleted,
+		Limit:   limit,
+		Offset:  offset,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("store.ListResources: %w", err)

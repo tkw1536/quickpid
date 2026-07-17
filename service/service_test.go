@@ -138,11 +138,6 @@ func TestEnsureRootUser_AnonymousModeSkipsBootstrap(t *testing.T) {
 	}
 }
 
-func TestValidateNamespaceID(t *testing.T) {
-	t.Parallel()
-	testIdentifierValidation(t, service.ValidateNamespaceID, "invalid namespace id")
-}
-
 func TestValidatePID(t *testing.T) {
 	t.Parallel()
 	testIdentifierValidation(t, service.ValidatePID, "invalid pid")

@@ -117,9 +117,9 @@ func (p namespacePermissionRow) toSpec() api.NamespacePermission {
 	}
 }
 
-func ensureNamespaceExists(tx *gorm.DB, id string) error {
+func ensureNamespaceExists(tx *gorm.DB, id *api.NamespaceID) error {
 	var n int64
-	if err := tx.Model(&namespaceRow{}).Where("id = ?", id).Count(&n).Error; err != nil {
+	if err := tx.Model(&namespaceRow{}).Where("id = ?", id.String()).Count(&n).Error; err != nil {
 		return err
 	}
 	if n == 0 {

@@ -54,7 +54,7 @@ func (s *Store) ListNamespaces(_ context.Context, user *string, params api.ListN
 	return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateNamespace(_ context.Context, namespace string, req api.NamespaceCreateRequest, owner *string, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(_ context.Context, namespace *api.NamespaceID, req api.NamespaceCreateRequest, owner *string, now func() time.Time) (*api.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -63,49 +63,49 @@ func (s *Store) CreateNamespace(_ context.Context, namespace string, req api.Nam
 			return nil, backend.ErrUserNotFound
 		}
 	}
-	if _, exists := s.namespaces[namespace]; exists {
+	if _, exists := s.namespaces[namespace.String()]; exists {
 		return nil, backend.ErrDuplicateNamespaceID
 	}
 
 	created := now().UTC().Format(time.RFC3339)
 	ns := api.NamespaceResponse{
-		ID:          namespace,
+		ID:          namespace.String(),
 		Tag:         req.Tag,
 		PIDFormat:   req.PIDFormat,
 		DateCreated: created,
 	}
-	s.namespaces[namespace] = ns
-	s.resources[namespace] = make(map[string]api.ResourceResponse)
+	s.namespaces[namespace.String()] = ns
+	s.resources[namespace.String()] = make(map[string]api.ResourceResponse)
 
 	if owner != nil {
-		if s.permissions[namespace] == nil {
-			s.permissions[namespace] = make(map[string]api.PermissionLevel)
+		if s.permissions[namespace.String()] == nil {
+			s.permissions[namespace.String()] = make(map[string]api.PermissionLevel)
 		}
-		s.permissions[namespace][*owner] = api.PermissionLevelManager
+		s.permissions[namespace.String()][*owner] = api.PermissionLevelManager
 	}
 
 	return &ns, nil
 }
 
-func (s *Store) GetNamespace(_ context.Context, namespace string) (*api.NamespaceResponse, error) {
+func (s *Store) GetNamespace(_ context.Context, namespace *api.NamespaceID) (*api.NamespaceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	ns, ok := s.namespaces[namespace]
+	ns, ok := s.namespaces[namespace.String()]
 	if !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
 	return &ns, nil
 }
 
-func (s *Store) ListResources(_ context.Context, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+func (s *Store) ListResources(_ context.Context, namespace *api.NamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if _, ok := s.namespaces[params.Namespace]; !ok {
+	if _, ok := s.namespaces[namespace.String()]; !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
 
-	byPID := s.resources[params.Namespace]
+	byPID := s.resources[namespace.String()]
 	filtered := make([]api.ResourceResponse, 0, len(byPID))
 	for _, r := range byPID {
 		if params.Tag != nil && r.Tag != *params.Tag {
@@ -144,14 +144,14 @@ func (s *Store) CountAllResources(_ context.Context) (int64, error) {
 	return n, nil
 }
 
-func (s *Store) CreateResource(_ context.Context, namespace, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(_ context.Context, namespace *api.NamespaceID, pid string, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.namespaces[namespace]; !ok {
+	if _, ok := s.namespaces[namespace.String()]; !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
-	byPID := s.resources[namespace]
+	byPID := s.resources[namespace.String()]
 	if _, exists := byPID[pid]; exists {
 		return nil, backend.ErrPIDAllocationFailed
 	}
@@ -169,18 +169,18 @@ func (s *Store) CreateResource(_ context.Context, namespace, pid string, req api
 	return &res, nil
 }
 
-func (s *Store) BatchCreateResources(_ context.Context, namespace string, pids []string, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(_ context.Context, namespace *api.NamespaceID, pids []string, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.namespaces[namespace]; !ok {
+	if _, ok := s.namespaces[namespace.String()]; !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
 	if len(pids) != len(reqs) {
 		return nil, backend.ErrPIDAllocationFailed
 	}
 
-	byPID := s.resources[namespace]
+	byPID := s.resources[namespace.String()]
 	seen := make(map[string]struct{}, len(pids))
 	for _, pid := range pids {
 		if _, dup := seen[pid]; dup {
@@ -210,28 +210,28 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace string, pids [
 	return out, nil
 }
 
-func (s *Store) GetResource(_ context.Context, namespace, pid string) (*api.ResourceResponse, error) {
+func (s *Store) GetResource(_ context.Context, namespace *api.NamespaceID, pid string) (*api.ResourceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if _, ok := s.namespaces[namespace]; !ok {
+	if _, ok := s.namespaces[namespace.String()]; !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
-	res, ok := s.resources[namespace][pid]
+	res, ok := s.resources[namespace.String()][pid]
 	if !ok {
 		return nil, backend.ErrResourceNotFound
 	}
 	return &res, nil
 }
 
-func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(_ context.Context, namespace *api.NamespaceID, pid string, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.namespaces[namespace]; !ok {
+	if _, ok := s.namespaces[namespace.String()]; !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
-	prev, ok := s.resources[namespace][pid]
+	prev, ok := s.resources[namespace.String()][pid]
 	if !ok {
 		return nil, backend.ErrResourceNotFound
 	}
@@ -251,6 +251,6 @@ func (s *Store) UpdateResource(_ context.Context, namespace, pid string, req api
 	}
 
 	res.DateUpdated = now().UTC().Format(time.RFC3339)
-	s.resources[namespace][pid] = res
+	s.resources[namespace.String()][pid] = res
 	return &res, nil
 }

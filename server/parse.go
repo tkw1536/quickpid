@@ -119,10 +119,10 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, err er
 // It can return the following errors:
 //
 // - [api.InvalidNamespaceID].
-func (*Server) getNamespace(r *http.Request) (namespace string, err error) {
-	namespace = r.PathValue("namespace")
-	if err := service.ValidateNamespaceID(namespace); err != nil {
-		return "", api.WithErrorString(fmt.Errorf("service.ValidateNamespaceID: %w", err), api.InvalidNamespaceID)
+func (*Server) getNamespace(r *http.Request) (*api.NamespaceID, error) {
+	namespace, err := api.NewNamespaceID(r.PathValue("namespace"))
+	if err != nil {
+		return nil, api.WithErrorString(fmt.Errorf("api.NewNamespaceID: %w", err), api.InvalidNamespaceID)
 	}
 	return namespace, nil
 }

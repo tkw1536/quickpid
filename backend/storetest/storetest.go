@@ -352,14 +352,19 @@ func RunAuthorizationCRUD(t *testing.T, newStore func() backend.Store) {
 	s := newStore()
 	now := FixedNow()
 
+	ns1, err := api.NewNamespaceID("ns-1")
+	if err != nil {
+		t.Fatalf("NewNamespaceID() error = %v", err)
+	}
+
 	if _, err := s.CreateUser(ctx, userReq(TestNamespaceOwner), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	if _, err := s.CreateNamespace(ctx, "ns-1", namespaceReq(), new(TestNamespaceOwner), now); err != nil {
+	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), new(TestNamespaceOwner), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 
-	level, err := s.GetNamespacePermission(ctx, "ns-1", "other")
+	level, err := s.GetNamespacePermission(ctx, ns1, "other")
 	if err != nil {
 		t.Fatalf("GetNamespacePermission() error = %v", err)
 	}
@@ -367,7 +372,7 @@ func RunAuthorizationCRUD(t *testing.T, newStore func() backend.Store) {
 		t.Fatalf("GetNamespacePermission() = %q, want none", level)
 	}
 
-	level, err = s.GetNamespacePermission(ctx, "ns-1", TestNamespaceOwner)
+	level, err = s.GetNamespacePermission(ctx, ns1, TestNamespaceOwner)
 	if err != nil {
 		t.Fatalf("GetNamespacePermission(owner) error = %v", err)
 	}
@@ -375,10 +380,10 @@ func RunAuthorizationCRUD(t *testing.T, newStore func() backend.Store) {
 		t.Fatalf("GetNamespacePermission(owner) = %q, want manager", level)
 	}
 
-	if err := s.SetNamespacePermission(ctx, "ns-1", "bob", api.PermissionLevelEditor); err != nil {
+	if err := s.SetNamespacePermission(ctx, ns1, "bob", api.PermissionLevelEditor); err != nil {
 		t.Fatalf("SetNamespacePermission() error = %v", err)
 	}
-	level, err = s.GetNamespacePermission(ctx, "ns-1", "bob")
+	level, err = s.GetNamespacePermission(ctx, ns1, "bob")
 	if err != nil {
 		t.Fatalf("GetNamespacePermission(bob) error = %v", err)
 	}
@@ -386,10 +391,10 @@ func RunAuthorizationCRUD(t *testing.T, newStore func() backend.Store) {
 		t.Fatalf("GetNamespacePermission(bob) = %q, want editor", level)
 	}
 
-	if err := s.SetNamespacePermission(ctx, "ns-1", "bob", api.PermissionLevelNone); err != nil {
+	if err := s.SetNamespacePermission(ctx, ns1, "bob", api.PermissionLevelNone); err != nil {
 		t.Fatalf("SetNamespacePermission(none) error = %v", err)
 	}
-	level, err = s.GetNamespacePermission(ctx, "ns-1", "bob")
+	level, err = s.GetNamespacePermission(ctx, ns1, "bob")
 	if err != nil {
 		t.Fatalf("GetNamespacePermission(bob) after none error = %v", err)
 	}
@@ -397,17 +402,17 @@ func RunAuthorizationCRUD(t *testing.T, newStore func() backend.Store) {
 		t.Fatalf("GetNamespacePermission(bob) after none = %q, want none", level)
 	}
 
-	if err := s.SetNamespacePermission(ctx, "ns-1", "carol", api.PermissionLevelContributor); err != nil {
+	if err := s.SetNamespacePermission(ctx, ns1, "carol", api.PermissionLevelContributor); err != nil {
 		t.Fatalf("SetNamespacePermission(carol) error = %v", err)
 	}
-	if err := s.DeleteNamespacePermission(ctx, "ns-1", "carol"); err != nil {
+	if err := s.DeleteNamespacePermission(ctx, ns1, "carol"); err != nil {
 		t.Fatalf("DeleteNamespacePermission() error = %v", err)
 	}
-	if err := s.DeleteNamespacePermission(ctx, "ns-1", "carol"); !errors.Is(err, backend.ErrPermissionNotFound) {
+	if err := s.DeleteNamespacePermission(ctx, ns1, "carol"); !errors.Is(err, backend.ErrPermissionNotFound) {
 		t.Fatalf("DeleteNamespacePermission() twice error = %v, want ErrPermissionNotFound", err)
 	}
 
-	page, err := s.ListNamespacePermissions(ctx, "ns-1", api.ListNamespacePermissionsParams{Limit: 100})
+	page, err := s.ListNamespacePermissions(ctx, ns1, api.ListNamespacePermissionsParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListNamespacePermissions() error = %v", err)
 	}
@@ -415,7 +420,7 @@ func RunAuthorizationCRUD(t *testing.T, newStore func() backend.Store) {
 		t.Fatalf("ListNamespacePermissions() = %+v", page)
 	}
 
-	if err := s.SetNamespacePermission(ctx, "ns-1", "dave", api.PermissionLevel("invalid")); !errors.Is(err, backend.ErrInvalidPermissionLevel) {
+	if err := s.SetNamespacePermission(ctx, ns1, "dave", api.PermissionLevel("invalid")); !errors.Is(err, backend.ErrInvalidPermissionLevel) {
 		t.Fatalf("SetNamespacePermission(invalid) error = %v, want ErrInvalidPermissionLevel", err)
 	}
 }
@@ -427,18 +432,27 @@ func RunCreateNamespaceWithOwner(t *testing.T, newStore func() backend.Store) {
 	s := newStore()
 	now := FixedNow()
 
-	if _, err := s.CreateNamespace(ctx, "ns-missing-owner", namespaceReq(), new("nobody"), now); !errors.Is(err, backend.ErrUserNotFound) {
+	nsMissingOwner, err := api.NewNamespaceID("ns-missing-owner")
+	if err != nil {
+		t.Fatalf("NewNamespaceID() error = %v", err)
+	}
+	nsOwned, err := api.NewNamespaceID("ns-owned")
+	if err != nil {
+		t.Fatalf("NewNamespaceID() error = %v", err)
+	}
+
+	if _, err := s.CreateNamespace(ctx, nsMissingOwner, namespaceReq(), new("nobody"), now); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("CreateNamespace() missing owner error = %v, want ErrUserNotFound", err)
 	}
 
 	if _, err := s.CreateUser(ctx, userReq("owner"), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	if _, err := s.CreateNamespace(ctx, "ns-owned", namespaceReq(), new("owner"), now); err != nil {
+	if _, err := s.CreateNamespace(ctx, nsOwned, namespaceReq(), new("owner"), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 
-	level, err := s.GetNamespacePermission(ctx, "ns-owned", "owner")
+	level, err := s.GetNamespacePermission(ctx, nsOwned, "owner")
 	if err != nil {
 		t.Fatalf("GetNamespacePermission() error = %v", err)
 	}
@@ -454,16 +468,21 @@ func RunDeleteUserCascadesPermissions(t *testing.T, newStore func() backend.Stor
 	s := newStore()
 	now := FixedNow()
 
+	ns1, err := api.NewNamespaceID("ns-1")
+	if err != nil {
+		t.Fatalf("NewNamespaceID() error = %v", err)
+	}
+
 	if _, err := s.CreateUser(ctx, userReq("alice"), now); err != nil {
 		t.Fatalf("CreateUser(alice) error = %v", err)
 	}
 	if _, err := s.CreateUser(ctx, userReq("bob"), now); err != nil {
 		t.Fatalf("CreateUser(bob) error = %v", err)
 	}
-	if _, err := s.CreateNamespace(ctx, "ns-1", namespaceReq(), new("alice"), now); err != nil {
+	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), new("alice"), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
-	if err := s.SetNamespacePermission(ctx, "ns-1", "bob", api.PermissionLevelEditor); err != nil {
+	if err := s.SetNamespacePermission(ctx, ns1, "bob", api.PermissionLevelEditor); err != nil {
 		t.Fatalf("SetNamespacePermission() error = %v", err)
 	}
 
@@ -471,7 +490,7 @@ func RunDeleteUserCascadesPermissions(t *testing.T, newStore func() backend.Stor
 		t.Fatalf("DeleteUser() error = %v", err)
 	}
 
-	level, err := s.GetNamespacePermission(ctx, "ns-1", "bob")
+	level, err := s.GetNamespacePermission(ctx, ns1, "bob")
 	if err != nil {
 		t.Fatalf("GetNamespacePermission(bob) error = %v", err)
 	}
@@ -479,7 +498,7 @@ func RunDeleteUserCascadesPermissions(t *testing.T, newStore func() backend.Stor
 		t.Fatalf("GetNamespacePermission(bob) after delete = %q, want none", level)
 	}
 
-	page, err := s.ListNamespacePermissions(ctx, "ns-1", api.ListNamespacePermissionsParams{Limit: 100})
+	page, err := s.ListNamespacePermissions(ctx, ns1, api.ListNamespacePermissionsParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListNamespacePermissions() error = %v", err)
 	}

@@ -17,7 +17,7 @@ import (
 // Authenticate looks up the username for a valid API key.
 // It returns errUnauthorized when the key is missing or invalid.
 func (s *Service) Authenticate(ctx context.Context, apiKey string) (string, error) {
-	if s.Options().Anonymous {
+	if s.AnonymousMode() {
 		return "", errUnauthorized
 	}
 	if apiKey == "" {
@@ -37,7 +37,7 @@ func (s *Service) Authenticate(ctx context.Context, apiKey string) (string, erro
 // CurrentUser authenticates an API key and returns the corresponding user account.
 // It returns errUnauthorized when the key is missing, invalid, or the user no longer exists.
 func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo, error) {
-	if s.Options().Anonymous {
+	if s.AnonymousMode() {
 		return nil, errUnauthorized
 	}
 	caller, err := s.Authenticate(ctx, apiKey)
@@ -331,7 +331,7 @@ const rootUsername = "root"
 // EnsureRootUser ensures that there is a user named "root" in the system.
 // If there is no such user, it creates a new root user with superuser privileges, and generates and logs out an API key.
 func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error {
-	if s.Options().Anonymous {
+	if s.AnonymousMode() {
 		return nil
 	}
 	page, err := s.store.ListUsers(ctx, api.ListUsersParams{Limit: 1})

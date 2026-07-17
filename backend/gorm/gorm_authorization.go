@@ -11,14 +11,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Store) GetNamespacePermission(ctx context.Context, namespace, username string) (api.PermissionLevel, error) {
+func (s *Store) GetNamespacePermission(ctx context.Context, namespace *api.NamespaceID, username string) (api.PermissionLevel, error) {
 	level, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (api.PermissionLevel, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return "", err
 		}
 
 		var row namespacePermissionRow
-		if err := tx.First(&row, "namespace = ? AND username = ?", namespace, username).Error; err != nil {
+		if err := tx.First(&row, "namespace = ? AND username = ?", namespace.String(), username).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return api.PermissionLevelNone, nil
 			}
@@ -29,7 +29,7 @@ func (s *Store) GetNamespacePermission(ctx context.Context, namespace, username 
 	return level, err
 }
 
-func (s *Store) SetNamespacePermission(ctx context.Context, namespace, username string, level api.PermissionLevel) error {
+func (s *Store) SetNamespacePermission(ctx context.Context, namespace *api.NamespaceID, username string, level api.PermissionLevel) error {
 	if level.Validate() != nil {
 		return backend.ErrInvalidPermissionLevel
 	}
@@ -41,7 +41,7 @@ func (s *Store) SetNamespacePermission(ctx context.Context, namespace, username 
 		}
 
 		if level == api.PermissionLevelNone {
-			result := tx.Where("namespace = ? AND username = ?", namespace, username).Delete(&namespacePermissionRow{})
+			result := tx.Where("namespace = ? AND username = ?", namespace.String(), username).Delete(&namespacePermissionRow{})
 			if result.Error != nil {
 				return zero, result.Error
 			}
@@ -49,7 +49,7 @@ func (s *Store) SetNamespacePermission(ctx context.Context, namespace, username 
 		}
 
 		row := namespacePermissionRow{
-			Namespace: namespace,
+			Namespace: namespace.String(),
 			Username:  username,
 			Level:     string(level),
 		}
@@ -61,10 +61,10 @@ func (s *Store) SetNamespacePermission(ctx context.Context, namespace, username 
 	return err
 }
 
-func (s *Store) DeleteNamespacePermission(ctx context.Context, namespace, username string) error {
+func (s *Store) DeleteNamespacePermission(ctx context.Context, namespace *api.NamespaceID, username string) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}
-		result := tx.Where("namespace = ? AND username = ?", namespace, username).Delete(&namespacePermissionRow{})
+		result := tx.Where("namespace = ? AND username = ?", namespace.String(), username).Delete(&namespacePermissionRow{})
 		if result.Error != nil {
 			return zero, result.Error
 		}
@@ -76,13 +76,13 @@ func (s *Store) DeleteNamespacePermission(ctx context.Context, namespace, userna
 	return err
 }
 
-func (s *Store) ListNamespacePermissions(ctx context.Context, namespace string, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
+func (s *Store) ListNamespacePermissions(ctx context.Context, namespace *api.NamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacePermissionsResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
 		}
 
-		q := tx.Model(&namespacePermissionRow{}).Where("namespace = ?", namespace)
+		q := tx.Model(&namespacePermissionRow{}).Where("namespace = ?", namespace.String())
 		var total int64
 		if err := q.Count(&total).Error; err != nil {
 			return nil, err

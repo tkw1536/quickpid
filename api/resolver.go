@@ -146,8 +146,6 @@ func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 
 // ListResourcesParams carries path and query parameters for listResources.
 type ListResourcesParams struct {
-	Namespace string // namespace id from path
-
 	Tag     *string // optionally filter by tag
 	Deleted *bool   // optionally filter by deletion status
 

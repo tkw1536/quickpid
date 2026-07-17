@@ -77,18 +77,9 @@ func (s *Service) GetResolverInfo() (*api.InfoResponse, error) {
 
 // regular expressions to validate various identifiers.
 var (
-	namespaceIDRE = regexp.MustCompile(`^[a-z0-9_-]+$`)
-	pidRE         = regexp.MustCompile(`^[a-z0-9_-]+$`)
-	usernameRE    = regexp.MustCompile(`^[a-z0-9_-]+$`)
+	pidRE      = regexp.MustCompile(`^[a-z0-9_-]+$`)
+	usernameRE = regexp.MustCompile(`^[a-z0-9_-]+$`)
 )
-
-// ValidateNamespaceID reports whether id is a valid namespace identifier.
-func ValidateNamespaceID(id string) error {
-	if !namespaceIDRE.MatchString(id) {
-		return errInvalidNamespaceID
-	}
-	return nil
-}
 
 // ValidatePID reports whether id is a valid pid.
 func ValidatePID(id string) error {
