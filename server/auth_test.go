@@ -134,6 +134,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 
 	auth := memory.NewStore()
 	aliceKey := createUserWithKey(t, auth, "alice", false)
+	createUserWithKey(t, auth, "bob", false)
 	rootKey := createUserWithKey(t, auth, "root", true)
 	h := testHandler(t, auth)
 
@@ -163,7 +164,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user/?username=alice", strings.NewReader(`{"superuser":true}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user/?username=bob", strings.NewReader(`{"superuser":true}`))
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -172,12 +173,12 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 			t.Fatalf("status = %d, want %d, body = %s", rec.Code, http.StatusOK, rec.Body.String())
 		}
 
-		user, err := auth.GetUser(context.Background(), "alice")
+		user, err := auth.GetUser(context.Background(), "bob")
 		if err != nil {
-			t.Fatalf("GetUser(alice) error = %v", err)
+			t.Fatalf("GetUser(bob) error = %v", err)
 		}
 		if !user.Superuser {
-			t.Fatalf("alice superuser = false, want true")
+			t.Fatalf("bob superuser = false, want true")
 		}
 	})
 }
