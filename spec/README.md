@@ -4,25 +4,29 @@
 > See [the main README](../README.md) for a generic introduction to what a PID is and why it is needed.
 
 > [!WARNING]
-> This has not been updated with the newly customer-facing work. 
+> This document is a work in progress and not yet completed.
+
+
 
 ![Architectural Sketch Of The PID system](pid_arch.svg "The PID System Architecture")
 
 We propose that a PID system consists of the following components, also seen in the sketch above:
 
-- An internal __PID Resolver API__ and associated database backend.
+- An internal __Resolver API__ and associated database backend.
   It is the central system that handles issuing and storing PIDs and associated metadata.
+- A __Management API__, which handles authentication and authorization.
 - A public __Read-Only Frontend__ that can display each PID and respond to clients with an HTTP redirect response for specific PIDs.
-- A __Customer-Facing API__, which improves upon the usability of the internal API, as well as handling authentication and authorization.
-- Further __Internal Clients__, which connect directly to the API.
+- A __Customer Frontend__, which allows customers to manage their PIDs, and optionally adds SSO support.
+- Further __Internal Clients__, which may connect directly to the resolver API.
 
+This folder provides a specification for the Resolver and Management API, although there is no strict distinction between them.
 
 ## Credits & LICENSE
 
-This folder only provides a technical documentation and specification for the PID Resolver API.
+This folder only provides a technical documentation and specification for the Quickpid Resolver and Management API.
 These were written up by me (Tom Wiesing).
 
-The system as a whole, and the PID Resolver API in particular, were designed collaboratively with input, feedback, and discussion from (in alphabetical order):
+The system as a whole, and the Resolver API in particular, were designed collaboratively with input, feedback, and discussion from (in alphabetical order):
 <!-- spellchecker:words Dominik Schmid Amann Walther -->
 
 - Kai Amann
@@ -41,15 +45,31 @@ Content in this directory is available under either of the following two license
 The API specification takes the shape of an [OpenAPI 3.0.0](https://spec.openapis.org/oas/v3.0.0.html) specification in [`openapi.yaml`](./openapi.yaml).
 Information in this README is non-normative, and provided for convenience only.
 
-As the API is not intended to be customer-facing, it is designed with a lot of verbosity in mind.
+The API is designed with a lot of verbosity in mind.
 In particular, all routes always require explicit parameters and in most cases are not defaulted automatically.
 Implementations should also validate objects passed, and return appropriate error codes when they do not match.
 
-The PID Resolver API talks about two kinds of objects:
+The API roughly splits into a `Resolver API` and a `Management API`.
+The Resolver API is responsible for creating PIDs, whereas the Management API is responsible for authentication and authorization. 
+
+In principle, the API can be run in one of two modes:
+
+- `Anonymous Mode`:
+  The Management API is disabled, and no authentication for any API routes is required.
+  This corresponds to just running the Resolver API in the architecture sketch above.   
+- `Authenticated Mode`:
+  Both Management and Resolver API are active.
+  Users need to authenticate to access specific resolver routes.
+
+Continuing, this document first discusses the pure Resolver API, and then moves on to talking about the Management API.
+
+### Resolver API
+
+The Resolver API talks about two kinds of objects:
 - **Namespaces**, which hold a set of Resources, and
 - **Resources**, which represent a PID along with the associated metadata.
 
-### Creation, Updates & Deletion
+#### Creation, Updates & Deletion
 
 Namespaces are intended to hold independent sets of PIDs.
 The API enables creating a new namespace.
@@ -78,7 +98,7 @@ Both Resources and Namespaces additionally hold a so-called tag.
 This is just a single string, and can be used in the API to filter them, but has no other effect.
 A resource tag can be updated, a namespace tag cannot.
 
-### Listing and Retrieval
+#### Listing and Retrieval
 
 Given the ID of a namespace the API can return information about the namespace (`GET /resolver/namespaces/{namespace}`; same JSON shape as each entry when listing namespaces).
 Given the PID of a resource along with a namespace, the API can return the current metadata for the associated resource.
@@ -90,6 +110,10 @@ Objects are always returned in ascending order by ID.
 
 Both Namespaces and Resources can be filtered by tag.
 Resources can additionally be filtered by deletion status.
+
+### Management API
+
+(to be documented)
 
 ## Test cases
 
