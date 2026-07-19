@@ -54,7 +54,7 @@ func (s *Store) ListNamespaces(_ context.Context, user *api.ValidUsername, param
 	return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateNamespace(_ context.Context, namespace *api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(_ context.Context, namespace api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -87,7 +87,7 @@ func (s *Store) CreateNamespace(_ context.Context, namespace *api.ValidNamespace
 	return &ns, nil
 }
 
-func (s *Store) GetNamespace(_ context.Context, namespace *api.ValidNamespaceID) (*api.NamespaceResponse, error) {
+func (s *Store) GetNamespace(_ context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	ns, ok := s.namespaces[namespace.String()]
@@ -97,7 +97,7 @@ func (s *Store) GetNamespace(_ context.Context, namespace *api.ValidNamespaceID)
 	return &ns, nil
 }
 
-func (s *Store) ListResources(_ context.Context, namespace *api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+func (s *Store) ListResources(_ context.Context, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -144,7 +144,7 @@ func (s *Store) CountAllResources(_ context.Context) (int64, error) {
 	return n, nil
 }
 
-func (s *Store) CreateResource(_ context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(_ context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -169,7 +169,7 @@ func (s *Store) CreateResource(_ context.Context, namespace *api.ValidNamespaceI
 	return &res, nil
 }
 
-func (s *Store) BatchCreateResources(_ context.Context, namespace *api.ValidNamespaceID, pids []*api.ValidPID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(_ context.Context, namespace api.ValidNamespaceID, pids []api.ValidPID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -210,7 +210,7 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace *api.ValidName
 	return out, nil
 }
 
-func (s *Store) GetResource(_ context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID) (*api.ResourceResponse, error) {
+func (s *Store) GetResource(_ context.Context, namespace api.ValidNamespaceID, pid api.ValidPID) (*api.ResourceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -224,7 +224,7 @@ func (s *Store) GetResource(_ context.Context, namespace *api.ValidNamespaceID, 
 	return &res, nil
 }
 
-func (s *Store) UpdateResource(_ context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(_ context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

@@ -21,22 +21,22 @@ import (
 // - [errUnauthorized] when the key is missing or invalid.
 //
 // Other failures are returned as plain (unannotated) errors.
-func (s *Service) Authenticate(ctx context.Context, apiKey string) (*api.ValidUsername, error) {
+func (s *Service) Authenticate(ctx context.Context, apiKey string) (api.ValidUsername, error) {
 	if s.AnonymousMode() || apiKey == "" {
-		return nil, errUnauthorized
+		return api.ValidUsername{}, errUnauthorized
 	}
 
 	username, err := s.store.LookupUserByKey(ctx, s.apiKeyFormat(), apiKey)
 	if errors.Is(err, backend.ErrInvalidKey) {
-		return nil, errUnauthorized
+		return api.ValidUsername{}, errUnauthorized
 	}
 	if err != nil {
-		return nil, fmt.Errorf("store.LookupUserByKey: %w", err)
+		return api.ValidUsername{}, fmt.Errorf("store.LookupUserByKey: %w", err)
 	}
 
 	name, err := api.NewUsername(username)
 	if err != nil {
-		return nil, fmt.Errorf("api.NewUsername: %w", err)
+		return api.ValidUsername{}, fmt.Errorf("api.NewUsername: %w", err)
 	}
 	return name, nil
 }
@@ -48,24 +48,24 @@ func (s *Service) Authenticate(ctx context.Context, apiKey string) (*api.ValidUs
 // - [errUnauthorized] when the key is missing, invalid, or the user no longer exists.
 //
 // Other failures are returned as plain (unannotated) errors.
-func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.ValidUserInfo, error) {
+func (s *Service) CurrentUser(ctx context.Context, apiKey string) (api.ValidUserInfo, error) {
 	if s.AnonymousMode() {
-		return nil, errUnauthorized
+		return api.ValidUserInfo{}, errUnauthorized
 	}
 	caller, err := s.Authenticate(ctx, apiKey)
 	if err != nil {
-		return nil, err
+		return api.ValidUserInfo{}, err
 	}
 	user, err := s.store.GetUser(ctx, caller)
 	if errors.Is(err, backend.ErrUserNotFound) {
-		return nil, errUnauthorized
+		return api.ValidUserInfo{}, errUnauthorized
 	}
 	if err != nil {
-		return nil, fmt.Errorf("store.GetUser: %w", err)
+		return api.ValidUserInfo{}, fmt.Errorf("store.GetUser: %w", err)
 	}
 	info, err := user.Validate()
 	if err != nil {
-		return nil, fmt.Errorf("user.Validate: %w", err)
+		return api.ValidUserInfo{}, fmt.Errorf("user.Validate: %w", err)
 	}
 	return info, nil
 }
@@ -126,7 +126,7 @@ func (s *Service) GetUser(ctx context.Context, caller *api.ValidUserInfo) (*api.
 // - [api.Forbidden]
 // - [api.DuplicateUsername]
 // - [api.DatabaseError].
-func (s *Service) CreateUser(ctx context.Context, caller *api.ValidUserInfo, req *api.ValidUserCreateRequest) (*api.UserInfo, error) {
+func (s *Service) CreateUser(ctx context.Context, caller *api.ValidUserInfo, req api.ValidUserCreateRequest) (*api.UserInfo, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.ValidUserInfo, targe
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
-func (s *Service) issueAPIKey(ctx context.Context, username *api.ValidUsername, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
+func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
 	s.mu.RLock()
 	maxAttempts := s.opts.Limits.MaxAPIKeyAttempts
 	s.mu.RUnlock()
@@ -337,7 +337,7 @@ func (s *Service) RevokeKey(ctx context.Context, caller *api.ValidUserInfo, targ
 // - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
-func (s *Service) UpdateUser(ctx context.Context, caller *api.ValidUserInfo, target *api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
+func (s *Service) UpdateUser(ctx context.Context, caller *api.ValidUserInfo, target api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
@@ -367,7 +367,7 @@ func (s *Service) UpdateUser(ctx context.Context, caller *api.ValidUserInfo, tar
 // It can return the following errors:
 //
 // - [api.Forbidden].
-func resolveTarget(caller *api.ValidUserInfo, target *api.ValidUsername) (*api.ValidUsername, error) {
+func resolveTarget(caller *api.ValidUserInfo, target *api.ValidUsername) (api.ValidUsername, error) {
 	// TODO: Are there more places where we can use this function?
 
 	// no target, or target === caller
@@ -376,9 +376,9 @@ func resolveTarget(caller *api.ValidUserInfo, target *api.ValidUsername) (*api.V
 	}
 
 	if !caller.Superuser {
-		return nil, api.WithErrorString(errForbidden, api.Forbidden)
+		return api.ValidUsername{}, api.WithErrorString(errForbidden, api.Forbidden)
 	}
-	return target, nil
+	return *target, nil
 }
 
 // requireSuperuser reports whether user is a superuser.
@@ -415,7 +415,7 @@ func mapAuthBackendError(err error) (error, bool) {
 	}
 }
 
-var rootUsername *api.ValidUsername
+var rootUsername api.ValidUsername
 
 func init() {
 	root, err := api.NewUsername("root")
@@ -448,7 +448,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 		return nil
 	}
 
-	_, err = s.store.CreateUser(ctx, &api.ValidUserCreateRequest{
+	_, err = s.store.CreateUser(ctx, api.ValidUserCreateRequest{
 		Username:  rootUsername,
 		Superuser: true,
 	}, s.runtime.Now)

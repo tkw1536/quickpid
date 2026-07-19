@@ -93,7 +93,7 @@ func fixedNow() func() time.Time {
 	return func() time.Time { return t }
 }
 
-func user(username string) *api.ValidUsername {
+func user(username string) api.ValidUsername {
 	user, err := api.NewUsername(username)
 	if err != nil {
 		panic("cannot create user" + username)
@@ -101,8 +101,13 @@ func user(username string) *api.ValidUsername {
 	return user
 }
 
-func userReq(username string) *api.ValidUserCreateRequest {
-	return &api.ValidUserCreateRequest{Username: user(username), Superuser: false}
+func userPtr(username string) *api.ValidUsername {
+	u := user(username)
+	return &u
+}
+
+func userReq(username string) api.ValidUserCreateRequest {
+	return api.ValidUserCreateRequest{Username: user(username), Superuser: false}
 }
 
 func namespaceReq() api.NamespaceCreateRequest {
@@ -387,7 +392,7 @@ func testAuthSuperuser(t *testing.T, newStore StoreFactory) {
 	b := newStore(t)
 	now := fixedNow()
 
-	created, err := b.CreateUser(ctx, &api.ValidUserCreateRequest{Username: user("admin"), Superuser: true}, now)
+	created, err := b.CreateUser(ctx, api.ValidUserCreateRequest{Username: user("admin"), Superuser: true}, now)
 	if err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
@@ -428,7 +433,7 @@ func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 	if _, err := s.CreateUser(ctx, userReq(testNamespaceOwner), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), user(testNamespaceOwner), now); err != nil {
+	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), userPtr(testNamespaceOwner), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 
@@ -509,14 +514,14 @@ func testCreateNamespaceWithOwner(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("NewNamespaceID() error = %v", err)
 	}
 
-	if _, err := s.CreateNamespace(ctx, nsMissingOwner, namespaceReq(), user("nobody"), now); !errors.Is(err, backend.ErrUserNotFound) {
+	if _, err := s.CreateNamespace(ctx, nsMissingOwner, namespaceReq(), userPtr("nobody"), now); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("CreateNamespace() missing owner error = %v, want ErrUserNotFound", err)
 	}
 
 	if _, err := s.CreateUser(ctx, userReq("owner"), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	if _, err := s.CreateNamespace(ctx, nsOwned, namespaceReq(), user("owner"), now); err != nil {
+	if _, err := s.CreateNamespace(ctx, nsOwned, namespaceReq(), userPtr("owner"), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 
@@ -547,7 +552,7 @@ func testDeleteUserCascadesPermissions(t *testing.T, newStore StoreFactory) {
 	if _, err := s.CreateUser(ctx, userReq("bob"), now); err != nil {
 		t.Fatalf("CreateUser(bob) error = %v", err)
 	}
-	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), user("alice"), now); err != nil {
+	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), userPtr("alice"), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 	if err := s.SetNamespacePermission(ctx, ns1, user("bob"), api.PermissionLevelEditor); err != nil {

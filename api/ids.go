@@ -14,14 +14,19 @@ import (
 // 2. Accidental casting from a string to an ID type cannot occur, and is guarded by the compiler.
 
 // ValidNamespaceID represents a valid namespace id.
+// The zero value is not valid.
 //
 // Use [NewNamespaceID] to create a new namespace id.
 type ValidNamespaceID struct {
+	valid bool
 	value string
 }
 
 // String returns the namespace id as a string.
 func (ns ValidNamespaceID) String() string {
+	if !ns.valid {
+		panic("invalid namespace id")
+	}
 	return ns.value
 }
 
@@ -32,21 +37,25 @@ var (
 )
 
 // NewNamespaceID creates a new NamespaceID.
-func NewNamespaceID(value string) (*ValidNamespaceID, error) {
+func NewNamespaceID(value string) (ValidNamespaceID, error) {
 	if !namespaceIDRE.MatchString(value) {
-		return nil, errInvalidNamespaceID
+		return ValidNamespaceID{}, errInvalidNamespaceID
 	}
-	return &ValidNamespaceID{value: value}, nil
+	return ValidNamespaceID{valid: true, value: value}, nil
 }
 
 // ValidPID represents a valid pid.
 //
 // Use [NewPID] to create a new pid.
 type ValidPID struct {
+	valid bool
 	value string
 }
 
 func (pid ValidPID) String() string {
+	if !pid.valid {
+		panic("invalid pid")
+	}
 	return pid.value
 }
 
@@ -56,18 +65,22 @@ var (
 )
 
 // NewPID creates a new PID.
-func NewPID(value string) (*ValidPID, error) {
+func NewPID(value string) (ValidPID, error) {
 	if !pidRE.MatchString(value) {
-		return nil, errInvalidPID
+		return ValidPID{}, errInvalidPID
 	}
-	return &ValidPID{value: value}, nil
+	return ValidPID{valid: true, value: value}, nil
 }
 
 type ValidUsername struct {
+	valid bool
 	value string
 }
 
 func (username ValidUsername) String() string {
+	if !username.valid {
+		panic("invalid username")
+	}
 	return username.value
 }
 
@@ -77,9 +90,9 @@ var (
 )
 
 // NewUsername creates a new Username.
-func NewUsername(value string) (*ValidUsername, error) {
+func NewUsername(value string) (ValidUsername, error) {
 	if !usernameRE.MatchString(value) {
-		return nil, errInvalidUsername
+		return ValidUsername{}, errInvalidUsername
 	}
-	return &ValidUsername{value: value}, nil
+	return ValidUsername{valid: true, value: value}, nil
 }

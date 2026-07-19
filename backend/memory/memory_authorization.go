@@ -10,7 +10,7 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 )
 
-func (s *Store) GetNamespacePermission(_ context.Context, namespace *api.ValidNamespaceID, username *api.ValidUsername) (api.PermissionLevel, error) {
+func (s *Store) GetNamespacePermission(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.PermissionLevel, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -25,7 +25,7 @@ func (s *Store) GetNamespacePermission(_ context.Context, namespace *api.ValidNa
 	return api.PermissionLevelNone, nil
 }
 
-func (s *Store) SetNamespacePermission(_ context.Context, namespace *api.ValidNamespaceID, username *api.ValidUsername, level api.PermissionLevel) error {
+func (s *Store) SetNamespacePermission(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, level api.PermissionLevel) error {
 	if level.Validate() != nil {
 		return backend.ErrInvalidPermissionLevel
 	}
@@ -54,7 +54,7 @@ func (s *Store) SetNamespacePermission(_ context.Context, namespace *api.ValidNa
 	return nil
 }
 
-func (s *Store) DeleteNamespacePermission(_ context.Context, namespace *api.ValidNamespaceID, username *api.ValidUsername) error {
+func (s *Store) DeleteNamespacePermission(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -72,7 +72,7 @@ func (s *Store) DeleteNamespacePermission(_ context.Context, namespace *api.Vali
 	return nil
 }
 
-func (s *Store) ListNamespacePermissions(_ context.Context, namespace *api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
+func (s *Store) ListNamespacePermissions(_ context.Context, namespace api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

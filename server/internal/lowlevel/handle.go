@@ -92,7 +92,7 @@ func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*api.ValidU
 		if err != nil {
 			return nil, nil, api.WithErrorString(fmt.Errorf("auth.CurrentUser: %w", err), api.DatabaseError)
 		}
-		return user.Username, user, nil
+		return &user.Username, &user, nil
 	}
 
 	username, err := h.auth.Authenticate(r.Context(), token)
@@ -102,7 +102,7 @@ func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*api.ValidU
 	if err != nil {
 		return nil, nil, api.WithErrorString(fmt.Errorf("auth.Authenticate: %w", err), api.DatabaseError)
 	}
-	return username, nil, nil
+	return &username, nil, nil
 }
 
 // writeHandledError validates that the error maps to a declared API error, logs it, and writes the JSON response.

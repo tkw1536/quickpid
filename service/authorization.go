@@ -78,6 +78,7 @@ func (s *Service) requireAuthEnabled() error {
 }
 
 // requireAuthenticated reports whether caller is authenticated.
+// A nil error return guarantees that caller is not nil.
 //
 // It can return the following errors:
 //
@@ -95,7 +96,7 @@ func (s *Service) requireAuthenticated(caller *api.ValidUserInfo) error {
 //
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) effectivePermission(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID) (api.PermissionLevel, error) {
+func (s *Service) effectivePermission(ctx context.Context, caller api.ValidUserInfo, namespace api.ValidNamespaceID) (api.PermissionLevel, error) {
 	if caller.Superuser {
 		return api.PermissionLevelManager, nil
 	}
@@ -118,11 +119,11 @@ func (s *Service) effectivePermission(ctx context.Context, caller *api.ValidUser
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) requireNamespaceCapability(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, allowed func(api.PermissionLevel) bool) error {
+func (s *Service) requireNamespaceCapability(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, allowed func(api.PermissionLevel) bool) error {
 	if err := s.requireAuthenticated(caller); err != nil {
 		return err
 	}
-	level, err := s.effectivePermission(ctx, caller, namespace)
+	level, err := s.effectivePermission(ctx, *caller, namespace)
 	if err != nil {
 		return err
 	}
@@ -154,7 +155,7 @@ func mapAuthorizationBackendError(err error) (error, bool) {
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, username *api.ValidUsername) (*api.NamespacePermission, error) {
+func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, username api.ValidUsername) (*api.NamespacePermission, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
@@ -187,7 +188,7 @@ func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.ValidU
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
+func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
@@ -215,7 +216,7 @@ func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.Vali
 // - [api.InvalidPermissionLevel]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, username *api.ValidUsername, req api.SetNamespacePermissionRequest) (*api.NamespacePermission, error) {
+func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, username api.ValidUsername, req api.SetNamespacePermissionRequest) (*api.NamespacePermission, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
@@ -259,7 +260,7 @@ func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.ValidU
 // - [api.NamespaceNotFound]
 // - [api.PermissionNotFound]
 // - [api.DatabaseError].
-func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, username *api.ValidUsername) error {
+func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, username api.ValidUsername) error {
 	if err := s.requireAuthEnabled(); err != nil {
 		return err
 	}

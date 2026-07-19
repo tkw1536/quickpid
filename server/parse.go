@@ -118,10 +118,10 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, err er
 // It can return the following errors:
 //
 // - [api.InvalidNamespaceID].
-func (*Server) getNamespace(r *http.Request) (*api.ValidNamespaceID, error) {
+func (*Server) getNamespace(r *http.Request) (api.ValidNamespaceID, error) {
 	namespace, err := api.NewNamespaceID(r.PathValue("namespace"))
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("api.NewNamespaceID: %w", err), api.InvalidNamespaceID)
+		return api.ValidNamespaceID{}, api.WithErrorString(fmt.Errorf("api.NewNamespaceID: %w", err), api.InvalidNamespaceID)
 	}
 	return namespace, nil
 }
@@ -131,19 +131,19 @@ func (*Server) getNamespace(r *http.Request) (*api.ValidNamespaceID, error) {
 // It can return the following errors:
 //
 // - [api.InvalidPID].
-func (*Server) getPID(r *http.Request) (pid *api.ValidPID, err error) {
-	pid, err = api.NewPID(r.PathValue("pid"))
+func (*Server) getPID(r *http.Request) (api.ValidPID, error) {
+	pid, err := api.NewPID(r.PathValue("pid"))
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("api.NewPID: %w", err), api.InvalidPID)
+		return api.ValidPID{}, api.WithErrorString(fmt.Errorf("api.NewPID: %w", err), api.InvalidPID)
 	}
 	return pid, nil
 }
 
 // getUsername gets the username from the request path.
-func (*Server) getUsername(r *http.Request) (*api.ValidUsername, error) {
+func (*Server) getUsername(r *http.Request) (api.ValidUsername, error) {
 	username, err := api.NewUsername(r.PathValue("username"))
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
+		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
 	}
 	return username, nil
 }
@@ -153,7 +153,7 @@ func (*Server) getUsername(r *http.Request) (*api.ValidUsername, error) {
 // It can return the following errors:
 //
 // - [api.InvalidUsername].
-func (*Server) parseOptionalUsernameQuery(r *http.Request) (target *api.ValidUsername, err error) {
+func (*Server) parseOptionalUsernameQuery(r *http.Request) (*api.ValidUsername, error) {
 	query := r.URL.Query()
 	if !query.Has("username") {
 		return nil, nil
@@ -162,7 +162,7 @@ func (*Server) parseOptionalUsernameQuery(r *http.Request) (target *api.ValidUse
 	if err != nil {
 		return nil, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
 	}
-	return username, nil
+	return &username, nil
 }
 
 // parseRequiredUsernameQuery parses a required username query parameter.
@@ -171,14 +171,14 @@ func (*Server) parseOptionalUsernameQuery(r *http.Request) (target *api.ValidUse
 //
 // - [api.InvalidQueryParameter]
 // - [api.InvalidUsername].
-func (*Server) parseRequiredUsernameQuery(r *http.Request) (*api.ValidUsername, error) {
+func (*Server) parseRequiredUsernameQuery(r *http.Request) (api.ValidUsername, error) {
 	query := r.URL.Query()
 	if !query.Has("username") {
-		return nil, api.WithErrorString(errMissingUsernameQuery, api.InvalidQueryParameter)
+		return api.ValidUsername{}, api.WithErrorString(errMissingUsernameQuery, api.InvalidQueryParameter)
 	}
 	username, err := api.NewUsername(query.Get("username"))
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
+		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
 	}
 	return username, nil
 }
@@ -189,17 +189,17 @@ func (*Server) parseRequiredUsernameQuery(r *http.Request) (*api.ValidUsername, 
 //
 // - [api.InvalidQueryParameter]
 // - [api.InvalidUsername].
-func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (*api.ValidUsername, error) {
+func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (api.ValidUsername, error) {
 	// HACK: The query itself isn't really a username
 	// but we use it because it's guaraneteed to be the same format.
 
 	q := r.URL.Query()
 	if !q.Has("query") {
-		return nil, api.WithErrorString(errMissingQueryParameter, api.InvalidQueryParameter)
+		return api.ValidUsername{}, api.WithErrorString(errMissingQueryParameter, api.InvalidQueryParameter)
 	}
 	query, err := api.NewUsername(q.Get("query"))
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
+		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
 	}
 	return query, nil
 }

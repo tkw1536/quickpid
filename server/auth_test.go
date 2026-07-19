@@ -51,7 +51,7 @@ func createUserWithKey(t *testing.T, auth backend.AuthenticationBackend, usernam
 		t.Fatalf("NewUsername(%q) error = %v", username, err)
 	}
 
-	if _, err := auth.CreateUser(ctx, &api.ValidUserCreateRequest{Username: validUsername, Superuser: superuser}, now); err != nil {
+	if _, err := auth.CreateUser(ctx, api.ValidUserCreateRequest{Username: validUsername, Superuser: superuser}, now); err != nil {
 		t.Fatalf("CreateUser(%q) error = %v", username, err)
 	}
 	rawKey := strings.Repeat("a", 32-len(username)) + username
@@ -134,7 +134,7 @@ func assertForbiddenJSON(t *testing.T, rec *httptest.ResponseRecorder) {
 	}
 }
 
-var bobUsername *api.ValidUsername
+var bobUsername api.ValidUsername
 
 func init() {
 	user, err := api.NewUsername("bob")

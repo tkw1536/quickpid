@@ -28,7 +28,7 @@ func testService(store backend.Store) *service.Service {
 	return service.New(store, service.NewRuntime(), service.Options{})
 }
 
-var rootUsername *api.ValidUsername
+var rootUsername api.ValidUsername
 
 func init() {
 	user, err := api.NewUsername("root")
@@ -74,7 +74,7 @@ func TestEnsureRootUser_ExistingUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewUsername(alice) error = %v", err)
 	}
-	if _, err := auth.CreateUser(ctx, &api.ValidUserCreateRequest{Username: aliceUsername}, fixedNow()); err != nil {
+	if _, err := auth.CreateUser(ctx, api.ValidUserCreateRequest{Username: aliceUsername}, fixedNow()); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
 
@@ -100,7 +100,7 @@ func TestEnsureRootUser_ExistingRootRace(t *testing.T) {
 	ctx := context.Background()
 	auth := memory.NewStore()
 
-	if _, err := auth.CreateUser(ctx, &api.ValidUserCreateRequest{Username: rootUsername, Superuser: true}, fixedNow()); err != nil {
+	if _, err := auth.CreateUser(ctx, api.ValidUserCreateRequest{Username: rootUsername, Superuser: true}, fixedNow()); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
 

@@ -139,7 +139,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = user
-						return authProbeResponse{Username: usernameStringPtr(user.Username), User: userInfoFromValid(user)}, nil
+						return authProbeResponse{Username: stringPtr(user.Username.String()), User: userInfoFromValid(user)}, nil
 					},
 					http.StatusOK,
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
@@ -170,7 +170,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						var username *string
 						var userInfo *api.UserInfo
 						if user != nil {
-							username = usernameStringPtr(user.Username)
+							username = stringPtr(user.Username.String())
 							userInfo = userInfoFromValid(user)
 						}
 						return authProbeResponse{Username: username, User: userInfo}, nil
@@ -207,32 +207,32 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					t.Parallel()
 
 					h := lowlevel.NewAuthHandler(&mockAuthService{
-						authenticate: func(_ context.Context, apiKey string) (*api.ValidUsername, error) {
+						authenticate: func(_ context.Context, apiKey string) (api.ValidUsername, error) {
 							switch apiKey {
 							case validKnownToken, validMissingToken, userFailToken:
 								return validUser.Username, nil
 							case invalidToken:
-								return nil, unauthorizedError{}
+								return api.ValidUsername{}, unauthorizedError{}
 							case lookupFailToken:
-								return nil, errLookupFailure
+								return api.ValidUsername{}, errLookupFailure
 							default:
-								return nil, unauthorizedError{}
+								return api.ValidUsername{}, unauthorizedError{}
 							}
 						},
-						currentUser: func(_ context.Context, apiKey string) (*api.ValidUserInfo, error) {
+						currentUser: func(_ context.Context, apiKey string) (api.ValidUserInfo, error) {
 							switch apiKey {
 							case validKnownToken:
-								return validUser, nil
+								return *validUser, nil
 							case validMissingToken:
-								return nil, unauthorizedError{}
+								return api.ValidUserInfo{}, unauthorizedError{}
 							case invalidToken:
-								return nil, unauthorizedError{}
+								return api.ValidUserInfo{}, unauthorizedError{}
 							case lookupFailToken:
-								return nil, errLookupFailure
+								return api.ValidUserInfo{}, errLookupFailure
 							case userFailToken:
-								return nil, errUserFailure
+								return api.ValidUserInfo{}, errUserFailure
 							default:
-								return nil, unauthorizedError{}
+								return api.ValidUserInfo{}, unauthorizedError{}
 							}
 						},
 					}, nil)
@@ -277,7 +277,7 @@ func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 			if err != nil {
 				return struct{}{}, fmt.Errorf("api.NewUsername: %w", err)
 			}
-			if _, err := svc.CreateUser(r.Context(), user, &api.ValidUserCreateRequest{Username: bobUsername, Superuser: true}); err != nil {
+			if _, err := svc.CreateUser(r.Context(), user, api.ValidUserCreateRequest{Username: bobUsername, Superuser: true}); err != nil {
 				return struct{}{}, fmt.Errorf("svc.CreateUser: %w", err)
 			}
 			return struct{}{}, nil
@@ -299,9 +299,9 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 	var currentUserCalled bool
 	h := lowlevel.NewAuthHandler(&mockAuthService{
 		anonymousMode: true,
-		currentUser: func(context.Context, string) (*api.ValidUserInfo, error) {
+		currentUser: func(context.Context, string) (api.ValidUserInfo, error) {
 			currentUserCalled = true
-			return nil, unauthorizedError{}
+			return api.ValidUserInfo{}, unauthorizedError{}
 		},
 	}, nil)
 	handler := lowlevel.HandleRequiredUserInAuthMode(
@@ -371,26 +371,26 @@ type scenario struct {
 
 type mockAuthService struct {
 	anonymousMode bool
-	authenticate  func(context.Context, string) (*api.ValidUsername, error)
-	currentUser   func(context.Context, string) (*api.ValidUserInfo, error)
+	authenticate  func(context.Context, string) (api.ValidUsername, error)
+	currentUser   func(context.Context, string) (api.ValidUserInfo, error)
 }
 
 func (m *mockAuthService) AnonymousMode() bool {
 	return m.anonymousMode
 }
 
-func (m *mockAuthService) Authenticate(ctx context.Context, apiKey string) (*api.ValidUsername, error) {
+func (m *mockAuthService) Authenticate(ctx context.Context, apiKey string) (api.ValidUsername, error) {
 	if m.authenticate != nil {
 		return m.authenticate(ctx, apiKey)
 	}
-	return nil, unauthorizedError{}
+	return api.ValidUsername{}, unauthorizedError{}
 }
 
-func (m *mockAuthService) CurrentUser(ctx context.Context, apiKey string) (*api.ValidUserInfo, error) {
+func (m *mockAuthService) CurrentUser(ctx context.Context, apiKey string) (api.ValidUserInfo, error) {
 	if m.currentUser != nil {
 		return m.currentUser(ctx, apiKey)
 	}
-	return nil, unauthorizedError{}
+	return api.ValidUserInfo{}, unauthorizedError{}
 }
 
 type unauthorizedError struct{}
@@ -519,7 +519,7 @@ func createUserWithKey(t *testing.T, auth backend.AuthenticationBackend, usernam
 	if err != nil {
 		t.Fatalf("NewUsername(%q) error = %v", username, err)
 	}
-	if _, err := auth.CreateUser(ctx, &api.ValidUserCreateRequest{Username: valid, Superuser: superuser}, now); err != nil {
+	if _, err := auth.CreateUser(ctx, api.ValidUserCreateRequest{Username: valid, Superuser: superuser}, now); err != nil {
 		t.Fatalf("CreateUser(%q) error = %v", username, err)
 	}
 

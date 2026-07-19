@@ -15,7 +15,7 @@ import (
 func (s *Store) ListNamespaces(ctx context.Context, user *api.ValidUsername, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
 		if user != nil {
-			if err := ensureUserExists(tx, user); err != nil {
+			if err := ensureUserExists(tx, *user); err != nil {
 				return nil, err
 			}
 		}
@@ -60,10 +60,10 @@ func (s *Store) ListNamespaces(ctx context.Context, user *api.ValidUsername, par
 	})
 }
 
-func (s *Store) CreateNamespace(ctx context.Context, namespace *api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		if owner != nil {
-			if err := ensureUserExists(tx, owner); err != nil {
+			if err := ensureUserExists(tx, *owner); err != nil {
 				return nil, err
 			}
 		}
@@ -99,7 +99,7 @@ func (s *Store) CreateNamespace(ctx context.Context, namespace *api.ValidNamespa
 	})
 }
 
-func (s *Store) GetNamespace(ctx context.Context, namespace *api.ValidNamespaceID) (*api.NamespaceResponse, error) {
+func (s *Store) GetNamespace(ctx context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		var ns namespaceRow
 		if err := tx.First(&ns, "id = ?", namespace.String()).Error; err != nil {
@@ -113,7 +113,7 @@ func (s *Store) GetNamespace(ctx context.Context, namespace *api.ValidNamespaceI
 	})
 }
 
-func (s *Store) ListResources(ctx context.Context, namespace *api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+func (s *Store) ListResources(ctx context.Context, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedResourcesResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
@@ -168,7 +168,7 @@ func (s *Store) CountAllResources(ctx context.Context) (int64, error) {
 	})
 }
 
-func (s *Store) CreateResource(ctx context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
@@ -195,7 +195,7 @@ func (s *Store) CreateResource(ctx context.Context, namespace *api.ValidNamespac
 	})
 }
 
-func (s *Store) BatchCreateResources(ctx context.Context, namespace *api.ValidNamespaceID, pids []*api.ValidPID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(ctx context.Context, namespace api.ValidNamespaceID, pids []api.ValidPID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
@@ -237,7 +237,7 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace *api.ValidNa
 	})
 }
 
-func (s *Store) GetResource(ctx context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID) (*api.ResourceResponse, error) {
+func (s *Store) GetResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
@@ -255,7 +255,7 @@ func (s *Store) GetResource(ctx context.Context, namespace *api.ValidNamespaceID
 	})
 }
 
-func (s *Store) UpdateResource(ctx context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err

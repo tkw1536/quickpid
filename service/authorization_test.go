@@ -16,7 +16,7 @@ import (
 	"github.com/tkw1536/quickpid/service"
 )
 
-var testNS *api.ValidNamespaceID
+var testNS api.ValidNamespaceID
 
 func init() {
 	ns, err := api.NewNamespaceID("test-ns")
@@ -37,11 +37,11 @@ func (r *fixedRuntime) NewAPIKeyID() (string, error)            { return "api-ke
 func (r *fixedRuntime) NewAPIKey(apikey.Format) (string, error) { return "api-key", nil }
 
 var (
-	ownerUsername       *api.ValidUsername
-	editorUsername      *api.ValidUsername
-	contributorUsername *api.ValidUsername
-	readerUsername      *api.ValidUsername
-	someoneUsername     *api.ValidUsername
+	ownerUsername       api.ValidUsername
+	editorUsername      api.ValidUsername
+	contributorUsername api.ValidUsername
+	readerUsername      api.ValidUsername
+	someoneUsername     api.ValidUsername
 )
 
 func init() {
@@ -76,16 +76,16 @@ func newTestService(t *testing.T) (*service.Service, backend.Store) {
 	now := fixedNow()
 	runtime := &fixedRuntime{now: now()}
 
-	if _, err := store.CreateUser(ctx, &api.ValidUserCreateRequest{Username: ownerUsername}, now); err != nil {
+	if _, err := store.CreateUser(ctx, api.ValidUserCreateRequest{Username: ownerUsername}, now); err != nil {
 		t.Fatalf("CreateUser(owner) error = %v", err)
 	}
-	if _, err := store.CreateUser(ctx, &api.ValidUserCreateRequest{Username: editorUsername}, now); err != nil {
+	if _, err := store.CreateUser(ctx, api.ValidUserCreateRequest{Username: editorUsername}, now); err != nil {
 		t.Fatalf("CreateUser(editor) error = %v", err)
 	}
-	if _, err := store.CreateUser(ctx, &api.ValidUserCreateRequest{Username: contributorUsername}, now); err != nil {
+	if _, err := store.CreateUser(ctx, api.ValidUserCreateRequest{Username: contributorUsername}, now); err != nil {
 		t.Fatalf("CreateUser(contributor) error = %v", err)
 	}
-	if _, err := store.CreateUser(ctx, &api.ValidUserCreateRequest{Username: readerUsername}, now); err != nil {
+	if _, err := store.CreateUser(ctx, api.ValidUserCreateRequest{Username: readerUsername}, now); err != nil {
 		t.Fatalf("CreateUser(reader) error = %v", err)
 	}
 
@@ -93,7 +93,7 @@ func newTestService(t *testing.T) (*service.Service, backend.Store) {
 		Tag:       "tag",
 		PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full},
 	}
-	if _, err := store.CreateNamespace(ctx, testNS, req, ownerUsername, now); err != nil {
+	if _, err := store.CreateNamespace(ctx, testNS, req, &ownerUsername, now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 	if err := store.SetNamespacePermission(ctx, testNS, editorUsername, api.PermissionLevelEditor); err != nil {
@@ -118,11 +118,11 @@ func newAnonymousTestService(t *testing.T) (*service.Service, backend.Store) {
 }
 
 func userInfo(username string) *api.ValidUserInfo {
-	valid, err := new(api.UserInfo{Username: username}).Validate()
+	valid, err := (&api.UserInfo{Username: username}).Validate()
 	if err != nil {
 		panic(fmt.Sprintf("NewValidUserInfo(%q) error = %v", username, err))
 	}
-	return valid
+	return &valid
 }
 
 func TestService_GetNamespacePermission(t *testing.T) {
@@ -391,7 +391,7 @@ func TestService_AnonymousDisablesUserAndPermissionManagement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewUsername(alice) error = %v", err)
 	}
-	_, err = svc.CreateUser(ctx, userInfo("owner"), &api.ValidUserCreateRequest{Username: aliceUsername})
+	_, err = svc.CreateUser(ctx, userInfo("owner"), api.ValidUserCreateRequest{Username: aliceUsername})
 	if !service.IsUnavailableInAnonymousMode(err) {
 		t.Fatalf("CreateUser() = %v, want anonymous mode unavailable", err)
 	}

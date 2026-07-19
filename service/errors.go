@@ -17,8 +17,6 @@ var (
 	errBadNamespaceID      = errors.New("bad namespace id generated")
 	errSpecInfoPrivate     = errors.New("info is private")
 
-	errInvalidUsername = errors.New("invalid username")
-
 	errExpiresAtInPast = errors.New("expires_at is in the past")
 	errResourceGone    = errors.New("resource gone")
 )

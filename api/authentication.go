@@ -33,12 +33,12 @@ func (r *UserCreateRequest) UnmarshalJSON(data []byte) error {
 }
 
 // Validate checks if the given request is valid.
-func (r *UserCreateRequest) Validate() (*ValidUserCreateRequest, error) {
+func (r *UserCreateRequest) Validate() (ValidUserCreateRequest, error) {
 	username, err := NewUsername(r.Username)
 	if err != nil {
-		return nil, err
+		return ValidUserCreateRequest{}, err
 	}
-	return &ValidUserCreateRequest{
+	return ValidUserCreateRequest{
 		Username:  username,
 		Superuser: r.Superuser,
 	}, nil
@@ -46,7 +46,7 @@ func (r *UserCreateRequest) Validate() (*ValidUserCreateRequest, error) {
 
 // ValidUserCreateRequest is like a [UserCreateRequest] but with a validated username.
 type ValidUserCreateRequest struct {
-	Username  *ValidUsername
+	Username  ValidUsername
 	Superuser bool
 }
 
@@ -56,12 +56,12 @@ type UserInfo struct {
 	Superuser bool   `json:"superuser"`
 }
 
-func (u *UserInfo) Validate() (*ValidUserInfo, error) {
+func (u *UserInfo) Validate() (ValidUserInfo, error) {
 	username, err := NewUsername(u.Username)
 	if err != nil {
-		return nil, err
+		return ValidUserInfo{}, err
 	}
-	return &ValidUserInfo{
+	return ValidUserInfo{
 		Username:  username,
 		Superuser: u.Superuser,
 	}, nil
@@ -69,7 +69,7 @@ func (u *UserInfo) Validate() (*ValidUserInfo, error) {
 
 // ValidUserInfo is information about a user with a validated username.
 type ValidUserInfo struct {
-	Username  *ValidUsername
+	Username  ValidUsername
 	Superuser bool
 }
 

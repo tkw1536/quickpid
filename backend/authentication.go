@@ -18,12 +18,12 @@ type AuthenticationBackend interface {
 	// CreateUser creates a new user account.
 	//
 	// Should return [ErrDuplicateUsername] if the username is already in use.
-	CreateUser(ctx context.Context, req *api.ValidUserCreateRequest, now func() time.Time) (*api.UserInfo, error)
+	CreateUser(ctx context.Context, req api.ValidUserCreateRequest, now func() time.Time) (*api.UserInfo, error)
 
 	// Gets a user account.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
-	GetUser(ctx context.Context, username *api.ValidUsername) (*api.UserInfo, error)
+	GetUser(ctx context.Context, username api.ValidUsername) (*api.UserInfo, error)
 
 	// ListUsers lists all user accounts, ordered ascending by username.
 	//
@@ -38,12 +38,12 @@ type AuthenticationBackend interface {
 	// DeleteUser removes a user and all associated API keys.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
-	DeleteUser(ctx context.Context, username *api.ValidUsername) error
+	DeleteUser(ctx context.Context, username api.ValidUsername) error
 
 	// UpdateUser updates fields on an existing user account.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
-	UpdateUser(ctx context.Context, username *api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error)
+	UpdateUser(ctx context.Context, username api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error)
 
 	// Creates a new API key for the given user.
 	// format describes how key should be validated and transformed into its stored representation.
@@ -51,30 +51,30 @@ type AuthenticationBackend interface {
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	// Should return [ErrKeyCollision] if the key could not be created due to a collision with an existing key.
-	CreateKey(ctx context.Context, format apikey.Format, username *api.ValidUsername, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error)
+	CreateKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error)
 
 	// ListKeys lists API keys for the given user, ordered ascending by id.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
-	ListKeys(ctx context.Context, format apikey.Format, username *api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error)
+	ListKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error)
 
 	// Gets an API key for the given user.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	// Should return [ErrKeyNotFound] if the key does not exist.
-	GetKey(ctx context.Context, format apikey.Format, username *api.ValidUsername, keyID string) (*api.APIKeyInfo, error)
+	GetKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error)
 
 	// UpdateKey updates metadata for an existing API key.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	// Should return [ErrKeyNotFound] if the key does not exist.
-	UpdateKey(ctx context.Context, format apikey.Format, username *api.ValidUsername, keyID string, req api.KeyUpdateRequest, now func() time.Time) (*api.APIKeyInfo, error)
+	UpdateKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string, req api.KeyUpdateRequest, now func() time.Time) (*api.APIKeyInfo, error)
 
 	// Revokes an API key and returns its final metadata.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	// Should return [ErrKeyNotFound] if the key does not exist.
-	RevokeKey(ctx context.Context, format apikey.Format, username *api.ValidUsername, keyID string) (*api.APIKeyInfo, error)
+	RevokeKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error)
 
 	// Looks up the username for a valid API key.
 	//

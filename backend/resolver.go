@@ -25,15 +25,15 @@ type ResolverBackend interface {
 	//
 	// Should return [ErrDuplicateNamespaceID] if the namespace id is already in use.
 	// Should return [ErrUserNotFound] if owner does not exist.
-	CreateNamespace(ctx context.Context, namespace *api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error)
+	CreateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error)
 
 	// Gets a namespace by its identifier.
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
-	GetNamespace(ctx context.Context, namespace *api.ValidNamespaceID) (*api.NamespaceResponse, error)
+	GetNamespace(ctx context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error)
 
 	// Lists all resources in a namespace, ordered ascending by pid.
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
-	ListResources(ctx context.Context, namespace *api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error)
+	ListResources(ctx context.Context, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error)
 
 	// Counts the number of resources across all namespaces, including soft-deleted resources.
 	// Has no specific error conditions.
@@ -43,26 +43,26 @@ type ResolverBackend interface {
 	//
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrResourceNotFound] if the resource is not found.
-	GetResource(ctx context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID) (*api.ResourceResponse, error)
+	GetResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID) (*api.ResourceResponse, error)
 
 	// Creates a new resource in the given namespace with the given pid.
 	//
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrPIDAllocationFailed] if the pid is already in use.
-	CreateResource(ctx context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error)
+	CreateResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error)
 
 	// Creates multiple resources in the given namespace with the given pids.
 	// If the creation of a single resource fails, should roll back the entire batch.
 	//
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrPIDAllocationFailed] if one of the pids is already in use.
-	BatchCreateResources(ctx context.Context, namespace *api.ValidNamespaceID, pids []*api.ValidPID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error)
+	BatchCreateResources(ctx context.Context, namespace api.ValidNamespaceID, pids []api.ValidPID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error)
 
 	// Updates a resource in the given namespace with the given pid.
 	//
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrResourceNotFound] if the resource did not previously exist.
-	UpdateResource(ctx context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error)
+	UpdateResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error)
 
 	WithShutdownMethod
 }

@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Store) GetNamespacePermission(ctx context.Context, namespace *api.ValidNamespaceID, username *api.ValidUsername) (api.PermissionLevel, error) {
+func (s *Store) GetNamespacePermission(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.PermissionLevel, error) {
 	level, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (api.PermissionLevel, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return "", err
@@ -29,7 +29,7 @@ func (s *Store) GetNamespacePermission(ctx context.Context, namespace *api.Valid
 	return level, err
 }
 
-func (s *Store) SetNamespacePermission(ctx context.Context, namespace *api.ValidNamespaceID, username *api.ValidUsername, level api.PermissionLevel) error {
+func (s *Store) SetNamespacePermission(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, level api.PermissionLevel) error {
 	if level.Validate() != nil {
 		return backend.ErrInvalidPermissionLevel
 	}
@@ -61,7 +61,7 @@ func (s *Store) SetNamespacePermission(ctx context.Context, namespace *api.Valid
 	return err
 }
 
-func (s *Store) DeleteNamespacePermission(ctx context.Context, namespace *api.ValidNamespaceID, username *api.ValidUsername) error {
+func (s *Store) DeleteNamespacePermission(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}
 		result := tx.Where("namespace = ? AND username = ?", namespace.String(), username.String()).Delete(&namespacePermissionRow{})
@@ -76,7 +76,7 @@ func (s *Store) DeleteNamespacePermission(ctx context.Context, namespace *api.Va
 	return err
 }
 
-func (s *Store) ListNamespacePermissions(ctx context.Context, namespace *api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
+func (s *Store) ListNamespacePermissions(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacePermissionsResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err

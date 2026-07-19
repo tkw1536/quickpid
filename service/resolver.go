@@ -30,7 +30,7 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.ValidUserInfo,
 
 	var user *api.ValidUsername
 	if caller != nil && !caller.Superuser {
-		user = caller.Username
+		user = &caller.Username
 	}
 	out, err := s.store.ListNamespaces(ctx, user, params)
 	if errors.Is(err, backend.ErrUserNotFound) {
@@ -53,7 +53,7 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.ValidUserInfo,
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) GetNamespace(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID) (*api.NamespaceResponse, error) {
+func (s *Service) GetNamespace(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
 	if !s.AnonymousMode() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canReadNamespaceMetadata); err != nil {
 			return nil, err
@@ -100,7 +100,7 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.ValidUserInfo
 		if err := s.requireAuthenticated(caller); err != nil {
 			return nil, err
 		}
-		owner = caller.Username
+		owner = &caller.Username
 	}
 	for range maxAttempts {
 		name, err := s.runtime.NewNamespaceID()
@@ -136,7 +136,7 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.ValidUserInfo
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListResources(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+func (s *Service) ListResources(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
 	if !s.AnonymousMode() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canListResources); err != nil {
 			return nil, err
@@ -162,7 +162,7 @@ func (s *Service) ListResources(ctx context.Context, caller *api.ValidUserInfo, 
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
-func (s *Service) CreateResource(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, req api.ResourceCreateRequest) (*api.ResourceResponse, error) {
+func (s *Service) CreateResource(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, req api.ResourceCreateRequest) (*api.ResourceResponse, error) {
 	if !s.AnonymousMode() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canCreateResource); err != nil {
 			return nil, err
@@ -177,7 +177,7 @@ func (s *Service) CreateResource(ctx context.Context, caller *api.ValidUserInfo,
 		return nil, api.WithErrorString(fmt.Errorf("store.GetNamespace: %w", err), api.DatabaseError)
 	}
 
-	out, err := s.allocatePID(ns.PIDFormat, func(pid *api.ValidPID) (*api.ResourceResponse, error) {
+	out, err := s.allocatePID(ns.PIDFormat, func(pid api.ValidPID) (*api.ResourceResponse, error) {
 		return s.store.CreateResource(ctx, namespace, pid, req, s.runtime.Now)
 	})
 	if err != nil {
@@ -199,7 +199,7 @@ var errLimitExceeded = errors.New("batch create limit exceeded")
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
-func (s *Service) BatchCreateResources(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, reqs []api.ResourceCreateRequest) ([]api.ResourceResponse, error) {
+func (s *Service) BatchCreateResources(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, reqs []api.ResourceCreateRequest) ([]api.ResourceResponse, error) {
 	s.mu.RLock()
 	maxBatch := s.opts.Limits.MaxBatchItems
 	s.mu.RUnlock()
@@ -222,7 +222,7 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.ValidUse
 		return nil, api.WithErrorString(fmt.Errorf("store.UpdateResource: %w", err), api.DatabaseError)
 	}
 
-	out, err := s.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []*api.ValidPID) ([]api.ResourceResponse, error) {
+	out, err := s.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []api.ValidPID) ([]api.ResourceResponse, error) {
 		return s.store.BatchCreateResources(ctx, namespace, pids, reqs, s.runtime.Now)
 	})
 	if err != nil {
@@ -236,11 +236,11 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.ValidUse
 // It can return the following errors:
 //
 // - [api.Unauthorized]
+// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound]
-// - [api.ResourceGone]
 // - [api.DatabaseError].
-func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, resourcePID *api.ValidPID) (*api.ResourceResponse, error) {
+func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, resourcePID api.ValidPID) (*api.ResourceResponse, error) {
 	out, err := s.store.GetResource(ctx, namespace, resourcePID)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorString(fmt.Errorf("store.UpdateResource: %w", err), api.NamespaceNotFound)
@@ -257,13 +257,14 @@ func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, na
 	}
 
 	if out.Deleted {
+		// TODO: Make this code nicer.
 		if caller == nil {
 			return nil, api.WithErrorString(errResourceGone, api.ResourceGone)
 		}
 		if caller.Superuser {
 			return out, nil
 		}
-		level, err := s.effectivePermission(ctx, caller, namespace)
+		level, err := s.effectivePermission(ctx, *caller, namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -288,7 +289,7 @@ func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, na
 // - [api.DatabaseError]
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound].
-func (s *Service) UpdateResource(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, resourcePID *api.ValidPID, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
+func (s *Service) UpdateResource(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, resourcePID api.ValidPID, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
 	if !s.AnonymousMode() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canUpdateResource); err != nil {
 			return nil, err
@@ -315,7 +316,7 @@ func (s *Service) UpdateResource(ctx context.Context, caller *api.ValidUserInfo,
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
-func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]*api.ValidPID) ([]api.ResourceResponse, error)) ([]api.ResourceResponse, error) {
+func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]api.ValidPID) ([]api.ResourceResponse, error)) ([]api.ResourceResponse, error) {
 	if n == 0 {
 		return []api.ResourceResponse{}, nil
 	}
@@ -325,7 +326,7 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]*api.Vali
 	s.mu.RUnlock()
 
 	for range maxAttempts {
-		pids := make([]*api.ValidPID, n)
+		pids := make([]api.ValidPID, n)
 		seen := make(map[string]struct{}, n)
 		for i := range n {
 			// Ensure uniqueness within this batch.
@@ -362,14 +363,8 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]*api.Vali
 }
 
 // allocatePID is like allocatePIDs but for a single PID.
-//
-// It can return the following errors:
-//
-// - [api.BadIDGeneration]
-// - [api.DatabaseError]
-// - [api.InsufficientEntropy].
-func (s *Service) allocatePID(format pid.Format, insert func(*api.ValidPID) (*api.ResourceResponse, error)) (*api.ResourceResponse, error) {
-	pids, err := s.allocatePIDs(format, 1, func(pids []*api.ValidPID) ([]api.ResourceResponse, error) {
+func (s *Service) allocatePID(format pid.Format, insert func(api.ValidPID) (*api.ResourceResponse, error)) (*api.ResourceResponse, error) {
+	pids, err := s.allocatePIDs(format, 1, func(pids []api.ValidPID) ([]api.ResourceResponse, error) {
 		res, err := insert(pids[0])
 		if err != nil {
 			return nil, err
