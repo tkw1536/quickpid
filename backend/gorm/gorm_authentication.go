@@ -13,9 +13,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Store) CreateUser(ctx context.Context, req api.UserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
+func (s *Store) CreateUser(ctx context.Context, req *api.ValidUserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.UserInfo, error) {
-		row := userRow{Username: req.Username, Superuser: req.Superuser}
+		row := userRow{Username: req.Username.String(), Superuser: req.Superuser}
 		if err := tx.Create(&row).Error; err != nil {
 			if isUniqueConstraintError(err) {
 				return nil, backend.ErrDuplicateUsername
@@ -27,7 +27,7 @@ func (s *Store) CreateUser(ctx context.Context, req api.UserCreateRequest, _ fun
 	})
 }
 
-func (s *Store) GetUser(ctx context.Context, username string) (*api.UserInfo, error) {
+func (s *Store) GetUser(ctx context.Context, username *api.ValidUsername) (*api.UserInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.UserInfo, error) {
 		row, err := findUser(tx, username)
 		if err != nil {
@@ -89,19 +89,19 @@ func (s *Store) AutocompleteUsers(ctx context.Context, query string, limit int) 
 	})
 }
 
-func (s *Store) DeleteUser(ctx context.Context, username string) error {
+func (s *Store) DeleteUser(ctx context.Context, username *api.ValidUsername) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}
 		if err := ensureUserExists(tx, username); err != nil {
 			return zero, err
 		}
-		if err := tx.Where("username = ?", username).Delete(&apiKeyRow{}).Error; err != nil {
+		if err := tx.Where("username = ?", username.String()).Delete(&apiKeyRow{}).Error; err != nil {
 			return zero, err
 		}
-		if err := tx.Where("username = ?", username).Delete(&namespacePermissionRow{}).Error; err != nil {
+		if err := tx.Where("username = ?", username.String()).Delete(&namespacePermissionRow{}).Error; err != nil {
 			return zero, err
 		}
-		result := tx.Delete(&userRow{Username: username})
+		result := tx.Delete(&userRow{Username: username.String()})
 		if result.Error != nil {
 			return zero, result.Error
 		}
@@ -113,7 +113,7 @@ func (s *Store) DeleteUser(ctx context.Context, username string) error {
 	return err
 }
 
-func (s *Store) UpdateUser(ctx context.Context, username string, req api.UserUpdateRequest) (*api.UserInfo, error) {
+func (s *Store) UpdateUser(ctx context.Context, username *api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.UserInfo, error) {
 		row, err := findUser(tx, username)
 		if err != nil {
@@ -130,7 +130,7 @@ func (s *Store) UpdateUser(ctx context.Context, username string, req api.UserUpd
 	})
 }
 
-func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username *api.ValidUsername, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
@@ -143,11 +143,11 @@ func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username, k
 
 		createdAt := now().UTC()
 		row := apiKeyRow{
-			Username:  username,
+			Username:  username.String(),
 			ID:        keyID,
 			Comment:   req.Comment,
 			CreatedAt: createdAt,
-			ExpiresAt: cloneStringPtr(req.ExpiresAt),
+			ExpiresAt: req.ExpiresAt,
 			Prefix:    hashed.Prefix,
 			Digest:    hashed.Digest,
 		}
@@ -162,13 +162,13 @@ func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username, k
 	})
 }
 
-func (s *Store) ListKeys(ctx context.Context, _ apikey.Format, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+func (s *Store) ListKeys(ctx context.Context, _ apikey.Format, username *api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedAPIKeysResponse, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
 		}
 
-		q := tx.Model(&apiKeyRow{}).Where("username = ? AND revoked = ?", username, false)
+		q := tx.Model(&apiKeyRow{}).Where("username = ? AND revoked = ?", username.String(), false)
 		var total int64
 		if err := q.Count(&total).Error; err != nil {
 			return nil, err
@@ -200,7 +200,7 @@ func (s *Store) ListKeys(ctx context.Context, _ apikey.Format, username string, 
 	})
 }
 
-func (s *Store) GetKey(ctx context.Context, _ apikey.Format, username, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) GetKey(ctx context.Context, _ apikey.Format, username *api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
@@ -214,7 +214,7 @@ func (s *Store) GetKey(ctx context.Context, _ apikey.Format, username, keyID str
 	})
 }
 
-func (s *Store) UpdateKey(ctx context.Context, _ apikey.Format, username, keyID string, req api.KeyUpdateRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) UpdateKey(ctx context.Context, _ apikey.Format, username *api.ValidUsername, keyID string, req api.KeyUpdateRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
@@ -228,7 +228,7 @@ func (s *Store) UpdateKey(ctx context.Context, _ apikey.Format, username, keyID 
 			row.Comment = *req.Comment
 		}
 		if req.ExpiresAt != nil {
-			row.ExpiresAt = cloneStringPtr(*req.ExpiresAt)
+			row.ExpiresAt = *req.ExpiresAt
 		}
 		if err := tx.Save(&row).Error; err != nil {
 			return nil, err
@@ -238,7 +238,7 @@ func (s *Store) UpdateKey(ctx context.Context, _ apikey.Format, username, keyID 
 	})
 }
 
-func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username *api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err

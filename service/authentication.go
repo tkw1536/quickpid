@@ -15,28 +15,40 @@ import (
 )
 
 // Authenticate looks up the username for a valid API key.
-// It returns errUnauthorized when the key is missing or invalid.
-func (s *Service) Authenticate(ctx context.Context, apiKey string) (string, error) {
-	if s.AnonymousMode() {
-		return "", errUnauthorized
-	}
-	if apiKey == "" {
-		return "", errUnauthorized
+//
+// It can return the following errors:
+//
+// - [errUnauthorized] when the key is missing or invalid.
+//
+// Other failures are returned as plain (unannotated) errors.
+func (s *Service) Authenticate(ctx context.Context, apiKey string) (*api.ValidUsername, error) {
+	if s.AnonymousMode() || apiKey == "" {
+		return nil, errUnauthorized
 	}
 
 	username, err := s.store.LookupUserByKey(ctx, s.apiKeyFormat(), apiKey)
 	if errors.Is(err, backend.ErrInvalidKey) {
-		return "", errUnauthorized
+		return nil, errUnauthorized
 	}
 	if err != nil {
-		return "", fmt.Errorf("store.LookupUserByKey: %w", err)
+		return nil, fmt.Errorf("store.LookupUserByKey: %w", err)
 	}
-	return username, nil
+
+	name, err := api.NewUsername(username)
+	if err != nil {
+		return nil, fmt.Errorf("api.NewUsername: %w", err)
+	}
+	return name, nil
 }
 
-// CurrentUser authenticates an API key and returns the corresponding user account.
-// It returns errUnauthorized when the key is missing, invalid, or the user no longer exists.
-func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo, error) {
+// CurrentUser authenticates using an API key and returns the corresponding user account.
+//
+// It can return the following errors:
+//
+// - [errUnauthorized] when the key is missing, invalid, or the user no longer exists.
+//
+// Other failures are returned as plain (unannotated) errors.
+func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.ValidUserInfo, error) {
 	if s.AnonymousMode() {
 		return nil, errUnauthorized
 	}
@@ -51,15 +63,26 @@ func (s *Service) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo
 	if err != nil {
 		return nil, fmt.Errorf("store.GetUser: %w", err)
 	}
-	return user, nil
+	info, err := user.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("user.Validate: %w", err)
+	}
+	return info, nil
 }
 
 // GetUserAccount returns the caller's account or another user's when caller is a superuser.
-func (s *Service) GetUserAccount(ctx context.Context, caller *api.UserInfo, target *string) (*api.UserInfo, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Forbidden]
+// - [api.UserNotFound]
+// - [api.DatabaseError].
+func (s *Service) GetUserAccount(ctx context.Context, caller *api.ValidUserInfo, target *api.ValidUsername) (*api.UserInfo, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
-	username, err := resolveTargetUsername(caller, target)
+	username, err := resolveTarget(caller, target)
 	if err != nil {
 		return nil, err
 	}
@@ -74,11 +97,17 @@ func (s *Service) GetUserAccount(ctx context.Context, caller *api.UserInfo, targ
 }
 
 // GetUser returns the user account for caller.
-func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.UserNotFound]
+// - [api.DatabaseError].
+func (s *Service) GetUser(ctx context.Context, caller *api.ValidUserInfo) (*api.UserInfo, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
-	user, err := s.store.GetUser(ctx, caller)
+	user, err := s.store.GetUser(ctx, caller.Username)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, fmt.Errorf("store.GetUser: %w", mapped)
 	}
@@ -89,15 +118,20 @@ func (s *Service) GetUser(ctx context.Context, caller string) (*api.UserInfo, er
 }
 
 // CreateUser creates a new user account. Caller must be a superuser.
-func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.UserCreateRequest) (*api.UserInfo, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.DuplicateUsername]
+// - [api.DatabaseError].
+func (s *Service) CreateUser(ctx context.Context, caller *api.ValidUserInfo, req *api.ValidUserCreateRequest) (*api.UserInfo, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
 	if err := requireSuperuser(caller); err != nil {
 		return nil, err
-	}
-	if err := ValidateUsername(req.Username); err != nil {
-		return nil, api.WithErrorString(err, api.InvalidUsername)
 	}
 	if req.Superuser && !caller.Superuser {
 		return nil, api.WithErrorString(errForbidden, api.Forbidden)
@@ -114,7 +148,14 @@ func (s *Service) CreateUser(ctx context.Context, caller *api.UserInfo, req api.
 }
 
 // ListUsers lists all user accounts. Caller must be a superuser.
-func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.DatabaseError].
+func (s *Service) ListUsers(ctx context.Context, caller *api.ValidUserInfo, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
@@ -130,7 +171,12 @@ func (s *Service) ListUsers(ctx context.Context, caller *api.UserInfo, params ap
 }
 
 // AutocompleteUsers returns usernames matching a prefix. Any authenticated caller is allowed.
-func (s *Service) AutocompleteUsers(ctx context.Context, caller *api.UserInfo, query string) ([]string, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.DatabaseError].
+func (s *Service) AutocompleteUsers(ctx context.Context, caller *api.ValidUserInfo, query string) ([]string, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
@@ -148,11 +194,18 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller *api.UserInfo, q
 }
 
 // ListKeys lists API keys for the caller or another user when caller is a superuser.
-func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Forbidden]
+// - [api.UserNotFound]
+// - [api.DatabaseError].
+func (s *Service) ListKeys(ctx context.Context, caller *api.ValidUserInfo, target *api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
-	username, err := resolveTargetUsername(caller, target)
+	username, err := resolveTarget(caller, target)
 	if err != nil {
 		return nil, err
 	}
@@ -170,15 +223,18 @@ func (s *Service) ListKeys(ctx context.Context, caller *api.UserInfo, target *st
 //
 // It can return the following errors:
 //
+// - [api.UnavailableInAnonymousMode]
 // - [api.Forbidden]
+// - [api.InvalidQueryParameter]
+// - [api.UserNotFound]
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
-func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *string, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
+func (s *Service) IssueKey(ctx context.Context, caller *api.ValidUserInfo, target *api.ValidUsername, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
-	username, err := resolveTargetUsername(caller, target)
+	username, err := resolveTarget(caller, target)
 	if err != nil {
 		return nil, err
 	}
@@ -210,10 +266,11 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.UserInfo, target *st
 //
 // It can return the following errors:
 //
+// - [api.UserNotFound]
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
-func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
+func (s *Service) issueAPIKey(ctx context.Context, username *api.ValidUsername, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
 	s.mu.RLock()
 	maxAttempts := s.opts.Limits.MaxAPIKeyAttempts
 	s.mu.RUnlock()
@@ -245,11 +302,19 @@ func (s *Service) issueAPIKey(ctx context.Context, username string, req api.KeyI
 }
 
 // RevokeKey revokes an API key for the caller or another user when caller is a superuser.
-func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, target *string, req api.KeyRevokeRequest) (*api.RevokeKeyResponse, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Forbidden]
+// - [api.UserNotFound]
+// - [api.KeyNotFound]
+// - [api.DatabaseError].
+func (s *Service) RevokeKey(ctx context.Context, caller *api.ValidUserInfo, target *api.ValidUsername, req api.KeyRevokeRequest) (*api.RevokeKeyResponse, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
-	username, err := resolveTargetUsername(caller, target)
+	username, err := resolveTarget(caller, target)
 	if err != nil {
 		return nil, err
 	}
@@ -264,14 +329,23 @@ func (s *Service) RevokeKey(ctx context.Context, caller *api.UserInfo, target *s
 }
 
 // UpdateUser updates a user account. Caller must be a superuser and cannot update their own account.
-func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, target string, req api.UserUpdateRequest) (*api.UserInfo, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.UserNotFound]
+// - [api.DatabaseError].
+func (s *Service) UpdateUser(ctx context.Context, caller *api.ValidUserInfo, target *api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
 	if err := requireSuperuser(caller); err != nil {
 		return nil, err
 	}
-	if target == caller.Username {
+
+	if target.String() == caller.Username.String() {
 		return nil, api.WithErrorString(errForbidden, api.Forbidden)
 	}
 
@@ -285,20 +359,35 @@ func (s *Service) UpdateUser(ctx context.Context, caller *api.UserInfo, target s
 	return user, nil
 }
 
-func resolveTargetUsername(caller *api.UserInfo, target *string) (string, error) {
-	if target == nil {
+// resolveTarget resolves a "target" username.
+//
+// When the caller is not a superuser, it only permits the caller's own username (or nil, which automatically defaults to the caller's username).
+// Otherwise, it allows the target username.
+//
+// It can return the following errors:
+//
+// - [api.Forbidden].
+func resolveTarget(caller *api.ValidUserInfo, target *api.ValidUsername) (*api.ValidUsername, error) {
+	// TODO: Are there more places where we can use this function?
+
+	// no target, or target === caller
+	if target == nil || target.String() == caller.Username.String() {
 		return caller.Username, nil
 	}
-	if *target != caller.Username && !caller.Superuser {
-		return "", api.WithErrorString(errForbidden, api.Forbidden)
+
+	if !caller.Superuser {
+		return nil, api.WithErrorString(errForbidden, api.Forbidden)
 	}
-	return *target, nil
+	return target, nil
 }
 
 // requireSuperuser reports whether user is a superuser.
 //
-// It can return errors annotated with [api.Unauthorized] or [api.Forbidden].
-func requireSuperuser(user *api.UserInfo) error {
+// It can return the following errors:
+//
+// - [api.Unauthorized]
+// - [api.Forbidden].
+func requireSuperuser(user *api.ValidUserInfo) error {
 	if user == nil {
 		return api.WithErrorString(errUnauthorized, api.Unauthorized)
 	}
@@ -326,10 +415,27 @@ func mapAuthBackendError(err error) (error, bool) {
 	}
 }
 
-const rootUsername = "root"
+var rootUsername *api.ValidUsername
+
+func init() {
+	root, err := api.NewUsername("root")
+	if err != nil {
+		panic("never reached: root is a valid username")
+	}
+	rootUsername = root
+}
 
 // EnsureRootUser ensures that there is a user named "root" in the system.
 // If there is no such user, it creates a new root user with superuser privileges, and generates and logs out an API key.
+//
+// It can return the following errors:
+//
+// - [api.UserNotFound]
+// - [api.BadIDGeneration]
+// - [api.DatabaseError]
+// - [api.InsufficientEntropy]
+//
+// Other failures are returned as plain (unannotated) errors.
 func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error {
 	if s.AnonymousMode() {
 		return nil
@@ -342,7 +448,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 		return nil
 	}
 
-	_, err = s.store.CreateUser(ctx, api.UserCreateRequest{
+	_, err = s.store.CreateUser(ctx, &api.ValidUserCreateRequest{
 		Username:  rootUsername,
 		Superuser: true,
 	}, s.runtime.Now)
@@ -362,7 +468,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 
 	logger.Warn(
 		"created root superuser with bootstrap API key; store this key securely and revoke it after first use",
-		slog.String("username", rootUsername),
+		slog.String("username", rootUsername.String()),
 		slog.String("key", issued.Key),
 	)
 	return nil

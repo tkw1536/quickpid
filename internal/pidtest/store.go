@@ -93,8 +93,16 @@ func fixedNow() func() time.Time {
 	return func() time.Time { return t }
 }
 
-func userReq(username string) api.UserCreateRequest {
-	return api.UserCreateRequest{Username: username}
+func user(username string) *api.ValidUsername {
+	user, err := api.NewUsername(username)
+	if err != nil {
+		panic("cannot create user" + username)
+	}
+	return user
+}
+
+func userReq(username string) *api.ValidUserCreateRequest {
+	return &api.ValidUserCreateRequest{Username: user(username), Superuser: false}
 }
 
 func namespaceReq() api.NamespaceCreateRequest {
@@ -123,7 +131,7 @@ func testAuthUserCRUD(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("duplicate CreateUser() error = %v, want ErrDuplicateUsername", err)
 	}
 
-	got, err := b.GetUser(ctx, "alice")
+	got, err := b.GetUser(ctx, user("alice"))
 	if err != nil {
 		t.Fatalf("GetUser() error = %v", err)
 	}
@@ -131,10 +139,10 @@ func testAuthUserCRUD(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("GetUser() = %+v", got)
 	}
 
-	if err := b.DeleteUser(ctx, "alice"); err != nil {
+	if err := b.DeleteUser(ctx, user("alice")); err != nil {
 		t.Fatalf("DeleteUser() error = %v", err)
 	}
-	if _, err := b.GetUser(ctx, "alice"); !errors.Is(err, backend.ErrUserNotFound) {
+	if _, err := b.GetUser(ctx, user("alice")); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("GetUser() after delete error = %v, want ErrUserNotFound", err)
 	}
 }
@@ -153,7 +161,7 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 	expires := "2027-01-01T00:00:00Z"
 	//spellchecker:words lifecyclekey
 	rawKey := testAPIKey("lifecyclekey000000000000000")
-	created, err := b.CreateKey(ctx, apikey.Default, "alice", "key-1", rawKey, api.KeyIssueRequest{
+	created, err := b.CreateKey(ctx, apikey.Default, user("alice"), "key-1", rawKey, api.KeyIssueRequest{
 		Comment:   "laptop",
 		ExpiresAt: &expires,
 	}, now)
@@ -167,7 +175,7 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("CreateKey() expires_at = %+v", created.ExpiresAt)
 	}
 
-	page, err := b.ListKeys(ctx, apikey.Default, "alice", api.ListKeysParams{Limit: 100})
+	page, err := b.ListKeys(ctx, apikey.Default, user("alice"), api.ListKeysParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListKeys() error = %v", err)
 	}
@@ -175,7 +183,7 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("ListKeys() = %+v", page)
 	}
 
-	got, err := b.GetKey(ctx, apikey.Default, "alice", "key-1")
+	got, err := b.GetKey(ctx, apikey.Default, user("alice"), "key-1")
 	if err != nil {
 		t.Fatalf("GetKey() error = %v", err)
 	}
@@ -184,7 +192,7 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 	}
 
 	updatedComment := "desktop"
-	updated, err := b.UpdateKey(ctx, apikey.Default, "alice", "key-1", api.KeyUpdateRequest{Comment: &updatedComment}, now)
+	updated, err := b.UpdateKey(ctx, apikey.Default, user("alice"), "key-1", api.KeyUpdateRequest{Comment: &updatedComment}, now)
 	if err != nil {
 		t.Fatalf("UpdateKey() error = %v", err)
 	}
@@ -200,7 +208,7 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("LookupUserByKey() = %q, want alice", username)
 	}
 
-	revoked, err := b.RevokeKey(ctx, apikey.Default, "alice", "key-1")
+	revoked, err := b.RevokeKey(ctx, apikey.Default, user("alice"), "key-1")
 	if err != nil {
 		t.Fatalf("RevokeKey() error = %v", err)
 	}
@@ -208,7 +216,7 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("RevokeKey() = %+v", revoked)
 	}
 
-	if _, err := b.GetKey(ctx, apikey.Default, "alice", "key-1"); !errors.Is(err, backend.ErrKeyNotFound) {
+	if _, err := b.GetKey(ctx, apikey.Default, user("alice"), "key-1"); !errors.Is(err, backend.ErrKeyNotFound) {
 		t.Fatalf("GetKey() after revoke error = %v, want ErrKeyNotFound", err)
 	}
 
@@ -224,26 +232,26 @@ func testAuthNotFoundErrors(t *testing.T, newStore StoreFactory) {
 	b := newStore(t)
 	now := fixedNow()
 
-	if _, err := b.GetUser(ctx, "missing"); !errors.Is(err, backend.ErrUserNotFound) {
+	if _, err := b.GetUser(ctx, user("missing")); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("GetUser() error = %v, want ErrUserNotFound", err)
 	}
-	if err := b.DeleteUser(ctx, "missing"); !errors.Is(err, backend.ErrUserNotFound) {
+	if err := b.DeleteUser(ctx, user("missing")); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("DeleteUser() error = %v, want ErrUserNotFound", err)
 	}
-	if _, err := b.UpdateUser(ctx, "missing", api.UserUpdateRequest{}); !errors.Is(err, backend.ErrUserNotFound) {
+	if _, err := b.UpdateUser(ctx, user("missing"), api.UserUpdateRequest{}); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("UpdateUser() error = %v, want ErrUserNotFound", err)
 	}
-	if _, err := b.CreateKey(ctx, apikey.Default, "missing", "key-1", "secret", api.KeyIssueRequest{Comment: "x"}, now); !errors.Is(err, backend.ErrUserNotFound) {
+	if _, err := b.CreateKey(ctx, apikey.Default, user("missing"), "key-1", "secret", api.KeyIssueRequest{Comment: "x"}, now); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("CreateKey() error = %v, want ErrUserNotFound", err)
 	}
 
 	if _, err := b.CreateUser(ctx, userReq("alice"), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	if _, err := b.GetKey(ctx, apikey.Default, "alice", "missing"); !errors.Is(err, backend.ErrKeyNotFound) {
+	if _, err := b.GetKey(ctx, apikey.Default, user("alice"), "missing"); !errors.Is(err, backend.ErrKeyNotFound) {
 		t.Fatalf("GetKey() error = %v, want ErrKeyNotFound", err)
 	}
-	if _, err := b.RevokeKey(ctx, apikey.Default, "alice", "missing"); !errors.Is(err, backend.ErrKeyNotFound) {
+	if _, err := b.RevokeKey(ctx, apikey.Default, user("alice"), "missing"); !errors.Is(err, backend.ErrKeyNotFound) {
 		t.Fatalf("RevokeKey() error = %v, want ErrKeyNotFound", err)
 	}
 	if _, err := b.LookupUserByKey(ctx, apikey.Default, testAPIKey("unknown000000000000000000")); !errors.Is(err, backend.ErrInvalidKey) {
@@ -280,12 +288,12 @@ func testAuthListKeysSorted(t *testing.T, newStore StoreFactory) {
 	}
 	for _, id := range []string{"key-b", "key-a", "key-c"} {
 		raw := testAPIKey(strings.ReplaceAll(id, "-", ""))
-		if _, err := b.CreateKey(ctx, apikey.Default, "alice", id, raw, api.KeyIssueRequest{Comment: id}, now); err != nil {
+		if _, err := b.CreateKey(ctx, apikey.Default, user("alice"), id, raw, api.KeyIssueRequest{Comment: id}, now); err != nil {
 			t.Fatalf("CreateKey(%q) error = %v", id, err)
 		}
 	}
 
-	page, err := b.ListKeys(ctx, apikey.Default, "alice", api.ListKeysParams{Limit: 100})
+	page, err := b.ListKeys(ctx, apikey.Default, user("alice"), api.ListKeysParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListKeys() error = %v", err)
 	}
@@ -379,7 +387,7 @@ func testAuthSuperuser(t *testing.T, newStore StoreFactory) {
 	b := newStore(t)
 	now := fixedNow()
 
-	created, err := b.CreateUser(ctx, api.UserCreateRequest{Username: "admin", Superuser: true}, now)
+	created, err := b.CreateUser(ctx, &api.ValidUserCreateRequest{Username: user("admin"), Superuser: true}, now)
 	if err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
@@ -387,7 +395,7 @@ func testAuthSuperuser(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("CreateUser() superuser = false, want true")
 	}
 
-	got, err := b.GetUser(ctx, "admin")
+	got, err := b.GetUser(ctx, user("admin"))
 	if err != nil {
 		t.Fatalf("GetUser() error = %v", err)
 	}
@@ -396,7 +404,7 @@ func testAuthSuperuser(t *testing.T, newStore StoreFactory) {
 	}
 
 	superuser := false
-	updated, err := b.UpdateUser(ctx, "admin", api.UserUpdateRequest{Superuser: &superuser})
+	updated, err := b.UpdateUser(ctx, user("admin"), api.UserUpdateRequest{Superuser: &superuser})
 	if err != nil {
 		t.Fatalf("UpdateUser() error = %v", err)
 	}
@@ -420,11 +428,11 @@ func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 	if _, err := s.CreateUser(ctx, userReq(testNamespaceOwner), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), new(testNamespaceOwner), now); err != nil {
+	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), user(testNamespaceOwner), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 
-	level, err := s.GetNamespacePermission(ctx, ns1, "other")
+	level, err := s.GetNamespacePermission(ctx, ns1, user("other"))
 	if err != nil {
 		t.Fatalf("GetNamespacePermission() error = %v", err)
 	}
@@ -432,7 +440,7 @@ func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("GetNamespacePermission() = %q, want none", level)
 	}
 
-	level, err = s.GetNamespacePermission(ctx, ns1, testNamespaceOwner)
+	level, err = s.GetNamespacePermission(ctx, ns1, user(testNamespaceOwner))
 	if err != nil {
 		t.Fatalf("GetNamespacePermission(owner) error = %v", err)
 	}
@@ -440,10 +448,10 @@ func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("GetNamespacePermission(owner) = %q, want manager", level)
 	}
 
-	if err := s.SetNamespacePermission(ctx, ns1, "bob", api.PermissionLevelEditor); err != nil {
+	if err := s.SetNamespacePermission(ctx, ns1, user("bob"), api.PermissionLevelEditor); err != nil {
 		t.Fatalf("SetNamespacePermission() error = %v", err)
 	}
-	level, err = s.GetNamespacePermission(ctx, ns1, "bob")
+	level, err = s.GetNamespacePermission(ctx, ns1, user("bob"))
 	if err != nil {
 		t.Fatalf("GetNamespacePermission(bob) error = %v", err)
 	}
@@ -451,10 +459,10 @@ func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("GetNamespacePermission(bob) = %q, want editor", level)
 	}
 
-	if err := s.SetNamespacePermission(ctx, ns1, "bob", api.PermissionLevelNone); err != nil {
+	if err := s.SetNamespacePermission(ctx, ns1, user("bob"), api.PermissionLevelNone); err != nil {
 		t.Fatalf("SetNamespacePermission(none) error = %v", err)
 	}
-	level, err = s.GetNamespacePermission(ctx, ns1, "bob")
+	level, err = s.GetNamespacePermission(ctx, ns1, user("bob"))
 	if err != nil {
 		t.Fatalf("GetNamespacePermission(bob) after none error = %v", err)
 	}
@@ -462,13 +470,13 @@ func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("GetNamespacePermission(bob) after none = %q, want none", level)
 	}
 
-	if err := s.SetNamespacePermission(ctx, ns1, "carol", api.PermissionLevelContributor); err != nil {
+	if err := s.SetNamespacePermission(ctx, ns1, user("carol"), api.PermissionLevelContributor); err != nil {
 		t.Fatalf("SetNamespacePermission(carol) error = %v", err)
 	}
-	if err := s.DeleteNamespacePermission(ctx, ns1, "carol"); err != nil {
+	if err := s.DeleteNamespacePermission(ctx, ns1, user("carol")); err != nil {
 		t.Fatalf("DeleteNamespacePermission() error = %v", err)
 	}
-	if err := s.DeleteNamespacePermission(ctx, ns1, "carol"); !errors.Is(err, backend.ErrPermissionNotFound) {
+	if err := s.DeleteNamespacePermission(ctx, ns1, user("carol")); !errors.Is(err, backend.ErrPermissionNotFound) {
 		t.Fatalf("DeleteNamespacePermission() twice error = %v, want ErrPermissionNotFound", err)
 	}
 
@@ -480,7 +488,7 @@ func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("ListNamespacePermissions() = %+v", page)
 	}
 
-	if err := s.SetNamespacePermission(ctx, ns1, "dave", api.PermissionLevel("invalid")); !errors.Is(err, backend.ErrInvalidPermissionLevel) {
+	if err := s.SetNamespacePermission(ctx, ns1, user("dave"), api.PermissionLevel("invalid")); !errors.Is(err, backend.ErrInvalidPermissionLevel) {
 		t.Fatalf("SetNamespacePermission(invalid) error = %v, want ErrInvalidPermissionLevel", err)
 	}
 }
@@ -501,18 +509,18 @@ func testCreateNamespaceWithOwner(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("NewNamespaceID() error = %v", err)
 	}
 
-	if _, err := s.CreateNamespace(ctx, nsMissingOwner, namespaceReq(), new("nobody"), now); !errors.Is(err, backend.ErrUserNotFound) {
+	if _, err := s.CreateNamespace(ctx, nsMissingOwner, namespaceReq(), user("nobody"), now); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("CreateNamespace() missing owner error = %v, want ErrUserNotFound", err)
 	}
 
 	if _, err := s.CreateUser(ctx, userReq("owner"), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	if _, err := s.CreateNamespace(ctx, nsOwned, namespaceReq(), new("owner"), now); err != nil {
+	if _, err := s.CreateNamespace(ctx, nsOwned, namespaceReq(), user("owner"), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 
-	level, err := s.GetNamespacePermission(ctx, nsOwned, "owner")
+	level, err := s.GetNamespacePermission(ctx, nsOwned, user("owner"))
 	if err != nil {
 		t.Fatalf("GetNamespacePermission() error = %v", err)
 	}
@@ -539,18 +547,18 @@ func testDeleteUserCascadesPermissions(t *testing.T, newStore StoreFactory) {
 	if _, err := s.CreateUser(ctx, userReq("bob"), now); err != nil {
 		t.Fatalf("CreateUser(bob) error = %v", err)
 	}
-	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), new("alice"), now); err != nil {
+	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), user("alice"), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
-	if err := s.SetNamespacePermission(ctx, ns1, "bob", api.PermissionLevelEditor); err != nil {
+	if err := s.SetNamespacePermission(ctx, ns1, user("bob"), api.PermissionLevelEditor); err != nil {
 		t.Fatalf("SetNamespacePermission() error = %v", err)
 	}
 
-	if err := s.DeleteUser(ctx, "bob"); err != nil {
+	if err := s.DeleteUser(ctx, user("bob")); err != nil {
 		t.Fatalf("DeleteUser() error = %v", err)
 	}
 
-	level, err := s.GetNamespacePermission(ctx, ns1, "bob")
+	level, err := s.GetNamespacePermission(ctx, ns1, user("bob"))
 	if err != nil {
 		t.Fatalf("GetNamespacePermission(bob) error = %v", err)
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) getCurrentUserHTTP(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.UserInfo, error) {
+func (h *Server) getCurrentUserHTTP(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.UserInfo, error) {
 	target, err := h.parseOptionalUsernameQuery(r)
 	if err != nil {
 		return nil, err
@@ -21,20 +21,25 @@ func (h *Server) getCurrentUserHTTP(w http.ResponseWriter, r *http.Request, user
 	return currentUser, nil
 }
 
-func (h *Server) createUser(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.UserInfo, error) {
+func (h *Server) createUser(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.UserInfo, error) {
 	var req api.UserCreateRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
 	}
 
-	createdUser, err := h.svc.CreateUser(r.Context(), user, req)
+	validReq, err := req.Validate()
+	if err != nil {
+		return nil, api.WithErrorString(fmt.Errorf("failed to validate user create request: %w", err), api.InvalidUsername)
+	}
+
+	createdUser, err := h.svc.CreateUser(r.Context(), user, validReq)
 	if err != nil {
 		return nil, fmt.Errorf("svc.CreateUser: %w", err)
 	}
 	return createdUser, nil
 }
 
-func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedUsersResponse, error) {
+func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedUsersResponse, error) {
 	superuser, err := h.parseSuperuserQuery(r)
 	if err != nil {
 		return nil, err
@@ -55,19 +60,19 @@ func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, user *api.Use
 	return users, nil
 }
 
-func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, user *api.UserInfo) ([]string, error) {
+func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) ([]string, error) {
 	query, err := h.parseRequiredAutocompleteQuery(r)
 	if err != nil {
 		return nil, err
 	}
-	usernames, err := h.svc.AutocompleteUsers(r.Context(), user, query)
+	usernames, err := h.svc.AutocompleteUsers(r.Context(), user, query.String())
 	if err != nil {
 		return nil, fmt.Errorf("svc.AutocompleteUsers: %w", err)
 	}
 	return usernames, nil
 }
 
-func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedAPIKeysResponse, error) {
+func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedAPIKeysResponse, error) {
 	target, err := h.parseOptionalUsernameQuery(r)
 	if err != nil {
 		return nil, err
@@ -87,7 +92,7 @@ func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, user *api.User
 	return keys, nil
 }
 
-func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.IssueKeyResponse, error) {
+func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.IssueKeyResponse, error) {
 	target, err := h.parseOptionalUsernameQuery(r)
 	if err != nil {
 		return nil, err
@@ -104,7 +109,7 @@ func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, user *api.User
 	return response, nil
 }
 
-func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.RevokeKeyResponse, error) {
+func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.RevokeKeyResponse, error) {
 	target, err := h.parseOptionalUsernameQuery(r)
 	if err != nil {
 		return nil, err
@@ -121,7 +126,7 @@ func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, user *api.Use
 	return response, nil
 }
 
-func (h *Server) updateCurrentUser(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.UserInfo, error) {
+func (h *Server) updateCurrentUser(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.UserInfo, error) {
 	target, err := h.parseRequiredUsernameQuery(r)
 	if err != nil {
 		return nil, err

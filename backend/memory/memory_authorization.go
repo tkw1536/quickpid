@@ -10,7 +10,7 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 )
 
-func (s *Store) GetNamespacePermission(_ context.Context, namespace *api.NamespaceID, username string) (api.PermissionLevel, error) {
+func (s *Store) GetNamespacePermission(_ context.Context, namespace *api.ValidNamespaceID, username *api.ValidUsername) (api.PermissionLevel, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -18,14 +18,14 @@ func (s *Store) GetNamespacePermission(_ context.Context, namespace *api.Namespa
 		return api.PermissionLevelNone, backend.ErrNamespaceNotFound
 	}
 	if byUser, ok := s.permissions[namespace.String()]; ok {
-		if level, ok := byUser[username]; ok {
+		if level, ok := byUser[username.String()]; ok {
 			return level, nil
 		}
 	}
 	return api.PermissionLevelNone, nil
 }
 
-func (s *Store) SetNamespacePermission(_ context.Context, namespace *api.NamespaceID, username string, level api.PermissionLevel) error {
+func (s *Store) SetNamespacePermission(_ context.Context, namespace *api.ValidNamespaceID, username *api.ValidUsername, level api.PermissionLevel) error {
 	if level.Validate() != nil {
 		return backend.ErrInvalidPermissionLevel
 	}
@@ -39,7 +39,7 @@ func (s *Store) SetNamespacePermission(_ context.Context, namespace *api.Namespa
 
 	if level == api.PermissionLevelNone {
 		if byUser, ok := s.permissions[namespace.String()]; ok {
-			delete(byUser, username)
+			delete(byUser, username.String())
 			if len(byUser) == 0 {
 				delete(s.permissions, namespace.String())
 			}
@@ -50,11 +50,11 @@ func (s *Store) SetNamespacePermission(_ context.Context, namespace *api.Namespa
 	if s.permissions[namespace.String()] == nil {
 		s.permissions[namespace.String()] = make(map[string]api.PermissionLevel)
 	}
-	s.permissions[namespace.String()][username] = level
+	s.permissions[namespace.String()][username.String()] = level
 	return nil
 }
 
-func (s *Store) DeleteNamespacePermission(_ context.Context, namespace *api.NamespaceID, username string) error {
+func (s *Store) DeleteNamespacePermission(_ context.Context, namespace *api.ValidNamespaceID, username *api.ValidUsername) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -62,17 +62,17 @@ func (s *Store) DeleteNamespacePermission(_ context.Context, namespace *api.Name
 	if !ok {
 		return backend.ErrPermissionNotFound
 	}
-	if _, ok := byUser[username]; !ok {
+	if _, ok := byUser[username.String()]; !ok {
 		return backend.ErrPermissionNotFound
 	}
-	delete(byUser, username)
+	delete(byUser, username.String())
 	if len(byUser) == 0 {
 		delete(s.permissions, namespace.String())
 	}
 	return nil
 }
 
-func (s *Store) ListNamespacePermissions(_ context.Context, namespace *api.NamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
+func (s *Store) ListNamespacePermissions(_ context.Context, namespace *api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

@@ -13,15 +13,15 @@ import (
 // 1. Creation (and validation with a regexp) has to be performed once, and only once.
 // 2. Accidental casting from a string to an ID type cannot occur, and is guarded by the compiler.
 
-// NamespaceID represents a valid namespace id.
+// ValidNamespaceID represents a valid namespace id.
 //
 // Use [NewNamespaceID] to create a new namespace id.
-type NamespaceID struct {
+type ValidNamespaceID struct {
 	value string
 }
 
 // String returns the namespace id as a string.
-func (ns NamespaceID) String() string {
+func (ns ValidNamespaceID) String() string {
 	return ns.value
 }
 
@@ -32,21 +32,21 @@ var (
 )
 
 // NewNamespaceID creates a new NamespaceID.
-func NewNamespaceID(value string) (*NamespaceID, error) {
+func NewNamespaceID(value string) (*ValidNamespaceID, error) {
 	if !namespaceIDRE.MatchString(value) {
 		return nil, errInvalidNamespaceID
 	}
-	return &NamespaceID{value: value}, nil
+	return &ValidNamespaceID{value: value}, nil
 }
 
-// PID represents a valid pid.
+// ValidPID represents a valid pid.
 //
 // Use [NewPID] to create a new pid.
-type PID struct {
+type ValidPID struct {
 	value string
 }
 
-func (pid PID) String() string {
+func (pid ValidPID) String() string {
 	return pid.value
 }
 
@@ -56,9 +56,30 @@ var (
 )
 
 // NewPID creates a new PID.
-func NewPID(value string) (*PID, error) {
+func NewPID(value string) (*ValidPID, error) {
 	if !pidRE.MatchString(value) {
 		return nil, errInvalidPID
 	}
-	return &PID{value: value}, nil
+	return &ValidPID{value: value}, nil
+}
+
+type ValidUsername struct {
+	value string
+}
+
+func (username ValidUsername) String() string {
+	return username.value
+}
+
+var (
+	usernameRE         = regexp.MustCompile(`^[a-z0-9_-]+$`)
+	errInvalidUsername = errors.New("invalid username")
+)
+
+// NewUsername creates a new Username.
+func NewUsername(value string) (*ValidUsername, error) {
+	if !usernameRE.MatchString(value) {
+		return nil, errInvalidUsername
+	}
+	return &ValidUsername{value: value}, nil
 }

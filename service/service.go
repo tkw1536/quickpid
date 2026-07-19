@@ -1,9 +1,8 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words regexp sync github quickpid backend
+//spellchecker:words sync github quickpid backend
 import (
-	"regexp"
 	"sync"
 
 	"github.com/tkw1536/quickpid/api"
@@ -73,16 +72,4 @@ func (s *Service) GetResolverInfo() (*api.InfoResponse, error) {
 		resp.MaxAutocompleteUsers = int64(opts.Limits.MaxAutocompleteUsers)
 	}
 	return resp, nil
-}
-
-// regular expressions to validate various identifiers.
-var (
-	usernameRE = regexp.MustCompile(`^[a-z0-9_-]+$`)
-)
-
-func ValidateUsername(username string) error {
-	if !usernameRE.MatchString(username) {
-		return errInvalidUsername
-	}
-	return nil
 }

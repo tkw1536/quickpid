@@ -65,6 +65,11 @@ func canManagePermissions(level api.PermissionLevel) bool {
 	return level == api.PermissionLevelManager
 }
 
+// requireAuthEnabled reports whether authentication features are available.
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode].
 func (s *Service) requireAuthEnabled() error {
 	if s.AnonymousMode() {
 		return api.WithErrorString(errUnavailableInAnonymousMode, api.UnavailableInAnonymousMode)
@@ -74,8 +79,10 @@ func (s *Service) requireAuthEnabled() error {
 
 // requireAuthenticated reports whether caller is authenticated.
 //
-// It can return errors annotated with [api.Unauthorized].
-func (s *Service) requireAuthenticated(caller *api.UserInfo) error {
+// It can return the following errors:
+//
+// - [api.Unauthorized].
+func (s *Service) requireAuthenticated(caller *api.ValidUserInfo) error {
 	if caller == nil {
 		return api.WithErrorString(errUnauthorized, api.Unauthorized)
 	}
@@ -84,13 +91,15 @@ func (s *Service) requireAuthenticated(caller *api.UserInfo) error {
 
 // effectivePermission returns the caller's permission level in namespace.
 //
-// It can return errors annotated with:
+// It can return the following errors:
+//
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) effectivePermission(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID) (api.PermissionLevel, error) {
+func (s *Service) effectivePermission(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID) (api.PermissionLevel, error) {
 	if caller.Superuser {
 		return api.PermissionLevelManager, nil
 	}
+
 	level, err := s.store.GetNamespacePermission(ctx, namespace, caller.Username)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return level, api.WithErrorString(fmt.Errorf("Store.GetNamespacePermission: %w", err), api.NamespaceNotFound)
@@ -103,12 +112,13 @@ func (s *Service) effectivePermission(ctx context.Context, caller *api.UserInfo,
 
 // requireNamespaceCapability checks that caller is authenticated and has the given capability in namespace.
 //
-// It can return errors annotated with:
+// It can return the following errors:
+//
 // - [api.Unauthorized]
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) requireNamespaceCapability(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, allowed func(api.PermissionLevel) bool) error {
+func (s *Service) requireNamespaceCapability(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, allowed func(api.PermissionLevel) bool) error {
 	if err := s.requireAuthenticated(caller); err != nil {
 		return err
 	}
@@ -136,18 +146,23 @@ func mapAuthorizationBackendError(err error) (error, bool) {
 // GetNamespacePermission returns a user's permission level in a namespace.
 //
 // Callers may read their own permission; reading another user's permission requires manager.
-func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, username string) (*api.NamespacePermission, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError].
+func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, username *api.ValidUsername) (*api.NamespacePermission, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
 	if err := s.requireAuthenticated(caller); err != nil {
 		return nil, err
 	}
-	if err := ValidateUsername(username); err != nil {
-		return nil, api.WithErrorString(err, api.InvalidUsername)
-	}
 
-	if username != caller.Username {
+	if username.String() != caller.Username.String() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
 			return nil, err
 		}
@@ -160,11 +175,19 @@ func (s *Service) GetNamespacePermission(ctx context.Context, caller *api.UserIn
 	if err != nil {
 		return nil, api.WithErrorString(fmt.Errorf("Store.GetNamespacePermission: %w", err), api.DatabaseError)
 	}
-	return &api.NamespacePermission{Username: username, Level: level}, nil
+	return &api.NamespacePermission{Username: username.String(), Level: level}, nil
 }
 
 // ListNamespacePermissions lists explicit permissions in a namespace. Caller must be a manager.
-func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError].
+func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
 	}
@@ -183,17 +206,23 @@ func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.User
 }
 
 // SetNamespacePermission sets a user's permission level in a namespace. Caller must be a manager.
-func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, username string, req api.SetNamespacePermissionRequest) (*api.NamespacePermission, error) {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.InvalidPermissionLevel]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError].
+func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, username *api.ValidUsername, req api.SetNamespacePermissionRequest) (*api.NamespacePermission, error) {
 	if err := s.requireAuthEnabled(); err != nil {
 		return nil, err
-	}
-	if err := ValidateUsername(username); err != nil {
-		return nil, api.WithErrorString(err, api.InvalidUsername)
 	}
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
 		return nil, err
 	}
-	if username == caller.Username && !caller.Superuser {
+	if username.String() == caller.Username.String() && !caller.Superuser {
 		return nil, api.WithErrorString(errForbidden, api.Forbidden)
 	}
 	if req.Level == api.PermissionLevelNone {
@@ -217,16 +246,22 @@ func (s *Service) SetNamespacePermission(ctx context.Context, caller *api.UserIn
 		}
 		return nil, api.WithErrorString(fmt.Errorf("Store.GetNamespacePermission: %w", err), api.DatabaseError)
 	}
-	return &api.NamespacePermission{Username: username, Level: level}, nil
+	return &api.NamespacePermission{Username: username.String(), Level: level}, nil
 }
 
 // DeleteNamespacePermission removes an explicit permission record. Caller must be a manager.
-func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.UserInfo, namespace *api.NamespaceID, username string) error {
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.NamespaceNotFound]
+// - [api.PermissionNotFound]
+// - [api.DatabaseError].
+func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.ValidUserInfo, namespace *api.ValidNamespaceID, username *api.ValidUsername) error {
 	if err := s.requireAuthEnabled(); err != nil {
 		return err
-	}
-	if err := ValidateUsername(username); err != nil {
-		return api.WithErrorString(err, api.InvalidUsername)
 	}
 	if _, err := s.store.GetNamespace(ctx, namespace); errors.Is(err, backend.ErrNamespaceNotFound) {
 		return api.WithErrorString(fmt.Errorf("Store.GetNamespace: %w", err), api.NamespaceNotFound)
@@ -236,7 +271,7 @@ func (s *Service) DeleteNamespacePermission(ctx context.Context, caller *api.Use
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManagePermissions); err != nil {
 		return err
 	}
-	if username == caller.Username && !caller.Superuser {
+	if username.String() == caller.Username.String() && !caller.Superuser {
 		return api.WithErrorString(errForbidden, api.Forbidden)
 	}
 

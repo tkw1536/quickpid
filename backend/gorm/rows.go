@@ -98,7 +98,7 @@ func (k apiKeyRow) toSpec() api.APIKeyInfo {
 		ID:        k.ID,
 		Comment:   k.Comment,
 		CreatedAt: k.CreatedAt.UTC().Format(time.RFC3339),
-		ExpiresAt: cloneStringPtr(k.ExpiresAt),
+		ExpiresAt: k.ExpiresAt,
 	}
 }
 
@@ -117,7 +117,7 @@ func (p namespacePermissionRow) toSpec() api.NamespacePermission {
 	}
 }
 
-func ensureNamespaceExists(tx *gorm.DB, id *api.NamespaceID) error {
+func ensureNamespaceExists(tx *gorm.DB, id *api.ValidNamespaceID) error {
 	var n int64
 	if err := tx.Model(&namespaceRow{}).Where("id = ?", id.String()).Count(&n).Error; err != nil {
 		return err
@@ -128,9 +128,9 @@ func ensureNamespaceExists(tx *gorm.DB, id *api.NamespaceID) error {
 	return nil
 }
 
-func ensureUserExists(tx *gorm.DB, username string) error {
+func ensureUserExists(tx *gorm.DB, user *api.ValidUsername) error {
 	var n int64
-	if err := tx.Model(&userRow{}).Where("username = ?", username).Count(&n).Error; err != nil {
+	if err := tx.Model(&userRow{}).Where("username = ?", user.String()).Count(&n).Error; err != nil {
 		return err
 	}
 	if n == 0 {
@@ -139,9 +139,9 @@ func ensureUserExists(tx *gorm.DB, username string) error {
 	return nil
 }
 
-func findUser(tx *gorm.DB, username string) (userRow, error) {
+func findUser(tx *gorm.DB, username *api.ValidUsername) (userRow, error) {
 	var row userRow
-	if err := tx.First(&row, "username = ?", username).Error; err != nil {
+	if err := tx.First(&row, "username = ?", username.String()).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return userRow{}, errUserNotFound
 		}
@@ -150,9 +150,9 @@ func findUser(tx *gorm.DB, username string) (userRow, error) {
 	return row, nil
 }
 
-func findKey(tx *gorm.DB, username, keyID string) (apiKeyRow, error) {
+func findKey(tx *gorm.DB, username *api.ValidUsername, keyID string) (apiKeyRow, error) {
 	var row apiKeyRow
-	if err := tx.First(&row, "username = ? AND id = ? AND revoked = ?", username, keyID, false).Error; err != nil {
+	if err := tx.First(&row, "username = ? AND id = ? AND revoked = ?", username.String(), keyID, false).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return apiKeyRow{}, errKeyNotFound
 		}
@@ -161,9 +161,9 @@ func findKey(tx *gorm.DB, username, keyID string) (apiKeyRow, error) {
 	return row, nil
 }
 
-func findKeyIncludingRevoked(tx *gorm.DB, username, keyID string) (apiKeyRow, error) {
+func findKeyIncludingRevoked(tx *gorm.DB, username *api.ValidUsername, keyID string) (apiKeyRow, error) {
 	var row apiKeyRow
-	if err := tx.First(&row, "username = ? AND id = ?", username, keyID).Error; err != nil {
+	if err := tx.First(&row, "username = ? AND id = ?", username.String(), keyID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return apiKeyRow{}, errKeyNotFound
 		}

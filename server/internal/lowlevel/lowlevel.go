@@ -21,10 +21,10 @@ type AuthHandler struct {
 // AuthService provides the authentication operations needed by [AuthHandler].
 type AuthService interface {
 	// Authenticate resolves a username from an API key.
-	Authenticate(ctx context.Context, apiKey string) (string, error)
+	Authenticate(ctx context.Context, apiKey string) (*api.ValidUsername, error)
 
 	// CurrentUser resolves the authenticated user from an API key.
-	CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo, error)
+	CurrentUser(ctx context.Context, apiKey string) (*api.ValidUserInfo, error)
 
 	// AnonymousMode reports whether authentication is disabled for resolver operations.
 	AnonymousMode() bool
@@ -48,7 +48,7 @@ func HandleNoAuth[T any](
 	return handle(
 		h,
 		authNone(),
-		func(w http.ResponseWriter, r *http.Request, _ *string, _ *api.UserInfo) (T, error) {
+		func(w http.ResponseWriter, r *http.Request, _ *api.ValidUsername, _ *api.ValidUserInfo) (T, error) {
 			return impl(w, r)
 		},
 		successCode,
@@ -59,18 +59,18 @@ func HandleNoAuth[T any](
 // HandleRequiredUsername wraps an endpoint that requires authentication and exposes the username.
 func HandleRequiredUsername[T any](
 	h *AuthHandler,
-	impl func(http.ResponseWriter, *http.Request, string) (T, error),
+	impl func(http.ResponseWriter, *http.Request, *api.ValidUsername) (T, error),
 	successCode int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(
 		h,
 		requiredUsernameAuth(),
-		func(w http.ResponseWriter, r *http.Request, username *string, _ *api.UserInfo) (T, error) {
+		func(w http.ResponseWriter, r *http.Request, username *api.ValidUsername, _ *api.ValidUserInfo) (T, error) {
 			if username == nil {
 				panic("never reached: required username authentication returned nil username")
 			}
-			return impl(w, r, *username)
+			return impl(w, r, username)
 		},
 		successCode,
 		allowedErrors,
@@ -80,14 +80,14 @@ func HandleRequiredUsername[T any](
 // HandleOptionalUsername wraps an endpoint that optionally authenticates and exposes the username when present.
 func HandleOptionalUsername[T any](
 	h *AuthHandler,
-	impl func(http.ResponseWriter, *http.Request, *string) (T, error),
+	impl func(http.ResponseWriter, *http.Request, *api.ValidUsername) (T, error),
 	successCode int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(
 		h,
 		optionalUsernameAuth(),
-		func(w http.ResponseWriter, r *http.Request, username *string, _ *api.UserInfo) (T, error) {
+		func(w http.ResponseWriter, r *http.Request, username *api.ValidUsername, _ *api.ValidUserInfo) (T, error) {
 			return impl(w, r, username)
 		},
 		successCode,
@@ -100,14 +100,14 @@ func HandleOptionalUsername[T any](
 // The provided user pointer is guaranteed to be non-nil.
 func HandleRequiredUser[T any](
 	h *AuthHandler,
-	impl func(http.ResponseWriter, *http.Request, *api.UserInfo) (T, error),
+	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
 	successCode int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(
 		h,
 		requiredUserAuth(),
-		func(w http.ResponseWriter, r *http.Request, _ *string, user *api.UserInfo) (T, error) {
+		func(w http.ResponseWriter, r *http.Request, _ *api.ValidUsername, user *api.ValidUserInfo) (T, error) {
 			if user == nil {
 				panic("never reached: required user authentication returned nil user")
 			}
@@ -122,14 +122,14 @@ func HandleRequiredUser[T any](
 // when the server is not in anonymous mode.
 func HandleRequiredUserInAuthMode[T any](
 	h *AuthHandler,
-	impl func(http.ResponseWriter, *http.Request, *api.UserInfo) (T, error),
+	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
 	successCode int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(
 		h,
 		requiredUserAuthManagement(),
-		func(w http.ResponseWriter, r *http.Request, _ *string, user *api.UserInfo) (T, error) {
+		func(w http.ResponseWriter, r *http.Request, _ *api.ValidUsername, user *api.ValidUserInfo) (T, error) {
 			if user == nil {
 				panic("never reached: required user authentication returned nil user")
 			}
@@ -143,14 +143,14 @@ func HandleRequiredUserInAuthMode[T any](
 // HandleOptionalUser wraps an endpoint that optionally authenticates and exposes the authenticated user when present.
 func HandleOptionalUser[T any](
 	h *AuthHandler,
-	impl func(http.ResponseWriter, *http.Request, *api.UserInfo) (T, error),
+	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
 	successCode int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(
 		h,
 		optionalUserAuth(),
-		func(w http.ResponseWriter, r *http.Request, _ *string, user *api.UserInfo) (T, error) {
+		func(w http.ResponseWriter, r *http.Request, _ *api.ValidUsername, user *api.ValidUserInfo) (T, error) {
 			return impl(w, r, user)
 		},
 		successCode,

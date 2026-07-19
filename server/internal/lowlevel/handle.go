@@ -17,7 +17,7 @@ import (
 func handle[T any](
 	h *AuthHandler,
 	auth authConfig,
-	impl func(http.ResponseWriter, *http.Request, *string, *api.UserInfo) (T, error),
+	impl func(http.ResponseWriter, *http.Request, *api.ValidUsername, *api.ValidUserInfo) (T, error),
 	successCode int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
@@ -70,7 +70,7 @@ func resolveAPIError(err error) api.ErrorString {
 // resolveAuth resolves the caller according to the given auth configuration.
 //
 // It returns nil values when auth is disabled or optional auth is not supplied.
-func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*string, *api.UserInfo, error) {
+func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*api.ValidUsername, *api.ValidUserInfo, error) {
 	if auth.requirement == authRequirementAuthMode && h.auth.AnonymousMode() {
 		return nil, nil, api.WithErrorString(errUnavailableInAnonymousMode, api.UnavailableInAnonymousMode)
 	}
@@ -92,7 +92,7 @@ func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*string, *a
 		if err != nil {
 			return nil, nil, api.WithErrorString(fmt.Errorf("auth.CurrentUser: %w", err), api.DatabaseError)
 		}
-		return &user.Username, user, nil
+		return user.Username, user, nil
 	}
 
 	username, err := h.auth.Authenticate(r.Context(), token)
@@ -102,7 +102,7 @@ func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*string, *a
 	if err != nil {
 		return nil, nil, api.WithErrorString(fmt.Errorf("auth.Authenticate: %w", err), api.DatabaseError)
 	}
-	return &username, nil, nil
+	return username, nil, nil
 }
 
 // writeHandledError validates that the error maps to a declared API error, logs it, and writes the JSON response.

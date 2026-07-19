@@ -28,6 +28,16 @@ func testService(store backend.Store) *service.Service {
 	return service.New(store, service.NewRuntime(), service.Options{})
 }
 
+var rootUsername *api.ValidUsername
+
+func init() {
+	user, err := api.NewUsername("root")
+	if err != nil {
+		panic(err)
+	}
+	rootUsername = user
+}
+
 func TestEnsureRootUser_EmptyBackend(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -38,7 +48,7 @@ func TestEnsureRootUser_EmptyBackend(t *testing.T) {
 		t.Fatalf("EnsureRootUser() error = %v", err)
 	}
 
-	user, err := auth.GetUser(ctx, "root")
+	user, err := auth.GetUser(ctx, rootUsername)
 	if err != nil {
 		t.Fatalf("GetUser(root) error = %v", err)
 	}
@@ -46,7 +56,7 @@ func TestEnsureRootUser_EmptyBackend(t *testing.T) {
 		t.Fatalf("GetUser(root) superuser = false, want true")
 	}
 
-	keys, err := auth.ListKeys(ctx, apikey.Default, "root", api.ListKeysParams{Limit: 100})
+	keys, err := auth.ListKeys(ctx, apikey.Default, rootUsername, api.ListKeysParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListKeys(root) error = %v", err)
 	}
@@ -60,7 +70,11 @@ func TestEnsureRootUser_ExistingUser(t *testing.T) {
 	ctx := context.Background()
 	auth := memory.NewStore()
 
-	if _, err := auth.CreateUser(ctx, api.UserCreateRequest{Username: "alice"}, fixedNow()); err != nil {
+	aliceUsername, err := api.NewUsername("alice")
+	if err != nil {
+		t.Fatalf("NewUsername(alice) error = %v", err)
+	}
+	if _, err := auth.CreateUser(ctx, &api.ValidUserCreateRequest{Username: aliceUsername}, fixedNow()); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
 
@@ -86,7 +100,7 @@ func TestEnsureRootUser_ExistingRootRace(t *testing.T) {
 	ctx := context.Background()
 	auth := memory.NewStore()
 
-	if _, err := auth.CreateUser(ctx, api.UserCreateRequest{Username: "root", Superuser: true}, fixedNow()); err != nil {
+	if _, err := auth.CreateUser(ctx, &api.ValidUserCreateRequest{Username: rootUsername, Superuser: true}, fixedNow()); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
 
@@ -135,64 +149,5 @@ func TestEnsureRootUser_AnonymousModeSkipsBootstrap(t *testing.T) {
 	}
 	if page.Total != 0 {
 		t.Fatalf("ListUsers() total = %d, want 0", page.Total)
-	}
-}
-
-func TestValidateUsername(t *testing.T) {
-	t.Parallel()
-	testIdentifierValidation(t, service.ValidateUsername, "invalid username")
-}
-
-func testIdentifierValidation(t *testing.T, validate func(string) error, wantInvalidMsg string) {
-	t.Helper()
-
-	tests := []struct {
-		name    string
-		input   string
-		wantErr string
-	}{
-		{
-			name:  "valid_alphanumeric",
-			input: "abc123",
-		},
-		{
-			name:  "valid_hyphen_underscore",
-			input: "a-b_c",
-		},
-		{
-			name:    "invalid_empty",
-			input:   "",
-			wantErr: wantInvalidMsg,
-		},
-		{
-			name:    "invalid_uppercase",
-			input:   "Alice",
-			wantErr: wantInvalidMsg,
-		},
-		{
-			name:    "invalid_special_characters",
-			input:   "a.b",
-			wantErr: wantInvalidMsg,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			err := validate(tt.input)
-			if tt.wantErr == "" {
-				if err != nil {
-					t.Fatalf("validate(%q) error = %v, want nil", tt.input, err)
-				}
-				return
-			}
-			if err == nil {
-				t.Fatalf("validate(%q) error = nil, want %q", tt.input, tt.wantErr)
-			}
-			if err.Error() != tt.wantErr {
-				t.Fatalf("validate(%q) error = %q, want %q", tt.input, err.Error(), tt.wantErr)
-			}
-		})
 	}
 }

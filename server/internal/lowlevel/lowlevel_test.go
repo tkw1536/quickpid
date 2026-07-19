@@ -43,15 +43,15 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 		userFailToken     = "user-fail-token"
 	)
 
-	validUser := &api.UserInfo{Username: "alice", Superuser: true}
+	validUser := mustValidUser(t, "alice", true)
 
 	tests := []struct {
 		name string
-		run  func(*testing.T, *lowlevel.AuthHandler, scenario, *api.UserInfo)
+		run  func(*testing.T, *lowlevel.AuthHandler, scenario, *api.ValidUserInfo)
 	}{
 		{
 			name: "HandleNoAuth",
-			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.UserInfo) {
+			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.ValidUserInfo) {
 				t.Helper()
 
 				var gotCalled bool
@@ -71,7 +71,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 		},
 		{
 			name: "HandleRequiredUsername",
-			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.UserInfo) {
+			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.ValidUserInfo) {
 				t.Helper()
 
 				var (
@@ -80,10 +80,10 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 				)
 				handler := lowlevel.HandleRequiredUsername(
 					h,
-					func(w http.ResponseWriter, r *http.Request, username string) (authProbeResponse, error) {
+					func(w http.ResponseWriter, r *http.Request, username *api.ValidUsername) (authProbeResponse, error) {
 						gotCalled = true
-						gotUser = username
-						return authProbeResponse{Username: new(username)}, nil
+						gotUser = username.String()
+						return authProbeResponse{Username: stringPtr(username.String())}, nil
 					},
 					http.StatusOK,
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
@@ -99,7 +99,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 		},
 		{
 			name: "HandleOptionalUsername",
-			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.UserInfo) {
+			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.ValidUserInfo) {
 				t.Helper()
 
 				var (
@@ -108,10 +108,10 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 				)
 				handler := lowlevel.HandleOptionalUsername(
 					h,
-					func(w http.ResponseWriter, r *http.Request, username *string) (authProbeResponse, error) {
+					func(w http.ResponseWriter, r *http.Request, username *api.ValidUsername) (authProbeResponse, error) {
 						gotCalled = true
-						gotUser = username
-						return authProbeResponse{Username: username}, nil
+						gotUser = usernameStringPtr(username)
+						return authProbeResponse{Username: usernameStringPtr(username)}, nil
 					},
 					http.StatusOK,
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
@@ -127,19 +127,19 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 		},
 		{
 			name: "HandleRequiredUser",
-			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.UserInfo) {
+			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.ValidUserInfo) {
 				t.Helper()
 
 				var (
 					gotCalled bool
-					gotUser   *api.UserInfo
+					gotUser   *api.ValidUserInfo
 				)
 				handler := lowlevel.HandleRequiredUser(
 					h,
-					func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (authProbeResponse, error) {
+					func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = user
-						return authProbeResponse{Username: &user.Username, User: user}, nil
+						return authProbeResponse{Username: usernameStringPtr(user.Username), User: userInfoFromValid(user)}, nil
 					},
 					http.StatusOK,
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
@@ -155,23 +155,25 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 		},
 		{
 			name: "HandleOptionalUser",
-			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.UserInfo) {
+			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.ValidUserInfo) {
 				t.Helper()
 
 				var (
 					gotCalled bool
-					gotUser   *api.UserInfo
+					gotUser   *api.ValidUserInfo
 				)
 				handler := lowlevel.HandleOptionalUser(
 					h,
-					func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (authProbeResponse, error) {
+					func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = user
 						var username *string
+						var userInfo *api.UserInfo
 						if user != nil {
-							username = &user.Username
+							username = usernameStringPtr(user.Username)
+							userInfo = userInfoFromValid(user)
 						}
-						return authProbeResponse{Username: username, User: user}, nil
+						return authProbeResponse{Username: username, User: userInfo}, nil
 					},
 					http.StatusOK,
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
@@ -205,19 +207,19 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					t.Parallel()
 
 					h := lowlevel.NewAuthHandler(&mockAuthService{
-						authenticate: func(_ context.Context, apiKey string) (string, error) {
+						authenticate: func(_ context.Context, apiKey string) (*api.ValidUsername, error) {
 							switch apiKey {
 							case validKnownToken, validMissingToken, userFailToken:
 								return validUser.Username, nil
 							case invalidToken:
-								return "", unauthorizedError{}
+								return nil, unauthorizedError{}
 							case lookupFailToken:
-								return "", errLookupFailure
+								return nil, errLookupFailure
 							default:
-								return "", unauthorizedError{}
+								return nil, unauthorizedError{}
 							}
 						},
-						currentUser: func(_ context.Context, apiKey string) (*api.UserInfo, error) {
+						currentUser: func(_ context.Context, apiKey string) (*api.ValidUserInfo, error) {
 							switch apiKey {
 							case validKnownToken:
 								return validUser, nil
@@ -248,7 +250,7 @@ func TestHandleRequiredUsernamePanicsWhenUnauthorizedNotAllowed(t *testing.T) {
 	h := lowlevel.NewAuthHandler(&mockAuthService{}, nil)
 	handler := lowlevel.HandleRequiredUsername(
 		h,
-		func(w http.ResponseWriter, r *http.Request, username string) (struct{}, error) {
+		func(w http.ResponseWriter, r *http.Request, username *api.ValidUsername) (struct{}, error) {
 			t.Fatal("impl should not be called")
 			return struct{}{}, nil
 		},
@@ -270,8 +272,12 @@ func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 	h := lowlevel.NewAuthHandler(svc, nil)
 	handler := lowlevel.HandleRequiredUser(
 		h,
-		func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, error) {
-			if _, err := svc.CreateUser(r.Context(), user, api.UserCreateRequest{Username: "bob", Superuser: true}); err != nil {
+		func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
+			bobUsername, err := api.NewUsername("bob")
+			if err != nil {
+				return struct{}{}, fmt.Errorf("api.NewUsername: %w", err)
+			}
+			if _, err := svc.CreateUser(r.Context(), user, &api.ValidUserCreateRequest{Username: bobUsername, Superuser: true}); err != nil {
 				return struct{}{}, fmt.Errorf("svc.CreateUser: %w", err)
 			}
 			return struct{}{}, nil
@@ -293,14 +299,14 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 	var currentUserCalled bool
 	h := lowlevel.NewAuthHandler(&mockAuthService{
 		anonymousMode: true,
-		currentUser: func(context.Context, string) (*api.UserInfo, error) {
+		currentUser: func(context.Context, string) (*api.ValidUserInfo, error) {
 			currentUserCalled = true
 			return nil, unauthorizedError{}
 		},
 	}, nil)
 	handler := lowlevel.HandleRequiredUserInAuthMode(
 		h,
-		func(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, error) {
+		func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
 			t.Fatal("handler must not be called in anonymous mode")
 			return struct{}{}, nil
 		},
@@ -365,22 +371,22 @@ type scenario struct {
 
 type mockAuthService struct {
 	anonymousMode bool
-	authenticate  func(context.Context, string) (string, error)
-	currentUser   func(context.Context, string) (*api.UserInfo, error)
+	authenticate  func(context.Context, string) (*api.ValidUsername, error)
+	currentUser   func(context.Context, string) (*api.ValidUserInfo, error)
 }
 
 func (m *mockAuthService) AnonymousMode() bool {
 	return m.anonymousMode
 }
 
-func (m *mockAuthService) Authenticate(ctx context.Context, apiKey string) (string, error) {
+func (m *mockAuthService) Authenticate(ctx context.Context, apiKey string) (*api.ValidUsername, error) {
 	if m.authenticate != nil {
 		return m.authenticate(ctx, apiKey)
 	}
-	return "", unauthorizedError{}
+	return nil, unauthorizedError{}
 }
 
-func (m *mockAuthService) CurrentUser(ctx context.Context, apiKey string) (*api.UserInfo, error) {
+func (m *mockAuthService) CurrentUser(ctx context.Context, apiKey string) (*api.ValidUserInfo, error) {
 	if m.currentUser != nil {
 		return m.currentUser(ctx, apiKey)
 	}
@@ -445,7 +451,7 @@ func runHandler(t *testing.T, handler http.Handler, token string) *httptest.Resp
 	return rec
 }
 
-func expectedUsernameOutcome(required bool, token string, validUser *api.UserInfo) (status int, called bool, username string) {
+func expectedUsernameOutcome(required bool, token string, validUser *api.ValidUserInfo) (status int, called bool, username string) {
 	if token == "" {
 		if required {
 			return http.StatusUnauthorized, false, ""
@@ -455,7 +461,7 @@ func expectedUsernameOutcome(required bool, token string, validUser *api.UserInf
 
 	switch token {
 	case "valid-known-token", "valid-missing-token", "user-fail-token":
-		return http.StatusOK, true, validUser.Username
+		return http.StatusOK, true, validUser.Username.String()
 	case "invalid-token":
 		return http.StatusUnauthorized, false, ""
 	case "lookup-fail-token":
@@ -465,15 +471,15 @@ func expectedUsernameOutcome(required bool, token string, validUser *api.UserInf
 	}
 }
 
-func expectedOptionalUsernameOutcome(token string, validUser *api.UserInfo) (status int, called bool, username *string) {
+func expectedOptionalUsernameOutcome(token string, validUser *api.ValidUserInfo) (status int, called bool, username *string) {
 	status, called, value := expectedUsernameOutcome(false, token, validUser)
 	if !called || value == "" {
 		return status, called, nil
 	}
-	return status, called, new(value)
+	return status, called, stringPtr(value)
 }
 
-func expectedUserOutcome(required bool, token string, validUser *api.UserInfo) (status int, called bool, user *api.UserInfo) {
+func expectedUserOutcome(required bool, token string, validUser *api.ValidUserInfo) (status int, called bool, user *api.ValidUserInfo) {
 	if token == "" {
 		if required {
 			return http.StatusUnauthorized, false, nil
@@ -508,15 +514,27 @@ func createUserWithKey(t *testing.T, auth backend.AuthenticationBackend, usernam
 
 	ctx := context.Background()
 	now := func() time.Time { return time.Date(2026, 7, 7, 12, 0, 0, 0, time.UTC) }
-	if _, err := auth.CreateUser(ctx, api.UserCreateRequest{Username: username, Superuser: superuser}, now); err != nil {
+
+	valid, err := api.NewUsername(username)
+	if err != nil {
+		t.Fatalf("NewUsername(%q) error = %v", username, err)
+	}
+	if _, err := auth.CreateUser(ctx, &api.ValidUserCreateRequest{Username: valid, Superuser: superuser}, now); err != nil {
 		t.Fatalf("CreateUser(%q) error = %v", username, err)
 	}
 
 	rawKey := strings.Repeat("a", 32-len(username)) + username
-	if _, err := auth.CreateKey(ctx, apikey.Default, username, "key-1", rawKey, api.KeyIssueRequest{Comment: "test"}, now); err != nil {
+	if _, err := auth.CreateKey(ctx, apikey.Default, valid, "key-1", rawKey, api.KeyIssueRequest{Comment: "test"}, now); err != nil {
 		t.Fatalf("CreateKey(%q) error = %v", username, err)
 	}
 	return rawKey
+}
+
+func userInfoFromValid(user *api.ValidUserInfo) *api.UserInfo {
+	return &api.UserInfo{
+		Username:  user.Username.String(),
+		Superuser: user.Superuser,
+	}
 }
 
 func expectPanic(t *testing.T) {
@@ -524,6 +542,26 @@ func expectPanic(t *testing.T) {
 	if recover() == nil {
 		t.Fatal("expected panic")
 	}
+}
+
+func mustValidUser(t *testing.T, username string, superuser bool) *api.ValidUserInfo {
+	t.Helper()
+	name, err := api.NewUsername(username)
+	if err != nil {
+		t.Fatalf("NewUsername(%q) error = %v", username, err)
+	}
+	return &api.ValidUserInfo{Username: name, Superuser: superuser}
+}
+
+func stringPtr(value string) *string {
+	return &value
+}
+
+func usernameStringPtr(username *api.ValidUsername) *string {
+	if username == nil {
+		return nil
+	}
+	return stringPtr(username.String())
 }
 
 func assertOptionalStringEqual(t *testing.T, got, want *string) {
@@ -538,14 +576,14 @@ func assertOptionalStringEqual(t *testing.T, got, want *string) {
 	}
 }
 
-func assertOptionalUserEqual(t *testing.T, got, want *api.UserInfo) {
+func assertOptionalUserEqual(t *testing.T, got, want *api.ValidUserInfo) {
 	t.Helper()
 	switch {
 	case got == nil && want == nil:
 		return
 	case got == nil || want == nil:
 		t.Fatalf("user pointer mismatch: got %v, want %v", got, want)
-	case got.Username != want.Username || got.Superuser != want.Superuser:
+	case got.Username.String() != want.Username.String() || got.Superuser != want.Superuser:
 		t.Fatalf("user = %+v, want %+v", *got, *want)
 	}
 }

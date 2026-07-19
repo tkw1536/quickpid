@@ -46,11 +46,16 @@ func createUserWithKey(t *testing.T, auth backend.AuthenticationBackend, usernam
 	ctx := context.Background()
 	now := func() time.Time { return time.Date(2026, 7, 5, 12, 0, 0, 0, time.UTC) }
 
-	if _, err := auth.CreateUser(ctx, api.UserCreateRequest{Username: username, Superuser: superuser}, now); err != nil {
+	validUsername, err := api.NewUsername(username)
+	if err != nil {
+		t.Fatalf("NewUsername(%q) error = %v", username, err)
+	}
+
+	if _, err := auth.CreateUser(ctx, &api.ValidUserCreateRequest{Username: validUsername, Superuser: superuser}, now); err != nil {
 		t.Fatalf("CreateUser(%q) error = %v", username, err)
 	}
 	rawKey := strings.Repeat("a", 32-len(username)) + username
-	if _, err := auth.CreateKey(ctx, apikey.Default, username, "key-1", rawKey, api.KeyIssueRequest{Comment: "test"}, now); err != nil {
+	if _, err := auth.CreateKey(ctx, apikey.Default, validUsername, "key-1", rawKey, api.KeyIssueRequest{Comment: "test"}, now); err != nil {
 		t.Fatalf("CreateKey(%q) error = %v", username, err)
 	}
 	return rawKey
@@ -129,6 +134,16 @@ func assertForbiddenJSON(t *testing.T, rec *httptest.ResponseRecorder) {
 	}
 }
 
+var bobUsername *api.ValidUsername
+
+func init() {
+	user, err := api.NewUsername("bob")
+	if err != nil {
+		panic(err)
+	}
+	bobUsername = user
+}
+
 func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 	t.Parallel()
 
@@ -173,7 +188,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 			t.Fatalf("status = %d, want %d, body = %s", rec.Code, http.StatusOK, rec.Body.String())
 		}
 
-		user, err := auth.GetUser(context.Background(), "bob")
+		user, err := auth.GetUser(context.Background(), bobUsername)
 		if err != nil {
 			t.Fatalf("GetUser(bob) error = %v", err)
 		}

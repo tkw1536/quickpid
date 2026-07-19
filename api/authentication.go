@@ -32,10 +32,45 @@ func (r *UserCreateRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Validate checks if the given request is valid.
+func (r *UserCreateRequest) Validate() (*ValidUserCreateRequest, error) {
+	username, err := NewUsername(r.Username)
+	if err != nil {
+		return nil, err
+	}
+	return &ValidUserCreateRequest{
+		Username:  username,
+		Superuser: r.Superuser,
+	}, nil
+}
+
+// ValidUserCreateRequest is like a [UserCreateRequest] but with a validated username.
+type ValidUserCreateRequest struct {
+	Username  *ValidUsername
+	Superuser bool
+}
+
 // UserInfo is returned for user operations.
 type UserInfo struct {
 	Username  string `json:"username"`
 	Superuser bool   `json:"superuser"`
+}
+
+func (u *UserInfo) Validate() (*ValidUserInfo, error) {
+	username, err := NewUsername(u.Username)
+	if err != nil {
+		return nil, err
+	}
+	return &ValidUserInfo{
+		Username:  username,
+		Superuser: u.Superuser,
+	}, nil
+}
+
+// ValidUserInfo is information about a user with a validated username.
+type ValidUserInfo struct {
+	Username  *ValidUsername
+	Superuser bool
 }
 
 // UserUpdateRequest updates fields on an existing user account.

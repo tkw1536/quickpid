@@ -11,12 +11,12 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 )
 
-func (s *Store) ListNamespaces(_ context.Context, user *string, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+func (s *Store) ListNamespaces(_ context.Context, user *api.ValidUsername, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if user != nil {
-		if _, exists := s.users[*user]; !exists {
+		if _, exists := s.users[user.String()]; !exists {
 			return nil, backend.ErrUserNotFound
 		}
 	}
@@ -31,7 +31,7 @@ func (s *Store) ListNamespaces(_ context.Context, user *string, params api.ListN
 			if !ok {
 				continue
 			}
-			if _, ok := byUser[*user]; !ok {
+			if _, ok := byUser[user.String()]; !ok {
 				continue
 			}
 		}
@@ -54,12 +54,12 @@ func (s *Store) ListNamespaces(_ context.Context, user *string, params api.ListN
 	return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateNamespace(_ context.Context, namespace *api.NamespaceID, req api.NamespaceCreateRequest, owner *string, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *Store) CreateNamespace(_ context.Context, namespace *api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if owner != nil {
-		if _, exists := s.users[*owner]; !exists {
+		if _, exists := s.users[owner.String()]; !exists {
 			return nil, backend.ErrUserNotFound
 		}
 	}
@@ -81,13 +81,13 @@ func (s *Store) CreateNamespace(_ context.Context, namespace *api.NamespaceID, r
 		if s.permissions[namespace.String()] == nil {
 			s.permissions[namespace.String()] = make(map[string]api.PermissionLevel)
 		}
-		s.permissions[namespace.String()][*owner] = api.PermissionLevelManager
+		s.permissions[namespace.String()][owner.String()] = api.PermissionLevelManager
 	}
 
 	return &ns, nil
 }
 
-func (s *Store) GetNamespace(_ context.Context, namespace *api.NamespaceID) (*api.NamespaceResponse, error) {
+func (s *Store) GetNamespace(_ context.Context, namespace *api.ValidNamespaceID) (*api.NamespaceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	ns, ok := s.namespaces[namespace.String()]
@@ -97,7 +97,7 @@ func (s *Store) GetNamespace(_ context.Context, namespace *api.NamespaceID) (*ap
 	return &ns, nil
 }
 
-func (s *Store) ListResources(_ context.Context, namespace *api.NamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+func (s *Store) ListResources(_ context.Context, namespace *api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -144,7 +144,7 @@ func (s *Store) CountAllResources(_ context.Context) (int64, error) {
 	return n, nil
 }
 
-func (s *Store) CreateResource(_ context.Context, namespace *api.NamespaceID, pid *api.PID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(_ context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -169,7 +169,7 @@ func (s *Store) CreateResource(_ context.Context, namespace *api.NamespaceID, pi
 	return &res, nil
 }
 
-func (s *Store) BatchCreateResources(_ context.Context, namespace *api.NamespaceID, pids []*api.PID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(_ context.Context, namespace *api.ValidNamespaceID, pids []*api.ValidPID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -210,7 +210,7 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace *api.Namespace
 	return out, nil
 }
 
-func (s *Store) GetResource(_ context.Context, namespace *api.NamespaceID, pid *api.PID) (*api.ResourceResponse, error) {
+func (s *Store) GetResource(_ context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID) (*api.ResourceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -224,7 +224,7 @@ func (s *Store) GetResource(_ context.Context, namespace *api.NamespaceID, pid *
 	return &res, nil
 }
 
-func (s *Store) UpdateResource(_ context.Context, namespace *api.NamespaceID, pid *api.PID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(_ context.Context, namespace *api.ValidNamespaceID, pid *api.ValidPID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

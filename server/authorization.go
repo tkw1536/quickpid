@@ -9,7 +9,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) getNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespacePermission, error) {
+func (h *Server) getNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.NamespacePermission, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func (h *Server) getNamespacePermission(w http.ResponseWriter, r *http.Request, 
 	return permission, nil
 }
 
-func (h *Server) listNamespacePermissions(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.PaginatedNamespacePermissionsResponse, error) {
+func (h *Server) listNamespacePermissions(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedNamespacePermissionsResponse, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (h *Server) listNamespacePermissions(w http.ResponseWriter, r *http.Request
 	return permissions, nil
 }
 
-func (h *Server) setNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (*api.NamespacePermission, error) {
+func (h *Server) setNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.NamespacePermission, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (h *Server) setNamespacePermission(w http.ResponseWriter, r *http.Request, 
 	return permission, nil
 }
 
-func (h *Server) deleteNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.UserInfo) (struct{}, error) {
+func (h *Server) deleteNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return struct{}{}, err

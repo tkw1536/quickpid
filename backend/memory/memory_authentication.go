@@ -15,30 +15,30 @@ import (
 	"github.com/tkw1536/quickpid/internal/apikey"
 )
 
-func (s *Store) CreateUser(_ context.Context, req api.UserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
+func (s *Store) CreateUser(_ context.Context, req *api.ValidUserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.users[req.Username]; exists {
+	if _, exists := s.users[req.Username.String()]; exists {
 		return nil, backend.ErrDuplicateUsername
 	}
-	s.users[req.Username] = &userRecord{
+	s.users[req.Username.String()] = &userRecord{
 		superuser: req.Superuser,
 		keys:      make(map[string]*keyRecord),
 		revoked:   make(map[string]*api.APIKeyInfo),
 	}
-	return s.users[req.Username].toSpec(req.Username), nil
+	return s.users[req.Username.String()].toSpec(req.Username.String()), nil
 }
 
-func (s *Store) GetUser(_ context.Context, username string) (*api.UserInfo, error) {
+func (s *Store) GetUser(_ context.Context, username *api.ValidUsername) (*api.UserInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	user, err := s.userLocked(username)
+	user, err := s.userLocked(username.String())
 	if err != nil {
 		return nil, err
 	}
-	return user.toSpec(username), nil
+	return user.toSpec(username.String()), nil
 }
 
 func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
@@ -89,17 +89,17 @@ func (s *Store) AutocompleteUsers(_ context.Context, query string, limit int) ([
 	return matches, nil
 }
 
-func (s *Store) DeleteUser(_ context.Context, username string) error {
+func (s *Store) DeleteUser(_ context.Context, username *api.ValidUsername) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.users[username]; !exists {
+	if _, exists := s.users[username.String()]; !exists {
 		return backend.ErrUserNotFound
 	}
 
-	delete(s.users, username)
+	delete(s.users, username.String())
 	for namespace, byUser := range s.permissions {
-		delete(byUser, username)
+		delete(byUser, username.String())
 		if len(byUser) == 0 {
 			delete(s.permissions, namespace)
 		}
@@ -107,25 +107,25 @@ func (s *Store) DeleteUser(_ context.Context, username string) error {
 	return nil
 }
 
-func (s *Store) UpdateUser(_ context.Context, username string, req api.UserUpdateRequest) (*api.UserInfo, error) {
+func (s *Store) UpdateUser(_ context.Context, username *api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	user, err := s.userLocked(username)
+	user, err := s.userLocked(username.String())
 	if err != nil {
 		return nil, err
 	}
 	if req.Superuser != nil {
 		user.superuser = *req.Superuser
 	}
-	return user.toSpec(username), nil
+	return user.toSpec(username.String()), nil
 }
 
-func (s *Store) CreateKey(_ context.Context, format apikey.Format, username, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) CreateKey(_ context.Context, format apikey.Format, username *api.ValidUsername, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	user, err := s.userLocked(username)
+	user, err := s.userLocked(username.String())
 	if err != nil {
 		return nil, err
 	}
@@ -158,11 +158,11 @@ func (s *Store) CreateKey(_ context.Context, format apikey.Format, username, key
 	return cloneAPIKeyInfo(&info), nil
 }
 
-func (s *Store) ListKeys(_ context.Context, _ apikey.Format, username string, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+func (s *Store) ListKeys(_ context.Context, _ apikey.Format, username *api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	user, err := s.userLocked(username)
+	user, err := s.userLocked(username.String())
 	if err != nil {
 		return nil, err
 	}
@@ -188,11 +188,11 @@ func (s *Store) ListKeys(_ context.Context, _ apikey.Format, username string, pa
 	return &api.PaginatedAPIKeysResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) GetKey(_ context.Context, _ apikey.Format, username, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) GetKey(_ context.Context, _ apikey.Format, username *api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	user, err := s.userLocked(username)
+	user, err := s.userLocked(username.String())
 	if err != nil {
 		return nil, err
 	}
@@ -203,11 +203,11 @@ func (s *Store) GetKey(_ context.Context, _ apikey.Format, username, keyID strin
 	return cloneAPIKeyInfo(&key.info), nil
 }
 
-func (s *Store) UpdateKey(_ context.Context, _ apikey.Format, username, keyID string, req api.KeyUpdateRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
+func (s *Store) UpdateKey(_ context.Context, _ apikey.Format, username *api.ValidUsername, keyID string, req api.KeyUpdateRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	user, err := s.userLocked(username)
+	user, err := s.userLocked(username.String())
 	if err != nil {
 		return nil, err
 	}
@@ -225,11 +225,11 @@ func (s *Store) UpdateKey(_ context.Context, _ apikey.Format, username, keyID st
 	return cloneAPIKeyInfo(&key.info), nil
 }
 
-func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username *api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	user, err := s.userLocked(username)
+	user, err := s.userLocked(username.String())
 	if err != nil {
 		return nil, err
 	}
