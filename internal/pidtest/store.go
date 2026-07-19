@@ -1,4 +1,4 @@
-// Package storetest provides shared backend test suites.
+// Package pidtest provides shared backend test suites.
 //
 //spellchecker:words pidtest
 package pidtest
