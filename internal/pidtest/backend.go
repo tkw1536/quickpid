@@ -1,9 +1,7 @@
-// Package servertest runs tests for a specific [backend.ResolverBackend] implementation against the [server.Server].
-//
-//spellchecker:words servertest
-package servertest
+//spellchecker:words pidtest
+package pidtest
 
-//spellchecker:words encoding json sort testing github quickpid backend
+//spellchecker:words encoding json sort testing github quickpid
 import (
 	"encoding/json"
 	"fmt"
@@ -11,16 +9,12 @@ import (
 	"sort"
 	"testing"
 
-	quickpid "github.com/tkw1536/quickpid"
-	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid"
 )
 
-// StoreFactory creates a concrete [backend.Store] for HTTP integration tests.
-type StoreFactory = func(t *testing.T) backend.Store
-
-// TestBackend starts an httptest server and runs a sequential suite of
-// subtests against resolver HTTP routes (namespaces, resources, batch, errors).
-func TestBackend(t *testing.T, factory StoreFactory) {
+// RunServerTests starts an httptest server and runs a sequential suite of
+// subtests against resolver HTTP routes.
+func RunServerTests(t *testing.T, factory StoreFactory) {
 	t.Helper()
 
 	flows, err := loadTestData()
@@ -30,6 +24,8 @@ func TestBackend(t *testing.T, factory StoreFactory) {
 
 	for _, flow := range flows {
 		t.Run(flow.Name, func(t *testing.T) {
+			t.Parallel()
+
 			s := factory(t)
 			flow.Run(t, s)
 		})

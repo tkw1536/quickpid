@@ -1,5 +1,5 @@
-//spellchecker:words servertest
-package servertest
+//spellchecker:words pidtest
+package pidtest
 
 //spellchecker:words context errors slog slices testing time github quickpid backend internal apikey httpfixture server service
 import (

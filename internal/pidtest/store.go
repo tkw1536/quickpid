@@ -1,7 +1,7 @@
 // Package storetest provides shared backend test suites.
 //
-//spellchecker:words storetest
-package storetest
+//spellchecker:words pidtest
+package pidtest
 
 //spellchecker:words context errors strings testing time github quickpid backend internal apikey
 import (
@@ -17,18 +17,78 @@ import (
 	"github.com/tkw1536/quickpid/pid"
 )
 
-const TestNamespaceOwner = "test-owner"
+// RunStoreTests tests various store operations, without creating an external server.
+func RunStoreTests(t *testing.T, newStore StoreFactory) {
+	t.Helper()
 
-// TestAPIKey returns a 32-character lowercase alphanumeric key for use in tests.
-func TestAPIKey(suffix string) string {
+	for _, test := range []struct {
+		Name string
+		Test func(t *testing.T, newStore StoreFactory)
+	}{
+		{
+			Name: "AuthUserCRUD",
+			Test: testAuthUserCRUD,
+		},
+		{
+			Name: "AuthKeyLifecycle",
+			Test: testAuthKeyLifecycle,
+		},
+		{
+			Name: "AuthNotFoundErrors",
+			Test: testAuthNotFoundErrors,
+		},
+		{
+			Name: "AuthShutdown",
+			Test: testAuthShutdown,
+		},
+		{
+			Name: "AuthListKeysSorted",
+			Test: testAuthListKeysSorted,
+		},
+		{
+			Name: "AuthListUsers",
+			Test: testAuthListUsers,
+		},
+		{
+			Name: "AuthAutocompleteUsers",
+			Test: testAuthAutocompleteUsers,
+		},
+		{
+			Name: "AuthSuperuser",
+			Test: testAuthSuperuser,
+		},
+		{
+			Name: "AuthorizationCRUD",
+			Test: testAuthorizationCRUD,
+		},
+		{
+			Name: "CreateNamespaceWithOwner",
+			Test: testCreateNamespaceWithOwner,
+		},
+		{
+			Name: "DeleteUserCascadesPermissions",
+			Test: testDeleteUserCascadesPermissions,
+		},
+	} {
+		t.Run(test.Name, func(t *testing.T) {
+			t.Parallel()
+			test.Test(t, newStore)
+		})
+	}
+}
+
+const testNamespaceOwner = "test-owner"
+
+// testAPIKey returns a 32-character lowercase alphanumeric key for use in tests.
+func testAPIKey(suffix string) string {
 	if len(suffix) >= 32 {
 		return suffix[:32]
 	}
 	return strings.Repeat("a", 32-len(suffix)) + suffix
 }
 
-// FixedNow returns a fixed clock for tests.
-func FixedNow() func() time.Time {
+// fixedNow returns a fixed clock for tests.
+func fixedNow() func() time.Time {
 	t := time.Date(2026, 7, 5, 12, 0, 0, 0, time.UTC)
 	return func() time.Time { return t }
 }
@@ -44,12 +104,12 @@ func namespaceReq() api.NamespaceCreateRequest {
 	}
 }
 
-// RunAuthUserCRUD runs user CRUD tests against an auth backend.
-func RunAuthUserCRUD(t *testing.T, newBackend func() backend.AuthenticationBackend) {
+// testAuthUserCRUD runs user CRUD tests against an auth backend.
+func testAuthUserCRUD(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newBackend()
-	now := FixedNow()
+	b := newStore(t)
+	now := fixedNow()
 
 	created, err := b.CreateUser(ctx, userReq("alice"), now)
 	if err != nil {
@@ -79,12 +139,12 @@ func RunAuthUserCRUD(t *testing.T, newBackend func() backend.AuthenticationBacke
 	}
 }
 
-// RunAuthKeyLifecycle runs API key lifecycle tests.
-func RunAuthKeyLifecycle(t *testing.T, newBackend func() backend.AuthenticationBackend) {
+// testAuthKeyLifecycle runs API key lifecycle tests.
+func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newBackend()
-	now := FixedNow()
+	b := newStore(t)
+	now := fixedNow()
 
 	if _, err := b.CreateUser(ctx, userReq("alice"), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
@@ -92,7 +152,7 @@ func RunAuthKeyLifecycle(t *testing.T, newBackend func() backend.AuthenticationB
 
 	expires := "2027-01-01T00:00:00Z"
 	//spellchecker:words lifecyclekey
-	rawKey := TestAPIKey("lifecyclekey000000000000000")
+	rawKey := testAPIKey("lifecyclekey000000000000000")
 	created, err := b.CreateKey(ctx, apikey.Default, "alice", "key-1", rawKey, api.KeyIssueRequest{
 		Comment:   "laptop",
 		ExpiresAt: &expires,
@@ -157,12 +217,12 @@ func RunAuthKeyLifecycle(t *testing.T, newBackend func() backend.AuthenticationB
 	}
 }
 
-// RunAuthNotFoundErrors runs auth not-found error tests.
-func RunAuthNotFoundErrors(t *testing.T, newBackend func() backend.AuthenticationBackend) {
+// testAuthNotFoundErrors runs auth not-found error tests.
+func testAuthNotFoundErrors(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newBackend()
-	now := FixedNow()
+	b := newStore(t)
+	now := fixedNow()
 
 	if _, err := b.GetUser(ctx, "missing"); !errors.Is(err, backend.ErrUserNotFound) {
 		t.Fatalf("GetUser() error = %v, want ErrUserNotFound", err)
@@ -186,18 +246,18 @@ func RunAuthNotFoundErrors(t *testing.T, newBackend func() backend.Authenticatio
 	if _, err := b.RevokeKey(ctx, apikey.Default, "alice", "missing"); !errors.Is(err, backend.ErrKeyNotFound) {
 		t.Fatalf("RevokeKey() error = %v, want ErrKeyNotFound", err)
 	}
-	if _, err := b.LookupUserByKey(ctx, apikey.Default, TestAPIKey("unknown000000000000000000")); !errors.Is(err, backend.ErrInvalidKey) {
+	if _, err := b.LookupUserByKey(ctx, apikey.Default, testAPIKey("unknown000000000000000000")); !errors.Is(err, backend.ErrInvalidKey) {
 		t.Fatalf("LookupUserByKey() error = %v, want ErrInvalidKey", err)
 	}
 }
 
-// RunAuthShutdown runs shutdown tests.
-func RunAuthShutdown(t *testing.T, newBackend func() backend.AuthenticationBackend) {
+// testAuthShutdown runs shutdown tests.
+func testAuthShutdown(t *testing.T, newStore StoreFactory) {
 	t.Helper()
-	b := newBackend()
+	b := newStore(t)
 	ctx := context.Background()
 
-	if _, err := b.CreateUser(ctx, userReq("alice"), FixedNow()); err != nil {
+	if _, err := b.CreateUser(ctx, userReq("alice"), fixedNow()); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
 
@@ -208,18 +268,18 @@ func RunAuthShutdown(t *testing.T, newBackend func() backend.AuthenticationBacke
 	}
 }
 
-// RunAuthListKeysSorted runs list keys ordering tests.
-func RunAuthListKeysSorted(t *testing.T, newBackend func() backend.AuthenticationBackend) {
+// testAuthListKeysSorted runs list keys ordering tests.
+func testAuthListKeysSorted(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newBackend()
-	now := FixedNow()
+	b := newStore(t)
+	now := fixedNow()
 
 	if _, err := b.CreateUser(ctx, userReq("alice"), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
 	for _, id := range []string{"key-b", "key-a", "key-c"} {
-		raw := TestAPIKey(strings.ReplaceAll(id, "-", ""))
+		raw := testAPIKey(strings.ReplaceAll(id, "-", ""))
 		if _, err := b.CreateKey(ctx, apikey.Default, "alice", id, raw, api.KeyIssueRequest{Comment: id}, now); err != nil {
 			t.Fatalf("CreateKey(%q) error = %v", id, err)
 		}
@@ -240,12 +300,12 @@ func RunAuthListKeysSorted(t *testing.T, newBackend func() backend.Authenticatio
 	}
 }
 
-// RunAuthListUsers runs list users tests.
-func RunAuthListUsers(t *testing.T, newBackend func() backend.AuthenticationBackend) {
+// testAuthListUsers runs list users tests.
+func testAuthListUsers(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newBackend()
-	now := FixedNow()
+	b := newStore(t)
+	now := fixedNow()
 
 	for _, username := range []string{"carol", "alice", "bob"} {
 		if _, err := b.CreateUser(ctx, userReq(username), now); err != nil {
@@ -268,12 +328,12 @@ func RunAuthListUsers(t *testing.T, newBackend func() backend.AuthenticationBack
 	}
 }
 
-// RunAuthAutocompleteUsers runs autocomplete users tests.
-func RunAuthAutocompleteUsers(t *testing.T, newBackend func() backend.AuthenticationBackend) {
+// testAuthAutocompleteUsers runs autocomplete users tests.
+func testAuthAutocompleteUsers(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newBackend()
-	now := FixedNow()
+	b := newStore(t)
+	now := fixedNow()
 
 	for _, username := range []string{"alice", "alex", "bob", "carol"} {
 		if _, err := b.CreateUser(ctx, userReq(username), now); err != nil {
@@ -312,12 +372,12 @@ func RunAuthAutocompleteUsers(t *testing.T, newBackend func() backend.Authentica
 	}
 }
 
-// RunAuthSuperuser runs superuser tests.
-func RunAuthSuperuser(t *testing.T, newBackend func() backend.AuthenticationBackend) {
+// testAuthSuperuser runs superuser tests.
+func testAuthSuperuser(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newBackend()
-	now := FixedNow()
+	b := newStore(t)
+	now := fixedNow()
 
 	created, err := b.CreateUser(ctx, api.UserCreateRequest{Username: "admin", Superuser: true}, now)
 	if err != nil {
@@ -345,22 +405,22 @@ func RunAuthSuperuser(t *testing.T, newBackend func() backend.AuthenticationBack
 	}
 }
 
-// RunAuthorizationCRUD runs namespace permission CRUD tests.
-func RunAuthorizationCRUD(t *testing.T, newStore func() backend.Store) {
+// testAuthorizationCRUD runs namespace permission CRUD tests.
+func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	s := newStore()
-	now := FixedNow()
+	s := newStore(t)
+	now := fixedNow()
 
 	ns1, err := api.NewNamespaceID("ns-1")
 	if err != nil {
 		t.Fatalf("NewNamespaceID() error = %v", err)
 	}
 
-	if _, err := s.CreateUser(ctx, userReq(TestNamespaceOwner), now); err != nil {
+	if _, err := s.CreateUser(ctx, userReq(testNamespaceOwner), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), new(TestNamespaceOwner), now); err != nil {
+	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), new(testNamespaceOwner), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 
@@ -372,7 +432,7 @@ func RunAuthorizationCRUD(t *testing.T, newStore func() backend.Store) {
 		t.Fatalf("GetNamespacePermission() = %q, want none", level)
 	}
 
-	level, err = s.GetNamespacePermission(ctx, ns1, TestNamespaceOwner)
+	level, err = s.GetNamespacePermission(ctx, ns1, testNamespaceOwner)
 	if err != nil {
 		t.Fatalf("GetNamespacePermission(owner) error = %v", err)
 	}
@@ -416,7 +476,7 @@ func RunAuthorizationCRUD(t *testing.T, newStore func() backend.Store) {
 	if err != nil {
 		t.Fatalf("ListNamespacePermissions() error = %v", err)
 	}
-	if page.Total != 1 || len(page.Items) != 1 || page.Items[0].Username != TestNamespaceOwner {
+	if page.Total != 1 || len(page.Items) != 1 || page.Items[0].Username != testNamespaceOwner {
 		t.Fatalf("ListNamespacePermissions() = %+v", page)
 	}
 
@@ -425,12 +485,12 @@ func RunAuthorizationCRUD(t *testing.T, newStore func() backend.Store) {
 	}
 }
 
-// RunCreateNamespaceWithOwner runs namespace creation with owner tests.
-func RunCreateNamespaceWithOwner(t *testing.T, newStore func() backend.Store) {
+// testCreateNamespaceWithOwner runs namespace creation with owner tests.
+func testCreateNamespaceWithOwner(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	s := newStore()
-	now := FixedNow()
+	s := newStore(t)
+	now := fixedNow()
 
 	nsMissingOwner, err := api.NewNamespaceID("ns-missing-owner")
 	if err != nil {
@@ -461,12 +521,12 @@ func RunCreateNamespaceWithOwner(t *testing.T, newStore func() backend.Store) {
 	}
 }
 
-// RunDeleteUserCascadesPermissions runs user deletion cascade tests.
-func RunDeleteUserCascadesPermissions(t *testing.T, newStore func() backend.Store) {
+// testDeleteUserCascadesPermissions runs user deletion cascade tests.
+func testDeleteUserCascadesPermissions(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	s := newStore()
-	now := FixedNow()
+	s := newStore(t)
+	now := fixedNow()
 
 	ns1, err := api.NewNamespaceID("ns-1")
 	if err != nil {
@@ -511,7 +571,7 @@ func RunDeleteUserCascadesPermissions(t *testing.T, newStore func() backend.Stor
 func SeedNamespaceOwner(t *testing.T, s backend.AuthenticationBackend) {
 	t.Helper()
 	ctx := context.Background()
-	if _, err := s.CreateUser(ctx, userReq(TestNamespaceOwner), FixedNow()); err != nil {
+	if _, err := s.CreateUser(ctx, userReq(testNamespaceOwner), fixedNow()); err != nil {
 		t.Fatalf("SeedNamespaceOwner() error = %v", err)
 	}
 }

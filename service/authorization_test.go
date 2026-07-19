@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service_test
 
-//spellchecker:words context testing time github quickpid backend memory storetest internal apikey service
+//spellchecker:words context testing time github quickpid backend memory internal apikey service
 import (
 	"context"
 	"testing"
@@ -10,7 +10,6 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/backend/memory"
-	"github.com/tkw1536/quickpid/backend/storetest"
 	"github.com/tkw1536/quickpid/internal/apikey"
 	"github.com/tkw1536/quickpid/pid"
 	"github.com/tkw1536/quickpid/service"
@@ -40,7 +39,7 @@ func newTestService(t *testing.T) (*service.Service, backend.Store) {
 	t.Helper()
 	store := memory.NewStore()
 	ctx := t.Context()
-	now := storetest.FixedNow()
+	now := fixedNow()
 	runtime := &fixedRuntime{now: now()}
 
 	if _, err := store.CreateUser(ctx, api.UserCreateRequest{Username: "owner"}, now); err != nil {
@@ -79,7 +78,7 @@ func newTestService(t *testing.T) (*service.Service, backend.Store) {
 func newAnonymousTestService(t *testing.T) (*service.Service, backend.Store) {
 	t.Helper()
 	store := memory.NewStore()
-	now := storetest.FixedNow()
+	now := fixedNow()
 	runtime := &fixedRuntime{now: now()}
 	return service.New(store, runtime, service.Options{Anonymous: true}), store
 }
@@ -121,7 +120,7 @@ func TestService_ResolverPermissions(t *testing.T) {
 
 	svc, store := newTestService(t)
 	ctx := t.Context()
-	now := storetest.FixedNow()
+	now := fixedNow()
 
 	_, err := svc.GetNamespace(ctx, userInfo("contributor"), testNS)
 	if err != nil {
