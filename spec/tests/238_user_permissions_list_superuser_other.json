@@ -1,0 +1,202 @@
+{
+  "name": "238_user_permissions_list_superuser_other",
+  "comment": "A superuser can list another user's permissions via GET /user/permissions?username=....",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root"
+        }
+      }
+    },
+    {
+      "name": "create_owner",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"owner\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "owner"
+        }
+      }
+    },
+    {
+      "name": "create_editor",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "editor"
+        }
+      }
+    },
+    {
+      "name": "issue_owner_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "owner-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "owner",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "owner-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+        }
+      }
+    },
+    {
+      "name": "owner_creates_namespace",
+      "config": {
+        "namespaceIDs": [
+          "c1000000-0000-4000-8000-000000000001"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"perm-ns\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "c1000000-0000-4000-8000-000000000001",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "perm-ns"
+        }
+      }
+    },
+    {
+      "name": "owner_grants_editor",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/editor",
+        "body": "{\"level\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "level": "editor",
+          "username": "editor"
+        }
+      }
+    },
+    {
+      "name": "root_lists_editor_permissions",
+      "config": {},
+      "limits": {
+        "MaxBodyBytes": 1048576,
+        "DefaultPageLimit": 100,
+        "MaxPageLimit": 1000,
+        "MaxBatchItems": 100,
+        "MaxNamespaceIDAttempts": 100,
+        "MaxPIDAttempts": 100
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/permissions?username=editor",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "items": [
+            {
+              "level": "editor",
+              "namespace": "c1000000-0000-4000-8000-000000000001"
+            }
+          ],
+          "offset": 0,
+          "total": 1
+        }
+      }
+    }
+  ]
+}

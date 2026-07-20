@@ -35,6 +35,11 @@ type AuthorizationBackend interface {
 	// Has no specific error conditions.
 	ListNamespacePermissions(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error)
 
+	// Lists namespaces where the user has an explicit non-none permission, ordered ascending by namespace.
+	//
+	// Should return [ErrUserNotFound] if the user does not exist.
+	ListUserPermissions(ctx context.Context, username api.ValidUsername, params api.ListUserPermissionsParams) (*api.PaginatedUserPermissionsResponse, error)
+
 	WithShutdownMethod
 }
 

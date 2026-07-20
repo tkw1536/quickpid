@@ -239,6 +239,15 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.UserNotFound,
 		api.UnavailableInAnonymousMode,
 	}))
+	h.mux.Handle("GET /user/permissions", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listUserPermissions, http.StatusOK, []api.ErrorString{
+		api.InvalidQueryParameter,
+		api.InvalidUsername,
+		api.Unauthorized,
+		api.Forbidden,
+		api.UserNotFound,
+		api.UnavailableInAnonymousMode,
+		api.DatabaseError,
+	}))
 	h.mux.Handle("PATCH /user/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.updateCurrentUser, http.StatusOK, []api.ErrorString{
 		api.BodySizeExceeded,
 		api.BodyMissing,

@@ -168,6 +168,13 @@ func (p namespacePermissionRow) toSpec() api.NamespacePermission {
 	}
 }
 
+func (p namespacePermissionRow) toUserPermission() api.UserPermission {
+	return api.UserPermission{
+		Namespace: p.Namespace,
+		Level:     api.PermissionLevel(p.Level),
+	}
+}
+
 func ensureNamespaceExists(tx *gorm.DB, id api.ValidNamespaceID) error {
 	var n int64
 	if err := tx.Model(&namespaceRow{}).Where("id = ?", id.String()).Count(&n).Error; err != nil {

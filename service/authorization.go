@@ -206,6 +206,39 @@ func (s *Service) ListNamespacePermissions(ctx context.Context, caller *api.Vali
 	return page, nil
 }
 
+// ListUserPermissions lists explicit permissions for a user across namespaces.
+//
+// Callers may list their own permissions; listing another user's permissions requires a superuser.
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.UserNotFound]
+// - [api.DatabaseError].
+func (s *Service) ListUserPermissions(ctx context.Context, caller *api.ValidUserInfo, target *api.ValidUsername, params api.ListUserPermissionsParams) (*api.PaginatedUserPermissionsResponse, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
+	}
+	if err := s.requireAuthenticated(caller); err != nil {
+		return nil, err
+	}
+	username, err := resolveTarget(caller, target)
+	if err != nil {
+		return nil, err
+	}
+
+	page, err := s.store.ListUserPermissions(ctx, username, params)
+	if mapped, ok := mapAuthBackendError(err); ok {
+		return nil, fmt.Errorf("Store.ListUserPermissions: %w", mapped)
+	}
+	if err != nil {
+		return nil, api.WithErrorString(fmt.Errorf("Store.ListUserPermissions: %w", err), api.DatabaseError)
+	}
+	return page, nil
+}
+
 // SetNamespacePermission sets a user's permission level in a namespace. Caller must be a manager.
 //
 // It can return the following errors:

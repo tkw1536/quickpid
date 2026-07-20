@@ -104,3 +104,37 @@ func (s *Store) ListNamespacePermissions(_ context.Context, namespace api.ValidN
 	}
 	return &api.PaginatedNamespacePermissionsResponse{Total: total, Offset: offset, Items: items}, nil
 }
+
+func (s *Store) ListUserPermissions(_ context.Context, username api.ValidUsername, params api.ListUserPermissionsParams) (*api.PaginatedUserPermissionsResponse, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if _, err := s.userLocked(username.String()); err != nil {
+		return nil, err
+	}
+
+	all := make([]api.UserPermission, 0)
+	for namespace, byUser := range s.permissions {
+		if level, ok := byUser[username.String()]; ok {
+			all = append(all, api.UserPermission{
+				Namespace: namespace,
+				Level:     level,
+			})
+		}
+	}
+	sort.Slice(all, func(i, j int) bool { return all[i].Namespace < all[j].Namespace })
+
+	total := len(all)
+	limit := params.Limit
+	offset := params.Offset
+
+	if offset >= total {
+		return &api.PaginatedUserPermissionsResponse{Total: total, Offset: offset, Items: []api.UserPermission{}}, nil
+	}
+	end := min(offset+limit, total)
+	items := append([]api.UserPermission(nil), all[offset:end]...)
+	if items == nil {
+		items = []api.UserPermission{}
+	}
+	return &api.PaginatedUserPermissionsResponse{Total: total, Offset: offset, Items: items}, nil
+}

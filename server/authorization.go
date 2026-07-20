@@ -83,3 +83,23 @@ func (h *Server) deleteNamespacePermission(w http.ResponseWriter, r *http.Reques
 	}
 	return struct{}{}, nil
 }
+
+func (h *Server) listUserPermissions(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedUserPermissionsResponse, error) {
+	target, err := h.parseOptionalUsernameQuery(r)
+	if err != nil {
+		return nil, err
+	}
+	limit, offset, err := h.parsePagination(r)
+	if err != nil {
+		return nil, err
+	}
+
+	permissions, err := h.svc.ListUserPermissions(r.Context(), user, target, api.ListUserPermissionsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("svc.ListUserPermissions: %w", err)
+	}
+	return permissions, nil
+}

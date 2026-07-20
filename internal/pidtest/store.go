@@ -62,6 +62,10 @@ func RunStoreTests(t *testing.T, newStore StoreFactory) {
 			Test: testAuthorizationCRUD,
 		},
 		{
+			Name: "ListUserPermissions",
+			Test: testListUserPermissions,
+		},
+		{
 			Name: "CreateNamespaceWithOwner",
 			Test: testCreateNamespaceWithOwner,
 		},
@@ -495,6 +499,88 @@ func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 
 	if err := s.SetNamespacePermission(ctx, ns1, user("dave"), api.PermissionLevel("invalid")); !errors.Is(err, backend.ErrInvalidPermissionLevel) {
 		t.Fatalf("SetNamespacePermission(invalid) error = %v, want ErrInvalidPermissionLevel", err)
+	}
+}
+
+// testListUserPermissions runs list-permissions-by-user tests.
+func testListUserPermissions(t *testing.T, newStore StoreFactory) {
+	t.Helper()
+	ctx := context.Background()
+	s := newStore(t)
+	now := fixedNow()
+
+	nsB, err := api.NewNamespaceID("ns-b")
+	if err != nil {
+		t.Fatalf("NewNamespaceID(ns-b) error = %v", err)
+	}
+	nsA, err := api.NewNamespaceID("ns-a")
+	if err != nil {
+		t.Fatalf("NewNamespaceID(ns-a) error = %v", err)
+	}
+
+	if _, err := s.CreateUser(ctx, userReq("alice"), now); err != nil {
+		t.Fatalf("CreateUser(alice) error = %v", err)
+	}
+	if _, err := s.CreateUser(ctx, userReq("bob"), now); err != nil {
+		t.Fatalf("CreateUser(bob) error = %v", err)
+	}
+	if _, err := s.CreateUser(ctx, userReq("carol"), now); err != nil {
+		t.Fatalf("CreateUser(carol) error = %v", err)
+	}
+
+	if _, err := s.CreateNamespace(ctx, nsB, namespaceReq(), userPtr("alice"), now); err != nil {
+		t.Fatalf("CreateNamespace(ns-b) error = %v", err)
+	}
+	if _, err := s.CreateNamespace(ctx, nsA, namespaceReq(), userPtr("alice"), now); err != nil {
+		t.Fatalf("CreateNamespace(ns-a) error = %v", err)
+	}
+	if err := s.SetNamespacePermission(ctx, nsB, user("bob"), api.PermissionLevelEditor); err != nil {
+		t.Fatalf("SetNamespacePermission(bob, ns-b) error = %v", err)
+	}
+	if err := s.SetNamespacePermission(ctx, nsA, user("bob"), api.PermissionLevelContributor); err != nil {
+		t.Fatalf("SetNamespacePermission(bob, ns-a) error = %v", err)
+	}
+
+	page, err := s.ListUserPermissions(ctx, user("alice"), api.ListUserPermissionsParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUserPermissions(alice) error = %v", err)
+	}
+	if page.Total != 2 || len(page.Items) != 2 {
+		t.Fatalf("ListUserPermissions(alice) = %+v, want 2 items", page)
+	}
+	if page.Items[0].Namespace != "ns-a" || page.Items[0].Level != api.PermissionLevelManager {
+		t.Fatalf("ListUserPermissions(alice)[0] = %+v, want ns-a manager", page.Items[0])
+	}
+	if page.Items[1].Namespace != "ns-b" || page.Items[1].Level != api.PermissionLevelManager {
+		t.Fatalf("ListUserPermissions(alice)[1] = %+v, want ns-b manager", page.Items[1])
+	}
+
+	page, err = s.ListUserPermissions(ctx, user("bob"), api.ListUserPermissionsParams{Limit: 1, Offset: 0})
+	if err != nil {
+		t.Fatalf("ListUserPermissions(bob, limit=1) error = %v", err)
+	}
+	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Namespace != "ns-a" || page.Items[0].Level != api.PermissionLevelContributor {
+		t.Fatalf("ListUserPermissions(bob, limit=1) = %+v", page)
+	}
+
+	page, err = s.ListUserPermissions(ctx, user("bob"), api.ListUserPermissionsParams{Limit: 1, Offset: 1})
+	if err != nil {
+		t.Fatalf("ListUserPermissions(bob, offset=1) error = %v", err)
+	}
+	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Namespace != "ns-b" || page.Items[0].Level != api.PermissionLevelEditor {
+		t.Fatalf("ListUserPermissions(bob, offset=1) = %+v", page)
+	}
+
+	page, err = s.ListUserPermissions(ctx, user("carol"), api.ListUserPermissionsParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUserPermissions(carol) error = %v", err)
+	}
+	if page.Total != 0 || len(page.Items) != 0 {
+		t.Fatalf("ListUserPermissions(carol) = %+v, want empty", page)
+	}
+
+	if _, err := s.ListUserPermissions(ctx, user("missing"), api.ListUserPermissionsParams{Limit: 100}); !errors.Is(err, backend.ErrUserNotFound) {
+		t.Fatalf("ListUserPermissions(missing) error = %v, want ErrUserNotFound", err)
 	}
 }
 

@@ -66,3 +66,20 @@ type PaginatedNamespacePermissionsResponse struct {
 	Offset int                   `json:"offset"`
 	Items  []NamespacePermission `json:"items"`
 }
+
+// UserPermission describes a user's permission level in a specific namespace.
+type UserPermission struct {
+	Namespace string          `json:"namespace"`
+	Level     PermissionLevel `json:"level"`
+}
+
+type ListUserPermissionsParams struct {
+	Limit  int
+	Offset int
+}
+
+type PaginatedUserPermissionsResponse struct {
+	Total  int              `json:"total"`
+	Offset int              `json:"offset"`
+	Items  []UserPermission `json:"items"`
+}

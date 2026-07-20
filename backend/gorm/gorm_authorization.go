@@ -113,3 +113,41 @@ func (s *Store) ListNamespacePermissions(ctx context.Context, namespace api.Vali
 		}, nil
 	})
 }
+
+func (s *Store) ListUserPermissions(ctx context.Context, username api.ValidUsername, params api.ListUserPermissionsParams) (*api.PaginatedUserPermissionsResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedUserPermissionsResponse, error) {
+		if err := ensureUserExists(tx, username); err != nil {
+			return nil, err
+		}
+
+		q := tx.Model(&namespacePermissionRow{}).Where("username = ?", username.String())
+		var total int64
+		if err := q.Count(&total).Error; err != nil {
+			return nil, err
+		}
+
+		limit := params.Limit
+		offset := params.Offset
+		if limit == 0 || int64(offset) >= total {
+			return &api.PaginatedUserPermissionsResponse{
+				Total:  int(total),
+				Offset: offset,
+				Items:  []api.UserPermission{},
+			}, nil
+		}
+
+		var rows []namespacePermissionRow
+		if err := q.Order("namespace ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
+			return nil, err
+		}
+		items := make([]api.UserPermission, len(rows))
+		for i := range rows {
+			items[i] = rows[i].toUserPermission()
+		}
+		return &api.PaginatedUserPermissionsResponse{
+			Total:  int(total),
+			Offset: offset,
+			Items:  items,
+		}, nil
+	})
+}

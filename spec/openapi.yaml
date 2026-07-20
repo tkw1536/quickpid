@@ -1455,6 +1455,95 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
+  /user/permissions:
+    get:
+      operationId: listUserPermissions
+      summary: List explicit namespace permissions for a user.
+      description: |
+        Lists namespaces where the user has an explicit non-none permission level.
+        Namespaces without an explicit permission record have the default `none` level and are not listed.
+
+        When not set, the currently authenticated user's permissions are returned.
+        The `username` parameter may be used by superusers to list permissions for another user account, including their own.
+
+        In anonymous mode, the route returns HTTP 404.
+      tags:
+        - permissions
+      parameters:
+        - name: username
+          in: query
+          required: false
+          description: |
+            When not set, the currently authenticated user's permissions are returned.
+            Superusers may set this parameter to list permissions for another user account, including their own.
+          schema:
+            $ref: '#/components/schemas/Username'
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Maximum number of items to return.
+            If omitted, a default value is applied.
+            If the value exceeds the configured maximum, it is clamped to that maximum.
+            A value of 0 returns an empty items array with a valid total.
+            Negative values or non-integers return a 400 response.
+          schema:
+            type: integer
+            minimum: 0
+        - name: offset
+          in: query
+          required: false
+          description: |
+            Number of items to skip before starting to collect the result set.
+            If omitted, the value is treated as 0.
+            Negative values or non-integers return a 400 response.
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: |
+            A paginated list of permissions, sorted by namespace id in increasing order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserPermissionsResponse'
+        '400':
+          description: Invalid query parameter (e.g. limit, offset, or username).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+                  - $ref: '#/components/schemas/ErrorInvalidUsername'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: Only superusers may set the `username` parameter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: The server is in anonymous mode, or the requested user does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
   /user/key:
     get:
       operationId: listKeys
@@ -2656,6 +2745,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NamespacePermission'
+    UserPermission:
+      description: A permission level for a user within a specific namespace.
+      type: object
+      required:
+        - namespace
+        - level
+      properties:
+        namespace:
+          description: Identifier of the namespace.
+          allOf:
+            - $ref: '#/components/schemas/NamespaceId'
+        level:
+          $ref: '#/components/schemas/PermissionLevel'
+    PaginatedUserPermissionsResponse:
+      description: Paginated list of permissions for a user across namespaces.
+      type: object
+      required:
+        - total
+        - offset
+        - items
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        offset:
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserPermission'
     ErrorPermissionNotFound:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'

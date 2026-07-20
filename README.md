@@ -93,7 +93,6 @@ Examples:
 
 ## Future Technical Work
 
-- add a route for all permissions of a specific user
 - namespace mounting
 - rework non-flow-tests
 - consider more validated API types

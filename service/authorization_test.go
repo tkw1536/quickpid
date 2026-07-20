@@ -153,6 +153,71 @@ func TestService_GetNamespacePermission(t *testing.T) {
 	}
 }
 
+func TestService_ListUserPermissions(t *testing.T) {
+	t.Parallel()
+
+	svc, store := newTestService(t)
+	ctx := t.Context()
+	now := fixedNow()
+
+	ns2, err := api.NewNamespaceID("test-ns-2")
+	if err != nil {
+		t.Fatalf("NewNamespaceID() error = %v", err)
+	}
+	req := api.NamespaceCreateRequest{
+		Tag:       "tag-2",
+		PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full},
+	}
+	if _, err := store.CreateNamespace(ctx, ns2, req, &ownerUsername, now); err != nil {
+		t.Fatalf("CreateNamespace(ns2) error = %v", err)
+	}
+	if err := store.SetNamespacePermission(ctx, ns2, editorUsername, api.PermissionLevelContributor); err != nil {
+		t.Fatalf("SetNamespacePermission(editor, ns2) error = %v", err)
+	}
+
+	page, err := svc.ListUserPermissions(ctx, userInfo("editor"), nil, api.ListUserPermissionsParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUserPermissions(self) = %v, %v", page, err)
+	}
+	if page.Total != 2 || len(page.Items) != 2 {
+		t.Fatalf("ListUserPermissions(self) = %+v, want 2 items", page)
+	}
+	if page.Items[0].Namespace != testNS.String() || page.Items[0].Level != api.PermissionLevelEditor {
+		t.Fatalf("ListUserPermissions(self)[0] = %+v", page.Items[0])
+	}
+	if page.Items[1].Namespace != ns2.String() || page.Items[1].Level != api.PermissionLevelContributor {
+		t.Fatalf("ListUserPermissions(self)[1] = %+v", page.Items[1])
+	}
+
+	other := editorUsername
+	_, err = svc.ListUserPermissions(ctx, userInfo("owner"), &other, api.ListUserPermissionsParams{Limit: 100})
+	if !service.IsForbidden(err) {
+		t.Fatalf("ListUserPermissions(other as non-superuser) = %v, want forbidden", err)
+	}
+
+	page, err = svc.ListUserPermissions(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &other, api.ListUserPermissionsParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUserPermissions(superuser) = %v, %v", page, err)
+	}
+	if page.Total != 2 {
+		t.Fatalf("ListUserPermissions(superuser) total = %d, want 2", page.Total)
+	}
+
+	missing, err := api.NewUsername("missing")
+	if err != nil {
+		t.Fatalf("NewUsername(missing) error = %v", err)
+	}
+	_, err = svc.ListUserPermissions(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &missing, api.ListUserPermissionsParams{Limit: 100})
+	if code, ok := api.GetErrorString(err); !ok || code != api.UserNotFound {
+		t.Fatalf("ListUserPermissions(missing) = %v, want user_not_found", err)
+	}
+
+	_, err = svc.ListUserPermissions(ctx, nil, nil, api.ListUserPermissionsParams{Limit: 100})
+	if !service.IsUnauthorized(err) {
+		t.Fatalf("ListUserPermissions(nil caller) = %v, want unauthorized", err)
+	}
+}
+
 func TestService_ResolverPermissions(t *testing.T) {
 	t.Parallel()
 
@@ -403,5 +468,8 @@ func TestService_AnonymousDisablesUserAndPermissionManagement(t *testing.T) {
 	}
 	if _, err := svc.GetNamespacePermission(ctx, userInfo("owner"), testNS, ownerUsername); !service.IsUnavailableInAnonymousMode(err) {
 		t.Fatalf("GetNamespacePermission() = %v, want anonymous mode unavailable", err)
+	}
+	if _, err := svc.ListUserPermissions(ctx, userInfo("owner"), nil, api.ListUserPermissionsParams{Limit: 10}); !service.IsUnavailableInAnonymousMode(err) {
+		t.Fatalf("ListUserPermissions() = %v, want anonymous mode unavailable", err)
 	}
 }

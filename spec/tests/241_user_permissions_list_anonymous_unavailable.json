@@ -1,0 +1,22 @@
+{
+  "name": "241_user_permissions_list_anonymous_unavailable",
+  "comment": "In anonymous mode, GET /user/permissions returns 404 unavailable_in_anonymous_mode.",
+  "steps": [
+    {
+      "name": "list_disabled",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/permissions"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "unavailable_in_anonymous_mode"
+        }
+      }
+    }
+  ]
+}
