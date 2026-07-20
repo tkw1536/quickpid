@@ -56,6 +56,7 @@ func TestOptional_SetClearToPointer(t *testing.T) {
 		p := opt.ToPointer()
 		if p == nil {
 			t.Fatalf("ToPointer() = nil, want non-nil")
+			return
 		}
 		if *p != "a" {
 			t.Fatalf("ToPointer() deref = %q, want %q", *p, "a")
