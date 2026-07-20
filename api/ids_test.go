@@ -9,29 +9,20 @@ import (
 
 func TestNewNamespaceID(t *testing.T) {
 	t.Parallel()
-	testIdentifierValidation(t, func(value string) error {
-		_, err := api.NewNamespaceID(value)
-		return err
-	}, "invalid namespace id")
+	testIdentifierValidation(t, api.NewNamespaceID, "invalid namespace id")
 }
 
 func TestNewPID(t *testing.T) {
 	t.Parallel()
-	testIdentifierValidation(t, func(value string) error {
-		_, err := api.NewPID(value)
-		return err
-	}, "invalid pid")
+	testIdentifierValidation(t, api.NewPID, "invalid pid")
 }
 
 func TestNewUsername(t *testing.T) {
 	t.Parallel()
-	testIdentifierValidation(t, func(value string) error {
-		_, err := api.NewUsername(value)
-		return err
-	}, "invalid username")
+	testIdentifierValidation(t, api.NewUsername, "invalid username")
 }
 
-func testIdentifierValidation(t *testing.T, validate func(string) error, wantInvalidMsg string) {
+func testIdentifierValidation[T any](t *testing.T, validate func(string) (T, error), wantInvalidMsg string) {
 	t.Helper()
 
 	tests := []struct {
@@ -68,7 +59,7 @@ func testIdentifierValidation(t *testing.T, validate func(string) error, wantInv
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := validate(tt.input)
+			_, err := validate(tt.input)
 			if tt.wantErr == "" {
 				if err != nil {
 					t.Fatalf("validate(%q) error = %v, want nil", tt.input, err)
