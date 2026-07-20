@@ -1,0 +1,42 @@
+{
+  "name": "228_resource_create_post_missing_tag_and_tags",
+  "comment": "Resource create without tag or tags returns 400 body_invalid_json.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"create-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "missingTagFields",
+      "config": {
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":null}"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "body_invalid_json"
+        }
+      }
+    }
+  ]
+}

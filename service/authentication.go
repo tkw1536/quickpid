@@ -467,7 +467,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 	}
 
 	logger.Warn(
-		"created root superuser with bootstrap API key; store this key securely and revoke it after first use",
+		"created root superuser with bootstrap API key",
 		slog.String("username", rootUsername.String()),
 		slog.String("key", issued.Key),
 	)

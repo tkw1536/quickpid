@@ -1,0 +1,63 @@
+{
+  "name": "227_resource_create_post_multi_tags_success",
+  "comment": "Creating a resource with two or more tags uses the tags field and returns tags in the response.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"create-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "create-res"
+        }
+      }
+    },
+    {
+      "name": "success",
+      "config": {
+        "pids": [
+          "xjc-cjy"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tags\":[\"alpha\",\"beta\"]}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "ext-1@sys-a",
+          "pid": "xjc-cjy",
+          "tags": [
+            "alpha",
+            "beta"
+          ],
+          "url": "https://example.com/a"
+        }
+      }
+    }
+  ]
+}

@@ -156,16 +156,40 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			wantErrIn: []string{"failed to unmarshal fields"},
 		},
 
-		// tag
+		// tag / tags
 		{
-			name:      "fail_missingTag",
+			name:      "fail_missingTagAndTags",
 			body:      `{"url":"https://example.com","metadata":"m"}`,
 			wantErr:   true,
-			wantErrIn: []string{"missing required field", "tag"},
+			wantErrIn: []string{"failed to unmarshal fields", "missing required field", "tag or tags"},
 		},
 		{
 			name:      "fail_tagNull",
 			body:      `{"url":"https://example.com","metadata":null,"tag":null}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal fields"},
+		},
+		{
+			name:      "fail_bothTagAndTags",
+			body:      `{"url":"https://example.com","metadata":null,"tag":"a","tags":["b","c"]}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal fields", "mutually exclusive"},
+		},
+		{
+			name:      "fail_tagsEmpty",
+			body:      `{"url":"https://example.com","metadata":null,"tags":[]}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal fields", "at least two"},
+		},
+		{
+			name:      "fail_tagsOneItem",
+			body:      `{"url":"https://example.com","metadata":null,"tags":["only"]}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal fields", "at least two"},
+		},
+		{
+			name:      "fail_tagsNull",
+			body:      `{"url":"https://example.com","metadata":null,"tags":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields"},
 		},
@@ -178,13 +202,13 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			wantErrIn: []string{"missing required field", "metadata"},
 		},
 		{
-			name:    "ok_metadataNull",
+			name:    "ok_singleTag",
 			body:    `{"url":"https://example.com","metadata":null,"tag":"t"}`,
 			wantErr: false,
 			want: api.ResourceCreateRequest{
 				URL:      "https://example.com",
 				Metadata: nil,
-				Tag:      "t",
+				Tags:     []string{"t"},
 			},
 		},
 		{
@@ -194,7 +218,17 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			want: api.ResourceCreateRequest{
 				URL:      "https://example.com",
 				Metadata: new("m"),
-				Tag:      "t",
+				Tags:     []string{"t"},
+			},
+		},
+		{
+			name:    "ok_multiTags",
+			body:    `{"url":"https://example.com","metadata":null,"tags":["a","b"]}`,
+			wantErr: false,
+			want: api.ResourceCreateRequest{
+				URL:      "https://example.com",
+				Metadata: nil,
+				Tags:     []string{"a", "b"},
 			},
 		},
 	}
@@ -235,9 +269,9 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			wantErrIn []string
 			want      api.ResourceUpdateRequest
 		}{
-			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: nil}},
-			{name: "string", body: `{"url":"https://example.com"}`, want: api.ResourceUpdateRequest{URL: new("https://example.com"), Tag: nil, Deleted: nil, Metadata: nil}},
-			{name: "emptyString", body: `{"url":""}`, want: api.ResourceUpdateRequest{URL: new(""), Tag: nil, Deleted: nil, Metadata: nil}},
+			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tags: nil, Deleted: nil, Metadata: nil}},
+			{name: "string", body: `{"url":"https://example.com"}`, want: api.ResourceUpdateRequest{URL: new("https://example.com"), Tags: nil, Deleted: nil, Metadata: nil}},
+			{name: "emptyString", body: `{"url":""}`, want: api.ResourceUpdateRequest{URL: new(""), Tags: nil, Deleted: nil, Metadata: nil}},
 			{name: "null_isError", body: `{"url":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "number_isError", body: `{"url":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "bool_isError", body: `{"url":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
@@ -282,9 +316,13 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			wantErrIn []string
 			want      api.ResourceUpdateRequest
 		}{
-			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: nil}},
-			{name: "string", body: `{"tag":"t"}`, want: api.ResourceUpdateRequest{URL: nil, Tag: new("t"), Deleted: nil, Metadata: nil}},
-			{name: "emptyString", body: `{"tag":""}`, want: api.ResourceUpdateRequest{URL: nil, Tag: new(""), Deleted: nil, Metadata: nil}},
+			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tags: nil, Deleted: nil, Metadata: nil}},
+			{name: "string", body: `{"tag":"t"}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{"t"}, Deleted: nil, Metadata: nil}},
+			{name: "emptyString", body: `{"tag":""}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{""}, Deleted: nil, Metadata: nil}},
+			{name: "multiTags", body: `{"tags":["a","b"]}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{"a", "b"}, Deleted: nil, Metadata: nil}},
+			{name: "both_isError", body: `{"tag":"a","tags":["b","c"]}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "mutually exclusive"}},
+			{name: "tagsEmpty_isError", body: `{"tags":[]}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "at least two"}},
+			{name: "tagsOneItem_isError", body: `{"tags":["only"]}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "at least two"}},
 			{name: "null_isError", body: `{"tag":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "number_isError", body: `{"tag":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "bool_isError", body: `{"tag":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
@@ -328,16 +366,16 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			wantErrIn []string
 			want      api.ResourceUpdateRequest
 		}{
-			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: nil}},
+			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tags: nil, Deleted: nil, Metadata: nil}},
 			{
 				name: "null",
 				body: `{"metadata":null}`,
-				want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: new(*string)},
+				want: api.ResourceUpdateRequest{URL: nil, Tags: nil, Deleted: nil, Metadata: new(*string)},
 			},
 			{
 				name: "string",
 				body: `{"metadata":"m"}`,
-				want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: new(new("m"))},
+				want: api.ResourceUpdateRequest{URL: nil, Tags: nil, Deleted: nil, Metadata: new(new("m"))},
 			},
 			{name: "number_isError", body: `{"metadata":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "bool_isError", body: `{"metadata":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
@@ -381,9 +419,9 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			wantErrIn []string
 			want      api.ResourceUpdateRequest
 		}{
-			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: nil, Metadata: nil}},
-			{name: "true", body: `{"deleted":true}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: new(true), Metadata: nil}},
-			{name: "false", body: `{"deleted":false}`, want: api.ResourceUpdateRequest{URL: nil, Tag: nil, Deleted: new(false), Metadata: nil}},
+			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tags: nil, Deleted: nil, Metadata: nil}},
+			{name: "true", body: `{"deleted":true}`, want: api.ResourceUpdateRequest{URL: nil, Tags: nil, Deleted: new(true), Metadata: nil}},
+			{name: "false", body: `{"deleted":false}`, want: api.ResourceUpdateRequest{URL: nil, Tags: nil, Deleted: new(false), Metadata: nil}},
 			{name: "null_isError", body: `{"deleted":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "number_isError", body: `{"deleted":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 			{name: "string_isError", body: `{"deleted":"no"}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},

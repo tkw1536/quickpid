@@ -1,6 +1,6 @@
 {
   "name": "49_resource_list_get_filter_empty_tag",
-  "comment": "An empty tag query value matches resources whose tag is the empty string.",
+  "comment": "An empty tag query value matches resources that include the empty string among their tags.",
   "steps": [
     {
       "name": "create_namespace",

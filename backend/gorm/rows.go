@@ -1,9 +1,10 @@
 //spellchecker:words gorm
 package gorm
 
-//spellchecker:words errors time github quickpid gorm
+//spellchecker:words errors sort time github quickpid gorm
 import (
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
@@ -37,7 +38,7 @@ func (n namespaceRow) toSpec() api.NamespaceResponse {
 }
 
 type resourceRow struct {
-	NamespaceID string `gorm:"column:namespace_id;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:1;index:idx_resources_ns_tag,priority:1"`
+	NamespaceID string `gorm:"column:namespace_id;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:1"`
 	PID         string `gorm:"column:pid;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:2"`
 
 	URL      string  `gorm:"column:url;type:text;not null"`
@@ -46,11 +47,21 @@ type resourceRow struct {
 	DateCreated time.Time `gorm:"column:date_created;not null"`
 	DateUpdated time.Time `gorm:"column:date_updated;not null"`
 
-	Tag     string `gorm:"column:tag;type:text;not null;index:idx_resources_ns_tag,priority:2"`
-	Deleted bool   `gorm:"column:deleted;not null;default:false;index"`
+	Deleted bool `gorm:"column:deleted;not null;default:false;index"`
+
+	TagRows []resourceTagRow `gorm:"foreignKey:NamespaceID,PID;references:NamespaceID,PID;constraint:OnDelete:CASCADE"`
 }
 
 func (resourceRow) TableName() string { return "resources" }
+
+type resourceTagRow struct {
+	NamespaceID string `gorm:"column:namespace_id;type:text;not null;primaryKey;index:idx_resource_tags_ns_tag,priority:1"`
+	PID         string `gorm:"column:pid;type:text;not null;primaryKey"`
+	Pos         int    `gorm:"column:pos;not null;primaryKey"`
+	Tag         string `gorm:"column:tag;type:text;not null;index:idx_resource_tags_ns_tag,priority:2"`
+}
+
+func (resourceTagRow) TableName() string { return "resource_tags" }
 
 func (r resourceRow) toSpec() api.ResourceResponse {
 	return api.ResourceResponse{
@@ -59,9 +70,49 @@ func (r resourceRow) toSpec() api.ResourceResponse {
 		Metadata:    r.Metadata,
 		DateCreated: r.DateCreated.UTC().Format(time.RFC3339),
 		DateUpdated: r.DateUpdated.UTC().Format(time.RFC3339),
-		Tag:         r.Tag,
+		Tags:        tagsFromRows(r.TagRows),
 		Deleted:     r.Deleted,
 	}
+}
+
+func tagRowsFor(namespaceID, pid string, tags []string) []resourceTagRow {
+	rows := make([]resourceTagRow, len(tags))
+	for i, tag := range tags {
+		rows[i] = resourceTagRow{
+			NamespaceID: namespaceID,
+			PID:         pid,
+			Pos:         i,
+			Tag:         tag,
+		}
+	}
+	return rows
+}
+
+func tagsFromRows(rows []resourceTagRow) []string {
+	if len(rows) == 0 {
+		return nil
+	}
+	sorted := append([]resourceTagRow(nil), rows...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Pos < sorted[j].Pos })
+	tags := make([]string, len(sorted))
+	for i := range sorted {
+		tags[i] = sorted[i].Tag
+	}
+	return tags
+}
+
+func replaceResourceTags(tx *gorm.DB, namespaceID, pid string, tags []string) error {
+	if err := tx.Where("namespace_id = ? AND pid = ?", namespaceID, pid).Delete(&resourceTagRow{}).Error; err != nil {
+		return err
+	}
+	if len(tags) == 0 {
+		return nil
+	}
+	return tx.Create(tagRowsFor(namespaceID, pid, tags)).Error
+}
+
+func preloadResourceTags(db *gorm.DB) *gorm.DB {
+	return db.Order("pos ASC")
 }
 
 type userRow struct {

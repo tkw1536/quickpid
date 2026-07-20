@@ -33,6 +33,7 @@ The code has several entry points, each using a different backend for storage:
 - [quickpid-mem](./cmd/quickpid-mem/main.go), an in-memory backend.
   It is intended to demonstrate the functionality of the API, and not intended as a production system.
 - [quickpid-sqlite](./cmd/quickpid-sqlite/main.go) a backend using an SQLite database for storage.
+  Note: You have to enable sqlite foreign keys using `?_pragma=foreign_keys(1)` for this to work properly.
 - [quickpid-postgres](./cmd/quickpid-postgres/main.go) a backend using an external Postgres database for storage.
 
 The commands produce informational output on STDOUT, and produce logs on STDERR.
@@ -93,6 +94,7 @@ Examples:
 ## Future Technical Work
 
 - add a route for all permissions of a specific user
+- namespace mounting
 - rework non-flow-tests
 - consider more validated API types
 - password auth

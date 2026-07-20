@@ -94,9 +94,13 @@ The metadata for a Resource can be updated, but the underlying PID cannot be cha
 Resources cannot be deleted, however they contain a deleted flag enabling soft deletion.
 From the perspective of the API this flag is just like any other flag.
 
-Both Resources and Namespaces additionally hold a so-called tag.
-This is just a single string, and can be used in the API to filter them, but has no other effect.
-A resource tag can be updated, a namespace tag cannot.
+Namespaces hold a so-called tag: a single string used for filtering, with no other effect.
+A namespace tag cannot be updated after creation.
+
+Resources hold one or more tags, also used for filtering.
+Exactly one tag is expressed in JSON as the singular `tag` field; two or more tags use the `tags` array (at least two items).
+Empty tag lists are not allowed, and mixing `tag` with `tags` is invalid.
+Resource tags can be updated.
 
 #### Listing and Retrieval
 
@@ -108,8 +112,8 @@ A dedicated endpoint returns the total number of resources (issued PIDs) across 
 List responses are always paginated and take appropriate query parameters.
 Objects are always returned in ascending order by ID.
 
-Both Namespaces and Resources can be filtered by tag.
-Resources can additionally be filtered by deletion status.
+Namespaces can be filtered by their tag (exact match).
+Resources can be filtered by tag membership (the resource includes the given tag) and by deletion status.
 
 ### Management API
 

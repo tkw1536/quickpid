@@ -1,8 +1,9 @@
 // Package api holds type definitions for the PID Resolver API.
 package api
 
-//spellchecker:words github quickpid internal strict embed
+//spellchecker:words encoding json github quickpid internal strict embed
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/tkw1536/quickpid/internal/strict"
@@ -58,16 +59,17 @@ type PaginatedNamespacesResponse struct {
 
 // ResourceCreateRequest is the JSON body for createResource and batchCreateResources items.
 type ResourceCreateRequest struct {
-	URL      string  `json:"url"`
-	Metadata *string `json:"metadata"`
-	Tag      string  `json:"tag"`
+	URL      string
+	Metadata *string
+	Tags     []string
 }
 
 func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
-		URL      strict.Optional[strict.String] `json:"url"`
-		Metadata strict.Optional[*string]       `json:"metadata"`
-		Tag      strict.Optional[strict.String] `json:"tag"`
+		URL      strict.Optional[strict.String]      `json:"url"`
+		Metadata strict.Optional[*string]            `json:"metadata"`
+		Tag      strict.Optional[strict.String]      `json:"tag"`
+		Tags     strict.Optional[strict.StringSlice] `json:"tags"`
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
@@ -84,23 +86,58 @@ func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	}
 	r.Metadata = decoded.Metadata.Value
 
-	if !decoded.Tag.Present {
-		return fmt.Errorf("%w: tag", errMissingRequiredField)
+	tags, _, err := unmarshalResourceTags(decoded.Tag, decoded.Tags, true)
+	if err != nil {
+		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
-	r.Tag = string(decoded.Tag.Value)
+	r.Tags = tags
 
 	return nil
 }
 
 // ResourceResponse is returned for resource operations.
 type ResourceResponse struct {
-	PID         string  `json:"pid"`
-	URL         string  `json:"url"`
-	Metadata    *string `json:"metadata"`
-	DateCreated string  `json:"date_created"`
-	DateUpdated string  `json:"date_updated"`
-	Tag         string  `json:"tag"`
-	Deleted     bool    `json:"deleted"`
+	PID         string
+	URL         string
+	Metadata    *string
+	DateCreated string
+	DateUpdated string
+	Tags        []string
+	Deleted     bool
+}
+
+func (r ResourceResponse) MarshalJSON() ([]byte, error) {
+	type out struct {
+		PID         string   `json:"pid"`
+		URL         string   `json:"url"`
+		Metadata    *string  `json:"metadata"`
+		DateCreated string   `json:"date_created"`
+		DateUpdated string   `json:"date_updated"`
+		Tag         *string  `json:"tag,omitempty"`
+		Tags        []string `json:"tags,omitempty"`
+		Deleted     bool     `json:"deleted"`
+	}
+	encoded := out{
+		PID:         r.PID,
+		URL:         r.URL,
+		Metadata:    r.Metadata,
+		DateCreated: r.DateCreated,
+		DateUpdated: r.DateUpdated,
+		Deleted:     r.Deleted,
+	}
+	switch len(r.Tags) {
+	case 0:
+		return nil, fmt.Errorf("%w: empty tags", errInvalidResourceTags)
+	case 1:
+		encoded.Tag = &r.Tags[0]
+	default:
+		encoded.Tags = r.Tags
+	}
+	bytes, err := json.Marshal(encoded)
+	if err != nil {
+		return nil, fmt.Errorf("json.Marshal: %w", err)
+	}
+	return bytes, nil
 }
 
 type PaginatedResourcesResponse struct {
@@ -117,20 +154,22 @@ type ResourceCountResponse struct {
 
 // ResourceUpdateRequest is the JSON body for updateResource.
 //
-// A nil pointer indicates that no update should be performed on that field.
+// A nil pointer (or nil Tags slice) indicates that no update should be performed on that field.
+// When Tags is non-nil, it always has length >= 1.
 type ResourceUpdateRequest struct {
-	URL      *string  `json:"url"`
-	Metadata **string `json:"metadata"`
-	Tag      *string  `json:"tag"`
-	Deleted  *bool    `json:"deleted"`
+	URL      *string
+	Metadata **string
+	Tags     []string
+	Deleted  *bool
 }
 
 func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
-		URL      strict.Optional[strict.String] `json:"url"`
-		Metadata strict.Optional[*string]       `json:"metadata"`
-		Tag      strict.Optional[strict.String] `json:"tag"`
-		Deleted  strict.Optional[strict.Bool]   `json:"deleted"`
+		URL      strict.Optional[strict.String]      `json:"url"`
+		Metadata strict.Optional[*string]            `json:"metadata"`
+		Tag      strict.Optional[strict.String]      `json:"tag"`
+		Tags     strict.Optional[strict.StringSlice] `json:"tags"`
+		Deleted  strict.Optional[strict.Bool]        `json:"deleted"`
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
@@ -138,15 +177,24 @@ func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 	}
 	r.URL = strict.OptionalStringToPointer(decoded.URL)
 	r.Metadata = decoded.Metadata.ToPointer()
-	r.Tag = strict.OptionalStringToPointer(decoded.Tag)
 	r.Deleted = strict.OptionalBoolToPointer(decoded.Deleted)
+
+	tags, present, err := unmarshalResourceTags(decoded.Tag, decoded.Tags, false)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
+	}
+	if present {
+		r.Tags = tags
+	} else {
+		r.Tags = nil
+	}
 
 	return nil
 }
 
 // ListResourcesParams carries path and query parameters for listResources.
 type ListResourcesParams struct {
-	Tag     *string // optionally filter by tag
+	Tag     *string // optionally filter by tag membership
 	Deleted *bool   // optionally filter by deletion status
 
 	Limit  int
@@ -168,4 +216,27 @@ type InfoResponse struct {
 	MaxBatchItems        int64 `json:"max_batch_items"`
 	MaxAutocompleteUsers int64 `json:"max_autocomplete_users,omitzero"`
 	Authentication       bool  `json:"authentication,omitzero"`
+}
+
+// unmarshalResourceTags decodes exclusive tag / tags fields into a non-empty []string.
+//
+// If required is true, exactly one of tag or tags must be present.
+// If required is false and neither is present, ok is false and tags is nil.
+func unmarshalResourceTags(tag strict.Optional[strict.String], tagsField strict.Optional[strict.StringSlice], required bool) (tags []string, ok bool, err error) {
+	if tag.Present && tagsField.Present {
+		return nil, false, fmt.Errorf("%w: %w", errInvalidResourceTags, errTagAndTagsMutuallyExclusive)
+	}
+	if tag.Present {
+		return []string{string(tag.Value)}, true, nil
+	}
+	if tagsField.Present {
+		if len(tagsField.Value) < 2 {
+			return nil, false, fmt.Errorf("%w: %w", errInvalidResourceTags, errTagsMustHaveAtLeastTwo)
+		}
+		return tagsField.Value.Strings(), true, nil
+	}
+	if required {
+		return nil, false, errMissingTagOrTags
+	}
+	return nil, false, nil
 }

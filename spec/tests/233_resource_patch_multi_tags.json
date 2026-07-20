@@ -1,0 +1,69 @@
+{
+  "name": "233_resource_patch_multi_tags",
+  "comment": "PATCH with tags of length at least two replaces resource tags and returns the multi-tag response shape.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"update-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "create_resource",
+      "config": {
+        "pids": [
+          "xjc-cjy"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "patchMultiTags",
+      "config": {
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+        "body": "{\"tags\":[\"beta\",\"gamma\"]}"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "ext-1@sys-a",
+          "pid": "xjc-cjy",
+          "tags": [
+            "beta",
+            "gamma"
+          ],
+          "url": "https://example.com/a"
+        }
+      }
+    }
+  ]
+}

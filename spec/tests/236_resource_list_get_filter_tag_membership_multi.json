@@ -1,0 +1,92 @@
+{
+  "name": "236_resource_list_get_filter_tag_membership_multi",
+  "comment": "The tag query parameter matches multi-tag resources that include the filter value among their tags.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"list-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "create_multi",
+      "config": {
+        "pids": [
+          "xjc-cjy"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/multi\",\"metadata\":null,\"tags\":[\"alpha\",\"beta\"]}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "create_other",
+      "config": {
+        "pids": [
+          "8zk-pwt"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/other\",\"metadata\":null,\"tag\":\"gamma\"}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "filterBeta",
+      "config": {
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources?tag=beta&limit=999"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 1,
+          "offset": 0,
+          "items": [
+            {
+              "date_created": "2020-01-02T03:04:05Z",
+              "date_updated": "2020-01-02T03:04:05Z",
+              "deleted": false,
+              "metadata": null,
+              "pid": "xjc-cjy",
+              "tags": [
+                "alpha",
+                "beta"
+              ],
+              "url": "https://example.com/multi"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -70,6 +70,7 @@ func Migrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(
 		&namespaceRow{},
 		&resourceRow{},
+		&resourceTagRow{},
 		&userRow{},
 		&apiKeyRow{},
 		&namespacePermissionRow{},

@@ -1,0 +1,60 @@
+{
+  "name": "234_resource_patch_both_tag_and_tags",
+  "comment": "PATCH with both tag and tags returns 400 body_invalid_json.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"update-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "create_resource",
+      "config": {
+        "pids": [
+          "xjc-cjy"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "bothTagFields",
+      "config": {
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+        "body": "{\"tag\":\"a\",\"tags\":[\"b\",\"c\"]}"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "body_invalid_json"
+        }
+      }
+    }
+  ]
+}

@@ -121,7 +121,12 @@ func (s *Store) ListResources(ctx context.Context, namespace api.ValidNamespaceI
 
 		q := tx.Model(&resourceRow{}).Where("namespace_id = ?", namespace.String())
 		if params.Tag != nil {
-			q = q.Where("tag = ?", *params.Tag)
+			q = q.Where(`EXISTS (
+				SELECT 1 FROM resource_tags
+				WHERE resource_tags.namespace_id = resources.namespace_id
+					AND resource_tags.pid = resources.pid
+					AND resource_tags.tag = ?
+			)`, *params.Tag)
 		}
 		if params.Deleted != nil {
 			q = q.Where("deleted = ?", *params.Deleted)
@@ -143,7 +148,7 @@ func (s *Store) ListResources(ctx context.Context, namespace api.ValidNamespaceI
 		}
 
 		var rows []resourceRow
-		if err := q.Order("pid ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
+		if err := q.Preload("TagRows", preloadResourceTags).Order("pid ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		items := make([]api.ResourceResponse, len(rows))
@@ -179,7 +184,6 @@ func (s *Store) CreateResource(ctx context.Context, namespace api.ValidNamespace
 			PID:         pid.String(),
 			URL:         req.URL,
 			Metadata:    req.Metadata,
-			Tag:         req.Tag,
 			Deleted:     false,
 			DateCreated: ts,
 			DateUpdated: ts,
@@ -190,6 +194,11 @@ func (s *Store) CreateResource(ctx context.Context, namespace api.ValidNamespace
 			}
 			return nil, err
 		}
+		tagRows := tagRowsFor(namespace.String(), pid.String(), req.Tags)
+		if err := tx.Create(&tagRows).Error; err != nil {
+			return nil, err
+		}
+		row.TagRows = tagRows
 		r := row.toSpec()
 		return &r, nil
 	})
@@ -209,17 +218,18 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace api.ValidNam
 		}
 		ts := now().UTC()
 		rows := make([]resourceRow, len(reqs))
+		var allTags []resourceTagRow
 		for i, req := range reqs {
 			rows[i] = resourceRow{
 				NamespaceID: namespace.String(),
 				PID:         pids[i].String(),
 				URL:         req.URL,
 				Metadata:    req.Metadata,
-				Tag:         req.Tag,
 				Deleted:     false,
 				DateCreated: ts,
 				DateUpdated: ts,
 			}
+			allTags = append(allTags, tagRowsFor(namespace.String(), pids[i].String(), req.Tags)...)
 		}
 
 		if err := tx.CreateInBatches(&rows, s.batchSize).Error; err != nil {
@@ -228,9 +238,15 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace api.ValidNam
 			}
 			return nil, err
 		}
+		if len(allTags) > 0 {
+			if err := tx.CreateInBatches(&allTags, s.batchSize).Error; err != nil {
+				return nil, err
+			}
+		}
 
 		out := make([]api.ResourceResponse, len(rows))
 		for i := range rows {
+			rows[i].TagRows = tagRowsFor(namespace.String(), pids[i].String(), reqs[i].Tags)
 			out[i] = rows[i].toSpec()
 		}
 		return out, nil
@@ -244,7 +260,7 @@ func (s *Store) GetResource(ctx context.Context, namespace api.ValidNamespaceID,
 		}
 
 		var row resourceRow
-		if err := tx.First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Error; err != nil {
+		if err := tx.Preload("TagRows", preloadResourceTags).First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, backend.ErrResourceNotFound
 			}
@@ -262,7 +278,7 @@ func (s *Store) UpdateResource(ctx context.Context, namespace api.ValidNamespace
 		}
 
 		var row resourceRow
-		if err := tx.First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Error; err != nil {
+		if err := tx.Preload("TagRows", preloadResourceTags).First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, backend.ErrResourceNotFound
 			}
@@ -271,9 +287,6 @@ func (s *Store) UpdateResource(ctx context.Context, namespace api.ValidNamespace
 
 		if req.URL != nil {
 			row.URL = *req.URL
-		}
-		if req.Tag != nil {
-			row.Tag = *req.Tag
 		}
 		if req.Deleted != nil {
 			row.Deleted = *req.Deleted
@@ -284,6 +297,12 @@ func (s *Store) UpdateResource(ctx context.Context, namespace api.ValidNamespace
 		row.DateUpdated = now().UTC()
 		if err := tx.Save(&row).Error; err != nil {
 			return nil, err
+		}
+		if req.Tags != nil {
+			if err := replaceResourceTags(tx, namespace.String(), pid.String(), req.Tags); err != nil {
+				return nil, err
+			}
+			row.TagRows = tagRowsFor(namespace.String(), pid.String(), req.Tags)
 		}
 		r := row.toSpec()
 		return &r, nil

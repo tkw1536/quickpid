@@ -1,9 +1,10 @@
 //spellchecker:words memory
 package memory
 
-//spellchecker:words context sort time github quickpid backend
+//spellchecker:words context slices sort time github quickpid backend
 import (
 	"context"
+	"slices"
 	"sort"
 	"time"
 
@@ -108,7 +109,7 @@ func (s *Store) ListResources(_ context.Context, namespace api.ValidNamespaceID,
 	byPID := s.resources[namespace.String()]
 	filtered := make([]api.ResourceResponse, 0, len(byPID))
 	for _, r := range byPID {
-		if params.Tag != nil && r.Tag != *params.Tag {
+		if params.Tag != nil && !slices.Contains(r.Tags, *params.Tag) {
 			continue
 		}
 		if params.Deleted != nil && r.Deleted != *params.Deleted {
@@ -162,7 +163,7 @@ func (s *Store) CreateResource(_ context.Context, namespace api.ValidNamespaceID
 		Metadata:    req.Metadata,
 		DateCreated: ts,
 		DateUpdated: ts,
-		Tag:         req.Tag,
+		Tags:        append([]string(nil), req.Tags...),
 		Deleted:     false,
 	}
 	byPID[pid.String()] = res
@@ -201,7 +202,7 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace api.ValidNames
 			Metadata:    req.Metadata,
 			DateCreated: ts,
 			DateUpdated: ts,
-			Tag:         req.Tag,
+			Tags:        append([]string(nil), req.Tags...),
 			Deleted:     false,
 		}
 		byPID[pids[i].String()] = res
@@ -240,8 +241,8 @@ func (s *Store) UpdateResource(_ context.Context, namespace api.ValidNamespaceID
 	if req.URL != nil {
 		res.URL = *req.URL
 	}
-	if req.Tag != nil {
-		res.Tag = *req.Tag
+	if req.Tags != nil {
+		res.Tags = append([]string(nil), req.Tags...)
 	}
 	if req.Deleted != nil {
 		res.Deleted = *req.Deleted
