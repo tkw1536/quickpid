@@ -191,7 +191,7 @@ func (*Server) parseRequiredUsernameQuery(r *http.Request) (api.ValidUsername, e
 // - [api.InvalidUsername].
 func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (api.ValidUsername, error) {
 	// HACK: The query itself isn't really a username
-	// but we use it because it's guaraneteed to be the same format.
+	// but we use it because it's guaranteed to be the same format.
 
 	q := r.URL.Query()
 	if !q.Has("query") {
