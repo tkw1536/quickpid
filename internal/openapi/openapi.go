@@ -1,6 +1,9 @@
 // Package openapi provides a helper for replacing specific configuration within the openapi spec.
+//
+//spellchecker:words openapi
 package openapi
 
+//spellchecker:words bytes pkglib yamlx gopkg yaml
 import (
 	"bytes"
 

@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words encoding json errors slog http regexp strconv sync github swaggest swgui quickpid backend
+//spellchecker:words encoding json errors slog http regexp strconv sync github swaggest swgui quickpid backend internal openapi
 import (
 	"encoding/json"
 	"errors"
