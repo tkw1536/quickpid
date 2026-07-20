@@ -87,9 +87,9 @@ func (s *StringSlice) UnmarshalJSON(data []byte) error {
 }
 
 // Strings converts this slice to a plain []string.
-func (s StringSlice) Strings() []string {
-	out := make([]string, len(s))
-	for i, v := range s {
+func (s *StringSlice) Strings() []string {
+	out := make([]string, len(*s))
+	for i, v := range *s {
 		out[i] = string(v)
 	}
 	return out
