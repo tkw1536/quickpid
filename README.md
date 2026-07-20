@@ -92,6 +92,11 @@ Examples:
 
 ## Future Technical Work
 
+- add a route for all permissions of a specific user
+- rework non-flow-tests
+- consider more validated API types
+- password auth
+- cookie auth? / browser-based auth?
 - use something other than uuid for namespace generation to drop dependency
 
 ## LICENSE
