@@ -39,6 +39,28 @@ func (h *Server) createUser(w http.ResponseWriter, r *http.Request, user *api.Va
 	return createdUser, nil
 }
 
+func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.SetPasswordResponse, error) {
+	target, err := h.parseOptionalUsernameQuery(r)
+	if err != nil {
+		return nil, err
+	}
+	var req api.SetPasswordRequest
+	if err := h.decodeJSON(w, r, &req); err != nil {
+		return nil, err
+	}
+
+	validReq, err := req.Validate()
+	if err != nil {
+		return nil, api.WithErrorString(fmt.Errorf("failed to validate set password request: %w", err), api.InvalidPassword)
+	}
+
+	response, err := h.svc.SetUserPassword(r.Context(), user, target, validReq)
+	if err != nil {
+		return nil, fmt.Errorf("svc.SetUserPassword: %w", err)
+	}
+	return response, nil
+}
+
 func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedUsersResponse, error) {
 	superuser, err := h.parseSuperuserQuery(r)
 	if err != nil {

@@ -58,6 +58,10 @@ func RunStoreTests(t *testing.T, newStore StoreFactory) {
 			Test: testAuthSuperuser,
 		},
 		{
+			Name: "AuthPasswordLifecycle",
+			Test: testAuthPasswordLifecycle,
+		},
+		{
 			Name: "AuthorizationCRUD",
 			Test: testAuthorizationCRUD,
 		},
@@ -112,6 +116,15 @@ func userPtr(username string) *api.ValidUsername {
 
 func userReq(username string) api.ValidUserCreateRequest {
 	return api.ValidUserCreateRequest{Username: user(username), Superuser: false}
+}
+
+func validPassword(t *testing.T, value string) api.ValidPassword {
+	t.Helper()
+	password, err := api.NewPassword(value)
+	if err != nil {
+		t.Fatalf("NewPassword(%q) error = %v", value, err)
+	}
+	return password
 }
 
 func namespaceReq() api.NamespaceCreateRequest {
@@ -419,6 +432,93 @@ func testAuthSuperuser(t *testing.T, newStore StoreFactory) {
 	}
 	if updated.Superuser {
 		t.Fatalf("UpdateUser() superuser = true, want false")
+	}
+}
+
+func testAuthPasswordLifecycle(t *testing.T, newStore StoreFactory) {
+	t.Helper()
+	ctx := context.Background()
+	b := newStore(t)
+	now := fixedNow()
+
+	if _, err := b.CreateUser(ctx, userReq("alice"), now); err != nil {
+		t.Fatalf("CreateUser() error = %v", err)
+	}
+
+	initial, err := b.GetUser(ctx, user("alice"))
+	if err != nil {
+		t.Fatalf("GetUser() error = %v", err)
+	}
+	if initial.Password {
+		t.Fatal("GetUser() password = true, want false")
+	}
+
+	secret := validPassword(t, "secret")
+	hasPassword, err := b.SetPassword(ctx, user("alice"), &secret)
+	if err != nil {
+		t.Fatalf("SetPassword() error = %v", err)
+	}
+	if !hasPassword {
+		t.Fatal("SetPassword() = false, want true")
+	}
+
+	updated, err := b.GetUser(ctx, user("alice"))
+	if err != nil {
+		t.Fatalf("GetUser() after set error = %v", err)
+	}
+	if !updated.Password {
+		t.Fatal("GetUser() after set password = false, want true")
+	}
+
+	matches, err := b.CheckPassword(ctx, user("alice"), secret)
+	if err != nil {
+		t.Fatalf("CheckPassword() error = %v", err)
+	}
+	if !matches {
+		t.Fatal("CheckPassword() = false, want true")
+	}
+
+	wrong := validPassword(t, "wrong")
+	matches, err = b.CheckPassword(ctx, user("alice"), wrong)
+	if err != nil {
+		t.Fatalf("CheckPassword(wrong) error = %v", err)
+	}
+	if matches {
+		t.Fatal("CheckPassword(wrong) = true, want false")
+	}
+
+	hasPassword, err = b.SetPassword(ctx, user("alice"), nil)
+	if err != nil {
+		t.Fatalf("SetPassword(nil) error = %v", err)
+	}
+	if hasPassword {
+		t.Fatal("SetPassword(nil) = true, want false")
+	}
+
+	updated, err = b.GetUser(ctx, user("alice"))
+	if err != nil {
+		t.Fatalf("GetUser() after unset error = %v", err)
+	}
+	if updated.Password {
+		t.Fatal("GetUser() after unset password = true, want false")
+	}
+
+	matches, err = b.CheckPassword(ctx, user("alice"), secret)
+	if err != nil {
+		t.Fatalf("CheckPassword() after unset error = %v", err)
+	}
+	if matches {
+		t.Fatal("CheckPassword() after unset = true, want false")
+	}
+
+	if _, err := api.NewPassword(""); err == nil {
+		t.Fatal("NewPassword(\"\") error = nil, want error")
+	}
+	if _, err := b.SetPassword(ctx, user("missing"), &secret); !errors.Is(err, backend.ErrUserNotFound) {
+		t.Fatalf("SetPassword(missing) error = %v, want ErrUserNotFound", err)
+	}
+	if _, err := b.CheckPassword(ctx, user("missing"), secret); !errors.Is(err, backend.ErrUserNotFound) {
+		t.Fatalf("CheckPassword(missing) error = %v, want ErrUserNotFound", err)
 	}
 }
 

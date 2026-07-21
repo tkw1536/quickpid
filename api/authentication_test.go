@@ -185,6 +185,106 @@ func TestUserUpdateRequest_UnmarshalJSON(t *testing.T) {
 	})
 }
 
+func TestSetPasswordRequest_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		body      string
+		wantErr   bool
+		wantErrIn []string
+		wantNil   bool
+		wantValue string
+	}{
+		{name: "string", body: `{"password":"secret"}`, wantValue: "secret"},
+		{name: "null", body: `{"password":null}`, wantNil: true},
+		{name: "missing", body: `{}`, wantErr: true, wantErrIn: []string{"missing required field", "password"}},
+		{name: "unknown", body: `{"password":"secret","unknown":1}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"}},
+		{name: "number", body: `{"password":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var req api.SetPasswordRequest
+			err := json.Unmarshal([]byte(tt.body), &req)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
+			}
+			if err != nil {
+				es := err.Error()
+				for _, wantIn := range tt.wantErrIn {
+					if !strings.Contains(es, wantIn) {
+						t.Fatalf("error: got %q want substring %q", es, wantIn)
+					}
+				}
+				return
+			}
+			if req.Password == nil {
+				t.Fatal("req.Password = nil, want non-nil field marker")
+			}
+			if tt.wantNil {
+				if *req.Password != nil {
+					t.Fatalf("req.Password = %v, want nil payload", **req.Password)
+				}
+				return
+			}
+			if *req.Password == nil || **req.Password != tt.wantValue {
+				t.Fatalf("req.Password = %v, want %q", req.Password, tt.wantValue)
+			}
+		})
+	}
+}
+
+func TestSetPasswordRequest_Validate(t *testing.T) {
+	t.Parallel()
+
+	t.Run("string", func(t *testing.T) {
+		t.Parallel()
+
+		value := "secret"
+		ptr := &value
+		req := api.SetPasswordRequest{Password: &ptr}
+		valid, err := req.Validate()
+		if err != nil {
+			t.Fatalf("Validate() error = %v", err)
+		}
+		if valid.Password == nil || valid.Password.String() != "secret" {
+			t.Fatalf("Validate() = %+v, want password secret", valid)
+		}
+	})
+
+	t.Run("null", func(t *testing.T) {
+		t.Parallel()
+
+		var ptr *string
+		req := api.SetPasswordRequest{Password: &ptr}
+		valid, err := req.Validate()
+		if err != nil {
+			t.Fatalf("Validate() error = %v", err)
+		}
+		if valid.Password != nil {
+			t.Fatalf("Validate() = %+v, want nil password", valid)
+		}
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		t.Parallel()
+
+		value := ""
+		ptr := &value
+		req := api.SetPasswordRequest{Password: &ptr}
+		_, err := req.Validate()
+		if err == nil {
+			t.Fatal("Validate() error = nil, want error")
+		}
+		if !strings.Contains(err.Error(), "invalid password") {
+			t.Fatalf("Validate() error = %q, want invalid password", err.Error())
+		}
+	})
+}
+
 func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 	t.Parallel()
 

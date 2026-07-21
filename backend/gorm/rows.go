@@ -116,8 +116,9 @@ func preloadResourceTags(db *gorm.DB) *gorm.DB {
 }
 
 type userRow struct {
-	Username  string `gorm:"column:username;type:text;primaryKey"`
-	Superuser bool   `gorm:"column:superuser;not null;default:false"`
+	Username     string `gorm:"column:username;type:text;primaryKey"`
+	Superuser    bool   `gorm:"column:superuser;not null;default:false"`
+	PasswordHash []byte `gorm:"column:password_hash;type:blob"`
 }
 
 func (userRow) TableName() string { return "auth_users" }
@@ -126,6 +127,7 @@ func (u userRow) toSpec() api.UserInfo {
 	return api.UserInfo{
 		Username:  u.Username,
 		Superuser: u.Superuser,
+		Password:  len(u.PasswordHash) > 0,
 	}
 }
 

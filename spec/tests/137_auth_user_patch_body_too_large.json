@@ -28,7 +28,8 @@
         "code": 200,
         "body": {
           "superuser": true,
-          "username": "root"
+          "username": "root",
+          "password": false
         }
       }
     },

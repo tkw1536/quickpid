@@ -54,6 +54,7 @@ type ValidUserCreateRequest struct {
 type UserInfo struct {
 	Username  string `json:"username"`
 	Superuser bool   `json:"superuser"`
+	Password  bool   `json:"password"`
 }
 
 func (u *UserInfo) Validate() (ValidUserInfo, error) {
@@ -64,6 +65,7 @@ func (u *UserInfo) Validate() (ValidUserInfo, error) {
 	return ValidUserInfo{
 		Username:  username,
 		Superuser: u.Superuser,
+		Password:  u.Password,
 	}, nil
 }
 
@@ -71,6 +73,7 @@ func (u *UserInfo) Validate() (ValidUserInfo, error) {
 type ValidUserInfo struct {
 	Username  ValidUsername
 	Superuser bool
+	Password  bool
 }
 
 // UserUpdateRequest updates fields on an existing user account.
@@ -91,6 +94,55 @@ func (r *UserUpdateRequest) UnmarshalJSON(data []byte) error {
 	}
 	r.Superuser = strict.OptionalBoolToPointer(decoded.Superuser)
 	return nil
+}
+
+// SetPasswordRequest is the JSON body for setUserPassword.
+//
+// The target account is selected with the username query parameter, not the request body.
+type SetPasswordRequest struct {
+	Password **string `json:"password"`
+}
+
+func (r *SetPasswordRequest) UnmarshalJSON(data []byte) error {
+	type internal struct {
+		Password strict.Optional[*string] `json:"password"`
+	}
+	decoded, err := strict.UnmarshalStruct[internal](data)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal fields: %w", err)
+	}
+	if !decoded.Password.Present {
+		return fmt.Errorf("%w: password", errMissingRequiredField)
+	}
+	r.Password = decoded.Password.ToPointer()
+	return nil
+}
+
+// Validate checks if the given request is valid.
+func (r *SetPasswordRequest) Validate() (ValidSetPasswordRequest, error) {
+	if r.Password == nil {
+		return ValidSetPasswordRequest{}, fmt.Errorf("%w: password", errMissingRequiredField)
+	}
+	if *r.Password == nil {
+		return ValidSetPasswordRequest{}, nil
+	}
+	password, err := NewPassword(**r.Password)
+	if err != nil {
+		return ValidSetPasswordRequest{}, err
+	}
+	return ValidSetPasswordRequest{
+		Password: &password,
+	}, nil
+}
+
+// ValidSetPasswordRequest is like a [SetPasswordRequest] but with a validated password.
+type ValidSetPasswordRequest struct {
+	Password *ValidPassword
+}
+
+// SetPasswordResponse is returned when a password is set or unset.
+type SetPasswordResponse struct {
+	Password bool `json:"password"`
 }
 
 type ListUsersParams struct {

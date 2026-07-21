@@ -28,7 +28,8 @@
         "code": 200,
         "body": {
           "superuser": true,
-          "username": "root"
+          "username": "root",
+          "password": false
         }
       }
     },
@@ -50,7 +51,8 @@
         "code": 201,
         "body": {
           "superuser": false,
-          "username": "alice"
+          "username": "alice",
+          "password": false
         }
       }
     },
@@ -71,7 +73,8 @@
         "code": 200,
         "body": {
           "superuser": false,
-          "username": "alice"
+          "username": "alice",
+          "password": false
         }
       }
     }

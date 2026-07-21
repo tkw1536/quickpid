@@ -28,7 +28,8 @@
         "code": 200,
         "body": {
           "superuser": true,
-          "username": "root"
+          "username": "root",
+          "password": false
         }
       }
     },
@@ -50,7 +51,8 @@
         "code": 201,
         "body": {
           "superuser": false,
-          "username": "owner"
+          "username": "owner",
+          "password": false
         }
       }
     },
@@ -72,7 +74,8 @@
         "code": 201,
         "body": {
           "superuser": false,
-          "username": "contributor"
+          "username": "contributor",
+          "password": false
         }
       }
     },
@@ -244,13 +247,13 @@
       "response": {
         "code": 200,
         "body": {
-          "date_created":"2020-01-02T03:04:05Z",
-          "date_updated":"2020-01-02T03:04:05Z",
-          "deleted":false,
-          "metadata":"seed",
-          "pid":"aaa-bbb",
-          "tag":"seed",
-          "url":"https://example.com/existing"
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "seed",
+          "pid": "aaa-bbb",
+          "tag": "seed",
+          "url": "https://example.com/existing"
         }
       }
     }

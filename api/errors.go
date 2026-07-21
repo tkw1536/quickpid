@@ -30,6 +30,7 @@ const (
 	InvalidNamespaceID ErrorString = "invalid_namespace_id" // An invalid namespace id was sent
 	InvalidPID         ErrorString = "invalid_pid"          // An invalid pid was sent
 	InvalidUsername    ErrorString = "invalid_username"     // An invalid username was sent
+	InvalidPassword    ErrorString = "invalid_password"     // An invalid password was sent
 
 	NamespaceNotFound ErrorString = "namespace_not_found" // Namespace not found
 	ResourceNotFound  ErrorString = "resource_not_found"  // Resource not found
@@ -98,6 +99,7 @@ var codes = map[ErrorString]int{
 	InvalidNamespaceID: http.StatusBadRequest,
 	InvalidPID:         http.StatusBadRequest,
 	InvalidUsername:    http.StatusBadRequest,
+	InvalidPassword:    http.StatusBadRequest,
 
 	NamespaceNotFound: http.StatusNotFound,
 	ResourceNotFound:  http.StatusNotFound,

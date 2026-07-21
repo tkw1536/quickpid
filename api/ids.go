@@ -96,3 +96,26 @@ func NewUsername(value string) (ValidUsername, error) {
 	}
 	return ValidUsername{valid: true, value: value}, nil
 }
+
+// ValidPassword represents a valid password.
+type ValidPassword struct {
+	valid bool
+	value string
+}
+
+func (password ValidPassword) String() string {
+	if !password.valid {
+		panic("invalid password")
+	}
+	return password.value
+}
+
+var errInvalidPassword = errors.New("invalid password")
+
+// NewPassword creates a new password.
+func NewPassword(value string) (ValidPassword, error) {
+	if value == "" {
+		return ValidPassword{}, errInvalidPassword
+	}
+	return ValidPassword{valid: true, value: value}, nil
+}

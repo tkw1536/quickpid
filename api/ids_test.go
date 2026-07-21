@@ -22,6 +22,53 @@ func TestNewUsername(t *testing.T) {
 	testIdentifierValidation(t, api.NewUsername, "invalid username")
 }
 
+func TestNewPassword(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		input   string
+		wantErr string
+	}{
+		{
+			name:  "valid_simple",
+			input: "secret",
+		},
+		{
+			name:  "valid_with_spaces",
+			input: "secret phrase",
+		},
+		{
+			name:    "invalid_empty",
+			input:   "",
+			wantErr: "invalid password",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			password, err := api.NewPassword(tt.input)
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Fatalf("NewPassword(%q) error = %v, want nil", tt.input, err)
+				}
+				if password.String() != tt.input {
+					t.Fatalf("password.String() = %q, want %q", password.String(), tt.input)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("NewPassword(%q) error = nil, want %q", tt.input, tt.wantErr)
+			}
+			if err.Error() != tt.wantErr {
+				t.Fatalf("NewPassword(%q) error = %q, want %q", tt.input, err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
 func testIdentifierValidation[T any](t *testing.T, validate func(string) (T, error), wantInvalidMsg string) {
 	t.Helper()
 

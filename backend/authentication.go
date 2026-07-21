@@ -45,6 +45,17 @@ type AuthenticationBackend interface {
 	// Should return [ErrUserNotFound] if the user does not exist.
 	UpdateUser(ctx context.Context, username api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error)
 
+	// SetPassword sets or clears a password for the given user.
+	//
+	// A nil password clears the stored password.
+	// Should return [ErrUserNotFound] if the user does not exist.
+	SetPassword(ctx context.Context, username api.ValidUsername, password *api.ValidPassword) (bool, error)
+
+	// CheckPassword reports whether password matches the stored password for the given user.
+	//
+	// Should return [ErrUserNotFound] if the user does not exist.
+	CheckPassword(ctx context.Context, username api.ValidUsername, password api.ValidPassword) (bool, error)
+
 	// Creates a new API key for the given user.
 	// format describes how key should be validated and transformed into its stored representation.
 	// key is the full raw API key; only a secure hash of it should be stored by the backend.

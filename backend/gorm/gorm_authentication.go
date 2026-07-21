@@ -10,6 +10,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/internal/password"
 	"gorm.io/gorm"
 )
 
@@ -127,6 +128,41 @@ func (s *Store) UpdateUser(ctx context.Context, username api.ValidUsername, req 
 		}
 		info := row.toSpec()
 		return &info, nil
+	})
+}
+
+func (s *Store) SetPassword(ctx context.Context, username api.ValidUsername, newPassword *api.ValidPassword) (bool, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (bool, error) {
+		row, err := findUser(tx, username)
+		if err != nil {
+			return false, err
+		}
+		if newPassword == nil {
+			row.PasswordHash = nil
+		} else {
+			hash, hashErr := password.Hash(newPassword.String())
+			if hashErr != nil {
+				return false, fmt.Errorf("password.Hash: %w", hashErr)
+			}
+			row.PasswordHash = hash
+		}
+		if err := tx.Save(&row).Error; err != nil {
+			return false, err
+		}
+		return len(row.PasswordHash) > 0, nil
+	})
+}
+
+func (s *Store) CheckPassword(ctx context.Context, username api.ValidUsername, candidate api.ValidPassword) (bool, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (bool, error) {
+		row, err := findUser(tx, username)
+		if err != nil {
+			return false, err
+		}
+		if len(row.PasswordHash) == 0 {
+			return false, nil
+		}
+		return password.Verify(candidate.String(), row.PasswordHash), nil
 	})
 }
 

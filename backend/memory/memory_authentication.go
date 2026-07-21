@@ -13,6 +13,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/internal/password"
 )
 
 func (s *Store) CreateUser(_ context.Context, req api.ValidUserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
@@ -119,6 +120,42 @@ func (s *Store) UpdateUser(_ context.Context, username api.ValidUsername, req ap
 		user.superuser = *req.Superuser
 	}
 	return user.toSpec(username.String()), nil
+}
+
+func (s *Store) SetPassword(_ context.Context, username api.ValidUsername, newPassword *api.ValidPassword) (bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	user, err := s.userLocked(username.String())
+	if err != nil {
+		return false, err
+	}
+
+	if newPassword == nil {
+		user.passwordHash = nil
+		return false, nil
+	}
+
+	hash, err := password.Hash(newPassword.String())
+	if err != nil {
+		return false, fmt.Errorf("password.Hash: %w", err)
+	}
+	user.passwordHash = hash
+	return true, nil
+}
+
+func (s *Store) CheckPassword(_ context.Context, username api.ValidUsername, candidate api.ValidPassword) (bool, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	user, err := s.userLocked(username.String())
+	if err != nil {
+		return false, err
+	}
+	if len(user.passwordHash) == 0 {
+		return false, nil
+	}
+	return password.Verify(candidate.String(), user.passwordHash), nil
 }
 
 func (s *Store) CreateKey(_ context.Context, format apikey.Format, username api.ValidUsername, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error) {

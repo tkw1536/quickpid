@@ -69,3 +69,11 @@ func TestGetErrorString_wrapped(t *testing.T) {
 		t.Fatal("wrapped error should unwrap to cause")
 	}
 }
+
+func TestErrorString_HTTPCode(t *testing.T) {
+	t.Parallel()
+
+	if got := api.InvalidPassword.HTTPCode(); got != 400 {
+		t.Fatalf("api.InvalidPassword.HTTPCode() = %d, want 400", got)
+	}
+}

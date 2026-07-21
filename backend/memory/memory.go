@@ -34,15 +34,17 @@ type Store struct {
 }
 
 type userRecord struct {
-	superuser bool
-	keys      map[string]*keyRecord
-	revoked   map[string]*api.APIKeyInfo
+	superuser    bool
+	passwordHash []byte
+	keys         map[string]*keyRecord
+	revoked      map[string]*api.APIKeyInfo
 }
 
 func (u *userRecord) toSpec(username string) *api.UserInfo {
 	return &api.UserInfo{
 		Username:  username,
 		Superuser: u.superuser,
+		Password:  len(u.passwordHash) > 0,
 	}
 }
 

@@ -117,6 +117,44 @@ func (s *Service) GetUser(ctx context.Context, caller *api.ValidUserInfo) (*api.
 	return user, nil
 }
 
+// SetUserPassword sets or clears a password for the caller or another user when caller is a superuser.
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Forbidden]
+// - [api.UserNotFound]
+// - [api.DatabaseError].
+func (s *Service) SetUserPassword(ctx context.Context, caller *api.ValidUserInfo, target *api.ValidUsername, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
+	if err := s.requireAuthEnabled(); err != nil {
+		return nil, err
+	}
+	username, err := resolveTarget(caller, target)
+	if err != nil {
+		return nil, err
+	}
+	hasPassword, err := s.store.SetPassword(ctx, username, req.Password)
+	if mapped, ok := mapAuthBackendError(err); ok {
+		return nil, fmt.Errorf("store.SetPassword: %w", mapped)
+	}
+	if err != nil {
+		return nil, api.WithErrorString(fmt.Errorf("store.SetPassword: %w", err), api.DatabaseError)
+	}
+	return &api.SetPasswordResponse{Password: hasPassword}, nil
+}
+
+// CheckPassword reports whether password matches the stored password for username.
+func (s *Service) CheckPassword(ctx context.Context, username api.ValidUsername, password api.ValidPassword) (bool, error) {
+	ok, err := s.store.CheckPassword(ctx, username, password)
+	if mapped, handled := mapAuthBackendError(err); handled {
+		return false, fmt.Errorf("store.CheckPassword: %w", mapped)
+	}
+	if err != nil {
+		return false, fmt.Errorf("store.CheckPassword: %w", err)
+	}
+	return ok, nil
+}
+
 // CreateUser creates a new user account. Caller must be a superuser.
 //
 // It can return the following errors:

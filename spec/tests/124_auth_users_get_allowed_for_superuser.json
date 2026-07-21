@@ -28,7 +28,8 @@
         "code": 200,
         "body": {
           "superuser": true,
-          "username": "root"
+          "username": "root",
+          "password": false
         }
       }
     },
@@ -50,7 +51,8 @@
         "code": 201,
         "body": {
           "superuser": false,
-          "username": "alice"
+          "username": "alice",
+          "password": false
         }
       }
     },
@@ -72,7 +74,8 @@
         "code": 201,
         "body": {
           "superuser": true,
-          "username": "servertest"
+          "username": "servertest",
+          "password": false
         }
       }
     },
@@ -127,7 +130,8 @@
         "code": 201,
         "body": {
           "superuser": false,
-          "username": "bob"
+          "username": "bob",
+          "password": false
         }
       }
     },
@@ -158,19 +162,23 @@
           "items": [
             {
               "superuser": false,
-              "username": "alice"
+              "username": "alice",
+              "password": false
             },
             {
               "superuser": false,
-              "username": "bob"
+              "username": "bob",
+              "password": false
             },
             {
               "superuser": true,
-              "username": "root"
+              "username": "root",
+              "password": false
             },
             {
               "superuser": true,
-              "username": "servertest"
+              "username": "servertest",
+              "password": false
             }
           ],
           "offset": 0,
