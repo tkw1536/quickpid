@@ -95,8 +95,6 @@ Examples:
 
 - namespace mounting
 - rework non-flow-tests
-- password auth
-- cookie auth? / browser-based auth?
 - use something other than uuid for namespace generation to drop dependency
 
 ## LICENSE

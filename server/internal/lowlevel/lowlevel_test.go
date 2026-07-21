@@ -1,9 +1,10 @@
 //spellchecker:words lowlevel
 package lowlevel_test
 
-//spellchecker:words context errors slog http httptest strings testing time github quickpid backend memory internal apikey httpfixture server lowlevel service
+//spellchecker:words base64 context errors slog http httptest strings testing time github quickpid backend memory internal apikey httpfixture server lowlevel service
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -36,11 +37,16 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 	t.Parallel()
 
 	const (
-		validKnownToken   = "valid-known-token"
-		validMissingToken = "valid-missing-token"
-		invalidToken      = "invalid-token"
-		lookupFailToken   = "lookup-fail-token" /* #nosec G101 -- hard-coded test token never talks to a real API  */
-		userFailToken     = "user-fail-token"
+		validKnownToken    = "valid-known-token"
+		validMissingToken  = "valid-missing-token"
+		invalidToken       = "invalid-token"
+		lookupFailToken    = "lookup-fail-token" /* #nosec G101 -- hard-coded test token never talks to a real API  */
+		userFailToken      = "user-fail-token"
+		validBasicPassword = "basic-secret"
+		invalidBasicUser   = "mallory"
+		invalidBasicPass   = "wrong-secret"
+		userFailBasicUser  = "charlie"
+		userFailBasicPass  = "charlie-secret"
 	)
 
 	validUser := mustValidUser(t, "alice", true)
@@ -65,7 +71,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					[]api.ErrorString{api.DatabaseError},
 				)
 
-				rec := runHandler(t, handler, scenario.token)
+				rec := runHandler(t, handler, scenario.authHeaders...)
 				assertStatusAndCalled(t, rec, gotCalled, http.StatusOK, true)
 			},
 		},
@@ -89,8 +95,8 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
-				rec := runHandler(t, handler, scenario.token)
-				wantStatus, wantCalled, wantUser := expectedUsernameOutcome(true, scenario.token, validUser)
+				rec := runHandler(t, handler, scenario.authHeaders...)
+				wantStatus, wantCalled, wantUser := expectedUsernameOutcome(true, scenario, validUser)
 				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
 				if wantCalled && gotUser != wantUser {
 					t.Fatalf("username = %q, want %q", gotUser, wantUser)
@@ -117,8 +123,8 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
-				rec := runHandler(t, handler, scenario.token)
-				wantStatus, wantCalled, wantUser := expectedOptionalUsernameOutcome(scenario.token, validUser)
+				rec := runHandler(t, handler, scenario.authHeaders...)
+				wantStatus, wantCalled, wantUser := expectedOptionalUsernameOutcome(scenario, validUser)
 				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
 				if wantCalled {
 					assertOptionalStringEqual(t, gotUser, wantUser)
@@ -145,8 +151,8 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
-				rec := runHandler(t, handler, scenario.token)
-				wantStatus, wantCalled, wantUser := expectedUserOutcome(true, scenario.token, validUser)
+				rec := runHandler(t, handler, scenario.authHeaders...)
+				wantStatus, wantCalled, wantUser := expectedUserOutcome(true, scenario, validUser)
 				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
 				if wantCalled {
 					assertOptionalUserEqual(t, gotUser, wantUser)
@@ -179,8 +185,8 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
-				rec := runHandler(t, handler, scenario.token)
-				wantStatus, wantCalled, wantUser := expectedUserOutcome(false, scenario.token, validUser)
+				rec := runHandler(t, handler, scenario.authHeaders...)
+				wantStatus, wantCalled, wantUser := expectedUserOutcome(false, scenario, validUser)
 				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
 				if wantCalled {
 					assertOptionalUserEqual(t, gotUser, wantUser)
@@ -190,12 +196,18 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 	}
 
 	scenarios := []scenario{
-		{name: "no user passed"},
-		{name: "user given", token: validKnownToken},
-		{name: "user given but backend can't find it", token: validMissingToken},
-		{name: "invalid user passed", token: invalidToken},
-		{name: "lookup backend failure", token: lookupFailToken},
-		{name: "user backend failure", token: userFailToken},
+		{id: "no-auth", name: "no user passed"},
+		{id: "bearer-valid-known", name: "bearer user given", authHeaders: []string{"Bearer " + validKnownToken}},
+		{id: "bearer-valid-missing", name: "bearer user given but backend can't find it", authHeaders: []string{"Bearer " + validMissingToken}},
+		{id: "bearer-invalid", name: "invalid bearer user passed", authHeaders: []string{"Bearer " + invalidToken}},
+		{id: "bearer-lookup-fail", name: "bearer lookup backend failure", authHeaders: []string{"Bearer " + lookupFailToken}},
+		{id: "bearer-user-fail", name: "bearer user backend failure", authHeaders: []string{"Bearer " + userFailToken}},
+		{id: "basic-valid-known", name: "basic user given", authHeaders: []string{basicAuthHeader(validUser.Username.String(), validBasicPassword)}},
+		{id: "basic-valid-missing", name: "basic user given but backend can't find it", authHeaders: []string{basicAuthHeader(validUser.Username.String(), "missing-secret")}},
+		{id: "basic-invalid", name: "invalid basic user passed", authHeaders: []string{basicAuthHeader(invalidBasicUser, invalidBasicPass)}},
+		{id: "basic-user-fail", name: "basic user backend failure", authHeaders: []string{basicAuthHeader(userFailBasicUser, userFailBasicPass)}},
+		{id: "basic-malformed", name: "malformed basic auth", authHeaders: []string{"Basic !!!"}},
+		{id: "mixed-auth", name: "mixed bearer and basic auth", authHeaders: []string{"Bearer " + validKnownToken, basicAuthHeader(validUser.Username.String(), validBasicPassword)}},
 	}
 
 	for _, test := range tests {
@@ -206,8 +218,14 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 				t.Run(scenario.name, func(t *testing.T) {
 					t.Parallel()
 
+					var (
+						lastAPIKey   string
+						lastPassword string
+					)
 					h := lowlevel.NewAuthHandler(&mockAuthService{
-						authenticate: func(_ context.Context, apiKey string) (api.ValidUsername, error) {
+						authenticateAPIKey: func(_ context.Context, apiKey string) (api.ValidUsername, error) {
+							lastAPIKey = apiKey
+							lastPassword = ""
 							switch apiKey {
 							case validKnownToken, validMissingToken, userFailToken:
 								return validUser.Username, nil
@@ -219,17 +237,39 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 								return api.ValidUsername{}, unauthorizedError{}
 							}
 						},
-						currentUser: func(_ context.Context, apiKey string) (api.ValidUserInfo, error) {
-							switch apiKey {
+						authenticatePassword: func(_ context.Context, username string, password string) (api.ValidUsername, error) {
+							lastAPIKey = ""
+							lastPassword = password
+							switch {
+							case username == validUser.Username.String() && password == validBasicPassword:
+								return validUser.Username, nil
+							case username == validUser.Username.String() && password == "missing-secret":
+								return validUser.Username, nil
+							case username == userFailBasicUser && password == userFailBasicPass:
+								name, err := api.NewUsername(username)
+								if err != nil {
+									t.Fatalf("NewUsername(%q) error = %v", username, err)
+								}
+								return name, nil
+							default:
+								return api.ValidUsername{}, unauthorizedError{}
+							}
+						},
+						loadUser: func(_ context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
+							switch lastAPIKey {
 							case validKnownToken:
 								return *validUser, nil
 							case validMissingToken:
 								return api.ValidUserInfo{}, unauthorizedError{}
-							case invalidToken:
-								return api.ValidUserInfo{}, unauthorizedError{}
-							case lookupFailToken:
-								return api.ValidUserInfo{}, errLookupFailure
 							case userFailToken:
+								return api.ValidUserInfo{}, errUserFailure
+							}
+							switch lastPassword {
+							case validBasicPassword:
+								return *validUser, nil
+							case "missing-secret":
+								return api.ValidUserInfo{}, unauthorizedError{}
+							case userFailBasicPass:
 								return api.ValidUserInfo{}, errUserFailure
 							default:
 								return api.ValidUserInfo{}, unauthorizedError{}
@@ -296,12 +336,12 @@ func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 	t.Parallel()
 
-	var currentUserCalled bool
+	var authenticateAPIKeyCalled bool
 	h := lowlevel.NewAuthHandler(&mockAuthService{
 		anonymousMode: true,
-		currentUser: func(context.Context, string) (api.ValidUserInfo, error) {
-			currentUserCalled = true
-			return api.ValidUserInfo{}, unauthorizedError{}
+		authenticateAPIKey: func(context.Context, string) (api.ValidUsername, error) {
+			authenticateAPIKeyCalled = true
+			return api.ValidUsername{}, unauthorizedError{}
 		},
 	}, nil)
 	handler := lowlevel.HandleRequiredUserInAuthMode(
@@ -318,8 +358,8 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
 	}
-	if currentUserCalled {
-		t.Fatal("CurrentUser was called, want anonymous-mode gate before auth")
+	if authenticateAPIKeyCalled {
+		t.Fatal("AuthenticateAPIKey was called, want anonymous-mode gate before auth")
 	}
 	if err := (httpfixture.Response{
 		Code: http.StatusNotFound,
@@ -365,30 +405,39 @@ func TestAuthHandlerLog(t *testing.T) {
 }
 
 type scenario struct {
-	name  string
-	token string
+	id          string
+	name        string
+	authHeaders []string
 }
 
 type mockAuthService struct {
-	anonymousMode bool
-	authenticate  func(context.Context, string) (api.ValidUsername, error)
-	currentUser   func(context.Context, string) (api.ValidUserInfo, error)
+	anonymousMode        bool
+	authenticateAPIKey   func(context.Context, string) (api.ValidUsername, error)
+	authenticatePassword func(context.Context, string, string) (api.ValidUsername, error)
+	loadUser             func(context.Context, api.ValidUsername) (api.ValidUserInfo, error)
 }
 
 func (m *mockAuthService) AnonymousMode() bool {
 	return m.anonymousMode
 }
 
-func (m *mockAuthService) Authenticate(ctx context.Context, apiKey string) (api.ValidUsername, error) {
-	if m.authenticate != nil {
-		return m.authenticate(ctx, apiKey)
+func (m *mockAuthService) AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, error) {
+	if m.authenticateAPIKey != nil {
+		return m.authenticateAPIKey(ctx, apiKey)
 	}
 	return api.ValidUsername{}, unauthorizedError{}
 }
 
-func (m *mockAuthService) CurrentUser(ctx context.Context, apiKey string) (api.ValidUserInfo, error) {
-	if m.currentUser != nil {
-		return m.currentUser(ctx, apiKey)
+func (m *mockAuthService) AuthenticatePassword(ctx context.Context, username string, password string) (api.ValidUsername, error) {
+	if m.authenticatePassword != nil {
+		return m.authenticatePassword(ctx, username, password)
+	}
+	return api.ValidUsername{}, unauthorizedError{}
+}
+
+func (m *mockAuthService) LoadUser(ctx context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
+	if m.loadUser != nil {
+		return m.loadUser(ctx, username)
 	}
 	return api.ValidUserInfo{}, unauthorizedError{}
 }
@@ -439,63 +488,65 @@ func (*captureHandler) WithGroup(string) slog.Handler {
 	return &captureHandler{}
 }
 
-func runHandler(t *testing.T, handler http.Handler, token string) *httptest.ResponseRecorder {
+func runHandler(t *testing.T, handler http.Handler, authHeaders ...string) *httptest.ResponseRecorder {
 	t.Helper()
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/probe", nil)
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
+	for _, authHeader := range authHeaders {
+		req.Header.Add("Authorization", authHeader)
 	}
 	handler.ServeHTTP(rec, req)
 	return rec
 }
 
-func expectedUsernameOutcome(required bool, token string, validUser *api.ValidUserInfo) (status int, called bool, username string) {
-	if token == "" {
+func expectedUsernameOutcome(required bool, scenario scenario, validUser *api.ValidUserInfo) (status int, called bool, username string) {
+	if scenario.id == "no-auth" {
 		if required {
 			return http.StatusUnauthorized, false, ""
 		}
 		return http.StatusOK, true, ""
 	}
 
-	switch token {
-	case "valid-known-token", "valid-missing-token", "user-fail-token":
+	switch scenario.id {
+	case "bearer-valid-known", "bearer-valid-missing", "bearer-user-fail", "basic-valid-known", "basic-valid-missing":
 		return http.StatusOK, true, validUser.Username.String()
-	case "invalid-token":
+	case "basic-user-fail":
+		return http.StatusOK, true, "charlie"
+	case "bearer-invalid", "basic-invalid", "basic-malformed", "mixed-auth":
 		return http.StatusUnauthorized, false, ""
-	case "lookup-fail-token":
+	case "bearer-lookup-fail":
 		return http.StatusInternalServerError, false, ""
 	default:
-		panic("unexpected token")
+		panic("unexpected scenario")
 	}
 }
 
-func expectedOptionalUsernameOutcome(token string, validUser *api.ValidUserInfo) (status int, called bool, username *string) {
-	status, called, value := expectedUsernameOutcome(false, token, validUser)
+func expectedOptionalUsernameOutcome(scenario scenario, validUser *api.ValidUserInfo) (status int, called bool, username *string) {
+	status, called, value := expectedUsernameOutcome(false, scenario, validUser)
 	if !called || value == "" {
 		return status, called, nil
 	}
 	return status, called, stringPtr(value)
 }
 
-func expectedUserOutcome(required bool, token string, validUser *api.ValidUserInfo) (status int, called bool, user *api.ValidUserInfo) {
-	if token == "" {
+func expectedUserOutcome(required bool, scenario scenario, validUser *api.ValidUserInfo) (status int, called bool, user *api.ValidUserInfo) {
+	if scenario.id == "no-auth" {
 		if required {
 			return http.StatusUnauthorized, false, nil
 		}
 		return http.StatusOK, true, nil
 	}
 
-	switch token {
-	case "valid-known-token":
+	switch scenario.id {
+	case "bearer-valid-known", "basic-valid-known":
 		return http.StatusOK, true, validUser
-	case "valid-missing-token", "invalid-token":
+	case "bearer-valid-missing", "bearer-invalid", "basic-valid-missing", "basic-invalid", "basic-malformed", "mixed-auth":
 		return http.StatusUnauthorized, false, nil
-	case "lookup-fail-token", "user-fail-token":
+	case "bearer-lookup-fail", "bearer-user-fail", "basic-user-fail":
 		return http.StatusInternalServerError, false, nil
 	default:
-		panic("unexpected token")
+		panic("unexpected scenario")
 	}
 }
 
@@ -555,6 +606,11 @@ func mustValidUser(t *testing.T, username string, superuser bool) *api.ValidUser
 
 func stringPtr(value string) *string {
 	return &value
+}
+
+func basicAuthHeader(username string, password string) string {
+	encoded := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
+	return "Basic " + encoded
 }
 
 func usernameStringPtr(username *api.ValidUsername) *string {

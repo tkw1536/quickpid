@@ -14,14 +14,14 @@ import (
 	"github.com/tkw1536/quickpid/internal/apikey"
 )
 
-// Authenticate looks up the username for a valid API key.
+// AuthenticateAPIKey looks up the username for a valid API key.
 //
 // It can return the following errors:
 //
 // - [errUnauthorized] when the key is missing or invalid.
 //
 // Other failures are returned as plain (unannotated) errors.
-func (s *Service) Authenticate(ctx context.Context, apiKey string) (api.ValidUsername, error) {
+func (s *Service) AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, error) {
 	if s.AnonymousMode() || apiKey == "" {
 		return api.ValidUsername{}, errUnauthorized
 	}
@@ -41,22 +41,54 @@ func (s *Service) Authenticate(ctx context.Context, apiKey string) (api.ValidUse
 	return name, nil
 }
 
-// CurrentUser authenticates using an API key and returns the corresponding user account.
+// AuthenticatePassword authenticates a username/password pair and returns the username.
 //
 // It can return the following errors:
 //
-// - [errUnauthorized] when the key is missing, invalid, or the user no longer exists.
+//   - [errUnauthorized] when authentication is disabled, credentials are missing or invalid,
+//     or the user does not exist.
 //
 // Other failures are returned as plain (unannotated) errors.
-func (s *Service) CurrentUser(ctx context.Context, apiKey string) (api.ValidUserInfo, error) {
+func (s *Service) AuthenticatePassword(ctx context.Context, username string, password string) (api.ValidUsername, error) {
+	if s.AnonymousMode() || username == "" || password == "" {
+		return api.ValidUsername{}, errUnauthorized
+	}
+
+	validUsername, err := api.NewUsername(username)
+	if err != nil {
+		return api.ValidUsername{}, errUnauthorized
+	}
+	validPassword, err := api.NewPassword(password)
+	if err != nil {
+		return api.ValidUsername{}, errUnauthorized
+	}
+
+	ok, err := s.store.CheckPassword(ctx, validUsername, validPassword)
+	if errors.Is(err, backend.ErrUserNotFound) {
+		return api.ValidUsername{}, errUnauthorized
+	}
+	if err != nil {
+		return api.ValidUsername{}, fmt.Errorf("store.CheckPassword: %w", err)
+	}
+	if !ok {
+		return api.ValidUsername{}, errUnauthorized
+	}
+	return validUsername, nil
+}
+
+// LoadUser loads and validates the user account for username.
+//
+// It can return the following errors:
+//
+// - [errUnauthorized] when authentication is disabled or the user does not exist.
+//
+// Other failures are returned as plain (unannotated) errors.
+func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
 	if s.AnonymousMode() {
 		return api.ValidUserInfo{}, errUnauthorized
 	}
-	caller, err := s.Authenticate(ctx, apiKey)
-	if err != nil {
-		return api.ValidUserInfo{}, err
-	}
-	user, err := s.store.GetUser(ctx, caller)
+
+	user, err := s.store.GetUser(ctx, username)
 	if errors.Is(err, backend.ErrUserNotFound) {
 		return api.ValidUserInfo{}, errUnauthorized
 	}

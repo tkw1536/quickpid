@@ -20,11 +20,14 @@ type AuthHandler struct {
 
 // AuthService provides the authentication operations needed by [AuthHandler].
 type AuthService interface {
-	// Authenticate resolves a username from an API key.
-	Authenticate(ctx context.Context, apiKey string) (api.ValidUsername, error)
+	// AuthenticateAPIKey resolves a username from an API key.
+	AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, error)
 
-	// CurrentUser resolves the authenticated user from an API key.
-	CurrentUser(ctx context.Context, apiKey string) (api.ValidUserInfo, error)
+	// AuthenticatePassword resolves a username from a username / password pair.
+	AuthenticatePassword(ctx context.Context, username string, password string) (api.ValidUsername, error)
+
+	// LoadUser loads a full user object from a username.
+	LoadUser(ctx context.Context, username api.ValidUsername) (api.ValidUserInfo, error)
 
 	// AnonymousMode reports whether authentication is disabled for resolver operations.
 	AnonymousMode() bool

@@ -445,11 +445,15 @@ func TestService_AnonymousDisablesUserAndPermissionManagement(t *testing.T) {
 	svc, _ := newAnonymousTestService(t)
 	ctx := t.Context()
 
-	if _, err := svc.Authenticate(ctx, "anything"); !service.IsUnauthorized(err) {
-		t.Fatalf("Authenticate() error = %v, want unauthorized", err)
+	if _, err := svc.AuthenticateAPIKey(ctx, "anything"); !service.IsUnauthorized(err) {
+		t.Fatalf("AuthenticateAPIKey() error = %v, want unauthorized", err)
 	}
-	if _, err := svc.CurrentUser(ctx, "anything"); !service.IsUnauthorized(err) {
-		t.Fatalf("CurrentUser() error = %v, want unauthorized", err)
+	rootUsername, err := api.NewUsername("root")
+	if err != nil {
+		t.Fatalf("NewUsername(root) error = %v", err)
+	}
+	if _, err := svc.LoadUser(ctx, rootUsername); !service.IsUnauthorized(err) {
+		t.Fatalf("LoadUser() error = %v, want unauthorized", err)
 	}
 
 	aliceUsername, err := api.NewUsername("alice")

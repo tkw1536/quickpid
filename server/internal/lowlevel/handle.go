@@ -79,30 +79,51 @@ func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*api.ValidU
 		return nil, nil, nil
 	}
 
-	token := readBearerToken(r)
-	if auth.requirement == authRequirementOptional && token == "" {
+	creds := readCredentials(r)
+	if creds.invalid {
+		return nil, nil, api.WithErrorString(errors.New("invalid authentication credentials"), api.Unauthorized)
+	}
+	if auth.requirement == authRequirementOptional && !creds.hasBearer() && !creds.hasBasic() {
 		return nil, nil, nil
 	}
 
-	if auth.loadUser {
-		user, err := h.auth.CurrentUser(r.Context(), token)
+	var (
+		username api.ValidUsername
+		err      error
+	)
+	switch {
+	case creds.hasBearer():
+		username, err = h.auth.AuthenticateAPIKey(r.Context(), creds.bearerToken)
 		if service.IsUnauthorized(err) {
-			return nil, nil, api.WithErrorString(fmt.Errorf("auth.CurrentUser: %w", err), api.Unauthorized)
+			return nil, nil, api.WithErrorString(fmt.Errorf("auth.AuthenticateAPIKey: %w", err), api.Unauthorized)
 		}
 		if err != nil {
-			return nil, nil, api.WithErrorString(fmt.Errorf("auth.CurrentUser: %w", err), api.DatabaseError)
+			return nil, nil, api.WithErrorString(fmt.Errorf("auth.AuthenticateAPIKey: %w", err), api.DatabaseError)
 		}
-		return &user.Username, &user, nil
+	case creds.hasBasic():
+		username, err = h.auth.AuthenticatePassword(r.Context(), creds.basicUsername, creds.basicPassword)
+		if service.IsUnauthorized(err) {
+			return nil, nil, api.WithErrorString(fmt.Errorf("auth.AuthenticatePassword: %w", err), api.Unauthorized)
+		}
+		if err != nil {
+			return nil, nil, api.WithErrorString(fmt.Errorf("auth.AuthenticatePassword: %w", err), api.DatabaseError)
+		}
+	default:
+		return nil, nil, api.WithErrorString(errors.New("missing authentication credentials"), api.Unauthorized)
 	}
 
-	username, err := h.auth.Authenticate(r.Context(), token)
+	if !auth.loadUser {
+		return &username, nil, nil
+	}
+
+	user, err := h.auth.LoadUser(r.Context(), username)
 	if service.IsUnauthorized(err) {
-		return nil, nil, api.WithErrorString(fmt.Errorf("auth.Authenticate: %w", err), api.Unauthorized)
+		return nil, nil, api.WithErrorString(fmt.Errorf("auth.LoadUser: %w", err), api.Unauthorized)
 	}
 	if err != nil {
-		return nil, nil, api.WithErrorString(fmt.Errorf("auth.Authenticate: %w", err), api.DatabaseError)
+		return nil, nil, api.WithErrorString(fmt.Errorf("auth.LoadUser: %w", err), api.DatabaseError)
 	}
-	return &username, nil, nil
+	return &user.Username, &user, nil
 }
 
 // writeHandledError validates that the error maps to a declared API error, logs it, and writes the JSON response.

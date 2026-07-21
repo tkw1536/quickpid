@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words context encoding json slog http strings time
+//spellchecker:words base64 context encoding json slog http strings time
 import (
 	"context"
 	"encoding/json"
@@ -25,14 +25,51 @@ func (h *AuthHandler) writeJSONResponse(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
-// readBearerToken extracts a bearer token from the Authorization header.
-func readBearerToken(r *http.Request) string {
-	auth := r.Header.Get("Authorization")
-	token, found := strings.CutPrefix(auth, "Bearer ")
-	if !found {
-		return ""
+type credentials struct {
+	bearerToken   string
+	basicUsername string
+	basicPassword string
+	invalid       bool
+}
+
+func (c credentials) hasBearer() bool {
+	return c.bearerToken != ""
+}
+
+func (c credentials) hasBasic() bool {
+	return c.basicUsername != "" || c.basicPassword != ""
+}
+
+func readCredentials(r *http.Request) credentials {
+	var creds credentials
+
+	for _, auth := range r.Header.Values("Authorization") {
+		switch {
+		case strings.HasPrefix(auth, "Bearer "):
+			token := strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
+			if token == "" || creds.hasBearer() {
+				creds.invalid = true
+				continue
+			}
+			creds.bearerToken = token
+		case strings.HasPrefix(auth, "Basic "):
+			username, password, ok := r.BasicAuth()
+			if !ok || creds.hasBasic() {
+				creds.invalid = true
+				continue
+			}
+			creds.basicUsername = username
+			creds.basicPassword = password
+		case strings.TrimSpace(auth) != "":
+			creds.invalid = true
+		}
 	}
-	return strings.TrimSpace(token)
+
+	if creds.hasBearer() && creds.hasBasic() {
+		creds.invalid = true
+	}
+
+	return creds
 }
 
 // Log writes a structured request log entry.
