@@ -95,7 +95,6 @@ Examples:
 
 - namespace mounting
 - rework non-flow-tests
-- consider more validated API types
 - password auth
 - cookie auth? / browser-based auth?
 - use something other than uuid for namespace generation to drop dependency
