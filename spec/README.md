@@ -115,6 +115,8 @@ Objects are always returned in ascending order by ID.
 Namespaces can be filtered by their tag (exact match).
 Resources can be filtered by tag membership (the resource includes the given tag) and by deletion status.
 
+TODO: document namespace mounts (`/resolver/mounts/{base_uri}`).
+
 ### Management API
 
 (to be documented)

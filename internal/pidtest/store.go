@@ -77,6 +77,10 @@ func RunStoreTests(t *testing.T, newStore StoreFactory) {
 			Name: "DeleteUserCascadesPermissions",
 			Test: testDeleteUserCascadesPermissions,
 		},
+		{
+			Name: "MountCRUD",
+			Test: testMountCRUD,
+		},
 	} {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Parallel()
@@ -774,3 +778,140 @@ func SeedNamespaceOwner(t *testing.T, s backend.AuthenticationBackend) {
 		t.Fatalf("SeedNamespaceOwner() error = %v", err)
 	}
 }
+
+// testMountCRUD runs namespace mount CRUD tests.
+func testMountCRUD(t *testing.T, newStore StoreFactory) {
+	t.Helper()
+	ctx := context.Background()
+	s := newStore(t)
+	now := fixedNow()
+
+	ns1, err := api.NewNamespaceID("ns-1")
+	if err != nil {
+		t.Fatalf("NewNamespaceID(ns-1) error = %v", err)
+	}
+	ns2, err := api.NewNamespaceID("ns-2")
+	if err != nil {
+		t.Fatalf("NewNamespaceID(ns-2) error = %v", err)
+	}
+	baseURI, err := api.NewBaseURI("https://example.com/prefix/")
+	if err != nil {
+		t.Fatalf("NewBaseURI() error = %v", err)
+	}
+	otherURI, err := api.NewBaseURI("https://other.example.com/")
+	if err != nil {
+		t.Fatalf("NewBaseURI(other) error = %v", err)
+	}
+
+	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), nil, now); err != nil {
+		t.Fatalf("CreateNamespace(ns-1) error = %v", err)
+	}
+	if _, err := s.CreateNamespace(ctx, ns2, namespaceReq(), nil, now); err != nil {
+		t.Fatalf("CreateNamespace(ns-2) error = %v", err)
+	}
+
+	if _, err := s.GetMount(ctx, baseURI); !errors.Is(err, backend.ErrMountNotFound) {
+		t.Fatalf("GetMount() empty error = %v, want ErrMountNotFound", err)
+	}
+	if err := s.DeleteMount(ctx, baseURI); !errors.Is(err, backend.ErrMountNotFound) {
+		t.Fatalf("DeleteMount() empty error = %v, want ErrMountNotFound", err)
+	}
+
+	missingNS, err := api.NewNamespaceID("missing")
+	if err != nil {
+		t.Fatalf("NewNamespaceID(missing) error = %v", err)
+	}
+	if err := s.SetMount(ctx, baseURI, missingNS); !errors.Is(err, backend.ErrNamespaceNotFound) {
+		t.Fatalf("SetMount(missing ns) error = %v, want ErrNamespaceNotFound", err)
+	}
+
+	if err := s.SetMount(ctx, baseURI, ns1); err != nil {
+		t.Fatalf("SetMount(ns-1) error = %v", err)
+	}
+	got, err := s.GetMount(ctx, baseURI)
+	if err != nil {
+		t.Fatalf("GetMount() error = %v", err)
+	}
+	if got != ns1.String() {
+		t.Fatalf("GetMount() = %q, want %q", got, ns1.String())
+	}
+
+	if err := s.SetMount(ctx, baseURI, ns2); err != nil {
+		t.Fatalf("SetMount(upsert ns-2) error = %v", err)
+	}
+	got, err = s.GetMount(ctx, baseURI)
+	if err != nil {
+		t.Fatalf("GetMount() after upsert error = %v", err)
+	}
+	if got != ns2.String() {
+		t.Fatalf("GetMount() after upsert = %q, want %q", got, ns2.String())
+	}
+
+	if err := s.SetMount(ctx, otherURI, ns1); err != nil {
+		t.Fatalf("SetMount(otherURI) error = %v", err)
+	}
+	got, err = s.GetMount(ctx, otherURI)
+	if err != nil {
+		t.Fatalf("GetMount(otherURI) error = %v", err)
+	}
+	if got != ns1.String() {
+		t.Fatalf("GetMount(otherURI) = %q, want %q", got, ns1.String())
+	}
+
+	page, err := s.ListMounts(ctx, api.ListMountsParams{Limit: 100, Offset: 0})
+	if err != nil {
+		t.Fatalf("ListMounts() error = %v", err)
+	}
+	if page.Total != 2 || len(page.Items) != 2 {
+		t.Fatalf("ListMounts() = %+v, want 2 items", page)
+	}
+	if page.Items[0].Namespace != ns1.String() || page.Items[0].BaseURI != otherURI.String() {
+		t.Fatalf("ListMounts()[0] = %+v", page.Items[0])
+	}
+	if page.Items[1].Namespace != ns2.String() || page.Items[1].BaseURI != baseURI.String() {
+		t.Fatalf("ListMounts()[1] = %+v", page.Items[1])
+	}
+
+	page, err = s.ListMounts(ctx, api.ListMountsParams{Limit: 1, Offset: 1})
+	if err != nil {
+		t.Fatalf("ListMounts(page) error = %v", err)
+	}
+	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Namespace != ns2.String() {
+		t.Fatalf("ListMounts(page) = %+v", page)
+	}
+
+	uris, err := s.ListNamespaceMounts(ctx, ns1, api.ListNamespaceMountsParams{Limit: 100, Offset: 0})
+	if err != nil {
+		t.Fatalf("ListNamespaceMounts(ns1) error = %v", err)
+	}
+	if uris.Total != 1 || len(uris.Items) != 1 || uris.Items[0] != otherURI.String() {
+		t.Fatalf("ListNamespaceMounts(ns1) = %+v", uris)
+	}
+
+	uris, err = s.ListNamespaceMounts(ctx, ns2, api.ListNamespaceMountsParams{Limit: 100, Offset: 0})
+	if err != nil {
+		t.Fatalf("ListNamespaceMounts(ns2) error = %v", err)
+	}
+	if uris.Total != 1 || len(uris.Items) != 1 || uris.Items[0] != baseURI.String() {
+		t.Fatalf("ListNamespaceMounts(ns2) = %+v", uris)
+	}
+
+	if _, err := s.ListNamespaceMounts(ctx, missingNS, api.ListNamespaceMountsParams{Limit: 10}); !errors.Is(err, backend.ErrNamespaceNotFound) {
+		t.Fatalf("ListNamespaceMounts(missing) error = %v, want ErrNamespaceNotFound", err)
+	}
+
+	if err := s.DeleteMount(ctx, baseURI); err != nil {
+		t.Fatalf("DeleteMount() error = %v", err)
+	}
+	if _, err := s.GetMount(ctx, baseURI); !errors.Is(err, backend.ErrMountNotFound) {
+		t.Fatalf("GetMount() after delete error = %v, want ErrMountNotFound", err)
+	}
+	got, err = s.GetMount(ctx, otherURI)
+	if err != nil {
+		t.Fatalf("GetMount(otherURI) after delete error = %v", err)
+	}
+	if got != ns1.String() {
+		t.Fatalf("GetMount(otherURI) after delete = %q, want %q", got, ns1.String())
+	}
+}
+

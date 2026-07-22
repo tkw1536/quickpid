@@ -20,6 +20,7 @@ func NewStore() *Store {
 		namespaces:  make(map[string]api.NamespaceResponse),
 		resources:   make(map[string]map[string]api.ResourceResponse),
 		permissions: make(map[string]map[string]api.PermissionLevel),
+		mounts:      make(map[string]string),
 	}
 }
 
@@ -31,6 +32,7 @@ type Store struct {
 	namespaces  map[string]api.NamespaceResponse
 	resources   map[string]map[string]api.ResourceResponse
 	permissions map[string]map[string]api.PermissionLevel
+	mounts      map[string]string // baseURI -> namespaceID
 }
 
 type userRecord struct {
@@ -72,6 +74,7 @@ func (s *Store) Shutdown(ctx context.Context) error {
 		s.namespaces = nil
 		s.resources = nil
 		s.permissions = nil
+		s.mounts = nil
 	}()
 
 	select {

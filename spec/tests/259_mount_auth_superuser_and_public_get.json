@@ -1,0 +1,235 @@
+{
+  "name": "259_mount_auth_superuser_and_public_get",
+  "comment": "In authenticated mode, only superusers may manage mounts; GET remains public without authentication.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "create_alice",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"alice\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "alice",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "issue_alice_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "alice-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key?username=alice",
+        "body": "{\"comment\": \"alice\",\"expires_at\": null}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "alice",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "alice-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+        }
+      }
+    },
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee3"
+        ],
+        "now": "2026-07-05T12:00:00Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"mount-auth\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2026-07-05T12:00:00Z",
+          "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee3",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "mount-auth"
+        }
+      }
+    },
+    {
+      "name": "put_unauthorized",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fauth%2F",
+        "body": "{\"namespace\":\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee3\"}"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    },
+    {
+      "name": "put_forbidden_non_superuser",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fauth%2F",
+        "body": "{\"namespace\":\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee3\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "put_superuser",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fauth%2F",
+        "body": "{\"namespace\":\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee3\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "base_uri": "https://example.com/auth/",
+          "namespace": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee3"
+        }
+      }
+    },
+    {
+      "name": "get_public_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fauth%2F"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "base_uri": "https://example.com/auth/",
+          "namespace": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee3"
+        }
+      }
+    },
+    {
+      "name": "delete_forbidden_non_superuser",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fauth%2F",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "delete_superuser",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fauth%2F",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 204
+      }
+    }
+  ]
+}

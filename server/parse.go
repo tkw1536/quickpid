@@ -148,6 +148,19 @@ func (*Server) getUsername(r *http.Request) (api.ValidUsername, error) {
 	return username, nil
 }
 
+// getBaseURI gets the base URI from the request path.
+//
+// It can return the following errors:
+//
+// - [api.InvalidBaseURI].
+func (*Server) getBaseURI(r *http.Request) (api.ValidBaseURI, error) {
+	baseURI, err := api.NewBaseURI(r.PathValue("base_uri"))
+	if err != nil {
+		return api.ValidBaseURI{}, api.WithErrorString(fmt.Errorf("api.NewBaseURI: %w", err), api.InvalidBaseURI)
+	}
+	return baseURI, nil
+}
+
 // parseOptionalUsernameQuery parses an optional username query parameter.
 //
 // It can return the following errors:

@@ -16,10 +16,12 @@ tags:
     description: Operations related to per-namespace permissions.
   - name: resources
     description: Operations related to resources.
+  - name: mounts
+    description: Operations related to namespace mounts.
   - name: user
     description: Operations related to user accounts.
-  - name: keys
-    description: Operations related to API keys.
+  - name: credentials
+    description: Operations related to credentials 
 
 
 servers:
@@ -232,6 +234,256 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
+  /resolver/mounts:
+    get:
+      operationId: listMounts
+      summary: List all namespace mounts.
+      description: |
+        Returns a paginated list of all mounts as `{base_uri, namespace}` pairs.
+        Results are ordered ascending by namespace id, then by base URI.
+
+        In anonymous mode, this route is accessible without authentication.
+        In authenticated mode, only a superuser may list all mounts.
+      tags:
+        - mounts
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Maximum number of items to return.
+            If omitted, a default value is applied.
+            If the value exceeds the configured maximum, it is clamped to that maximum.
+            A value of 0 returns an empty items array with a valid total.
+            Negative values or non-integers return a 400 response.
+          schema:
+            type: integer
+            minimum: 0
+        - name: offset
+          in: query
+          required: false
+          description: |
+            Number of items to skip before starting to collect the result set.
+            If omitted, the value is treated as 0.
+            Negative values or non-integers return a 400 response.
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: |
+            A paginated list of mounts, sorted by namespace id then base URI in increasing order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMountsResponse'
+        '400':
+          description: Invalid query parameter (e.g. limit or offset).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+        '401':
+          description: Authentication is required or the credentials are incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to list all mounts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /resolver/mounts/{base_uri}:
+    get:
+      operationId: getMount
+      summary: Resolve a namespace mount by base URI.
+      description: |
+        Returns the namespace id mapped from the given base URI.
+
+        The `base_uri` path parameter must be a single path segment containing a percent-encoded absolute URI
+        (for example, encode `https://example.com/prefix/` as `https%3A%2F%2Fexample.com%2Fprefix%2F`).
+
+        This endpoint never requires authentication.
+      security: []
+      tags:
+        - mounts
+      parameters:
+        - name: base_uri
+          in: path
+          required: true
+          description: |
+            Absolute base URI of the mount, percent-encoded as a single path segment.
+          schema:
+            $ref: '#/components/schemas/BaseURI'
+      responses:
+        '200':
+          description: Mount found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mount'
+        '400':
+          description: Invalid base URI.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInvalidBaseURI'
+        '404':
+          description: Mount does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMountNotFound'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+    put:
+      operationId: setMount
+      summary: Create or replace a namespace mount.
+      description: |
+        Creates or replaces the unidirectional mapping from the given base URI to a namespace id.
+        There may only be one mapping per base URI; multiple base URIs may map to the same namespace.
+
+        The `base_uri` path parameter must be a single path segment containing a percent-encoded absolute URI
+        (for example, encode `https://example.com/prefix/` as `https%3A%2F%2Fexample.com%2Fprefix%2F`).
+
+        In anonymous mode, this route is accessible without authentication.
+        In authenticated mode, only a superuser may manage mounts.
+      tags:
+        - mounts
+      parameters:
+        - name: base_uri
+          in: path
+          required: true
+          description: |
+            Absolute base URI of the mount, percent-encoded as a single path segment.
+          schema:
+            $ref: '#/components/schemas/BaseURI'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MountUpsertRequest'
+      responses:
+        '200':
+          description: Mount created or replaced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mount'
+        '400':
+          description: Invalid request body or base URI.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+                  - $ref: '#/components/schemas/ErrorInvalidBaseURI'
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+        '401':
+          description: Authentication is required or the credentials are incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to manage mounts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: Namespace does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNamespaceNotFound'
+        '413':
+          description: Request body exceeds the configured size limit.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+    delete:
+      operationId: deleteMount
+      summary: Delete a namespace mount.
+      description: |
+        Removes the mapping for the given base URI.
+
+        The `base_uri` path parameter must be a single path segment containing a percent-encoded absolute URI
+        (for example, encode `https://example.com/prefix/` as `https%3A%2F%2Fexample.com%2Fprefix%2F`).
+
+        In anonymous mode, this route is accessible without authentication.
+        In authenticated mode, only a superuser may manage mounts.
+      tags:
+        - mounts
+      parameters:
+        - name: base_uri
+          in: path
+          required: true
+          description: |
+            Absolute base URI of the mount, percent-encoded as a single path segment.
+          schema:
+            $ref: '#/components/schemas/BaseURI'
+      responses:
+        '204':
+          description: Mount deleted.
+        '400':
+          description: Invalid base URI.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInvalidBaseURI'
+        '401':
+          description: Authentication is required or the credentials are incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to manage mounts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: Mount does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMountNotFound'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
   /resolver/namespaces/{namespace}:
     get:
       operationId: getNamespace
@@ -279,6 +531,88 @@ paths:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The namespace exists but the authenticated user is not allowed to access it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: Namespace does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNamespaceNotFound'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /resolver/namespaces/{namespace}/mounts:
+    get:
+      operationId: listNamespaceMounts
+      summary: List mounts for a namespace.
+      description: |
+        Returns a paginated list of base URIs mounted to the given namespace.
+        Results are ordered ascending by base URI.
+
+        In anonymous mode, this route is accessible without authentication.
+        In authenticated mode, the caller must have at least contributor permission for the namespace, or be a superuser.
+      tags:
+        - mounts
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/NamespaceId'
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Maximum number of items to return.
+            If omitted, a default value is applied.
+            If the value exceeds the configured maximum, it is clamped to that maximum.
+            A value of 0 returns an empty items array with a valid total.
+            Negative values or non-integers return a 400 response.
+          schema:
+            type: integer
+            minimum: 0
+        - name: offset
+          in: query
+          required: false
+          description: |
+            Number of items to skip before starting to collect the result set.
+            If omitted, the value is treated as 0.
+            Negative values or non-integers return a 400 response.
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: |
+            A paginated list of base URIs, sorted in increasing order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBaseURIResponse'
+        '400':
+          description: Invalid namespace id or query parameter.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+        '401':
+          description: Authentication is required or the credentials are incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to list mounts for this namespace.
           content:
             application/json:
               schema:
@@ -1159,8 +1493,8 @@ paths:
           in: query
           required: true
           description: |
-            When not set, the currently authenticated user is the update target.
-            Superusers may set this parameter to select another user account to update, including their own.
+            The username of the account to update.
+            It is not permitted to update one's own account.
           schema:
             $ref: '#/components/schemas/Username'
       requestBody:
@@ -1557,7 +1891,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
-        - keys
+        - credentials
       parameters:
         - name: username
           in: query
@@ -1644,7 +1978,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
-        - keys
+        - credentials
       parameters:
         - name: username
           in: query
@@ -1732,7 +2066,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
-        - user
+        - credentials
       parameters:
         - name: username
           in: query
@@ -1816,7 +2150,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
-        - keys
+        - credentials
       parameters:
         - name: username
           in: query
@@ -2045,6 +2379,16 @@ components:
               enum:
                 - invalid_password
           description: The password was invalid.
+    ErrorInvalidBaseURI:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - invalid_base_uri
+          description: The base URI was invalid.
     ErrorNamespaceNotFound:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -2065,6 +2409,16 @@ components:
               enum:
                 - resource_not_found
           description: The resource does not exist.
+    ErrorMountNotFound:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - mount_not_found
+          description: The mount does not exist.
     ErrorResourceGone:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -2253,6 +2607,81 @@ components:
         Allowed characters are lowercase letters, digits, hyphen, and underscore.
       type: string
       pattern: '^[a-z0-9_-]+$'
+    BaseURI:
+      description: |
+        Absolute base URI used as the key of a namespace mount.
+        Must be a valid absolute URI (non-empty scheme).
+        May not have a query or a fragment component.
+        When used as a path parameter, the full URI must be percent-encoded as a single path segment.
+      type: string
+      format: uri
+    Mount:
+      description: A unidirectional mapping from a base URI to a namespace id.
+      type: object
+      additionalProperties: false
+      required:
+        - base_uri
+        - namespace
+      properties:
+        base_uri:
+          $ref: '#/components/schemas/BaseURI'
+        namespace:
+          $ref: '#/components/schemas/NamespaceId'
+    MountUpsertRequest:
+      description: Request to create or replace a namespace mount.
+      type: object
+      additionalProperties: false
+      required:
+        - namespace
+      properties:
+        namespace:
+          $ref: '#/components/schemas/NamespaceId'
+    PaginatedMountsResponse:
+      description: |
+        A single page of mount responses.
+        The 'total' field is the total number of mounts, ignoring 'limit' and 'offset'.
+        The 'offset' field is the effective offset used to produce this response.
+      type: object
+      required:
+        - total
+        - offset
+        - items
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of items available.
+        offset:
+          type: integer
+          minimum: 0
+          description: Offset of the current response.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mount'
+    PaginatedBaseURIResponse:
+      description: |
+        A single page of base URI strings.
+        The 'total' field is the total number of URIs, ignoring 'limit' and 'offset'.
+        The 'offset' field is the effective offset used to produce this response.
+      type: object
+      required:
+        - total
+        - offset
+        - items
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of items available.
+        offset:
+          type: integer
+          minimum: 0
+          description: Offset of the current response.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BaseURI'
     Username:
       description: |
         Username of a user account.

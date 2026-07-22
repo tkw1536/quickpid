@@ -1,0 +1,234 @@
+{
+  "name": "260_mount_list_anonymous",
+  "comment": "In anonymous mode, listing all mounts and mounts for a namespace works without authentication, with correct sort order.",
+  "steps": [
+    {
+      "name": "create_ns_a",
+      "config": {
+        "namespaceIDs": [
+          "ns-aaa"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"a\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "ns-aaa",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "a"
+        }
+      }
+    },
+    {
+      "name": "create_ns_b",
+      "config": {
+        "namespaceIDs": [
+          "ns-bbb"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"b\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "ns-bbb",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "b"
+        }
+      }
+    },
+    {
+      "name": "put_mount_b_z",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fz.example.com%2F",
+        "body": "{\"namespace\":\"ns-bbb\"}"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "base_uri": "https://z.example.com/",
+          "namespace": "ns-bbb"
+        }
+      }
+    },
+    {
+      "name": "put_mount_a_m",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fm.example.com%2F",
+        "body": "{\"namespace\":\"ns-aaa\"}"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "base_uri": "https://m.example.com/",
+          "namespace": "ns-aaa"
+        }
+      }
+    },
+    {
+      "name": "put_mount_a_a",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fa.example.com%2F",
+        "body": "{\"namespace\":\"ns-aaa\"}"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "base_uri": "https://a.example.com/",
+          "namespace": "ns-aaa"
+        }
+      }
+    },
+    {
+      "name": "list_all_sorted",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts?limit=100"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 3,
+          "offset": 0,
+          "items": [
+            {
+              "base_uri": "https://a.example.com/",
+              "namespace": "ns-aaa"
+            },
+            {
+              "base_uri": "https://m.example.com/",
+              "namespace": "ns-aaa"
+            },
+            {
+              "base_uri": "https://z.example.com/",
+              "namespace": "ns-bbb"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "list_all_paginated",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts?limit=1&offset=1"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 3,
+          "offset": 1,
+          "items": [
+            {
+              "base_uri": "https://m.example.com/",
+              "namespace": "ns-aaa"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "list_namespace_sorted",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/ns-aaa/mounts?limit=100"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 2,
+          "offset": 0,
+          "items": [
+            "https://a.example.com/",
+            "https://m.example.com/"
+          ]
+        }
+      }
+    },
+    {
+      "name": "list_namespace_empty",
+      "config": {
+        "namespaceIDs": [
+          "ns-empty"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"empty\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "ns-empty",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "empty"
+        }
+      }
+    },
+    {
+      "name": "list_empty_namespace_mounts",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/ns-empty/mounts?limit=100"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 0,
+          "offset": 0,
+          "items": []
+        }
+      }
+    }
+  ]
+}

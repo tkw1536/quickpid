@@ -31,10 +31,12 @@ const (
 	InvalidPID         ErrorString = "invalid_pid"          // An invalid pid was sent
 	InvalidUsername    ErrorString = "invalid_username"     // An invalid username was sent
 	InvalidPassword    ErrorString = "invalid_password"     // An invalid password was sent
+	InvalidBaseURI     ErrorString = "invalid_base_uri"     // An invalid base URI was sent
 
 	NamespaceNotFound ErrorString = "namespace_not_found" // Namespace not found
 	ResourceNotFound  ErrorString = "resource_not_found"  // Resource not found
 	ResourceGone      ErrorString = "resource_gone"       // Resource exists but has been deleted
+	MountNotFound     ErrorString = "mount_not_found"     // Mount not found
 
 	PermissionNotFound     ErrorString = "permission_not_found"     // Permission record not found
 	InvalidPermissionLevel ErrorString = "invalid_permission_level" // Permission level is not allowed for this operation
@@ -100,10 +102,12 @@ var codes = map[ErrorString]int{
 	InvalidPID:         http.StatusBadRequest,
 	InvalidUsername:    http.StatusBadRequest,
 	InvalidPassword:    http.StatusBadRequest,
+	InvalidBaseURI:     http.StatusBadRequest,
 
 	NamespaceNotFound: http.StatusNotFound,
 	ResourceNotFound:  http.StatusNotFound,
 	ResourceGone:      http.StatusGone,
+	MountNotFound:     http.StatusNotFound,
 
 	PermissionNotFound:     http.StatusNotFound,
 	InvalidPermissionLevel: http.StatusBadRequest,

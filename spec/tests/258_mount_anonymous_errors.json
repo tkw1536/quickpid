@@ -1,0 +1,73 @@
+{
+  "name": "258_mount_anonymous_errors",
+  "comment": "Anonymous mount management returns 400 for invalid base URIs and 404 for missing namespaces.",
+  "steps": [
+    {
+      "name": "put_invalid_base_uri",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/not-a-uri",
+        "body": "{\"namespace\":\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee1\"}"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_base_uri"
+        }
+      }
+    },
+    {
+      "name": "get_invalid_base_uri",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts/not-a-uri"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_base_uri"
+        }
+      }
+    },
+    {
+      "name": "put_missing_namespace",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fmissing%2F",
+        "body": "{\"namespace\":\"does-not-exist\"}"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "namespace_not_found"
+        }
+      }
+    },
+    {
+      "name": "put_invalid_namespace_id",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fbad-ns%2F",
+        "body": "{\"namespace\":\"BAD_ID\"}"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalid_namespace_id"
+        }
+      }
+    }
+  ]
+}

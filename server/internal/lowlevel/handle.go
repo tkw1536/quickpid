@@ -67,6 +67,8 @@ func resolveAPIError(err error) api.ErrorString {
 	}
 }
 
+var errInvalidAuthenticationCredentials = errors.New("invalid authentication credentials")
+
 // resolveAuth resolves the caller according to the given auth configuration.
 //
 // It returns nil values when auth is disabled or optional auth is not supplied.
@@ -81,7 +83,7 @@ func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*api.ValidU
 
 	creds := readCredentials(r)
 	if creds.invalid {
-		return nil, nil, api.WithErrorString(errors.New("invalid authentication credentials"), api.Unauthorized)
+		return nil, nil, api.WithErrorString(errInvalidAuthenticationCredentials, api.Unauthorized)
 	}
 	if auth.requirement == authRequirementOptional && !creds.hasBearer() && !creds.hasBasic() {
 		return nil, nil, nil
@@ -109,7 +111,7 @@ func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*api.ValidU
 			return nil, nil, api.WithErrorString(fmt.Errorf("auth.AuthenticatePassword: %w", err), api.DatabaseError)
 		}
 	default:
-		return nil, nil, api.WithErrorString(errors.New("missing authentication credentials"), api.Unauthorized)
+		return nil, nil, api.WithErrorString(errInvalidAuthenticationCredentials, api.Unauthorized)
 	}
 
 	if !auth.loadUser {

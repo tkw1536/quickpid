@@ -3,6 +3,8 @@ package api
 //spellchecker:words errors regexp
 import (
 	"errors"
+	"fmt"
+	"net/url"
 	"regexp"
 )
 
@@ -118,4 +120,42 @@ func NewPassword(value string) (ValidPassword, error) {
 		return ValidPassword{}, errInvalidPassword
 	}
 	return ValidPassword{valid: true, value: value}, nil
+}
+
+// ValidBaseURI represents a valid absolute base URI for a namespace mount.
+// The zero value is not valid.
+//
+// Use [NewBaseURI] to create a new base URI.
+type ValidBaseURI struct {
+	valid bool
+	value string
+}
+
+// String returns the base URI as a string.
+func (u ValidBaseURI) String() string {
+	if !u.valid {
+		panic("invalid base uri")
+	}
+	return u.value
+}
+
+var errInvalidBaseURI = errors.New("invalid base uri")
+
+// NewBaseURI creates a new BaseURI.
+// The value must be a valid absolute URI as accepted by [url.ParseRequestURI] with a non-empty scheme.
+func NewBaseURI(value string) (ValidBaseURI, error) {
+	parsed, err := url.Parse(value)
+	if err != nil {
+		return ValidBaseURI{}, fmt.Errorf("%w: failed to parse: %w", errInvalidBaseURI, err)
+	}
+	if !parsed.IsAbs() {
+		return ValidBaseURI{}, fmt.Errorf("%w: not an absolute URI", errInvalidBaseURI)
+	}
+	if parsed.Fragment != "" {
+		return ValidBaseURI{}, fmt.Errorf("%w: fragment is not empty", errInvalidBaseURI)
+	}
+	if parsed.RawQuery != "" {
+		return ValidBaseURI{}, fmt.Errorf("%w: raw query is not empty", errInvalidBaseURI)
+	}
+	return ValidBaseURI{valid: true, value: value}, nil
 }

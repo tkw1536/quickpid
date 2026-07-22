@@ -1,0 +1,175 @@
+{
+  "name": "257_mount_anonymous_crud",
+  "comment": "In anonymous mode, mounts can be created, retrieved, overwritten, and deleted without authentication.",
+  "steps": [
+    {
+      "name": "create_ns_a",
+      "config": {
+        "namespaceIDs": [
+          "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee1"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"mount-a\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee1",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "mount-a"
+        }
+      }
+    },
+    {
+      "name": "create_ns_b",
+      "config": {
+        "namespaceIDs": [
+          "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee2"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"mount-b\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee2",
+          "pid_format": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "mount-b"
+        }
+      }
+    },
+    {
+      "name": "get_missing",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fprefix%2F"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "mount_not_found"
+        }
+      }
+    },
+    {
+      "name": "put_create",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fprefix%2F",
+        "body": "{\"namespace\":\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee1\"}"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "base_uri": "https://example.com/prefix/",
+          "namespace": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee1"
+        }
+      }
+    },
+    {
+      "name": "get_success",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fprefix%2F"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "base_uri": "https://example.com/prefix/",
+          "namespace": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee1"
+        }
+      }
+    },
+    {
+      "name": "put_overwrite",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fprefix%2F",
+        "body": "{\"namespace\":\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee2\"}"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "base_uri": "https://example.com/prefix/",
+          "namespace": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee2"
+        }
+      }
+    },
+    {
+      "name": "get_after_overwrite",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fprefix%2F"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "base_uri": "https://example.com/prefix/",
+          "namespace": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee2"
+        }
+      }
+    },
+    {
+      "name": "delete_mount",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fprefix%2F"
+      },
+      "response": {
+        "code": 204
+      }
+    },
+    {
+      "name": "get_after_delete",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fprefix%2F"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "mount_not_found"
+        }
+      }
+    }
+  ]
+}

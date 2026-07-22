@@ -177,6 +177,13 @@ func (p namespacePermissionRow) toUserPermission() api.UserPermission {
 	}
 }
 
+type mountRow struct {
+	BaseURI     string `gorm:"column:base_uri;type:text;primaryKey"`
+	NamespaceID string `gorm:"column:namespace_id;type:text;not null;index"`
+}
+
+func (mountRow) TableName() string { return "mounts" }
+
 func ensureNamespaceExists(tx *gorm.DB, id api.ValidNamespaceID) error {
 	var n int64
 	if err := tx.Model(&namespaceRow{}).Where("id = ?", id.String()).Count(&n).Error; err != nil {

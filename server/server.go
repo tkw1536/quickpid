@@ -78,6 +78,55 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
+	h.mux.Handle("GET /resolver/mounts", lowlevel.HandleOptionalUser(
+		h.authHandler,
+		h.listMounts,
+		http.StatusOK,
+		[]api.ErrorString{
+			api.InvalidQueryParameter,
+			api.Unauthorized,
+			api.Forbidden,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("GET /resolver/mounts/{base_uri}", lowlevel.HandleNoAuth(
+		h.authHandler,
+		h.getMount,
+		http.StatusOK,
+		[]api.ErrorString{
+			api.InvalidBaseURI,
+			api.MountNotFound,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("PUT /resolver/mounts/{base_uri}", lowlevel.HandleOptionalUser(
+		h.authHandler,
+		h.setMount,
+		http.StatusOK,
+		[]api.ErrorString{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidBaseURI,
+			api.InvalidNamespaceID,
+			api.Unauthorized,
+			api.Forbidden,
+			api.NamespaceNotFound,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("DELETE /resolver/mounts/{base_uri}", lowlevel.HandleOptionalUser(
+		h.authHandler,
+		h.deleteMount,
+		http.StatusNoContent,
+		[]api.ErrorString{
+			api.InvalidBaseURI,
+			api.Unauthorized,
+			api.Forbidden,
+			api.MountNotFound,
+			api.DatabaseError,
+		},
+	))
 	h.mux.Handle("POST /resolver/namespaces", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.createNamespace,
@@ -99,6 +148,19 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		http.StatusOK,
 		[]api.ErrorString{
 			api.InvalidNamespaceID,
+			api.Unauthorized,
+			api.Forbidden,
+			api.NamespaceNotFound,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/mounts", lowlevel.HandleOptionalUser(
+		h.authHandler,
+		h.listNamespaceMounts,
+		http.StatusOK,
+		[]api.ErrorString{
+			api.InvalidNamespaceID,
+			api.InvalidQueryParameter,
 			api.Unauthorized,
 			api.Forbidden,
 			api.NamespaceNotFound,

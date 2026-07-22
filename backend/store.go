@@ -13,6 +13,7 @@ type Store interface {
 	ResolverBackend
 	AuthenticationBackend
 	AuthorizationBackend
+	MountBackend
 }
 
 type WithShutdownMethod interface {
