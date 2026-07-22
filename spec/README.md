@@ -27,9 +27,10 @@ This folder only provides a technical documentation and specification for the Qu
 These were written up by me (Tom Wiesing).
 
 The system as a whole, and the Resolver API in particular, were designed collaboratively with input, feedback, and discussion from (in alphabetical order):
-<!-- spellchecker:words Dominik Schmid Amann Walther -->
+<!-- spellchecker:words Dominik Schmid Amann Walther Bidisha Borgohain -->
 
 - Kai Amann
+- Bidisha Borgohain
 - Mona Dietrich
 - Anne-Christine Plank
 - Dominik Schmid
