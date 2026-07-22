@@ -22,6 +22,8 @@ tags:
     description: Operations related to credentials 
   - name: permissions
     description: Operations related to per-namespace permissions.
+  - name: tovalidate
+    description: Routes which need to be double-checked for correctness.
 
 servers:
   - url: /api/v2
@@ -44,6 +46,7 @@ paths:
         This is intended for use cases where the API runs behind a separate system which handles authentication and authorization on it's own.
       security: []
       tags:
+        - tovalidate
         - quickpid
       responses:
         '200':
@@ -61,6 +64,7 @@ paths:
   /resolver/info:
     get:
       tags:
+        - tovalidate
         - quickpid
         - todo
       summary: Get meta information1
@@ -85,6 +89,7 @@ paths:
         This is defined by having a permission that is not "none" for a namespace.
         If the authenticated user is a superuser, all namespaces are returned.
       tags:
+        - tovalidate
         - namespaces
 
       parameters:
@@ -161,6 +166,7 @@ paths:
         In authenticated mode, any user can create a namespace.
         The authenticated user automatically receives namespace 'manager' permissions for the new namespace.
       tags:
+        - tovalidate
         - namespaces
 
       requestBody:
@@ -227,6 +233,7 @@ paths:
         This endpoint never requires authentication.
       security: []
       tags:
+        - tovalidate
         - resources
       responses:
         '200':
@@ -256,6 +263,7 @@ paths:
         In anonymous mode, this route is accessible without authentication.
         In authenticated mode, only a superuser may list all mounts.
       tags:
+        - tovalidate
         - mounts
       parameters:
         - name: limit
@@ -327,6 +335,7 @@ paths:
         This endpoint never requires authentication.
       security: []
       tags:
+        - tovalidate
         - mounts
       parameters:
         - name: base_uri
@@ -375,6 +384,7 @@ paths:
         In anonymous mode, this route is accessible without authentication.
         In authenticated mode, only a superuser may manage mounts.
       tags:
+        - tovalidate
         - mounts
       parameters:
         - name: base_uri
@@ -451,6 +461,7 @@ paths:
         In anonymous mode, this route is accessible without authentication.
         In authenticated mode, only a superuser may manage mounts.
       tags:
+        - tovalidate
         - mounts
       parameters:
         - name: base_uri
@@ -512,6 +523,7 @@ paths:
         If the namespace exists but the caller lacks required access, a 403 response is returned.
         If the namespace does not exist, a 404 response is returned.
       tags:
+        - tovalidate
         - namespaces
       parameters:
         - name: namespace
@@ -571,6 +583,7 @@ paths:
         In anonymous mode, this route is accessible without authentication.
         In authenticated mode, the caller must have at least contributor permission for the namespace, or be a superuser.
       tags:
+        - tovalidate
         - mounts
       parameters:
         - name: namespace
@@ -653,6 +666,7 @@ paths:
         In anonymous mode, the route returns a http 404. 
         In authenticated mode, this requires the calling user to have manager permissions for the namespace, or be a superuser.
       tags:
+        - tovalidate
         - permissions
       parameters:
         - name: namespace
@@ -736,6 +750,7 @@ paths:
         In authenticated mode, callers may read their own permission; reading another user's permission requires the manager level or being a superuser.
         TODO: need error codes for user not found etc.
       tags:
+        - tovalidate
         - permissions
         - todo
       parameters:
@@ -800,6 +815,7 @@ paths:
         In authenticated mode, the caller must have manager permissions for the namespace, or be a superuser.
         Only superusers can set their own permission level.
       tags:
+        - tovalidate
         - permissions
       parameters:
         - name: namespace
@@ -879,6 +895,7 @@ paths:
         In authenticated mode, the caller must have manager permissions for the namespace, or be a superuser.
         Only superusers can remove themselves from a namespace.
       tags:
+        - tovalidate
         - permissions
       parameters:
         - name: namespace
@@ -945,6 +962,7 @@ paths:
 
         Deleted resources are included according to the `deleted` query filter.
       tags:
+        - tovalidate
         - resources
 
       parameters:
@@ -1054,6 +1072,7 @@ paths:
         If the namespace exists but the caller lacks required access, a 403 response is returned.
         If the namespace does not exist, a 404 response is returned.
       tags:
+        - tovalidate
         - resources
 
       parameters:
@@ -1146,6 +1165,7 @@ paths:
         If the namespace exists but the caller lacks required access, a 403 response is returned.
         If the namespace does not exist, a 404 response is returned.
       tags:
+        - tovalidate
         - resources
 
       parameters:
@@ -1258,6 +1278,7 @@ paths:
         If the namespace or resource does not exist, a 404 response is returned.
         If a user tries to access a deleted resource but does not have permission to do so, a 410 response is returned.
       tags:
+        - tovalidate
         - resources
         - todo
 
@@ -1338,6 +1359,7 @@ paths:
         If the namespace or resource exists but the caller lacks required access, a 403 response is returned.
         If the namespace or resource does not exist, a 404 response is returned.
       tags:
+        - tovalidate
         - resources
 
       parameters:
@@ -1431,6 +1453,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
+        - tovalidate
         - user
       parameters:
         - name: username
@@ -1496,6 +1519,7 @@ paths:
         The `username` parameter must be set to the username of the account to update.
         It is not permitted to update one's own account.
       tags:
+        - tovalidate
         - user
       parameters:
         - name: username
@@ -1579,6 +1603,7 @@ paths:
         In authenticated mode, this route requires superuser privileges.
         TODO: Missing body_invalid_json
       tags:
+        - tovalidate
         - user
         - todo
       requestBody:
@@ -1660,6 +1685,7 @@ paths:
         In authenticated mode, the caller must be authenticated as a valid user.
         Unauthenticated callers or callers with invalid credentials receive 401 or 403, respectively.
       tags:
+        - tovalidate
         - user
       parameters:
         - name: query
@@ -1719,6 +1745,7 @@ paths:
         In anonymous mode, the route returns HTTP 404.
         In authenticated mode, this route requires superuser privileges.
       tags:
+        - tovalidate
         - user
       parameters:
         - name: superuser
@@ -1808,6 +1835,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
+        - tovalidate
         - permissions
       parameters:
         - name: username
@@ -1897,6 +1925,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
+        - tovalidate
         - credentials
         - todo
       parameters:
@@ -1985,6 +2014,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
+        - tovalidate
         - credentials
       parameters:
         - name: username
@@ -2073,6 +2103,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
+        - tovalidate
         - credentials
       parameters:
         - name: username
@@ -2157,6 +2188,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
+        - tovalidate
         - credentials
       parameters:
         - name: username
