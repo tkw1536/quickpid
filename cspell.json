@@ -52,6 +52,7 @@
     "go.sum",
     "spec/pid_arch.svg",
     "quickpid.db",
-    "*.json"
+    "*.json",
+    "AGENTS.md"
   ]
 }

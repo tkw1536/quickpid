@@ -94,7 +94,6 @@ Examples:
 ## Future Technical Work
 
 - rework non-flow-tests
-- add an extensive AGENTS.md / documentation
 - use something other than uuid for namespace generation to drop dependency
 
 ## LICENSE
