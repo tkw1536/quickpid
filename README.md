@@ -94,6 +94,7 @@ Examples:
 ## Future Technical Work
 
 - rework non-flow-tests
+- work on the TODOs in the openapi spec
 - use something other than uuid for namespace generation to drop dependency
 
 ## LICENSE

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: QuickPID API
-  description: API for managing PIDs across namespaces and user accounts with API keys.
+  description: "API for managing PIDs across namespaces and user accounts with API keys. TODO: Move authenticated / anonymous mode. TODO: multiple tags - break backward compatibility? TODO: /resolve pair of base URI and PID directly. TODO: Delete user route (superuser only). TODO: Rename permissions -> roles"
   version: 3.0.0
   license:
     name: Creative Commons Attribution-ShareAlike 4.0 International
@@ -12,8 +12,6 @@ tags:
     description: Generic information about the server.
   - name: namespaces
     description: Operations related to namespaces.
-  - name: permissions
-    description: Operations related to per-namespace permissions.
   - name: resources
     description: Operations related to resources.
   - name: mounts
@@ -22,7 +20,8 @@ tags:
     description: Operations related to user accounts.
   - name: credentials
     description: Operations related to credentials 
-
+  - name: permissions
+    description: Operations related to per-namespace permissions.
 
 servers:
   - url: /api/v2
@@ -59,6 +58,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorInfoUnavailable'
+  /resolver/info:
+    get:
+      tags:
+        - quickpid
+        - todo
+      summary: Get meta information1
+      responses:
+        '200':
+          description: 'contact email, version, software, ...'
+          content:
+            application/json:
+              schema:
 
   /resolver/namespaces:
     get:
@@ -723,8 +734,10 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
         In authenticated mode, callers may read their own permission; reading another user's permission requires the manager level or being a superuser.
+        TODO: need error codes for user not found etc.
       tags:
         - permissions
+        - todo
       parameters:
         - name: namespace
           in: path
@@ -1246,6 +1259,7 @@ paths:
         If a user tries to access a deleted resource but does not have permission to do so, a 410 response is returned.
       tags:
         - resources
+        - todo
 
       parameters:
         - name: namespace
@@ -1284,12 +1298,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
-        '403':
-          description: The namespace or resource exists but the authenticated user is not allowed to read it.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace or resource does not exist.
           content:
@@ -1302,6 +1310,7 @@ paths:
           description: |
             The resource exists but has been deleted.
             Returned to unauthenticated callers in authenticated mode, confirming the resource existed without returning resource data.
+            TODO: Return censored object
           content:
             application/json:
               schema:
@@ -1568,8 +1577,10 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
         In authenticated mode, this route requires superuser privileges.
+        TODO: Missing body_invalid_json
       tags:
         - user
+        - todo
       requestBody:
         required: true
         description: |
@@ -1681,12 +1692,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
-        '403':
-          description: The authenticated user is not allowed to perform this action.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode.
           content:
@@ -1888,10 +1893,12 @@ paths:
 
         When not set, the currently authenticated user's keys are returned.
         The `username` parameter may be used by superusers to list keys for another user account, including their own.
+        TODO: Add expired option
 
         In anonymous mode, the route returns HTTP 404.
       tags:
         - credentials
+        - todo
       parameters:
         - name: username
           in: query
