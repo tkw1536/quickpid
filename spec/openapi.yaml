@@ -35,7 +35,6 @@ security:
 paths:
   /resolver:
     get:
-      operationId: getResolverInfo
       summary: Return information regarding the API's limits and other configuration.
       description: |
         This endpoint returns internal limits and configuration information.
@@ -46,7 +45,6 @@ paths:
         This is intended for use cases where the API runs behind a separate system which handles authentication and authorization on it's own.
       security: []
       tags:
-        - tovalidate
         - quickpid
       responses:
         '200':
@@ -77,7 +75,6 @@ paths:
 
   /resolver/namespaces:
     get:
-      operationId: listNamespaces
       summary: List namespaces available on the resolver.
       description: |
         This endpoint returns a list of namespaces available on the server.
@@ -86,10 +83,9 @@ paths:
         In anonymous mode, the initial list of namespaces includes all namespaces.
         
         In authenticated mode, only namespaces the current user has access to are returned.
-        This is defined by having a permission that is not "none" for a namespace.
+        This is defined by having a permission that is not `none` for a namespace.
         If the authenticated user is a superuser, all namespaces are returned.
       tags:
-        - tovalidate
         - namespaces
 
       parameters:
@@ -156,17 +152,15 @@ paths:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
     post:
-      operationId: createNamespace
       summary: Creates a new namespace.
       description: |
         This endpoint creates a new namespace with a server-assigned id.
 
-        In anonymous mode, namespaces can be created by any user.
-        
+        In anonymous mode, no authentication is required and no authorization checks are performed.
+
         In authenticated mode, any user can create a namespace.
         The authenticated user automatically receives namespace 'manager' permissions for the new namespace.
       tags:
-        - tovalidate
         - namespaces
 
       requestBody:
@@ -225,7 +219,6 @@ paths:
 
   /resolver/resources/count:
     get:
-      operationId: countAllResources
       summary: Return the total number of resources (issued PIDs) stored across all namespaces.
       description: |
         This endpoint returns the total number of resources (issued PIDs) across all namespaces.
@@ -233,7 +226,6 @@ paths:
         This endpoint never requires authentication.
       security: []
       tags:
-        - tovalidate
         - resources
       responses:
         '200':
@@ -254,16 +246,14 @@ paths:
 
   /resolver/mounts:
     get:
-      operationId: listMounts
       summary: List all namespace mounts.
       description: |
-        Returns a paginated list of all mounts as `{base_uri, namespace}` pairs.
+        Returns a paginated list of all mounts.
         Results are ordered ascending by namespace id, then by base URI.
 
         In anonymous mode, this route is accessible without authentication.
         In authenticated mode, only a superuser may list all mounts.
       tags:
-        - tovalidate
         - mounts
       parameters:
         - name: limit
@@ -324,7 +314,6 @@ paths:
 
   /resolver/mounts/{base_uri}:
     get:
-      operationId: getMount
       summary: Resolve a namespace mount by base URI.
       description: |
         Returns the namespace id mapped from the given base URI.
@@ -335,7 +324,6 @@ paths:
         This endpoint never requires authentication.
       security: []
       tags:
-        - tovalidate
         - mounts
       parameters:
         - name: base_uri
@@ -372,19 +360,17 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
     put:
-      operationId: setMount
       summary: Create or replace a namespace mount.
       description: |
         Creates or replaces the unidirectional mapping from the given base URI to a namespace id.
-        There may only be one mapping per base URI; multiple base URIs may map to the same namespace.
+        There may only be at most one mapping per base URI; multiple base URIs may map to the same namespace.
 
         The `base_uri` path parameter must be a single path segment containing a percent-encoded absolute URI
         (for example, encode `https://example.com/prefix/` as `https%3A%2F%2Fexample.com%2Fprefix%2F`).
 
         In anonymous mode, this route is accessible without authentication.
-        In authenticated mode, only a superuser may manage mounts.
+        In authenticated mode, only a superuser may update mounts.
       tags:
-        - tovalidate
         - mounts
       parameters:
         - name: base_uri
@@ -450,7 +436,6 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
     delete:
-      operationId: deleteMount
       summary: Delete a namespace mount.
       description: |
         Removes the mapping for the given base URI.
@@ -459,9 +444,8 @@ paths:
         (for example, encode `https://example.com/prefix/` as `https%3A%2F%2Fexample.com%2Fprefix%2F`).
 
         In anonymous mode, this route is accessible without authentication.
-        In authenticated mode, only a superuser may manage mounts.
+        In authenticated mode, only a superuser may delete a mount.
       tags:
-        - tovalidate
         - mounts
       parameters:
         - name: base_uri
@@ -508,7 +492,6 @@ paths:
 
   /resolver/namespaces/{namespace}:
     get:
-      operationId: getNamespace
       summary: Retrieve a single namespace by id.
       description: |
         This endpoint returns a single namespace by id.
@@ -523,7 +506,6 @@ paths:
         If the namespace exists but the caller lacks required access, a 403 response is returned.
         If the namespace does not exist, a 404 response is returned.
       tags:
-        - tovalidate
         - namespaces
       parameters:
         - name: namespace
@@ -574,7 +556,6 @@ paths:
 
   /resolver/namespaces/{namespace}/mounts:
     get:
-      operationId: listNamespaceMounts
       summary: List mounts for a namespace.
       description: |
         Returns a paginated list of base URIs mounted to the given namespace.
@@ -583,7 +564,6 @@ paths:
         In anonymous mode, this route is accessible without authentication.
         In authenticated mode, the caller must have at least contributor permission for the namespace, or be a superuser.
       tags:
-        - tovalidate
         - mounts
       parameters:
         - name: namespace
@@ -657,7 +637,6 @@ paths:
 
   /resolver/namespaces/{namespace}/permissions:
     get:
-      operationId: listNamespacePermissions
       summary: List explicit namespace permissions.
       description: |
         Lists users who have an explicit non-none permission level in the namespace.
@@ -666,7 +645,6 @@ paths:
         In anonymous mode, the route returns a http 404. 
         In authenticated mode, this requires the calling user to have manager permissions for the namespace, or be a superuser.
       tags:
-        - tovalidate
         - permissions
       parameters:
         - name: namespace
@@ -748,11 +726,8 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
         In authenticated mode, callers may read their own permission; reading another user's permission requires the manager level or being a superuser.
-        TODO: need error codes for user not found etc.
       tags:
-        - tovalidate
         - permissions
-        - todo
       parameters:
         - name: namespace
           in: path
@@ -790,12 +765,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: Namespace does not exist, or the server is in anonymous mode.
+          description: Namespace or user do not exist, or the server is in anonymous mode.
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error.
@@ -805,7 +781,6 @@ paths:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
     put:
-      operationId: setNamespacePermission
       summary: Set a user's permission level in a namespace.
       description: |
         Sets the permission level of a specific user in a namespace.
@@ -815,7 +790,6 @@ paths:
         In authenticated mode, the caller must have manager permissions for the namespace, or be a superuser.
         Only superusers can set their own permission level.
       tags:
-        - tovalidate
         - permissions
       parameters:
         - name: namespace
@@ -871,6 +845,7 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '413':
           description: Request body exceeds the configured maximum size.
@@ -886,7 +861,6 @@ paths:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
     delete:
-      operationId: deleteNamespacePermission
       summary: Remove a user's explicit permission in a namespace.
       description: |
         Removes an explicit permission record, reverting the user to the default `none` level.
@@ -895,7 +869,6 @@ paths:
         In authenticated mode, the caller must have manager permissions for the namespace, or be a superuser.
         Only superusers can remove themselves from a namespace.
       tags:
-        - tovalidate
         - permissions
       parameters:
         - name: namespace
@@ -938,6 +911,7 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
                   - $ref: '#/components/schemas/ErrorPermissionNotFound'
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
@@ -949,7 +923,6 @@ paths:
 
   /resolver/namespaces/{namespace}/resources:
     get:
-      operationId: listResources
       summary: List resources within a namespace.
       description: |
         Returns a paginated list of resources within the namespace, ordered by pid in increasing order.
@@ -962,7 +935,6 @@ paths:
 
         Deleted resources are included according to the `deleted` query filter.
       tags:
-        - tovalidate
         - resources
 
       parameters:
@@ -1060,7 +1032,6 @@ paths:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
     post:
-      operationId: createResource
       summary: Create a resource within a namespace.
       description: |
         Creates a new resource within the namespace.
@@ -1072,7 +1043,6 @@ paths:
         If the namespace exists but the caller lacks required access, a 403 response is returned.
         If the namespace does not exist, a 404 response is returned.
       tags:
-        - tovalidate
         - resources
 
       parameters:
@@ -1150,7 +1120,6 @@ paths:
 
   /resolver/namespaces/{namespace}/resources:batch:
     post:
-      operationId: batchCreateResources
       summary: Create several resources within a namespace.
       description: |
         Creates multiple resources in a single request.
@@ -1165,7 +1134,6 @@ paths:
         If the namespace exists but the caller lacks required access, a 403 response is returned.
         If the namespace does not exist, a 404 response is returned.
       tags:
-        - tovalidate
         - resources
 
       parameters:
