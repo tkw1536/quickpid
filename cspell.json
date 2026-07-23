@@ -9,6 +9,7 @@
     "bitstring",
     "Canonicalization",
     "dbname",
+    "Errorf",
     "Fexample",
     "Fprefix",
     "glebarez",
