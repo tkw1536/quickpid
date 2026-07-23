@@ -18,7 +18,7 @@ func handle[T any](
 	h *AuthHandler,
 	auth authConfig,
 	impl func(http.ResponseWriter, *http.Request, *api.ValidUsername, *api.ValidUserInfo) (T, error),
-	successCode int,
+	successCode func(T) int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	errors := make(map[api.ErrorString]struct{}, len(allowedErrors))
@@ -44,8 +44,9 @@ func handle[T any](
 			return
 		}
 
-		h.Log(r.Context(), r, duration, successCode)
-		h.writeJSONResponse(w, r, successCode, value)
+		status := successCode(value)
+		h.Log(r.Context(), r, duration, status)
+		h.writeJSONResponse(w, r, status, value)
 	}
 }
 

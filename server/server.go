@@ -52,7 +52,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver", lowlevel.HandleNoAuth(
 		h.authHandler,
 		h.getResolverInfo,
-		http.StatusOK,
+		lowlevel.FixedStatusCode[*api.InfoResponse](http.StatusOK),
 		[]api.ErrorString{
 			api.InfoUnavailable,
 		},
@@ -60,7 +60,9 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/namespaces", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.listNamespaces,
-		http.StatusOK,
+		func(result *api.PaginatedNamespacesResponse) int {
+			return http.StatusOK
+		},
 		[]api.ErrorString{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
@@ -71,7 +73,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/resources/count", lowlevel.HandleNoAuth(
 		h.authHandler,
 		h.countAllResources,
-		http.StatusOK,
+		lowlevel.FixedStatusCode[*api.ResourceCountResponse](http.StatusOK),
 		[]api.ErrorString{
 			api.Unauthorized,
 			api.Forbidden,
@@ -81,7 +83,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/mounts", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.listMounts,
-		http.StatusOK,
+		lowlevel.FixedStatusCode[*api.PaginatedMountsResponse](http.StatusOK),
 		[]api.ErrorString{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
@@ -92,7 +94,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/mounts/{base_uri}", lowlevel.HandleNoAuth(
 		h.authHandler,
 		h.getMount,
-		http.StatusOK,
+		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorString{
 			api.InvalidBaseURI,
 			api.MountNotFound,
@@ -102,7 +104,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("PUT /resolver/mounts/{base_uri}", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.setMount,
-		http.StatusOK,
+		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorString{
 			api.BodySizeExceeded,
 			api.BodyMissing,
@@ -118,7 +120,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("DELETE /resolver/mounts/{base_uri}", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.deleteMount,
-		http.StatusNoContent,
+		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorString{
 			api.InvalidBaseURI,
 			api.Unauthorized,
@@ -130,7 +132,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /resolver/namespaces", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.createNamespace,
-		http.StatusCreated,
+		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusCreated),
 		[]api.ErrorString{
 			api.BodySizeExceeded,
 			api.BodyMissing,
@@ -145,7 +147,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/namespaces/{namespace}", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.getNamespaceDetail,
-		http.StatusOK,
+		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusOK),
 		[]api.ErrorString{
 			api.InvalidNamespaceID,
 			api.Unauthorized,
@@ -157,7 +159,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/mounts", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.listNamespaceMounts,
-		http.StatusOK,
+		lowlevel.FixedStatusCode[*api.PaginatedBaseURIResponse](http.StatusOK),
 		[]api.ErrorString{
 			api.InvalidNamespaceID,
 			api.InvalidQueryParameter,
@@ -171,7 +173,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.listResources,
-		http.StatusOK,
+		lowlevel.FixedStatusCode[*api.PaginatedResourcesResponse](http.StatusOK),
 		[]api.ErrorString{
 			api.InvalidNamespaceID,
 			api.InvalidQueryParameter,
@@ -185,7 +187,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.createResource,
-		http.StatusCreated,
+		lowlevel.FixedStatusCode[*api.ResourceResponse](http.StatusCreated),
 		[]api.ErrorString{
 			api.BodySizeExceeded,
 			api.BodyMissing,
@@ -202,7 +204,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.batchCreateResources,
-		http.StatusCreated,
+		lowlevel.FixedStatusCode[[]api.ResourceResponse](http.StatusCreated),
 		[]api.ErrorString{
 			api.BodySizeExceeded,
 			api.BodyMissing,
@@ -221,7 +223,12 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.getResource,
-		http.StatusOK,
+		func(result api.ResourceGetResult) int {
+			if redacted, ok := result.(api.RedactedResourceResponse); ok {
+				return redacted.StatusCode()
+			}
+			return http.StatusOK
+		},
 		[]api.ErrorString{
 			api.InvalidNamespaceID,
 			api.InvalidPID,
@@ -229,14 +236,13 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.Forbidden,
 			api.NamespaceNotFound,
 			api.ResourceNotFound,
-			api.ResourceGone,
 			api.DatabaseError,
 		},
 	))
 	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.updateResource,
-		http.StatusOK,
+		lowlevel.FixedStatusCode[*api.ResourceResponse](http.StatusOK),
 		[]api.ErrorString{
 			api.BodySizeExceeded,
 			api.BodyMissing,
@@ -251,150 +257,220 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listNamespaceRoles, http.StatusOK, []api.ErrorString{
-		api.InvalidNamespaceID,
-		api.InvalidQueryParameter,
-		api.Unauthorized,
-		api.Forbidden,
-		api.NamespaceNotFound,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.getNamespaceRole, http.StatusOK, []api.ErrorString{
-		api.InvalidNamespaceID,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.NamespaceNotFound,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("PUT /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.setNamespaceRole, http.StatusOK, []api.ErrorString{
-		api.BodySizeExceeded,
-		api.BodyMissing,
-		api.BodyInvalidJSON,
-		api.InvalidNamespaceID,
-		api.InvalidUsername,
-		api.InvalidRole,
-		api.Unauthorized,
-		api.Forbidden,
-		api.NamespaceNotFound,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.deleteNamespaceRole, http.StatusNoContent, []api.ErrorString{
-		api.InvalidNamespaceID,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.NamespaceNotFound,
-		api.RoleNotFound,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.listNamespaceRoles,
+		lowlevel.FixedStatusCode[*api.PaginatedNamespaceRolesResponse](http.StatusOK),
+		[]api.ErrorString{
+			api.InvalidNamespaceID,
+			api.InvalidQueryParameter,
+			api.Unauthorized,
+			api.Forbidden,
+			api.NamespaceNotFound,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.getNamespaceRole,
+		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
+		[]api.ErrorString{
+			api.InvalidNamespaceID,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.NamespaceNotFound,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("PUT /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.setNamespaceRole,
+		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
+		[]api.ErrorString{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidNamespaceID,
+			api.InvalidUsername,
+			api.InvalidRole,
+			api.Unauthorized,
+			api.Forbidden,
+			api.NamespaceNotFound,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.deleteNamespaceRole,
+		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
+		[]api.ErrorString{
+			api.InvalidNamespaceID,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.NamespaceNotFound,
+			api.RoleNotFound,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
 
-	h.mux.Handle("GET /user/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.getCurrentUserHTTP, http.StatusOK, []api.ErrorString{
-		api.InvalidQueryParameter,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.UserNotFound,
-		api.UnavailableInAnonymousMode,
-	}))
-	h.mux.Handle("GET /user/roles", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listUserRoles, http.StatusOK, []api.ErrorString{
-		api.InvalidQueryParameter,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.UserNotFound,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("PATCH /user/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.updateCurrentUser, http.StatusOK, []api.ErrorString{
-		api.BodySizeExceeded,
-		api.BodyMissing,
-		api.BodyInvalidJSON,
-		api.InvalidQueryParameter,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.UserNotFound,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("POST /user/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.createUser, http.StatusCreated, []api.ErrorString{
-		api.BodySizeExceeded,
-		api.BodyMissing,
-		api.BodyInvalidJSON,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.DuplicateUsername,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("POST /user/password", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.setUserPassword, http.StatusOK, []api.ErrorString{
-		api.BodySizeExceeded,
-		api.BodyMissing,
-		api.BodyInvalidJSON,
-		api.InvalidPassword,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.UserNotFound,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("GET /users/autocomplete", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.autocompleteUsers, http.StatusOK, []api.ErrorString{
-		api.InvalidQueryParameter,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("GET /users/", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listUsers, http.StatusOK, []api.ErrorString{
-		api.InvalidQueryParameter,
-		api.Unauthorized,
-		api.Forbidden,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("GET /user/key", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listKeys, http.StatusOK, []api.ErrorString{
-		api.InvalidQueryParameter,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.UserNotFound,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("POST /user/key", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.issueKey, http.StatusCreated, []api.ErrorString{
-		api.BodySizeExceeded,
-		api.BodyMissing,
-		api.BodyInvalidJSON,
-		api.InvalidQueryParameter,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.UserNotFound,
-		api.BadIDGeneration,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
-	h.mux.Handle("POST /user/key/revoke", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.revokeKey, http.StatusOK, []api.ErrorString{
-		api.BodySizeExceeded,
-		api.BodyMissing,
-		api.BodyInvalidJSON,
-		api.InvalidQueryParameter,
-		api.InvalidUsername,
-		api.Unauthorized,
-		api.Forbidden,
-		api.KeyNotFound,
-		api.UserNotFound,
-		api.UnavailableInAnonymousMode,
-		api.DatabaseError,
-	}))
+	h.mux.Handle("GET /user/", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.getCurrentUserHTTP,
+		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
+		[]api.ErrorString{
+			api.InvalidQueryParameter,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UserNotFound,
+			api.UnavailableInAnonymousMode,
+		},
+	))
+	h.mux.Handle("GET /user/roles", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.listUserRoles,
+		lowlevel.FixedStatusCode[*api.PaginatedUserRolesResponse](http.StatusOK),
+		[]api.ErrorString{
+			api.InvalidQueryParameter,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UserNotFound,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("PATCH /user/", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.updateCurrentUser,
+		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
+		[]api.ErrorString{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidQueryParameter,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UserNotFound,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("POST /user/", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.createUser,
+		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusCreated),
+		[]api.ErrorString{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.DuplicateUsername,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("POST /user/password", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.setUserPassword,
+		lowlevel.FixedStatusCode[*api.SetPasswordResponse](http.StatusOK),
+		[]api.ErrorString{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidPassword,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UserNotFound,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("GET /users/autocomplete", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.autocompleteUsers,
+		lowlevel.FixedStatusCode[[]string](http.StatusOK),
+		[]api.ErrorString{
+			api.InvalidQueryParameter,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("GET /users/", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.listUsers,
+		lowlevel.FixedStatusCode[*api.PaginatedUsersResponse](http.StatusOK),
+		[]api.ErrorString{
+			api.InvalidQueryParameter,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("GET /user/key", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.listKeys,
+		lowlevel.FixedStatusCode[*api.PaginatedAPIKeysResponse](http.StatusOK),
+		[]api.ErrorString{
+			api.InvalidQueryParameter,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UserNotFound,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("POST /user/key", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.issueKey,
+		lowlevel.FixedStatusCode[*api.IssueKeyResponse](http.StatusCreated),
+		[]api.ErrorString{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidQueryParameter,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UserNotFound,
+			api.BadIDGeneration,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("POST /user/key/revoke", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.revokeKey,
+		lowlevel.FixedStatusCode[*api.RevokeKeyResponse](http.StatusOK),
+		[]api.ErrorString{
+			api.BodySizeExceeded,
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidQueryParameter,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.KeyNotFound,
+			api.UserNotFound,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
 
 	h.mux.Handle("GET /openapi.yaml", h.handleOpenAPISpec())
 	h.mux.Handle("/", h.handleSwaggerUI())

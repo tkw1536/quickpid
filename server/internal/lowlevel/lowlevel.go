@@ -33,6 +33,13 @@ type AuthService interface {
 	AnonymousMode() bool
 }
 
+// FixedStatusCode returns a function that always returns the same status code.
+func FixedStatusCode[T any](status int) func(T) int {
+	return func(result T) int {
+		return status
+	}
+}
+
 // NewAuthHandler creates a new [AuthHandler].
 func NewAuthHandler(auth AuthService, logger *slog.Logger) *AuthHandler {
 	return &AuthHandler{
@@ -45,7 +52,7 @@ func NewAuthHandler(auth AuthService, logger *slog.Logger) *AuthHandler {
 func HandleNoAuth[T any](
 	h *AuthHandler,
 	impl func(http.ResponseWriter, *http.Request) (T, error),
-	successCode int,
+	successCode func(T) int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(
@@ -63,7 +70,7 @@ func HandleNoAuth[T any](
 func HandleRequiredUsername[T any](
 	h *AuthHandler,
 	impl func(http.ResponseWriter, *http.Request, *api.ValidUsername) (T, error),
-	successCode int,
+	successCode func(T) int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(
@@ -84,7 +91,7 @@ func HandleRequiredUsername[T any](
 func HandleOptionalUsername[T any](
 	h *AuthHandler,
 	impl func(http.ResponseWriter, *http.Request, *api.ValidUsername) (T, error),
-	successCode int,
+	successCode func(T) int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(
@@ -104,7 +111,7 @@ func HandleOptionalUsername[T any](
 func HandleRequiredUser[T any](
 	h *AuthHandler,
 	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
-	successCode int,
+	successCode func(T) int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(
@@ -126,7 +133,7 @@ func HandleRequiredUser[T any](
 func HandleRequiredUserInAuthMode[T any](
 	h *AuthHandler,
 	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
-	successCode int,
+	successCode func(T) int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(
@@ -147,7 +154,7 @@ func HandleRequiredUserInAuthMode[T any](
 func HandleOptionalUser[T any](
 	h *AuthHandler,
 	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
-	successCode int,
+	successCode func(T) int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
 	return handle(

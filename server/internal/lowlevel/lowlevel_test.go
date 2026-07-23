@@ -67,7 +67,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						gotCalled = true
 						return authProbeResponse{}, nil
 					},
-					http.StatusOK,
+					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
 					[]api.ErrorString{api.DatabaseError},
 				)
 
@@ -91,7 +91,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						gotUser = username.String()
 						return authProbeResponse{Username: stringPtr(username.String())}, nil
 					},
-					http.StatusOK,
+					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
@@ -119,7 +119,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						gotUser = usernameStringPtr(username)
 						return authProbeResponse{Username: usernameStringPtr(username)}, nil
 					},
-					http.StatusOK,
+					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
@@ -147,7 +147,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						gotUser = user
 						return authProbeResponse{Username: stringPtr(user.Username.String()), User: userInfoFromValid(user)}, nil
 					},
-					http.StatusOK,
+					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
@@ -181,7 +181,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						}
 						return authProbeResponse{Username: username, User: userInfo}, nil
 					},
-					http.StatusOK,
+					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 				)
 
@@ -284,6 +284,33 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 	}
 }
 
+func TestHandleNoAuthHonorsSuccessCode(t *testing.T) {
+	t.Parallel()
+
+	h := lowlevel.NewAuthHandler(&mockAuthService{}, nil)
+	handler := lowlevel.HandleNoAuth(
+		h,
+		func(w http.ResponseWriter, r *http.Request) (*api.RedactedResourceResponse, error) {
+			return &api.RedactedResourceResponse{
+				PID:         "abc-def",
+				DateCreated: "2020-01-02T03:04:05Z",
+				DateUpdated: "2020-01-02T03:04:05Z",
+			}, nil
+		},
+		lowlevel.FixedStatusCode[*api.RedactedResourceResponse](http.StatusGone),
+		nil,
+	)
+
+	rec := runHandler(t, handler)
+	if rec.Code != http.StatusGone {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusGone)
+	}
+	wantBody := `{"pid":"abc-def","date_created":"2020-01-02T03:04:05Z","date_updated":"2020-01-02T03:04:05Z","deleted":true}` + "\n"
+	if got := rec.Body.String(); got != wantBody {
+		t.Fatalf("body = %q, want %q", got, wantBody)
+	}
+}
+
 func TestHandleRequiredUsernamePanicsWhenUnauthorizedNotAllowed(t *testing.T) {
 	t.Parallel()
 
@@ -294,7 +321,7 @@ func TestHandleRequiredUsernamePanicsWhenUnauthorizedNotAllowed(t *testing.T) {
 			t.Fatal("impl should not be called")
 			return struct{}{}, nil
 		},
-		http.StatusOK,
+		lowlevel.FixedStatusCode[struct{}](http.StatusOK),
 		[]api.ErrorString{api.DatabaseError},
 	)
 
@@ -322,7 +349,7 @@ func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
 			}
 			return struct{}{}, nil
 		},
-		http.StatusOK,
+		lowlevel.FixedStatusCode[struct{}](http.StatusOK),
 		[]api.ErrorString{api.Unauthorized, api.DatabaseError},
 	)
 
@@ -350,7 +377,7 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 			t.Fatal("handler must not be called in anonymous mode")
 			return struct{}{}, nil
 		},
-		http.StatusOK,
+		lowlevel.FixedStatusCode[struct{}](http.StatusOK),
 		[]api.ErrorString{api.Unauthorized, api.UnavailableInAnonymousMode, api.DatabaseError},
 	)
 

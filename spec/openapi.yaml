@@ -715,7 +715,6 @@ paths:
 
   /resolver/namespaces/{namespace}/roles/{username}:
     get:
-      operationId: getNamespaceRole
       summary: Get a user's role in a namespace.
       description: |
         Retrieves the role of a specific user in a namespace.
@@ -1236,14 +1235,11 @@ paths:
 
         Deleted resources require authentication and at least the `editor` role for the namespace, or superuser privileges.
         Such callers receive the full resource object with `deleted: true`.
-        Unauthorized callers receive 410 Gone, confirming the resource existed without returning resource data.
+        Unauthorized callers receive 410 Gone with a redacted resource object (`pid`, dates, and `deleted: true` only).
 
-        If the namespace or resource exists but the caller lacks required access to a non-deleted resource, a 403 response is returned.
         If the namespace or resource does not exist, a 404 response is returned.
-        If a user tries to access a deleted resource but is not allowed to do so, a 410 response is returned.
       tags:
         - resources
-        - todo
 
       parameters:
         - name: namespace
@@ -1293,12 +1289,11 @@ paths:
         '410':
           description: |
             The resource exists but has been deleted.
-            Returned to unauthenticated callers in authenticated mode, confirming the resource existed without returning resource data.
-            TODO: Return censored object
+            Returned to callers who are not allowed to see the full deleted resource, with a redacted object only.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResourceGone'
+                $ref: '#/components/schemas/RedactedResourceResponse'
         '500':
           description: Internal server error.
           content:
@@ -2401,18 +2396,6 @@ components:
               enum:
                 - mount_not_found
           description: The mount does not exist.
-    ErrorResourceGone:
-      allOf:
-        - $ref: '#/components/schemas/ErrorResponse'
-        - type: object
-          properties:
-            error:
-              type: string
-              enum:
-                - resource_gone
-          description: |
-            The resource exists but has been deleted.
-            Returned without resource data to confirm prior existence.
     ErrorInfoUnavailable:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -2820,6 +2803,36 @@ components:
           description: |
             Whether this resource has been deleted.
           type: boolean
+    RedactedResourceResponse:
+      description: |
+        A redacted view of a deleted resource.
+        Returned with HTTP 410 when the caller is not allowed to see the full resource.
+      type: object
+      additionalProperties: false
+      required:
+        - pid
+        - date_created
+        - date_updated
+        - deleted
+      properties:
+        pid:
+          $ref: '#/components/schemas/PID'
+        date_created:
+          description: |
+            The date and time the resource was created.
+          type: string
+          format: date-time
+        date_updated:
+          description: |
+            The date and time the resource was last updated.
+          type: string
+          format: date-time
+        deleted:
+          description: |
+            Always true for redacted deleted resources.
+          type: boolean
+          enum:
+            - true
     ResourceUpdateRequest:
       description: |
         A request to update a resource.

@@ -1,6 +1,6 @@
 {
   "name": "resource_get_deleted_gone_unauthenticated",
-  "comment": "In authenticated mode, an unauthenticated GET for a soft-deleted resource returns 410 resource_gone without resource data.",
+  "comment": "In authenticated mode, an unauthenticated GET for a soft-deleted resource returns 410 with a redacted resource object.",
   "steps": [
     {
       "name": "create_namespace",
@@ -94,7 +94,10 @@
       "response": {
         "code": 410,
         "body": {
-          "error": "resource_gone"
+          "pid": "xjc-cjy",
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": true
         }
       }
     }

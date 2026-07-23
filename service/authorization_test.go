@@ -283,6 +283,59 @@ func TestService_ResolverRoles(t *testing.T) {
 	}
 }
 
+func TestService_GetResourceDeletedRedacted(t *testing.T) {
+	t.Parallel()
+
+	svc, store := newTestService(t)
+	ctx := t.Context()
+	now := fixedNow()
+
+	existingPID, err := api.NewPID("existing")
+	if err != nil {
+		t.Fatalf("NewPID(existing) error = %v", err)
+	}
+	created, err := store.CreateResource(ctx, testNS, existingPID, api.ResourceCreateRequest{
+		URL: "https://example.com",
+	}, now)
+	if err != nil {
+		t.Fatalf("CreateResource() error = %v", err)
+	}
+	deleted := true
+	if _, err := store.UpdateResource(ctx, testNS, existingPID, api.ResourceUpdateRequest{Deleted: &deleted}, now); err != nil {
+		t.Fatalf("UpdateResource() error = %v", err)
+	}
+
+	assertRedacted := func(t *testing.T, caller *api.ValidUserInfo) {
+		t.Helper()
+		got, err := svc.GetResource(ctx, caller, testNS, existingPID)
+		if err != nil {
+			t.Fatalf("GetResource() = %v, %v", got, err)
+		}
+		redacted, ok := got.(api.RedactedResourceResponse)
+		if !ok {
+			t.Fatalf("GetResource() type = %T, want api.RedactedResourceResponse", got)
+		}
+		if redacted.PID != created.PID || redacted.DateCreated != created.DateCreated || redacted.DateUpdated != created.DateUpdated {
+			t.Fatalf("redacted = %+v, want pid/dates from %+v", redacted, *created)
+		}
+		if redacted.StatusCode() != 410 {
+			t.Fatalf("StatusCode() = %d, want 410", redacted.StatusCode())
+		}
+	}
+
+	assertRedacted(t, nil)
+	assertRedacted(t, userInfo("reader"))
+	assertRedacted(t, userInfo("contributor"))
+
+	full, err := svc.GetResource(ctx, userInfo("editor"), testNS, existingPID)
+	if err != nil {
+		t.Fatalf("editor GetResource = %v, %v", full, err)
+	}
+	if _, ok := full.(*api.ResourceResponse); !ok {
+		t.Fatalf("editor GetResource type = %T, want *api.ResourceResponse", full)
+	}
+}
+
 func TestService_SetNamespaceRoleCannotEscalate(t *testing.T) {
 	t.Parallel()
 
@@ -426,8 +479,12 @@ func TestService_AnonymousResolverMode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetResource(nil) = %v, %v", got, err)
 	}
-	if got.URL != "https://example.com/anon" {
-		t.Fatalf("GetResource() url = %q, want https://example.com/anon", got.URL)
+	full, ok := got.(*api.ResourceResponse)
+	if !ok {
+		t.Fatalf("GetResource() type = %T, want *api.ResourceResponse", got)
+	}
+	if full.URL != "https://example.com/anon" {
+		t.Fatalf("GetResource() url = %q, want https://example.com/anon", full.URL)
 	}
 
 	count, err := svc.CountAllResources(ctx)

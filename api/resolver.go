@@ -5,6 +5,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/tkw1536/quickpid/internal/strict"
 	"github.com/tkw1536/quickpid/pid"
@@ -104,6 +105,13 @@ type ResourceResponse struct {
 	Deleted     bool
 }
 
+// ResourceGetResult is the JSON body for GET resource (full 200 or censored 410).
+//
+// It is either a [ResourceResponse] or a [RedactedResourceResponse].
+type ResourceGetResult interface {
+	resourceGetResult()
+}
+
 func (r ResourceResponse) MarshalJSON() ([]byte, error) {
 	type out struct {
 		PID         string   `json:"pid"`
@@ -126,6 +134,50 @@ func (r ResourceResponse) MarshalJSON() ([]byte, error) {
 		DateUpdated: r.DateUpdated,
 		Tags:        tags,
 		Deleted:     r.Deleted,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("json.Marshal: %w", err)
+	}
+	return bytes, nil
+}
+
+func (ResourceResponse) resourceGetResult() {}
+
+// RedactedResourceResponse is returned for GET resource when the resource is
+// deleted and the caller is not allowed to see the full object.
+type RedactedResourceResponse struct {
+	PID         string
+	DateCreated string
+	DateUpdated string
+}
+
+func (r ResourceResponse) Redact() RedactedResourceResponse {
+	return RedactedResourceResponse{
+		PID:         r.PID,
+		DateCreated: r.DateCreated,
+		DateUpdated: r.DateUpdated,
+	}
+}
+
+func (RedactedResourceResponse) resourceGetResult() {}
+
+// StatusCode returns HTTP 410 Gone for censored deleted resources.
+func (RedactedResourceResponse) StatusCode() int {
+	return http.StatusGone
+}
+
+func (r RedactedResourceResponse) MarshalJSON() ([]byte, error) {
+	type out struct {
+		PID         string `json:"pid"`
+		DateCreated string `json:"date_created"`
+		DateUpdated string `json:"date_updated"`
+		Deleted     bool   `json:"deleted"`
+	}
+	bytes, err := json.Marshal(out{
+		PID:         r.PID,
+		DateCreated: r.DateCreated,
+		DateUpdated: r.DateUpdated,
+		Deleted:     true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("json.Marshal: %w", err)

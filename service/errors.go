@@ -18,7 +18,6 @@ var (
 	errSpecInfoPrivate     = errors.New("info is private")
 
 	errExpiresAtInPast = errors.New("expires_at is in the past")
-	errResourceGone    = errors.New("resource gone")
 )
 
 // IsUnauthorized reports whether err indicates a missing or invalid API key.

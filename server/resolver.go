@@ -150,7 +150,7 @@ func (h *Server) batchCreateResources(w http.ResponseWriter, r *http.Request, us
 	return resources, nil
 }
 
-func (h *Server) getResource(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.ResourceResponse, error) {
+func (h *Server) getResource(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (api.ResourceGetResult, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return nil, err

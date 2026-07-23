@@ -240,7 +240,10 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.ValidUse
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound]
 // - [api.DatabaseError].
-func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, resourcePID api.ValidPID) (*api.ResourceResponse, error) {
+//
+// When the resource is deleted and the caller is not allowed to see the full
+// object, it returns a [api.RedactedResourceResponse] (HTTP 410) instead of an error.
+func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, resourcePID api.ValidPID) (api.ResourceGetResult, error) {
 	out, err := s.store.GetResource(ctx, namespace, resourcePID)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorString(fmt.Errorf("store.UpdateResource: %w", err), api.NamespaceNotFound)
@@ -257,9 +260,8 @@ func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, na
 	}
 
 	if out.Deleted {
-		// TODO: Make this code nicer.
 		if caller == nil {
-			return nil, api.WithErrorString(errResourceGone, api.ResourceGone)
+			return out.Redact(), nil
 		}
 		if caller.Superuser {
 			return out, nil
@@ -271,7 +273,7 @@ func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, na
 		if canReadDeletedResource(role) {
 			return out, nil
 		}
-		return nil, api.WithErrorString(errResourceGone, api.ResourceGone)
+		return out.Redact(), nil
 	}
 
 	if caller == nil {

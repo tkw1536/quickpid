@@ -35,7 +35,6 @@ const (
 
 	NamespaceNotFound ErrorString = "namespace_not_found" // Namespace not found
 	ResourceNotFound  ErrorString = "resource_not_found"  // Resource not found
-	ResourceGone      ErrorString = "resource_gone"       // Resource exists but has been deleted
 	MountNotFound     ErrorString = "mount_not_found"     // Mount not found
 
 	RoleNotFound ErrorString = "role_not_found" // Role record not found
@@ -106,7 +105,6 @@ var codes = map[ErrorString]int{
 
 	NamespaceNotFound: http.StatusNotFound,
 	ResourceNotFound:  http.StatusNotFound,
-	ResourceGone:      http.StatusGone,
 	MountNotFound:     http.StatusNotFound,
 
 	RoleNotFound: http.StatusNotFound,
