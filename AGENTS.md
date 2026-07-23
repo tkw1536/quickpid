@@ -98,7 +98,9 @@ Spell-checking:
 
 - CI runs `cspell` via [`.github/workflows/cspell.yaml`](.github/workflows/cspell.yaml).
 - Repository spelling exceptions are configured in [`cspell.json`](cspell.json).
-- When editing Markdown, YAML, OpenAPI, comments, or error strings, keep spelling clean and update `cspell.json` or `//spellchecker:words` comments if a project-specific term is intentionally introduced.
+- When fixing cspell errors, first run `go tool go-check-spellchecker -fix ./...`. That command regenerates import- and package-name `//spellchecker:words` comments; do not edit those comments by hand, and do not add custom words into them. Only add custom `//spellchecker:words` comments outside of the auto-managed ones.
+- Decide where an intentional project-specific term belongs: put it in [`cspell.json`](cspell.json) when it is used widely across the repo; otherwise keep it in a file-local `//spellchecker:words` comment.
+- When editing Markdown, YAML, OpenAPI, comments, or error strings, keep spelling clean and update `cspell.json` or a custom `//spellchecker:words` comment if a project-specific term is intentionally introduced.
 - If `cspell` is installed locally, run it against the files you changed using [`cspell.json`](cspell.json).
 
 Before finishing a change, prefer the narrowest relevant validation first, then broader checks if the change crosses package or API boundaries.
@@ -124,7 +126,9 @@ Error mapping conventions:
 Spelling conventions matter in this repo:
 
 - Go files often use `//spellchecker:words ...` comments for unusual identifiers and domain terms.
+- Import- and package-name spellchecker comments are maintained by `go tool go-check-spellchecker -fix ./...`; leave those alone and only add custom words in separate comments.
 - Documentation and spec files rely on [`cspell.json`](cspell.json).
+- Prefer `cspell.json` for terms used in many places; prefer a file-local comment for one-off terms.
 - If you add a new uncommon term, update the relevant spellchecker mechanism in the same change.
 
 ## Build And Deployment Notes
