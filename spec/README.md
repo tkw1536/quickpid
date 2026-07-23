@@ -98,9 +98,8 @@ From the perspective of the API this flag is just like any other flag.
 Namespaces hold a so-called tag: a single string used for filtering, with no other effect.
 A namespace tag cannot be updated after creation.
 
-Resources hold one or more tags, also used for filtering.
-Exactly one tag is expressed in JSON as the singular `tag` field; two or more tags use the `tags` array (at least two items).
-Empty tag lists are not allowed, and mixing `tag` with `tags` is invalid.
+Resources hold a `tags` array used for filtering.
+The array may be empty.
 Resource tags can be updated.
 
 #### Listing and Retrieval

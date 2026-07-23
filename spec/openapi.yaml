@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: QuickPID API
-  description: "API for managing PIDs across namespaces and user accounts with API keys. TODO: Move authenticated / anonymous mode. TODO: multiple tags - break backward compatibility? TODO: /resolve pair of base URI and PID directly. TODO: Delete user route (superuser only). TODO: Rename permissions -> roles"
+  description: "API for managing PIDs across namespaces and user accounts with API keys. TODO: Move authenticated / anonymous mode. TODO: /resolve pair of base URI and PID directly. TODO: Delete user route (superuser only). TODO: Rename permissions -> roles"
   version: 3.0.0
   license:
     name: Creative Commons Attribution-ShareAlike 4.0 International
@@ -2733,14 +2733,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResourceResponse'
-    ResourceCreateRequestBase:
+    ResourceCreateRequest:
       description: |
-        Common fields for creating a resource.
-        Tag cardinality is expressed by SingleTagResourceCreateRequest or MultiTagResourceCreateRequest.
+        A request to create a resource.
+        The `tags` field is required and may be an empty array.
       type: object
+      additionalProperties: false
       required:
         - url
         - metadata
+        - tags
       properties:
         url:
           description: |
@@ -2753,56 +2755,14 @@ components:
             This may be null.
           type: string
           nullable: true
-    SingleTagResourceCreateRequest:
-      description: |
-        Create a resource that has exactly one tag.
-        The singular `tag` field must be used; `tags` is not permitted.
-      allOf:
-        - $ref: '#/components/schemas/ResourceCreateRequestBase'
-        - type: object
-          additionalProperties: false
-          required:
-            - tag
-          properties:
-            # Inherited from ResourceCreateRequestBase; re-listed so additionalProperties: false allows them.
-            url: {}
-            metadata: {}
-            tag:
-              description: |
-                The single tag for this resource.
-                Tags can be used inside the API for filtering.
-              type: string
-    MultiTagResourceCreateRequest:
-      description: |
-        Create a resource that has two or more tags.
-        The `tags` field must be used; the singular `tag` field is not permitted.
-        An empty list or a list with fewer than two items is invalid.
-      allOf:
-        - $ref: '#/components/schemas/ResourceCreateRequestBase'
-        - type: object
-          additionalProperties: false
-          required:
-            - tags
-          properties:
-            # Inherited from ResourceCreateRequestBase; re-listed so additionalProperties: false allows them.
-            url: {}
-            metadata: {}
-            tags:
-              description: |
-                Tags for this resource.
-                Tags can be used inside the API for filtering.
-              type: array
-              minItems: 2
-              items:
-                type: string
-    ResourceCreateRequest:
-      description: |
-        A request to create a resource.
-        Exactly one tag uses `tag`; two or more tags use `tags` with at least two items.
-        Providing both fields, neither field, an empty `tags` array, or a one-element `tags` array is invalid.
-      oneOf:
-        - $ref: '#/components/schemas/SingleTagResourceCreateRequest'
-        - $ref: '#/components/schemas/MultiTagResourceCreateRequest'
+        tags:
+          description: |
+            Tags for this resource.
+            Tags can be used inside the API for filtering.
+            May be empty.
+          type: array
+          items:
+            type: string
     PID:
       description: |
         A persistent identifier for a resource.
@@ -2811,17 +2771,19 @@ components:
       type: string
       pattern: '^[a-z0-9_-]+$'
       example: 'abc-def'
-    ResourceResponseBase:
+    ResourceResponse:
       description: |
-        Common fields of a resource stored on this resolver.
-        Tag cardinality is expressed by SingleTagResourceResponse or MultiTagResourceResponse.
+        A resource stored on this resolver.
+        Tags are always returned as a `tags` array, which may be empty.
       type: object
+      additionalProperties: false
       required:
         - pid
         - url
         - metadata
         - date_created
         - date_updated
+        - tags
         - deleted
       properties:
         pid:
@@ -2846,68 +2808,26 @@ components:
             The date and time the resource was last updated.
           type: string
           format: date-time
+        tags:
+          description: |
+            Tags for this resource.
+            Tags can be used inside the API for filtering.
+            May be empty.
+          type: array
+          items:
+            type: string
         deleted:
           description: |
             Whether this resource has been deleted.
           type: boolean
-    SingleTagResourceResponse:
-      description: A resource that has exactly one tag.
-      allOf:
-        - $ref: '#/components/schemas/ResourceResponseBase'
-        - type: object
-          additionalProperties: false
-          required:
-            - tag
-          properties:
-            # Inherited from ResourceResponseBase; re-listed so additionalProperties: false allows them.
-            pid: {}
-            url: {}
-            metadata: {}
-            date_created: {}
-            date_updated: {}
-            deleted: {}
-            tag:
-              description: |
-                The single tag for this resource.
-                Tags can be used inside the API for filtering.
-              type: string
-    MultiTagResourceResponse:
-      description: A resource that has two or more tags.
-      allOf:
-        - $ref: '#/components/schemas/ResourceResponseBase'
-        - type: object
-          additionalProperties: false
-          required:
-            - tags
-          properties:
-            # Inherited from ResourceResponseBase; re-listed so additionalProperties: false allows them.
-            pid: {}
-            url: {}
-            metadata: {}
-            date_created: {}
-            date_updated: {}
-            deleted: {}
-            tags:
-              description: |
-                Tags for this resource.
-                Tags can be used inside the API for filtering.
-              type: array
-              minItems: 2
-              items:
-                type: string
-    ResourceResponse:
+    ResourceUpdateRequest:
       description: |
-        A resource stored on this resolver.
-        Exactly one tag is returned as `tag`; two or more tags are returned as `tags`.
-      oneOf:
-        - $ref: '#/components/schemas/SingleTagResourceResponse'
-        - $ref: '#/components/schemas/MultiTagResourceResponse'
-    ResourceUpdateRequestBase:
-      description: |
-        Common optional fields for updating a resource.
+        A request to update a resource.
         Fields that are omitted will not be changed.
-        Tag updates are expressed by SingleTagResourceUpdateRequest or MultiTagResourceUpdateRequest.
+        When `tags` is present it replaces the resource tags and may be empty.
+        Omitting `tags` leaves the resource tags unchanged.
       type: object
+      additionalProperties: false
       properties:
         url:
           description: |
@@ -2922,76 +2842,14 @@ components:
           nullable: true
         deleted:
           type: boolean
-    ResourceUpdateRequestNoTags:
-      description: |
-        Update a resource without changing its tags.
-        Fields that are omitted will not be changed.
-      allOf:
-        - $ref: '#/components/schemas/ResourceUpdateRequestBase'
-        - type: object
-          additionalProperties: false
-          properties:
-            # Inherited from ResourceUpdateRequestBase; re-listed so additionalProperties: false allows them.
-            url: {}
-            metadata: {}
-            deleted: {}
-    SingleTagResourceUpdateRequest:
-      description: |
-        Update a resource and set exactly one tag via the singular `tag` field.
-        Fields that are omitted will not be changed.
-        The `tags` field is not permitted.
-      allOf:
-        - $ref: '#/components/schemas/ResourceUpdateRequestBase'
-        - type: object
-          additionalProperties: false
-          required:
-            - tag
-          properties:
-            # Inherited from ResourceUpdateRequestBase; re-listed so additionalProperties: false allows them.
-            url: {}
-            metadata: {}
-            deleted: {}
-            tag:
-              description: |
-                The single tag for this resource.
-                Tags can be used inside the API for filtering.
-              type: string
-    MultiTagResourceUpdateRequest:
-      description: |
-        Update a resource and set two or more tags via the `tags` field.
-        Fields that are omitted will not be changed.
-        The singular `tag` field is not permitted.
-        An empty list or a list with fewer than two items is invalid.
-      allOf:
-        - $ref: '#/components/schemas/ResourceUpdateRequestBase'
-        - type: object
-          additionalProperties: false
-          required:
-            - tags
-          properties:
-            # Inherited from ResourceUpdateRequestBase; re-listed so additionalProperties: false allows them.
-            url: {}
-            metadata: {}
-            deleted: {}
-            tags:
-              description: |
-                Tags for this resource.
-                Tags can be used inside the API for filtering.
-              type: array
-              minItems: 2
-              items:
-                type: string
-    ResourceUpdateRequest:
-      description: |
-        A request to update a resource.
-        Fields that are omitted will not be changed.
-        To set exactly one tag use `tag`; to set two or more tags use `tags`.
-        Providing both `tag` and `tags`, an empty `tags` array, or a one-element `tags` array is invalid.
-        Omitting both leaves the resource tags unchanged.
-      oneOf:
-        - $ref: '#/components/schemas/ResourceUpdateRequestNoTags'
-        - $ref: '#/components/schemas/SingleTagResourceUpdateRequest'
-        - $ref: '#/components/schemas/MultiTagResourceUpdateRequest'
+        tags:
+          description: |
+            Tags for this resource.
+            Tags can be used inside the API for filtering.
+            May be empty.
+          type: array
+          items:
+            type: string
     ErrorDuplicateUsername:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'

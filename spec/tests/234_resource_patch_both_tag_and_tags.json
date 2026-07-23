@@ -1,6 +1,6 @@
 {
   "name": "234_resource_patch_both_tag_and_tags",
-  "comment": "PATCH with both tag and tags returns 400 body_invalid_json.",
+  "comment": "PATCH with a singular tag field (with or without tags) returns 400 body_invalid_json.",
   "steps": [
     {
       "name": "create_namespace",
@@ -32,7 +32,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tags\":[\"alpha\"]}"
       },
       "response": {
         "code": 201

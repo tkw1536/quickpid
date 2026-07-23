@@ -41,7 +41,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/b1000000-0000-4000-8000-000000000002/resources",
-        "body": "{\"url\":\"https://example.com/r\",\"metadata\":\"m\",\"tag\":\"t\"}"
+        "body": "{\"url\":\"https://example.com/r\",\"metadata\":\"m\",\"tags\":[\"t\"]}"
       },
       "response": {
         "code": 201,
@@ -51,8 +51,10 @@
           "deleted": false,
           "metadata": "m",
           "pid": "aaa-bbb",
-          "tag": "t",
-          "url": "https://example.com/r"
+          "url": "https://example.com/r",
+          "tags": [
+            "t"
+          ]
         }
       }
     },

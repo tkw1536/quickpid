@@ -35,7 +35,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/b1000000-0000-4000-8000-000000000002/resources:batch",
-        "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}]"
+        "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tags\":[\"\"]}]"
       },
       "response": {
         "code": 401,

@@ -93,7 +93,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=owner",
-        "body": "{\"comment\": \"owner\",\"expires_at\": null}",
+        "body": "{\"comment\":\"owner\",\"expires_at\":null}",
         "headers": [
           [
             "Authorization",
@@ -126,7 +126,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=contributor",
-        "body": "{\"comment\": \"contributor\",\"expires_at\": null}",
+        "body": "{\"comment\":\"contributor\",\"expires_at\":null}",
         "headers": [
           [
             "Authorization",
@@ -210,7 +210,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/resources",
-        "body": "{\"url\":\"https://example.com/existing\",\"metadata\":\"seed\",\"tag\":\"seed\"}",
+        "body": "{\"url\":\"https://example.com/existing\",\"metadata\":\"seed\",\"tags\":[\"seed\"]}",
         "headers": [
           [
             "Authorization",
@@ -226,8 +226,10 @@
           "deleted": false,
           "metadata": "seed",
           "pid": "aaa-bbb",
-          "tag": "seed",
-          "url": "https://example.com/existing"
+          "url": "https://example.com/existing",
+          "tags": [
+            "seed"
+          ]
         }
       }
     },
@@ -252,8 +254,10 @@
           "deleted": false,
           "metadata": "seed",
           "pid": "aaa-bbb",
-          "tag": "seed",
-          "url": "https://example.com/existing"
+          "url": "https://example.com/existing",
+          "tags": [
+            "seed"
+          ]
         }
       }
     }

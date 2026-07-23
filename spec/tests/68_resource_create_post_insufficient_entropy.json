@@ -41,7 +41,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/collision-seed\",\"metadata\":null,\"tag\":\"t\"}"
+        "body": "{\"url\":\"https://example.com/collision-seed\",\"metadata\":null,\"tags\":[\"t\"]}"
       },
       "response": {
         "code": 201
@@ -69,7 +69,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/collision-retry\",\"metadata\":null,\"tag\":\"t\"}"
+        "body": "{\"url\":\"https://example.com/collision-retry\",\"metadata\":null,\"tags\":[\"t\"]}"
       },
       "response": {
         "code": 503,

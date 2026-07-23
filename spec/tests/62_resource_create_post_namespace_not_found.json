@@ -10,7 +10,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/absent-ns/resources",
-        "body": "{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}"
+        "body": "{\"url\":\"https://x\",\"metadata\":null,\"tags\":[\"\"]}"
       },
       "response": {
         "code": 404,

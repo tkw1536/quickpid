@@ -139,53 +139,41 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 		// url
 		{
 			name:      "fail_missingURL",
-			body:      `{"metadata":"m","tag":"t"}`,
+			body:      `{"metadata":"m","tags":["t"]}`,
 			wantErr:   true,
 			wantErrIn: []string{"missing required field", "url"},
 		},
 		{
 			name:      "fail_unknownField",
-			body:      `{"url":"https://example.com","metadata":null,"tag":"t","unknown":123}`,
+			body:      `{"url":"https://example.com","metadata":null,"tags":["t"],"unknown":123}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
 		},
 		{
 			name:      "fail_urlNull",
-			body:      `{"url":null,"metadata":"m","tag":"t"}`,
+			body:      `{"url":null,"metadata":"m","tags":["t"]}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields"},
 		},
 
-		// tag / tags
+		// tags
 		{
-			name:      "fail_missingTagAndTags",
+			name:      "fail_missingTags",
 			body:      `{"url":"https://example.com","metadata":"m"}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "missing required field", "tag or tags"},
+			wantErrIn: []string{"missing required field", "tags"},
 		},
 		{
-			name:      "fail_tagNull",
-			body:      `{"url":"https://example.com","metadata":null,"tag":null}`,
+			name:      "fail_singularTag",
+			body:      `{"url":"https://example.com","metadata":null,"tag":"t"}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "tag"},
 		},
 		{
-			name:      "fail_bothTagAndTags",
+			name:      "fail_singularTagWithTags",
 			body:      `{"url":"https://example.com","metadata":null,"tag":"a","tags":["b","c"]}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "mutually exclusive"},
-		},
-		{
-			name:      "fail_tagsEmpty",
-			body:      `{"url":"https://example.com","metadata":null,"tags":[]}`,
-			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "at least two"},
-		},
-		{
-			name:      "fail_tagsOneItem",
-			body:      `{"url":"https://example.com","metadata":null,"tags":["only"]}`,
-			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "at least two"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "tag"},
 		},
 		{
 			name:      "fail_tagsNull",
@@ -197,13 +185,23 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 		// metadata
 		{
 			name:      "fail_missingMetadata",
-			body:      `{"url":"https://example.com","tag":"t"}`,
+			body:      `{"url":"https://example.com","tags":["t"]}`,
 			wantErr:   true,
 			wantErrIn: []string{"missing required field", "metadata"},
 		},
 		{
-			name:    "ok_singleTag",
-			body:    `{"url":"https://example.com","metadata":null,"tag":"t"}`,
+			name:    "ok_tagsEmpty",
+			body:    `{"url":"https://example.com","metadata":null,"tags":[]}`,
+			wantErr: false,
+			want: api.ResourceCreateRequest{
+				URL:      "https://example.com",
+				Metadata: nil,
+				Tags:     []string{},
+			},
+		},
+		{
+			name:    "ok_tagsOneItem",
+			body:    `{"url":"https://example.com","metadata":null,"tags":["t"]}`,
 			wantErr: false,
 			want: api.ResourceCreateRequest{
 				URL:      "https://example.com",
@@ -213,7 +211,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			name:    "ok_metadataString",
-			body:    `{"url":"https://example.com","metadata":"m","tag":"t"}`,
+			body:    `{"url":"https://example.com","metadata":"m","tags":["t"]}`,
 			wantErr: false,
 			want: api.ResourceCreateRequest{
 				URL:      "https://example.com",
@@ -306,7 +304,7 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 		}
 	})
 
-	t.Run("tag", func(t *testing.T) {
+	t.Run("tags", func(t *testing.T) {
 		t.Parallel()
 
 		tests := []struct {
@@ -317,16 +315,16 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			want      api.ResourceUpdateRequest
 		}{
 			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tags: nil, Deleted: nil, Metadata: nil}},
-			{name: "string", body: `{"tag":"t"}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{"t"}, Deleted: nil, Metadata: nil}},
-			{name: "emptyString", body: `{"tag":""}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{""}, Deleted: nil, Metadata: nil}},
+			{name: "empty", body: `{"tags":[]}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{}, Deleted: nil, Metadata: nil}},
+			{name: "oneItem", body: `{"tags":["t"]}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{"t"}, Deleted: nil, Metadata: nil}},
+			{name: "emptyStringItem", body: `{"tags":[""]}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{""}, Deleted: nil, Metadata: nil}},
 			{name: "multiTags", body: `{"tags":["a","b"]}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{"a", "b"}, Deleted: nil, Metadata: nil}},
-			{name: "both_isError", body: `{"tag":"a","tags":["b","c"]}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "mutually exclusive"}},
-			{name: "tagsEmpty_isError", body: `{"tags":[]}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "at least two"}},
-			{name: "tagsOneItem_isError", body: `{"tags":["only"]}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "at least two"}},
-			{name: "null_isError", body: `{"tag":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "number_isError", body: `{"tag":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "bool_isError", body: `{"tag":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "object_isError", body: `{"tag":{}}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
+			{name: "singularTag_isError", body: `{"tag":"t"}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "unknown field", "tag"}},
+			{name: "singularTagWithTags_isError", body: `{"tag":"a","tags":["b","c"]}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "unknown field", "tag"}},
+			{name: "null_isError", body: `{"tags":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
+			{name: "number_isError", body: `{"tags":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
+			{name: "bool_isError", body: `{"tags":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
+			{name: "object_isError", body: `{"tags":{}}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 		}
 
 		for _, tt := range tests {

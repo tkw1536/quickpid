@@ -1,6 +1,6 @@
 {
   "name": "233_resource_patch_multi_tags",
-  "comment": "PATCH with tags of length at least two replaces resource tags and returns the multi-tag response shape.",
+  "comment": "PATCH with tags of length at least two replaces resource tags and returns the tags array.",
   "steps": [
     {
       "name": "create_namespace",
@@ -32,7 +32,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tags\":[\"alpha\"]}"
       },
       "response": {
         "code": 201

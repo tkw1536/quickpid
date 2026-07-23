@@ -10,7 +10,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/missing/resources:batch",
-        "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}]"
+        "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tags\":[\"\"]}]"
       },
       "response": {
         "code": 404,

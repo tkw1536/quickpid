@@ -39,7 +39,7 @@
       "request": {
         "method": "POST",
         "path": "/user/",
-        "body": "{\"username\": \"owner\"}",
+        "body": "{\"username\":\"owner\"}",
         "headers": [
           [
             "Authorization",
@@ -62,7 +62,7 @@
       "request": {
         "method": "POST",
         "path": "/user/",
-        "body": "{\"username\": \"reader\"}",
+        "body": "{\"username\":\"reader\"}",
         "headers": [
           [
             "Authorization",
@@ -93,7 +93,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=owner",
-        "body": "{\"comment\": \"owner\", \"expires_at\": null}",
+        "body": "{\"comment\":\"owner\",\"expires_at\":null}",
         "headers": [
           [
             "Authorization",
@@ -126,7 +126,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=reader",
-        "body": "{\"comment\": \"reader\", \"expires_at\": null}",
+        "body": "{\"comment\":\"reader\",\"expires_at\":null}",
         "headers": [
           [
             "Authorization",
@@ -183,7 +183,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/resources:batch",
-        "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}]",
+        "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tags\":[\"\"]}]",
         "headers": [
           [
             "Authorization",

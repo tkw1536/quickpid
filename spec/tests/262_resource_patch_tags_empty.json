@@ -1,6 +1,6 @@
 {
-  "name": "231_resource_create_post_tags_one_item",
-  "comment": "Resource create with a one-element tags array succeeds and returns that tags array.",
+  "name": "262_resource_patch_tags_empty",
+  "comment": "PATCH with an empty tags array clears resource tags and returns tags as an empty array.",
   "steps": [
     {
       "name": "create_namespace",
@@ -14,14 +14,14 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"create-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"update-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201
       }
     },
     {
-      "name": "tagsOneItem",
+      "name": "create_resource",
       "config": {
         "pids": [
           "xjc-cjy"
@@ -32,19 +32,32 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/a\",\"metadata\":null,\"tags\":[\"only\"]}"
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tags\":[\"alpha\",\"beta\"]}"
       },
       "response": {
-        "code": 201,
+        "code": 201
+      }
+    },
+    {
+      "name": "clearTags",
+      "config": {
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+        "body": "{\"tags\":[]}"
+      },
+      "response": {
+        "code": 200,
         "body": {
           "date_created": "2020-01-02T03:04:05Z",
           "date_updated": "2020-01-02T03:04:05Z",
           "deleted": false,
-          "metadata": null,
+          "metadata": "ext-1@sys-a",
           "pid": "xjc-cjy",
-          "tags": [
-            "only"
-          ],
+          "tags": [],
           "url": "https://example.com/a"
         }
       }

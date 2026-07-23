@@ -47,7 +47,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"root\", \"expires_at\": null}",
+        "body": "{\"comment\":\"root\",\"expires_at\":null}",
         "headers": [
           [
             "Authorization",
@@ -72,7 +72,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/absent-ns/resources",
-        "body": "{\"url\":\"https://x\",\"metadata\":null,\"tag\":\"\"}",
+        "body": "{\"url\":\"https://x\",\"metadata\":null,\"tags\":[\"\"]}",
         "headers": [
           [
             "Authorization",

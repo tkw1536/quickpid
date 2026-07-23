@@ -39,7 +39,7 @@
       "request": {
         "method": "POST",
         "path": "/user/",
-        "body": "{\"username\": \"owner\"}",
+        "body": "{\"username\":\"owner\"}",
         "headers": [
           [
             "Authorization",
@@ -62,7 +62,7 @@
       "request": {
         "method": "POST",
         "path": "/user/",
-        "body": "{\"username\": \"editor\"}",
+        "body": "{\"username\":\"editor\"}",
         "headers": [
           [
             "Authorization",
@@ -93,7 +93,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=owner",
-        "body": "{\"comment\": \"owner\", \"expires_at\": null}",
+        "body": "{\"comment\":\"owner\",\"expires_at\":null}",
         "headers": [
           [
             "Authorization",
@@ -126,7 +126,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=editor",
-        "body": "{\"comment\": \"editor\", \"expires_at\": null}",
+        "body": "{\"comment\":\"editor\",\"expires_at\":null}",
         "headers": [
           [
             "Authorization",
@@ -188,7 +188,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/resources",
-        "body": "{\"url\":\"https://example.com/r\",\"metadata\":\"m\",\"tag\":\"t\"}",
+        "body": "{\"url\":\"https://example.com/r\",\"metadata\":\"m\",\"tags\":[\"t\"]}",
         "headers": [
           [
             "Authorization",
@@ -204,8 +204,10 @@
           "deleted": false,
           "metadata": "m",
           "pid": "aaa-bbb",
-          "tag": "t",
-          "url": "https://example.com/r"
+          "url": "https://example.com/r",
+          "tags": [
+            "t"
+          ]
         }
       }
     },
@@ -255,8 +257,10 @@
           "deleted": true,
           "metadata": "m",
           "pid": "aaa-bbb",
-          "tag": "t",
-          "url": "https://example.com/r"
+          "url": "https://example.com/r",
+          "tags": [
+            "t"
+          ]
         }
       }
     },
@@ -281,8 +285,10 @@
           "deleted": true,
           "metadata": "m",
           "pid": "aaa-bbb",
-          "tag": "t",
-          "url": "https://example.com/r"
+          "url": "https://example.com/r",
+          "tags": [
+            "t"
+          ]
         }
       }
     }

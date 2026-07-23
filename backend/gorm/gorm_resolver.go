@@ -195,8 +195,10 @@ func (s *Store) CreateResource(ctx context.Context, namespace api.ValidNamespace
 			return nil, err
 		}
 		tagRows := tagRowsFor(namespace.String(), pid.String(), req.Tags)
-		if err := tx.Create(&tagRows).Error; err != nil {
-			return nil, err
+		if len(tagRows) > 0 {
+			if err := tx.Create(&tagRows).Error; err != nil {
+				return nil, err
+			}
 		}
 		row.TagRows = tagRows
 		r := row.toSpec()

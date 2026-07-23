@@ -41,7 +41,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tags\":[\"alpha\"]}"
       },
       "response": {
         "code": 201
@@ -56,7 +56,7 @@
       "request": {
         "method": "PATCH",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
-        "body": "{\"url\":\"https://example.com/updated\",\"metadata\":\"ext-1b@sys-b\",\"tag\":\"beta\",\"deleted\":false}"
+        "body": "{\"url\":\"https://example.com/updated\",\"metadata\":\"ext-1b@sys-b\",\"deleted\":false,\"tags\":[\"beta\"]}"
       },
       "response": {
         "code": 200,
@@ -66,8 +66,10 @@
           "deleted": false,
           "metadata": "ext-1b@sys-b",
           "pid": "xjc-cjy",
-          "tag": "beta",
-          "url": "https://example.com/updated"
+          "url": "https://example.com/updated",
+          "tags": [
+            "beta"
+          ]
         }
       }
     },
@@ -90,8 +92,10 @@
           "deleted": false,
           "metadata": "ext-1b@sys-b",
           "pid": "xjc-cjy",
-          "tag": "beta",
-          "url": "https://example.com/url-only"
+          "url": "https://example.com/url-only",
+          "tags": [
+            "beta"
+          ]
         }
       }
     },
@@ -114,8 +118,10 @@
           "deleted": false,
           "metadata": null,
           "pid": "xjc-cjy",
-          "tag": "beta",
-          "url": "https://example.com/url-only"
+          "url": "https://example.com/url-only",
+          "tags": [
+            "beta"
+          ]
         }
       }
     },
@@ -138,8 +144,10 @@
           "deleted": false,
           "metadata": "ext-new@sys-c",
           "pid": "xjc-cjy",
-          "tag": "beta",
-          "url": "https://example.com/url-only"
+          "url": "https://example.com/url-only",
+          "tags": [
+            "beta"
+          ]
         }
       }
     },
@@ -162,8 +170,10 @@
           "deleted": true,
           "metadata": "ext-new@sys-c",
           "pid": "xjc-cjy",
-          "tag": "beta",
-          "url": "https://example.com/url-only"
+          "url": "https://example.com/url-only",
+          "tags": [
+            "beta"
+          ]
         }
       }
     },
@@ -186,8 +196,10 @@
           "deleted": true,
           "metadata": "ext-new@sys-c",
           "pid": "xjc-cjy",
-          "tag": "beta",
-          "url": "https://example.com/url-only"
+          "url": "https://example.com/url-only",
+          "tags": [
+            "beta"
+          ]
         }
       }
     }

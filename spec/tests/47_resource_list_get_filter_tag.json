@@ -41,7 +41,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tag\":\"alpha\"}"
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"ext-1@sys-a\",\"tags\":[\"alpha\"]}"
       },
       "response": {
         "code": 201
@@ -59,7 +59,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/b\",\"metadata\":\"ext-2@sys-a\",\"tag\":\"beta\"}"
+        "body": "{\"url\":\"https://example.com/b\",\"metadata\":\"ext-2@sys-a\",\"tags\":[\"beta\"]}"
       },
       "response": {
         "code": 201
@@ -77,7 +77,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/empty-tag\",\"metadata\":null,\"tag\":\"\"}"
+        "body": "{\"url\":\"https://example.com/empty-tag\",\"metadata\":null,\"tags\":[\"\"]}"
       },
       "response": {
         "code": 201
@@ -95,7 +95,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/c\",\"metadata\":\"ext-4@sys-a\",\"tag\":\"alpha\"}"
+        "body": "{\"url\":\"https://example.com/c\",\"metadata\":\"ext-4@sys-a\",\"tags\":[\"alpha\"]}"
       },
       "response": {
         "code": 201
@@ -113,7 +113,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/d\",\"metadata\":\"ext-5@sys-a\",\"tag\":\"alpha\"}"
+        "body": "{\"url\":\"https://example.com/d\",\"metadata\":\"ext-5@sys-a\",\"tags\":[\"alpha\"]}"
       },
       "response": {
         "code": 201

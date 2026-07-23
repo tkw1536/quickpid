@@ -46,7 +46,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
-        "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"\"},{\"url\":\"https://b2\",\"metadata\":\"b2@batch\",\"tag\":\"\"},{\"url\":\"https://b3\",\"metadata\":\"b3@batch\",\"tag\":\"\"}]"
+        "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tags\":[\"\"]},{\"url\":\"https://b2\",\"metadata\":\"b2@batch\",\"tags\":[\"\"]},{\"url\":\"https://b3\",\"metadata\":\"b3@batch\",\"tags\":[\"\"]}]"
       },
       "response": {
         "code": 422,

@@ -1,6 +1,6 @@
 {
-  "name": "232_resource_batch_create_post_both_tag_and_tags",
-  "comment": "Batch create with an item that has both tag and tags returns 400 body_invalid_json.",
+  "name": "228_resource_create_post_missing_tags",
+  "comment": "Resource create without tags returns 400 body_invalid_json.",
   "steps": [
     {
       "name": "create_namespace",
@@ -14,22 +14,22 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"batch-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"create-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201
       }
     },
     {
-      "name": "bothTagFields",
+      "name": "missingTags",
       "config": {
         "now": "2020-01-02T03:04:05Z",
         "anonymous": true
       },
       "request": {
         "method": "POST",
-        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
-        "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tag\":\"a\",\"tags\":[\"b\",\"c\"]}]"
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":null}"
       },
       "response": {
         "code": 400,

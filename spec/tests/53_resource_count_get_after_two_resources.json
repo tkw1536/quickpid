@@ -41,7 +41,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/a1b2c3d4-e5f6-7890-abcd-ef1234567890/resources",
-        "body": "{\"url\":\"https://example.com/one\",\"metadata\":null,\"tag\":\"t1\"}"
+        "body": "{\"url\":\"https://example.com/one\",\"metadata\":null,\"tags\":[\"t1\"]}"
       },
       "response": {
         "code": 201
@@ -59,7 +59,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/a1b2c3d4-e5f6-7890-abcd-ef1234567890/resources",
-        "body": "{\"url\":\"https://example.com/two\",\"metadata\":null,\"tag\":\"t2\"}"
+        "body": "{\"url\":\"https://example.com/two\",\"metadata\":null,\"tags\":[\"t2\"]}"
       },
       "response": {
         "code": 201

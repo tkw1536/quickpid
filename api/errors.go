@@ -137,12 +137,8 @@ func (e ErrorString) HTTPCode() int {
 
 // various internal sentinel errors.
 var (
-	errMissingRequiredField        = errors.New("missing required field")
-	errInvalidPermissionLevel      = errors.New("invalid permission level")
-	errFailedToUnmarshalFields     = errors.New("failed to unmarshal fields")
-	errInvalidPIDFormat            = errors.New("invalid PID format")
-	errInvalidResourceTags         = errors.New("invalid resource tags")
-	errTagsMustHaveAtLeastTwo      = errors.New("tags must contain at least two items")
-	errTagAndTagsMutuallyExclusive = errors.New("tag and tags are mutually exclusive")
-	errMissingTagOrTags            = errors.New("missing required field: tag or tags")
+	errMissingRequiredField    = errors.New("missing required field")
+	errInvalidPermissionLevel  = errors.New("invalid permission level")
+	errFailedToUnmarshalFields = errors.New("failed to unmarshal fields")
+	errInvalidPIDFormat        = errors.New("invalid PID format")
 )

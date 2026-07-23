@@ -41,7 +41,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/r\",\"metadata\":\"m\",\"tag\":\"t\"}"
+        "body": "{\"url\":\"https://example.com/r\",\"metadata\":\"m\",\"tags\":[\"t\"]}"
       },
       "response": {
         "code": 201,
@@ -51,8 +51,10 @@
           "deleted": false,
           "metadata": "m",
           "pid": "xjc-cjy",
-          "tag": "t",
-          "url": "https://example.com/r"
+          "url": "https://example.com/r",
+          "tags": [
+            "t"
+          ]
         }
       }
     },
@@ -75,8 +77,10 @@
           "deleted": true,
           "metadata": "m",
           "pid": "xjc-cjy",
-          "tag": "t",
-          "url": "https://example.com/r"
+          "url": "https://example.com/r",
+          "tags": [
+            "t"
+          ]
         }
       }
     },
@@ -92,7 +96,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
-        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"a\",\"tag\":\"a\"}"
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"a\",\"tags\":[\"a\"]}"
       },
       "response": {
         "code": 201,
@@ -102,8 +106,10 @@
           "deleted": false,
           "metadata": "a",
           "pid": "bbb-ccc",
-          "tag": "a",
-          "url": "https://example.com/a"
+          "url": "https://example.com/a",
+          "tags": [
+            "a"
+          ]
         }
       }
     },
@@ -128,8 +134,10 @@
               "deleted": true,
               "metadata": "m",
               "pid": "xjc-cjy",
-              "tag": "t",
-              "url": "https://example.com/r"
+              "url": "https://example.com/r",
+              "tags": [
+                "t"
+              ]
             }
           ]
         }
