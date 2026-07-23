@@ -22,8 +22,6 @@ tags:
     description: Operations related to credentials 
   - name: permissions
     description: Operations related to per-namespace permissions.
-  - name: tovalidate
-    description: Routes which need to be double-checked for correctness.
 
 servers:
   - url: /api/v2
@@ -62,7 +60,6 @@ paths:
   /resolver/info:
     get:
       tags:
-        - tovalidate
         - quickpid
         - todo
       summary: Get meta information1
@@ -1228,7 +1225,6 @@ paths:
 
   /resolver/namespaces/{namespace}/resources/{pid}:
     get:
-      operationId: getResource
       summary: Retrieve a resource by PID within a namespace.
       description: |
         Retrieves a single resource by PID within a namespace.
@@ -1246,7 +1242,6 @@ paths:
         If the namespace or resource does not exist, a 404 response is returned.
         If a user tries to access a deleted resource but does not have permission to do so, a 410 response is returned.
       tags:
-        - tovalidate
         - resources
         - todo
 
@@ -1313,7 +1308,6 @@ paths:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
     patch:
-      operationId: updateResource
       summary: Update a resource by PID within a namespace.
       description: |
         Updates a resource using patch semantics.
@@ -1327,7 +1321,6 @@ paths:
         If the namespace or resource exists but the caller lacks required access, a 403 response is returned.
         If the namespace or resource does not exist, a 404 response is returned.
       tags:
-        - tovalidate
         - resources
 
       parameters:
@@ -1411,7 +1404,6 @@ paths:
 
   /user/:
     get:
-      operationId: getCurrentUser
       summary: Return information about a user account.
       description: |
         Returns information about a user account.
@@ -1421,7 +1413,6 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
-        - tovalidate
         - user
       parameters:
         - name: username
@@ -1476,7 +1467,6 @@ paths:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
     patch:
-      operationId: updateUser
       summary: Update a user account.
       description: |
         Updates fields on a user account.
@@ -1487,7 +1477,6 @@ paths:
         The `username` parameter must be set to the username of the account to update.
         It is not permitted to update one's own account.
       tags:
-        - tovalidate
         - user
       parameters:
         - name: username
@@ -1562,18 +1551,14 @@ paths:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
     post:
-      operationId: createUser
       summary: Create a new user account.
       description: |
         Creates a new user account.
 
         In anonymous mode, the route returns HTTP 404.
         In authenticated mode, this route requires superuser privileges.
-        TODO: Missing body_invalid_json
       tags:
-        - tovalidate
         - user
-        - todo
       requestBody:
         required: true
         description: |
@@ -1641,7 +1626,6 @@ paths:
 
   /users/autocomplete:
     get:
-      operationId: autocompleteUsers
       summary: Autocomplete usernames by prefix.
       description: |
         Returns a list of usernames that begin with the given query prefix, sorted in increasing order.
@@ -1653,7 +1637,6 @@ paths:
         In authenticated mode, the caller must be authenticated as a valid user.
         Unauthenticated callers or callers with invalid credentials receive 401 or 403, respectively.
       tags:
-        - tovalidate
         - user
       parameters:
         - name: query
@@ -1681,7 +1664,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
                   - $ref: '#/components/schemas/ErrorInvalidUsername'
         '401':
-          description: Authentication is required, the credentials are incorrect, or the authenticated user does not exist.
+          description: Authentication is required, the credentials are incorrect.
           content:
             application/json:
               schema:
@@ -1702,7 +1685,6 @@ paths:
 
   /users/:
     get:
-      operationId: listUsers
       summary: List all user accounts.
       description: |
         Returns a paginated list of user accounts.
@@ -1712,9 +1694,10 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
         In authenticated mode, this route requires superuser privileges.
+        TODO: Filter by password status.
       tags:
-        - tovalidate
         - user
+        - todo
       parameters:
         - name: superuser
           in: query
@@ -1792,7 +1775,6 @@ paths:
 
   /user/permissions:
     get:
-      operationId: listUserPermissions
       summary: List explicit namespace permissions for a user.
       description: |
         Lists namespaces where the user has an explicit non-none permission level.
@@ -1803,7 +1785,6 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
-        - tovalidate
         - permissions
       parameters:
         - name: username
@@ -1882,7 +1863,6 @@ paths:
 
   /user/key:
     get:
-      operationId: listKeys
       summary: List API keys for a user account.
       description: |
         Returns a paginated list of API keys.
@@ -1893,7 +1873,6 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
-        - tovalidate
         - credentials
         - todo
       parameters:
@@ -1972,7 +1951,6 @@ paths:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
     post:
-      operationId: issueKey
       summary: Issue a new API key.
       description: |
         Issues a new API key.
@@ -1982,7 +1960,6 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
-        - tovalidate
         - credentials
       parameters:
         - name: username
@@ -2058,7 +2035,6 @@ paths:
 
   /user/password:
     post:
-      operationId: setUserPassword
       summary: Set or clear a user password.
       description: |
         Sets or clears an HTTP basic password for a user account.
@@ -2070,9 +2046,10 @@ paths:
         Set `password` to `null` to clear it.
 
         In anonymous mode, the route returns HTTP 404.
+        TODO: Don't allow clearing your own password.
       tags:
-        - tovalidate
         - credentials
+        - todo
       parameters:
         - name: username
           in: query
@@ -2145,7 +2122,6 @@ paths:
 
   /user/key/revoke:
     post:
-      operationId: revokeKey
       summary: Revoke an API key for a user account.
       description: |
         Revokes an API key.
@@ -2156,7 +2132,6 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
       tags:
-        - tovalidate
         - credentials
       parameters:
         - name: username
