@@ -1,7 +1,7 @@
 //spellchecker:words password
 package password_test
 
-//spellchecker:words bytes testing github quickpid internal
+//spellchecker:words bytes testing github quickpid internal password
 import (
 	"bytes"
 	"testing"

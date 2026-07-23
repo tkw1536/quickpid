@@ -1,7 +1,7 @@
 //spellchecker:words memory
 package memory
 
-//spellchecker:words bytes context sort strings time github quickpid backend internal apikey
+//spellchecker:words bytes context sort strings time github quickpid backend internal apikey password
 import (
 	"bytes"
 	"context"

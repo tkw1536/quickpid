@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words base64 context encoding json slog http strings time
+//spellchecker:words context encoding json slog http strings time
 import (
 	"context"
 	"encoding/json"

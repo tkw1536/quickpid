@@ -3,7 +3,7 @@
 //spellchecker:words password
 package password
 
-//spellchecker:words bcrypt crypto
+//spellchecker:words golang crypto bcrypt
 import (
 	"fmt"
 

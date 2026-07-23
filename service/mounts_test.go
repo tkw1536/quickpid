@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service_test
 
-//spellchecker:words context testing github quickpid api service
+//spellchecker:words context testing github quickpid service
 import (
 	"context"
 	"testing"

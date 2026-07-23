@@ -1,7 +1,7 @@
 //spellchecker:words gorm
 package gorm
 
-//spellchecker:words context time github quickpid backend internal apikey gorm
+//spellchecker:words context time github quickpid backend internal apikey password gorm
 import (
 	"context"
 	"fmt"
