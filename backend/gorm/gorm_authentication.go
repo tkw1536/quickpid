@@ -99,7 +99,7 @@ func (s *Store) DeleteUser(ctx context.Context, username api.ValidUsername) erro
 		if err := tx.Where("username = ?", username.String()).Delete(&apiKeyRow{}).Error; err != nil {
 			return zero, err
 		}
-		if err := tx.Where("username = ?", username.String()).Delete(&namespacePermissionRow{}).Error; err != nil {
+		if err := tx.Where("username = ?", username.String()).Delete(&namespaceRoleRow{}).Error; err != nil {
 			return zero, err
 		}
 		result := tx.Delete(&userRow{Username: username.String()})

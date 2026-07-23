@@ -1,6 +1,6 @@
 {
   "name": "resource_patch_reader_forbidden",
-  "comment": "A user without editor or manager permission cannot PATCH resources (403 forbidden).",
+  "comment": "A user without editor or manager role cannot PATCH resources (403 forbidden).",
   "steps": [
     {
       "name": "bootstrap_root",

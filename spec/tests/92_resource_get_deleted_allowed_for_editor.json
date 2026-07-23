@@ -1,6 +1,6 @@
 {
   "name": "resource_get_deleted_allowed_for_editor",
-  "comment": "In authenticated mode, a user with editor permission can GET a deleted resource and receives the full object with deleted=true.",
+  "comment": "In authenticated mode, a user with editor role can GET a deleted resource and receives the full object with deleted=true.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -216,8 +216,8 @@
       "config": {},
       "request": {
         "method": "PUT",
-        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/permissions/editor",
-        "body": "{\"level\":\"editor\"}",
+        "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001/roles/editor",
+        "body": "{\"role\":\"editor\"}",
         "headers": [
           [
             "Authorization",
@@ -228,7 +228,7 @@
       "response": {
         "code": 200,
         "body": {
-          "level": "editor",
+          "role": "editor",
           "username": "editor"
         }
       }

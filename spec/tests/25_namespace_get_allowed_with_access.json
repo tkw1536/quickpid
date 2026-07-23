@@ -1,6 +1,6 @@
 {
   "name": "25_namespace_get_allowed_with_access",
-  "comment": "In authenticated mode, a user with non-none permission on a namespace can retrieve it by id.",
+  "comment": "In authenticated mode, a user with a non-none role on a namespace can retrieve it by id.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -214,8 +214,8 @@
       "config": {},
       "request": {
         "method": "PUT",
-        "path": "/resolver/namespaces/a1000000-0000-4000-8000-000000000001/permissions/admin",
-        "body": "{\"level\":\"manager\"}",
+        "path": "/resolver/namespaces/a1000000-0000-4000-8000-000000000001/roles/admin",
+        "body": "{\"role\":\"manager\"}",
         "headers": [
           [
             "Authorization",
@@ -226,7 +226,7 @@
       "response": {
         "code": 200,
         "body": {
-          "level": "manager",
+          "role": "manager",
           "username": "admin"
         }
       }
@@ -236,8 +236,8 @@
       "config": {},
       "request": {
         "method": "PUT",
-        "path": "/resolver/namespaces/b1000000-0000-4000-8000-000000000002/permissions/alice",
-        "body": "{\"level\":\"contributor\"}",
+        "path": "/resolver/namespaces/b1000000-0000-4000-8000-000000000002/roles/alice",
+        "body": "{\"role\":\"contributor\"}",
         "headers": [
           [
             "Authorization",
@@ -248,7 +248,7 @@
       "response": {
         "code": 200,
         "body": {
-          "level": "contributor",
+          "role": "contributor",
           "username": "alice"
         }
       }

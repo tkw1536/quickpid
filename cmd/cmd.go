@@ -102,7 +102,7 @@ func (main *mainCmd) run() int {
 
 	main.printStartupBanner()
 	if main.anonymous {
-		main.logger.Warn("anonymous mode enabled; authentication, user management, and permission checks for resolver operations are disabled")
+		main.logger.Warn("anonymous mode enabled; authentication, user management, and authorization checks for resolver operations are disabled")
 	}
 
 	if main.preamble != nil {

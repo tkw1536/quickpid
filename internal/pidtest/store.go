@@ -66,16 +66,16 @@ func RunStoreTests(t *testing.T, newStore StoreFactory) {
 			Test: testAuthorizationCRUD,
 		},
 		{
-			Name: "ListUserPermissions",
-			Test: testListUserPermissions,
+			Name: "ListUserRoles",
+			Test: testListUserRoles,
 		},
 		{
 			Name: "CreateNamespaceWithOwner",
 			Test: testCreateNamespaceWithOwner,
 		},
 		{
-			Name: "DeleteUserCascadesPermissions",
-			Test: testDeleteUserCascadesPermissions,
+			Name: "DeleteUserCascadesRoles",
+			Test: testDeleteUserCascadesRoles,
 		},
 		{
 			Name: "MountCRUD",
@@ -526,7 +526,7 @@ func testAuthPasswordLifecycle(t *testing.T, newStore StoreFactory) {
 	}
 }
 
-// testAuthorizationCRUD runs namespace permission CRUD tests.
+// testAuthorizationCRUD runs namespace role CRUD tests.
 func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
@@ -545,69 +545,69 @@ func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 
-	level, err := s.GetNamespacePermission(ctx, ns1, user("other"))
+	role, err := s.GetNamespaceRole(ctx, ns1, user("other"))
 	if err != nil {
-		t.Fatalf("GetNamespacePermission() error = %v", err)
+		t.Fatalf("GetNamespaceRole() error = %v", err)
 	}
-	if level != api.PermissionLevelNone {
-		t.Fatalf("GetNamespacePermission() = %q, want none", level)
+	if role != api.RoleNone {
+		t.Fatalf("GetNamespaceRole() = %q, want none", role)
 	}
 
-	level, err = s.GetNamespacePermission(ctx, ns1, user(testNamespaceOwner))
+	role, err = s.GetNamespaceRole(ctx, ns1, user(testNamespaceOwner))
 	if err != nil {
-		t.Fatalf("GetNamespacePermission(owner) error = %v", err)
+		t.Fatalf("GetNamespaceRole(owner) error = %v", err)
 	}
-	if level != api.PermissionLevelManager {
-		t.Fatalf("GetNamespacePermission(owner) = %q, want manager", level)
+	if role != api.RoleManager {
+		t.Fatalf("GetNamespaceRole(owner) = %q, want manager", role)
 	}
 
-	if err := s.SetNamespacePermission(ctx, ns1, user("bob"), api.PermissionLevelEditor); err != nil {
-		t.Fatalf("SetNamespacePermission() error = %v", err)
+	if err := s.SetNamespaceRole(ctx, ns1, user("bob"), api.RoleEditor); err != nil {
+		t.Fatalf("SetNamespaceRole() error = %v", err)
 	}
-	level, err = s.GetNamespacePermission(ctx, ns1, user("bob"))
+	role, err = s.GetNamespaceRole(ctx, ns1, user("bob"))
 	if err != nil {
-		t.Fatalf("GetNamespacePermission(bob) error = %v", err)
+		t.Fatalf("GetNamespaceRole(bob) error = %v", err)
 	}
-	if level != api.PermissionLevelEditor {
-		t.Fatalf("GetNamespacePermission(bob) = %q, want editor", level)
+	if role != api.RoleEditor {
+		t.Fatalf("GetNamespaceRole(bob) = %q, want editor", role)
 	}
 
-	if err := s.SetNamespacePermission(ctx, ns1, user("bob"), api.PermissionLevelNone); err != nil {
-		t.Fatalf("SetNamespacePermission(none) error = %v", err)
+	if err := s.SetNamespaceRole(ctx, ns1, user("bob"), api.RoleNone); err != nil {
+		t.Fatalf("SetNamespaceRole(none) error = %v", err)
 	}
-	level, err = s.GetNamespacePermission(ctx, ns1, user("bob"))
+	role, err = s.GetNamespaceRole(ctx, ns1, user("bob"))
 	if err != nil {
-		t.Fatalf("GetNamespacePermission(bob) after none error = %v", err)
+		t.Fatalf("GetNamespaceRole(bob) after none error = %v", err)
 	}
-	if level != api.PermissionLevelNone {
-		t.Fatalf("GetNamespacePermission(bob) after none = %q, want none", level)
+	if role != api.RoleNone {
+		t.Fatalf("GetNamespaceRole(bob) after none = %q, want none", role)
 	}
 
-	if err := s.SetNamespacePermission(ctx, ns1, user("carol"), api.PermissionLevelContributor); err != nil {
-		t.Fatalf("SetNamespacePermission(carol) error = %v", err)
+	if err := s.SetNamespaceRole(ctx, ns1, user("carol"), api.RoleContributor); err != nil {
+		t.Fatalf("SetNamespaceRole(carol) error = %v", err)
 	}
-	if err := s.DeleteNamespacePermission(ctx, ns1, user("carol")); err != nil {
-		t.Fatalf("DeleteNamespacePermission() error = %v", err)
+	if err := s.DeleteNamespaceRole(ctx, ns1, user("carol")); err != nil {
+		t.Fatalf("DeleteNamespaceRole() error = %v", err)
 	}
-	if err := s.DeleteNamespacePermission(ctx, ns1, user("carol")); !errors.Is(err, backend.ErrPermissionNotFound) {
-		t.Fatalf("DeleteNamespacePermission() twice error = %v, want ErrPermissionNotFound", err)
+	if err := s.DeleteNamespaceRole(ctx, ns1, user("carol")); !errors.Is(err, backend.ErrRoleNotFound) {
+		t.Fatalf("DeleteNamespaceRole() twice error = %v, want ErrRoleNotFound", err)
 	}
 
-	page, err := s.ListNamespacePermissions(ctx, ns1, api.ListNamespacePermissionsParams{Limit: 100})
+	page, err := s.ListNamespaceRoles(ctx, ns1, api.ListNamespaceRolesParams{Limit: 100})
 	if err != nil {
-		t.Fatalf("ListNamespacePermissions() error = %v", err)
+		t.Fatalf("ListNamespaceRoles() error = %v", err)
 	}
 	if page.Total != 1 || len(page.Items) != 1 || page.Items[0].Username != testNamespaceOwner {
-		t.Fatalf("ListNamespacePermissions() = %+v", page)
+		t.Fatalf("ListNamespaceRoles() = %+v", page)
 	}
 
-	if err := s.SetNamespacePermission(ctx, ns1, user("dave"), api.PermissionLevel("invalid")); !errors.Is(err, backend.ErrInvalidPermissionLevel) {
-		t.Fatalf("SetNamespacePermission(invalid) error = %v, want ErrInvalidPermissionLevel", err)
+	if err := s.SetNamespaceRole(ctx, ns1, user("dave"), api.Role("invalid")); !errors.Is(err, backend.ErrInvalidRole) {
+		t.Fatalf("SetNamespaceRole(invalid) error = %v, want ErrInvalidRole", err)
 	}
 }
 
-// testListUserPermissions runs list-permissions-by-user tests.
-func testListUserPermissions(t *testing.T, newStore StoreFactory) {
+// testListUserRoles runs list-roles-by-user tests.
+func testListUserRoles(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
@@ -638,53 +638,53 @@ func testListUserPermissions(t *testing.T, newStore StoreFactory) {
 	if _, err := s.CreateNamespace(ctx, nsA, namespaceReq(), userPtr("alice"), now); err != nil {
 		t.Fatalf("CreateNamespace(ns-a) error = %v", err)
 	}
-	if err := s.SetNamespacePermission(ctx, nsB, user("bob"), api.PermissionLevelEditor); err != nil {
-		t.Fatalf("SetNamespacePermission(bob, ns-b) error = %v", err)
+	if err := s.SetNamespaceRole(ctx, nsB, user("bob"), api.RoleEditor); err != nil {
+		t.Fatalf("SetNamespaceRole(bob, ns-b) error = %v", err)
 	}
-	if err := s.SetNamespacePermission(ctx, nsA, user("bob"), api.PermissionLevelContributor); err != nil {
-		t.Fatalf("SetNamespacePermission(bob, ns-a) error = %v", err)
+	if err := s.SetNamespaceRole(ctx, nsA, user("bob"), api.RoleContributor); err != nil {
+		t.Fatalf("SetNamespaceRole(bob, ns-a) error = %v", err)
 	}
 
-	page, err := s.ListUserPermissions(ctx, user("alice"), api.ListUserPermissionsParams{Limit: 100})
+	page, err := s.ListUserRoles(ctx, user("alice"), api.ListUserRolesParams{Limit: 100})
 	if err != nil {
-		t.Fatalf("ListUserPermissions(alice) error = %v", err)
+		t.Fatalf("ListUserRoles(alice) error = %v", err)
 	}
 	if page.Total != 2 || len(page.Items) != 2 {
-		t.Fatalf("ListUserPermissions(alice) = %+v, want 2 items", page)
+		t.Fatalf("ListUserRoles(alice) = %+v, want 2 items", page)
 	}
-	if page.Items[0].Namespace != "ns-a" || page.Items[0].Level != api.PermissionLevelManager {
-		t.Fatalf("ListUserPermissions(alice)[0] = %+v, want ns-a manager", page.Items[0])
+	if page.Items[0].Namespace != "ns-a" || page.Items[0].Role != api.RoleManager {
+		t.Fatalf("ListUserRoles(alice)[0] = %+v, want ns-a manager", page.Items[0])
 	}
-	if page.Items[1].Namespace != "ns-b" || page.Items[1].Level != api.PermissionLevelManager {
-		t.Fatalf("ListUserPermissions(alice)[1] = %+v, want ns-b manager", page.Items[1])
-	}
-
-	page, err = s.ListUserPermissions(ctx, user("bob"), api.ListUserPermissionsParams{Limit: 1, Offset: 0})
-	if err != nil {
-		t.Fatalf("ListUserPermissions(bob, limit=1) error = %v", err)
-	}
-	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Namespace != "ns-a" || page.Items[0].Level != api.PermissionLevelContributor {
-		t.Fatalf("ListUserPermissions(bob, limit=1) = %+v", page)
+	if page.Items[1].Namespace != "ns-b" || page.Items[1].Role != api.RoleManager {
+		t.Fatalf("ListUserRoles(alice)[1] = %+v, want ns-b manager", page.Items[1])
 	}
 
-	page, err = s.ListUserPermissions(ctx, user("bob"), api.ListUserPermissionsParams{Limit: 1, Offset: 1})
+	page, err = s.ListUserRoles(ctx, user("bob"), api.ListUserRolesParams{Limit: 1, Offset: 0})
 	if err != nil {
-		t.Fatalf("ListUserPermissions(bob, offset=1) error = %v", err)
+		t.Fatalf("ListUserRoles(bob, limit=1) error = %v", err)
 	}
-	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Namespace != "ns-b" || page.Items[0].Level != api.PermissionLevelEditor {
-		t.Fatalf("ListUserPermissions(bob, offset=1) = %+v", page)
+	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Namespace != "ns-a" || page.Items[0].Role != api.RoleContributor {
+		t.Fatalf("ListUserRoles(bob, limit=1) = %+v", page)
 	}
 
-	page, err = s.ListUserPermissions(ctx, user("carol"), api.ListUserPermissionsParams{Limit: 100})
+	page, err = s.ListUserRoles(ctx, user("bob"), api.ListUserRolesParams{Limit: 1, Offset: 1})
 	if err != nil {
-		t.Fatalf("ListUserPermissions(carol) error = %v", err)
+		t.Fatalf("ListUserRoles(bob, offset=1) error = %v", err)
+	}
+	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Namespace != "ns-b" || page.Items[0].Role != api.RoleEditor {
+		t.Fatalf("ListUserRoles(bob, offset=1) = %+v", page)
+	}
+
+	page, err = s.ListUserRoles(ctx, user("carol"), api.ListUserRolesParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUserRoles(carol) error = %v", err)
 	}
 	if page.Total != 0 || len(page.Items) != 0 {
-		t.Fatalf("ListUserPermissions(carol) = %+v, want empty", page)
+		t.Fatalf("ListUserRoles(carol) = %+v, want empty", page)
 	}
 
-	if _, err := s.ListUserPermissions(ctx, user("missing"), api.ListUserPermissionsParams{Limit: 100}); !errors.Is(err, backend.ErrUserNotFound) {
-		t.Fatalf("ListUserPermissions(missing) error = %v, want ErrUserNotFound", err)
+	if _, err := s.ListUserRoles(ctx, user("missing"), api.ListUserRolesParams{Limit: 100}); !errors.Is(err, backend.ErrUserNotFound) {
+		t.Fatalf("ListUserRoles(missing) error = %v, want ErrUserNotFound", err)
 	}
 }
 
@@ -715,17 +715,17 @@ func testCreateNamespaceWithOwner(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
 
-	level, err := s.GetNamespacePermission(ctx, nsOwned, user("owner"))
+	role, err := s.GetNamespaceRole(ctx, nsOwned, user("owner"))
 	if err != nil {
-		t.Fatalf("GetNamespacePermission() error = %v", err)
+		t.Fatalf("GetNamespaceRole() error = %v", err)
 	}
-	if level != api.PermissionLevelManager {
-		t.Fatalf("GetNamespacePermission() = %q, want manager", level)
+	if role != api.RoleManager {
+		t.Fatalf("GetNamespaceRole() = %q, want manager", role)
 	}
 }
 
-// testDeleteUserCascadesPermissions runs user deletion cascade tests.
-func testDeleteUserCascadesPermissions(t *testing.T, newStore StoreFactory) {
+// testDeleteUserCascadesRoles runs user deletion cascade tests.
+func testDeleteUserCascadesRoles(t *testing.T, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
 	s := newStore(t)
@@ -745,28 +745,28 @@ func testDeleteUserCascadesPermissions(t *testing.T, newStore StoreFactory) {
 	if _, err := s.CreateNamespace(ctx, ns1, namespaceReq(), userPtr("alice"), now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
-	if err := s.SetNamespacePermission(ctx, ns1, user("bob"), api.PermissionLevelEditor); err != nil {
-		t.Fatalf("SetNamespacePermission() error = %v", err)
+	if err := s.SetNamespaceRole(ctx, ns1, user("bob"), api.RoleEditor); err != nil {
+		t.Fatalf("SetNamespaceRole() error = %v", err)
 	}
 
 	if err := s.DeleteUser(ctx, user("bob")); err != nil {
 		t.Fatalf("DeleteUser() error = %v", err)
 	}
 
-	level, err := s.GetNamespacePermission(ctx, ns1, user("bob"))
+	role, err := s.GetNamespaceRole(ctx, ns1, user("bob"))
 	if err != nil {
-		t.Fatalf("GetNamespacePermission(bob) error = %v", err)
+		t.Fatalf("GetNamespaceRole(bob) error = %v", err)
 	}
-	if level != api.PermissionLevelNone {
-		t.Fatalf("GetNamespacePermission(bob) after delete = %q, want none", level)
+	if role != api.RoleNone {
+		t.Fatalf("GetNamespaceRole(bob) after delete = %q, want none", role)
 	}
 
-	page, err := s.ListNamespacePermissions(ctx, ns1, api.ListNamespacePermissionsParams{Limit: 100})
+	page, err := s.ListNamespaceRoles(ctx, ns1, api.ListNamespaceRolesParams{Limit: 100})
 	if err != nil {
-		t.Fatalf("ListNamespacePermissions() error = %v", err)
+		t.Fatalf("ListNamespaceRoles() error = %v", err)
 	}
 	if page.Total != 1 || page.Items[0].Username != "alice" {
-		t.Fatalf("ListNamespacePermissions() = %+v", page)
+		t.Fatalf("ListNamespaceRoles() = %+v", page)
 	}
 }
 
@@ -914,4 +914,3 @@ func testMountCRUD(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("GetMount(otherURI) after delete = %q, want %q", got, ns1.String())
 	}
 }
-

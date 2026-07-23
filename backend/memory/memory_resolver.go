@@ -28,7 +28,7 @@ func (s *Store) ListNamespaces(_ context.Context, user *api.ValidUsername, param
 			continue
 		}
 		if user != nil {
-			byUser, ok := s.permissions[id]
+			byUser, ok := s.roles[id]
 			if !ok {
 				continue
 			}
@@ -79,10 +79,10 @@ func (s *Store) CreateNamespace(_ context.Context, namespace api.ValidNamespaceI
 	s.resources[namespace.String()] = make(map[string]api.ResourceResponse)
 
 	if owner != nil {
-		if s.permissions[namespace.String()] == nil {
-			s.permissions[namespace.String()] = make(map[string]api.PermissionLevel)
+		if s.roles[namespace.String()] == nil {
+			s.roles[namespace.String()] = make(map[string]api.Role)
 		}
-		s.permissions[namespace.String()][owner.String()] = api.PermissionLevelManager
+		s.roles[namespace.String()][owner.String()] = api.RoleManager
 	}
 
 	return &ns, nil

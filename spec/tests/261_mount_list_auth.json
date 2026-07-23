@@ -182,8 +182,8 @@
       "config": {},
       "request": {
         "method": "PUT",
-        "path": "/resolver/namespaces/ns-list-auth/permissions/alice",
-        "body": "{\"level\":\"contributor\"}",
+        "path": "/resolver/namespaces/ns-list-auth/roles/alice",
+        "body": "{\"role\":\"contributor\"}",
         "headers": [
           [
             "Authorization",
@@ -195,7 +195,7 @@
         "code": 200,
         "body": {
           "username": "alice",
-          "level": "contributor"
+          "role": "contributor"
         }
       }
     },

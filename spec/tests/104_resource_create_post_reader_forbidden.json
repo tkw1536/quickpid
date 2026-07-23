@@ -1,6 +1,6 @@
 {
   "name": "resource_create_post_reader_forbidden",
-  "comment": "In authenticated mode, a user without contributor/editor/manager permission cannot create resources (403 forbidden).",
+  "comment": "In authenticated mode, a user without contributor/editor/manager role cannot create resources (403 forbidden).",
   "steps": [
     {
       "name": "bootstrap_root",

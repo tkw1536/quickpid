@@ -1,6 +1,6 @@
 {
   "name": "resource_batch_create_post_reader_forbidden",
-  "comment": "In authenticated mode, a user without sufficient permission cannot batch-create resources (403 forbidden).",
+  "comment": "In authenticated mode, a user without a sufficient role cannot batch-create resources (403 forbidden).",
   "steps": [
     {
       "name": "bootstrap_root",

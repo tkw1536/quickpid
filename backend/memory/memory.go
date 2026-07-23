@@ -16,11 +16,11 @@ import (
 // NewStore returns a new in-memory backend store.
 func NewStore() *Store {
 	return &Store{
-		users:       make(map[string]*userRecord),
-		namespaces:  make(map[string]api.NamespaceResponse),
-		resources:   make(map[string]map[string]api.ResourceResponse),
-		permissions: make(map[string]map[string]api.PermissionLevel),
-		mounts:      make(map[string]string),
+		users:      make(map[string]*userRecord),
+		namespaces: make(map[string]api.NamespaceResponse),
+		resources:  make(map[string]map[string]api.ResourceResponse),
+		roles:      make(map[string]map[string]api.Role),
+		mounts:     make(map[string]string),
 	}
 }
 
@@ -28,11 +28,11 @@ func NewStore() *Store {
 type Store struct {
 	mu sync.RWMutex
 
-	users       map[string]*userRecord
-	namespaces  map[string]api.NamespaceResponse
-	resources   map[string]map[string]api.ResourceResponse
-	permissions map[string]map[string]api.PermissionLevel
-	mounts      map[string]string // baseURI -> namespaceID
+	users      map[string]*userRecord
+	namespaces map[string]api.NamespaceResponse
+	resources  map[string]map[string]api.ResourceResponse
+	roles      map[string]map[string]api.Role
+	mounts     map[string]string // baseURI -> namespaceID
 }
 
 type userRecord struct {
@@ -73,7 +73,7 @@ func (s *Store) Shutdown(ctx context.Context) error {
 		s.users = nil
 		s.namespaces = nil
 		s.resources = nil
-		s.permissions = nil
+		s.roles = nil
 		s.mounts = nil
 	}()
 

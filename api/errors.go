@@ -38,8 +38,8 @@ const (
 	ResourceGone      ErrorString = "resource_gone"       // Resource exists but has been deleted
 	MountNotFound     ErrorString = "mount_not_found"     // Mount not found
 
-	PermissionNotFound     ErrorString = "permission_not_found"     // Permission record not found
-	InvalidPermissionLevel ErrorString = "invalid_permission_level" // Permission level is not allowed for this operation
+	RoleNotFound ErrorString = "role_not_found" // Role record not found
+	InvalidRole  ErrorString = "invalid_role"   // Role is not allowed for this operation
 
 	InfoUnavailable ErrorString = "info_unavailable" // Info is unavailable (possibly for security reasons)
 
@@ -109,8 +109,8 @@ var codes = map[ErrorString]int{
 	ResourceGone:      http.StatusGone,
 	MountNotFound:     http.StatusNotFound,
 
-	PermissionNotFound:     http.StatusNotFound,
-	InvalidPermissionLevel: http.StatusBadRequest,
+	RoleNotFound: http.StatusNotFound,
+	InvalidRole:  http.StatusBadRequest,
 
 	InfoUnavailable: http.StatusNotFound,
 
@@ -138,7 +138,7 @@ func (e ErrorString) HTTPCode() int {
 // various internal sentinel errors.
 var (
 	errMissingRequiredField    = errors.New("missing required field")
-	errInvalidPermissionLevel  = errors.New("invalid permission level")
+	errInvalidRole             = errors.New("invalid role")
 	errFailedToUnmarshalFields = errors.New("failed to unmarshal fields")
 	errInvalidPIDFormat        = errors.New("invalid PID format")
 )

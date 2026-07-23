@@ -11,27 +11,27 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Store) GetNamespacePermission(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.PermissionLevel, error) {
-	level, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (api.PermissionLevel, error) {
+func (s *Store) GetNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error) {
+	role, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (api.Role, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return "", err
 		}
 
-		var row namespacePermissionRow
+		var row namespaceRoleRow
 		if err := tx.First(&row, "namespace = ? AND username = ?", namespace.String(), username.String()).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return api.PermissionLevelNone, nil
+				return api.RoleNone, nil
 			}
 			return "", err
 		}
-		return api.PermissionLevel(row.Level), nil
+		return api.Role(row.Role), nil
 	})
-	return level, err
+	return role, err
 }
 
-func (s *Store) SetNamespacePermission(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, level api.PermissionLevel) error {
-	if level.Validate() != nil {
-		return backend.ErrInvalidPermissionLevel
+func (s *Store) SetNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, role api.Role) error {
+	if role.Validate() != nil {
+		return backend.ErrInvalidRole
 	}
 
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
@@ -40,18 +40,18 @@ func (s *Store) SetNamespacePermission(ctx context.Context, namespace api.ValidN
 			return zero, err
 		}
 
-		if level == api.PermissionLevelNone {
-			result := tx.Where("namespace = ? AND username = ?", namespace.String(), username.String()).Delete(&namespacePermissionRow{})
+		if role == api.RoleNone {
+			result := tx.Where("namespace = ? AND username = ?", namespace.String(), username.String()).Delete(&namespaceRoleRow{})
 			if result.Error != nil {
 				return zero, result.Error
 			}
 			return zero, nil
 		}
 
-		row := namespacePermissionRow{
+		row := namespaceRoleRow{
 			Namespace: namespace.String(),
 			Username:  username.String(),
-			Level:     string(level),
+			Role:      string(role),
 		}
 		if err := tx.Save(&row).Error; err != nil {
 			return zero, err
@@ -61,28 +61,28 @@ func (s *Store) SetNamespacePermission(ctx context.Context, namespace api.ValidN
 	return err
 }
 
-func (s *Store) DeleteNamespacePermission(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
+func (s *Store) DeleteNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}
-		result := tx.Where("namespace = ? AND username = ?", namespace.String(), username.String()).Delete(&namespacePermissionRow{})
+		result := tx.Where("namespace = ? AND username = ?", namespace.String(), username.String()).Delete(&namespaceRoleRow{})
 		if result.Error != nil {
 			return zero, result.Error
 		}
 		if result.RowsAffected == 0 {
-			return zero, backend.ErrPermissionNotFound
+			return zero, backend.ErrRoleNotFound
 		}
 		return zero, nil
 	})
 	return err
 }
 
-func (s *Store) ListNamespacePermissions(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacePermissionsResponse, error) {
+func (s *Store) ListNamespaceRoles(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespaceRolesResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
 		}
 
-		q := tx.Model(&namespacePermissionRow{}).Where("namespace = ?", namespace.String())
+		q := tx.Model(&namespaceRoleRow{}).Where("namespace = ?", namespace.String())
 		var total int64
 		if err := q.Count(&total).Error; err != nil {
 			return nil, err
@@ -91,22 +91,22 @@ func (s *Store) ListNamespacePermissions(ctx context.Context, namespace api.Vali
 		limit := params.Limit
 		offset := params.Offset
 		if limit == 0 || int64(offset) >= total {
-			return &api.PaginatedNamespacePermissionsResponse{
+			return &api.PaginatedNamespaceRolesResponse{
 				Total:  int(total),
 				Offset: offset,
-				Items:  []api.NamespacePermission{},
+				Items:  []api.NamespaceRole{},
 			}, nil
 		}
 
-		var rows []namespacePermissionRow
+		var rows []namespaceRoleRow
 		if err := q.Order("username ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
-		items := make([]api.NamespacePermission, len(rows))
+		items := make([]api.NamespaceRole, len(rows))
 		for i := range rows {
 			items[i] = rows[i].toSpec()
 		}
-		return &api.PaginatedNamespacePermissionsResponse{
+		return &api.PaginatedNamespaceRolesResponse{
 			Total:  int(total),
 			Offset: offset,
 			Items:  items,
@@ -114,13 +114,13 @@ func (s *Store) ListNamespacePermissions(ctx context.Context, namespace api.Vali
 	})
 }
 
-func (s *Store) ListUserPermissions(ctx context.Context, username api.ValidUsername, params api.ListUserPermissionsParams) (*api.PaginatedUserPermissionsResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedUserPermissionsResponse, error) {
+func (s *Store) ListUserRoles(ctx context.Context, username api.ValidUsername, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedUserRolesResponse, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
 		}
 
-		q := tx.Model(&namespacePermissionRow{}).Where("username = ?", username.String())
+		q := tx.Model(&namespaceRoleRow{}).Where("username = ?", username.String())
 		var total int64
 		if err := q.Count(&total).Error; err != nil {
 			return nil, err
@@ -129,22 +129,22 @@ func (s *Store) ListUserPermissions(ctx context.Context, username api.ValidUsern
 		limit := params.Limit
 		offset := params.Offset
 		if limit == 0 || int64(offset) >= total {
-			return &api.PaginatedUserPermissionsResponse{
+			return &api.PaginatedUserRolesResponse{
 				Total:  int(total),
 				Offset: offset,
-				Items:  []api.UserPermission{},
+				Items:  []api.UserRole{},
 			}, nil
 		}
 
-		var rows []namespacePermissionRow
+		var rows []namespaceRoleRow
 		if err := q.Order("namespace ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
-		items := make([]api.UserPermission, len(rows))
+		items := make([]api.UserRole, len(rows))
 		for i := range rows {
-			items[i] = rows[i].toUserPermission()
+			items[i] = rows[i].toUserRole()
 		}
-		return &api.PaginatedUserPermissionsResponse{
+		return &api.PaginatedUserRolesResponse{
 			Total:  int(total),
 			Offset: offset,
 			Items:  items,

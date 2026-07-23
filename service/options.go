@@ -8,7 +8,7 @@ type Options struct {
 	// InfoEnabled enables the generic info endpoint.
 	InfoEnabled bool
 
-	// Anonymous disables user management and permission checks for resolver operations.
+	// Anonymous disables user management and authorization checks for resolver operations.
 	Anonymous bool
 
 	// Limits for various internal behavior.

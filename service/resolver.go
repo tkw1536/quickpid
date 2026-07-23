@@ -264,11 +264,11 @@ func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, na
 		if caller.Superuser {
 			return out, nil
 		}
-		level, err := s.effectivePermission(ctx, *caller, namespace)
+		role, err := s.effectiveRole(ctx, *caller, namespace)
 		if err != nil {
 			return nil, err
 		}
-		if canReadDeletedResource(level) {
+		if canReadDeletedResource(role) {
 			return out, nil
 		}
 		return nil, api.WithErrorString(errResourceGone, api.ResourceGone)

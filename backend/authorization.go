@@ -9,42 +9,42 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-// AuthorizationBackend represents the backend for per-namespace permissions.
+// AuthorizationBackend represents the backend for per-namespace roles.
 //
 // See [memory.NewStore] and [gorm.NewStore] for implementations.
 type AuthorizationBackend interface {
-	// Gets the permission level for a username in a namespace.
+	// Gets the role for a username in a namespace.
 	//
-	// Should return [api.PermissionLevelNone] if no explicit permission is stored.
-	GetNamespacePermission(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.PermissionLevel, error)
+	// Should return [api.RoleNone] if no explicit role is stored.
+	GetNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error)
 
-	// Sets or updates the permission level for a username in a namespace.
-	// Setting [api.PermissionLevelNone] should remove any explicit permission record.
+	// Sets or updates the role for a username in a namespace.
+	// Setting [api.RoleNone] should remove any explicit role record.
 	//
-	// Should return [ErrInvalidPermissionLevel] if the permission level is invalid.
+	// Should return [ErrInvalidRole] if the role is invalid.
 	// Should return [ErrUserNotFound] if the user does not exist.
-	SetNamespacePermission(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, level api.PermissionLevel) error
+	SetNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, role api.Role) error
 
-	// Deletes an explicit permission record.
+	// Deletes an explicit role record.
 	//
-	// Should return [ErrPermissionNotFound] if no explicit permission exists.
-	DeleteNamespacePermission(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error
+	// Should return [ErrRoleNotFound] if no explicit role exists.
+	DeleteNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error
 
-	// Lists users with explicit non-none permissions in a namespace, ordered ascending by username.
+	// Lists users with explicit non-none roles in a namespace, ordered ascending by username.
 	//
 	// Has no specific error conditions.
-	ListNamespacePermissions(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error)
+	ListNamespaceRoles(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error)
 
-	// Lists namespaces where the user has an explicit non-none permission, ordered ascending by namespace.
+	// Lists namespaces where the user has an explicit non-none role, ordered ascending by namespace.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
-	ListUserPermissions(ctx context.Context, username api.ValidUsername, params api.ListUserPermissionsParams) (*api.PaginatedUserPermissionsResponse, error)
+	ListUserRoles(ctx context.Context, username api.ValidUsername, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error)
 
 	WithShutdownMethod
 }
 
 // Sentinel errors to be returned by [AuthorizationBackend] implementations.
 var (
-	ErrPermissionNotFound     = errors.New("permission not found")
-	ErrInvalidPermissionLevel = errors.New("invalid permission level")
+	ErrRoleNotFound = errors.New("role not found")
+	ErrInvalidRole  = errors.New("invalid role")
 )

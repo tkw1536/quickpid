@@ -99,10 +99,10 @@ func (s *Store) DeleteUser(_ context.Context, username api.ValidUsername) error 
 	}
 
 	delete(s.users, username.String())
-	for namespace, byUser := range s.permissions {
+	for namespace, byUser := range s.roles {
 		delete(byUser, username.String())
 		if len(byUser) == 0 {
-			delete(s.permissions, namespace)
+			delete(s.roles, namespace)
 		}
 	}
 	return nil

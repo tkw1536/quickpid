@@ -155,25 +155,25 @@ func (k apiKeyRow) toSpec() api.APIKeyInfo {
 	}
 }
 
-type namespacePermissionRow struct {
+type namespaceRoleRow struct {
 	Namespace string `gorm:"column:namespace;type:text;not null;primaryKey"`
 	Username  string `gorm:"column:username;type:text;not null;primaryKey"`
-	Level     string `gorm:"column:level;type:text;not null"`
+	Role      string `gorm:"column:role;type:text;not null"`
 }
 
-func (namespacePermissionRow) TableName() string { return "authz_namespace_permissions" }
+func (namespaceRoleRow) TableName() string { return "authz_namespace_roles" }
 
-func (p namespacePermissionRow) toSpec() api.NamespacePermission {
-	return api.NamespacePermission{
+func (p namespaceRoleRow) toSpec() api.NamespaceRole {
+	return api.NamespaceRole{
 		Username: p.Username,
-		Level:    api.PermissionLevel(p.Level),
+		Role:     api.Role(p.Role),
 	}
 }
 
-func (p namespacePermissionRow) toUserPermission() api.UserPermission {
-	return api.UserPermission{
+func (p namespaceRoleRow) toUserRole() api.UserRole {
+	return api.UserRole{
 		Namespace: p.Namespace,
-		Level:     api.PermissionLevel(p.Level),
+		Role:      api.Role(p.Role),
 	}
 }
 

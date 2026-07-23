@@ -251,7 +251,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/permissions", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listNamespacePermissions, http.StatusOK, []api.ErrorString{
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listNamespaceRoles, http.StatusOK, []api.ErrorString{
 		api.InvalidNamespaceID,
 		api.InvalidQueryParameter,
 		api.Unauthorized,
@@ -260,7 +260,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/permissions/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.getNamespacePermission, http.StatusOK, []api.ErrorString{
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.getNamespaceRole, http.StatusOK, []api.ErrorString{
 		api.InvalidNamespaceID,
 		api.InvalidUsername,
 		api.Unauthorized,
@@ -269,26 +269,26 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
-	h.mux.Handle("PUT /resolver/namespaces/{namespace}/permissions/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.setNamespacePermission, http.StatusOK, []api.ErrorString{
+	h.mux.Handle("PUT /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.setNamespaceRole, http.StatusOK, []api.ErrorString{
 		api.BodySizeExceeded,
 		api.BodyMissing,
 		api.BodyInvalidJSON,
 		api.InvalidNamespaceID,
 		api.InvalidUsername,
-		api.InvalidPermissionLevel,
+		api.InvalidRole,
 		api.Unauthorized,
 		api.Forbidden,
 		api.NamespaceNotFound,
 		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
-	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/permissions/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.deleteNamespacePermission, http.StatusNoContent, []api.ErrorString{
+	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.deleteNamespaceRole, http.StatusNoContent, []api.ErrorString{
 		api.InvalidNamespaceID,
 		api.InvalidUsername,
 		api.Unauthorized,
 		api.Forbidden,
 		api.NamespaceNotFound,
-		api.PermissionNotFound,
+		api.RoleNotFound,
 		api.UnavailableInAnonymousMode,
 		api.DatabaseError,
 	}))
@@ -301,7 +301,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.UserNotFound,
 		api.UnavailableInAnonymousMode,
 	}))
-	h.mux.Handle("GET /user/permissions", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listUserPermissions, http.StatusOK, []api.ErrorString{
+	h.mux.Handle("GET /user/roles", lowlevel.HandleRequiredUserInAuthMode(h.authHandler, h.listUserRoles, http.StatusOK, []api.ErrorString{
 		api.InvalidQueryParameter,
 		api.InvalidUsername,
 		api.Unauthorized,

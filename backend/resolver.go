@@ -20,8 +20,8 @@ type ResolverBackend interface {
 	// Should return [ErrUserNotFound] if owner does not exist.
 	ListNamespaces(ctx context.Context, user *api.ValidUsername, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error)
 
-	// Creates a new namespace and grants manager permissions for the owner.
-	// If owner is nil, no new manager permissions are granted.
+	// Creates a new namespace and grants the manager role to the owner.
+	// If owner is nil, no manager role is granted.
 	//
 	// Should return [ErrDuplicateNamespaceID] if the namespace id is already in use.
 	// Should return [ErrUserNotFound] if owner does not exist.

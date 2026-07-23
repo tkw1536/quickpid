@@ -10,24 +10,24 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 )
 
-func (s *Store) GetNamespacePermission(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.PermissionLevel, error) {
+func (s *Store) GetNamespaceRole(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if _, ok := s.namespaces[namespace.String()]; !ok {
-		return api.PermissionLevelNone, backend.ErrNamespaceNotFound
+		return api.RoleNone, backend.ErrNamespaceNotFound
 	}
-	if byUser, ok := s.permissions[namespace.String()]; ok {
-		if level, ok := byUser[username.String()]; ok {
-			return level, nil
+	if byUser, ok := s.roles[namespace.String()]; ok {
+		if role, ok := byUser[username.String()]; ok {
+			return role, nil
 		}
 	}
-	return api.PermissionLevelNone, nil
+	return api.RoleNone, nil
 }
 
-func (s *Store) SetNamespacePermission(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, level api.PermissionLevel) error {
-	if level.Validate() != nil {
-		return backend.ErrInvalidPermissionLevel
+func (s *Store) SetNamespaceRole(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, role api.Role) error {
+	if role.Validate() != nil {
+		return backend.ErrInvalidRole
 	}
 
 	s.mu.Lock()
@@ -37,42 +37,42 @@ func (s *Store) SetNamespacePermission(_ context.Context, namespace api.ValidNam
 		return backend.ErrNamespaceNotFound
 	}
 
-	if level == api.PermissionLevelNone {
-		if byUser, ok := s.permissions[namespace.String()]; ok {
+	if role == api.RoleNone {
+		if byUser, ok := s.roles[namespace.String()]; ok {
 			delete(byUser, username.String())
 			if len(byUser) == 0 {
-				delete(s.permissions, namespace.String())
+				delete(s.roles, namespace.String())
 			}
 		}
 		return nil
 	}
 
-	if s.permissions[namespace.String()] == nil {
-		s.permissions[namespace.String()] = make(map[string]api.PermissionLevel)
+	if s.roles[namespace.String()] == nil {
+		s.roles[namespace.String()] = make(map[string]api.Role)
 	}
-	s.permissions[namespace.String()][username.String()] = level
+	s.roles[namespace.String()][username.String()] = role
 	return nil
 }
 
-func (s *Store) DeleteNamespacePermission(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
+func (s *Store) DeleteNamespaceRole(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	byUser, ok := s.permissions[namespace.String()]
+	byUser, ok := s.roles[namespace.String()]
 	if !ok {
-		return backend.ErrPermissionNotFound
+		return backend.ErrRoleNotFound
 	}
 	if _, ok := byUser[username.String()]; !ok {
-		return backend.ErrPermissionNotFound
+		return backend.ErrRoleNotFound
 	}
 	delete(byUser, username.String())
 	if len(byUser) == 0 {
-		delete(s.permissions, namespace.String())
+		delete(s.roles, namespace.String())
 	}
 	return nil
 }
 
-func (s *Store) ListNamespacePermissions(_ context.Context, namespace api.ValidNamespaceID, params api.ListNamespacePermissionsParams) (*api.PaginatedNamespacePermissionsResponse, error) {
+func (s *Store) ListNamespaceRoles(_ context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -80,12 +80,12 @@ func (s *Store) ListNamespacePermissions(_ context.Context, namespace api.ValidN
 		return nil, backend.ErrNamespaceNotFound
 	}
 
-	byUser := s.permissions[namespace.String()]
-	all := make([]api.NamespacePermission, 0, len(byUser))
-	for username, level := range byUser {
-		all = append(all, api.NamespacePermission{
+	byUser := s.roles[namespace.String()]
+	all := make([]api.NamespaceRole, 0, len(byUser))
+	for username, role := range byUser {
+		all = append(all, api.NamespaceRole{
 			Username: username,
-			Level:    level,
+			Role:     role,
 		})
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i].Username < all[j].Username })
@@ -95,17 +95,17 @@ func (s *Store) ListNamespacePermissions(_ context.Context, namespace api.ValidN
 	offset := params.Offset
 
 	if offset >= total {
-		return &api.PaginatedNamespacePermissionsResponse{Total: total, Offset: offset, Items: []api.NamespacePermission{}}, nil
+		return &api.PaginatedNamespaceRolesResponse{Total: total, Offset: offset, Items: []api.NamespaceRole{}}, nil
 	}
 	end := min(offset+limit, total)
-	items := append([]api.NamespacePermission(nil), all[offset:end]...)
+	items := append([]api.NamespaceRole(nil), all[offset:end]...)
 	if items == nil {
-		items = []api.NamespacePermission{}
+		items = []api.NamespaceRole{}
 	}
-	return &api.PaginatedNamespacePermissionsResponse{Total: total, Offset: offset, Items: items}, nil
+	return &api.PaginatedNamespaceRolesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) ListUserPermissions(_ context.Context, username api.ValidUsername, params api.ListUserPermissionsParams) (*api.PaginatedUserPermissionsResponse, error) {
+func (s *Store) ListUserRoles(_ context.Context, username api.ValidUsername, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -113,12 +113,12 @@ func (s *Store) ListUserPermissions(_ context.Context, username api.ValidUsernam
 		return nil, err
 	}
 
-	all := make([]api.UserPermission, 0)
-	for namespace, byUser := range s.permissions {
-		if level, ok := byUser[username.String()]; ok {
-			all = append(all, api.UserPermission{
+	all := make([]api.UserRole, 0)
+	for namespace, byUser := range s.roles {
+		if role, ok := byUser[username.String()]; ok {
+			all = append(all, api.UserRole{
 				Namespace: namespace,
-				Level:     level,
+				Role:      role,
 			})
 		}
 	}
@@ -129,12 +129,12 @@ func (s *Store) ListUserPermissions(_ context.Context, username api.ValidUsernam
 	offset := params.Offset
 
 	if offset >= total {
-		return &api.PaginatedUserPermissionsResponse{Total: total, Offset: offset, Items: []api.UserPermission{}}, nil
+		return &api.PaginatedUserRolesResponse{Total: total, Offset: offset, Items: []api.UserRole{}}, nil
 	}
 	end := min(offset+limit, total)
-	items := append([]api.UserPermission(nil), all[offset:end]...)
+	items := append([]api.UserRole(nil), all[offset:end]...)
 	if items == nil {
-		items = []api.UserPermission{}
+		items = []api.UserRole{}
 	}
-	return &api.PaginatedUserPermissionsResponse{Total: total, Offset: offset, Items: items}, nil
+	return &api.PaginatedUserRolesResponse{Total: total, Offset: offset, Items: items}, nil
 }

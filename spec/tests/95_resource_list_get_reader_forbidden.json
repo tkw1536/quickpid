@@ -1,6 +1,6 @@
 {
   "name": "resource_list_get_reader_forbidden",
-  "comment": "In authenticated mode, a user without editor or manager permission cannot list resources (403 forbidden).",
+  "comment": "In authenticated mode, a user without editor or manager role cannot list resources (403 forbidden).",
   "steps": [
     {
       "name": "bootstrap_root",

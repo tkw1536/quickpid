@@ -149,7 +149,7 @@ The Docker publish workflow builds and pushes images for all three entrypoints.
 
 ## Security And Operational Notes
 
-- `-anon` disables authentication and permission checks for resolver operations. Be explicit about whether a change is intended for anonymous mode, authenticated mode, or both.
+- `-anon` disables authentication and authorization checks for resolver operations. Be explicit about whether a change is intended for anonymous mode, authenticated mode, or both.
 - The default startup path bootstraps a root superuser if no accounts exist. Avoid breaking this flow unintentionally.
 - Do not commit real secrets, production DSNs, or private credentials.
 - The repository code is intentionally unlicensed for reuse, while `spec/` is licensed separately. Preserve that distinction when editing docs.

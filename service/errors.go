@@ -26,7 +26,7 @@ func IsUnauthorized(err error) bool {
 	return errors.Is(err, errUnauthorized)
 }
 
-// IsForbidden reports whether err indicates insufficient permissions.
+// IsForbidden reports whether err indicates insufficient authorization.
 func IsForbidden(err error) bool {
 	return errors.Is(err, errForbidden)
 }

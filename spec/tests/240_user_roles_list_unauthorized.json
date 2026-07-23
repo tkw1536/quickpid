@@ -1,0 +1,20 @@
+{
+  "name": "240_user_roles_list_unauthorized",
+  "comment": "GET /user/roles without authentication returns 401 unauthorized.",
+  "steps": [
+    {
+      "name": "list_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user/roles"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "39_auth_namespace_create_post_grants_manager_to_creator",
-  "comment": "In authenticated mode, the user who creates a namespace automatically receives manager permission for it.",
+  "comment": "In authenticated mode, the user who creates a namespace automatically receives manager role for it.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -122,11 +122,11 @@
       }
     },
     {
-      "name": "owner_has_manager_permission",
+      "name": "owner_has_manager_role",
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/resolver/namespaces/c2000000-0000-4000-8000-000000000001/permissions/owner",
+        "path": "/resolver/namespaces/c2000000-0000-4000-8000-000000000001/roles/owner",
         "headers": [
           [
             "Authorization",
@@ -137,7 +137,7 @@
       "response": {
         "code": 200,
         "body": {
-          "level": "manager",
+          "role": "manager",
           "username": "owner"
         }
       }

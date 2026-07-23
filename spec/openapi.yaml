@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: QuickPID API
-  description: "API for managing PIDs across namespaces and user accounts with API keys. TODO: Move authenticated / anonymous mode. TODO: /resolve pair of base URI and PID directly. TODO: Delete user route (superuser only). TODO: Rename permissions -> roles"
+  description: "API for managing PIDs across namespaces and user accounts with API keys. TODO: Move authenticated / anonymous mode. TODO: /resolve pair of base URI and PID directly. TODO: Delete user route (superuser only)."
   version: 3.0.0
   license:
     name: Creative Commons Attribution-ShareAlike 4.0 International
@@ -20,8 +20,8 @@ tags:
     description: Operations related to user accounts.
   - name: credentials
     description: Operations related to credentials 
-  - name: permissions
-    description: Operations related to per-namespace permissions.
+  - name: roles
+    description: Operations related to per-namespace roles.
 
 servers:
   - url: /api/v2
@@ -80,7 +80,7 @@ paths:
         In anonymous mode, the initial list of namespaces includes all namespaces.
         
         In authenticated mode, only namespaces the current user has access to are returned.
-        This is defined by having a permission that is not `none` for a namespace.
+        This is defined by having a role that is not `none` for a namespace.
         If the authenticated user is a superuser, all namespaces are returned.
       tags:
         - namespaces
@@ -156,7 +156,7 @@ paths:
         In anonymous mode, no authentication is required and no authorization checks are performed.
 
         In authenticated mode, any user can create a namespace.
-        The authenticated user automatically receives namespace 'manager' permissions for the new namespace.
+        The authenticated user automatically receives the namespace 'manager' role for the new namespace.
       tags:
         - namespaces
 
@@ -497,7 +497,7 @@ paths:
 
         In authenticated mode, API-key authentication is required.
         Only namespaces the current user has access to can be accessed.
-        This is defined by having a permission that is not "none" for a namespace.
+        This is defined by having a role that is not "none" for a namespace.
         If the authenticated user is a superuser, all namespaces can be accessed.
 
         If the namespace exists but the caller lacks required access, a 403 response is returned.
@@ -559,7 +559,7 @@ paths:
         Results are ordered ascending by base URI.
 
         In anonymous mode, this route is accessible without authentication.
-        In authenticated mode, the caller must have at least contributor permission for the namespace, or be a superuser.
+        In authenticated mode, the caller must have at least the contributor role for the namespace, or be a superuser.
       tags:
         - mounts
       parameters:
@@ -632,17 +632,17 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
-  /resolver/namespaces/{namespace}/permissions:
+  /resolver/namespaces/{namespace}/roles:
     get:
-      summary: List explicit namespace permissions.
+      summary: List explicit namespace roles.
       description: |
-        Lists users who have an explicit non-none permission level in the namespace.
-        Users without an explicit permission record have the default `none` level and are not listed.
+        Lists users who have an explicit non-none role in the namespace.
+        Users without an explicit role record have the default `none` role and are not listed.
 
         In anonymous mode, the route returns a http 404. 
-        In authenticated mode, this requires the calling user to have manager permissions for the namespace, or be a superuser.
+        In authenticated mode, this requires the calling user to have the manager role for the namespace, or be a superuser.
       tags:
-        - permissions
+        - roles
       parameters:
         - name: namespace
           in: path
@@ -673,11 +673,11 @@ paths:
             minimum: 0
       responses:
         '200':
-          description: Permissions listed successfully.
+          description: Roles listed successfully.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedNamespacePermissionsResponse'
+                $ref: '#/components/schemas/PaginatedNamespaceRolesResponse'
         '400':
           description: Invalid namespace id or query parameter.
           content:
@@ -693,7 +693,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
-          description: The authenticated user is not allowed to list permissions.
+          description: The authenticated user is not allowed to list roles.
           content:
             application/json:
               schema:
@@ -713,18 +713,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
-  /resolver/namespaces/{namespace}/permissions/{username}:
+  /resolver/namespaces/{namespace}/roles/{username}:
     get:
-      operationId: getNamespacePermission
-      summary: Get a user's permission level in a namespace.
+      operationId: getNamespaceRole
+      summary: Get a user's role in a namespace.
       description: |
-        Retrieves the permission level of a specific user in a namespace.
-        If no explicit permission record exists, the response returns `level: none`.
+        Retrieves the role of a specific user in a namespace.
+        If no explicit role record exists, the response returns `role: none`.
 
         In anonymous mode, the route returns HTTP 404.
-        In authenticated mode, callers may read their own permission; reading another user's permission requires the manager level or being a superuser.
+        In authenticated mode, callers may read their own role; reading another user's role requires the manager role or being a superuser.
       tags:
-        - permissions
+        - roles
       parameters:
         - name: namespace
           in: path
@@ -738,11 +738,11 @@ paths:
             $ref: '#/components/schemas/Username'
       responses:
         '200':
-          description: Permission retrieved successfully.
+          description: Role retrieved successfully.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NamespacePermission'
+                $ref: '#/components/schemas/NamespaceRole'
         '400':
           description: Invalid namespace id.
           content:
@@ -756,7 +756,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
-          description: The authenticated user is not allowed to view this permission.
+          description: The authenticated user is not allowed to view this role.
           content:
             application/json:
               schema:
@@ -778,16 +778,16 @@ paths:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
     put:
-      summary: Set a user's permission level in a namespace.
+      summary: Set a user's role in a namespace.
       description: |
-        Sets the permission level of a specific user in a namespace.
-        The `none` level cannot be set via this endpoint; use DELETE to remove an explicit permission.
+        Sets the role of a specific user in a namespace.
+        The `none` role cannot be set via this endpoint; use DELETE to remove an explicit role.
 
         In anonymous mode, the route returns HTTP 404.
-        In authenticated mode, the caller must have manager permissions for the namespace, or be a superuser.
-        Only superusers can set their own permission level.
+        In authenticated mode, the caller must have the manager role for the namespace, or be a superuser.
+        Only superusers can set their own role.
       tags:
-        - permissions
+        - roles
       parameters:
         - name: namespace
           in: path
@@ -804,14 +804,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SetNamespacePermissionRequest'
+              $ref: '#/components/schemas/SetNamespaceRoleRequest'
       responses:
         '200':
-          description: Permission updated successfully.
+          description: Role updated successfully.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NamespacePermission'
+                $ref: '#/components/schemas/NamespaceRole'
         '400':
           description: Invalid request.
           content:
@@ -822,7 +822,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
                   - $ref: '#/components/schemas/ErrorInvalidUsername'
-                  - $ref: '#/components/schemas/ErrorInvalidPermissionLevel'
+                  - $ref: '#/components/schemas/ErrorInvalidRole'
         '401':
           description: Authentication is required or the credentials are incorrect.
           content:
@@ -830,7 +830,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
-          description: The authenticated user is not allowed to set the specified permission level.
+          description: The authenticated user is not allowed to set the specified role.
           content:
             application/json:
               schema:
@@ -858,15 +858,15 @@ paths:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
     delete:
-      summary: Remove a user's explicit permission in a namespace.
+      summary: Remove a user's explicit role in a namespace.
       description: |
-        Removes an explicit permission record, reverting the user to the default `none` level.
+        Removes an explicit role record, reverting the user to the default `none` role.
 
         In anonymous mode, the route returns HTTP 404.
-        In authenticated mode, the caller must have manager permissions for the namespace, or be a superuser.
+        In authenticated mode, the caller must have the manager role for the namespace, or be a superuser.
         Only superusers can remove themselves from a namespace.
       tags:
-        - permissions
+        - roles
       parameters:
         - name: namespace
           in: path
@@ -880,7 +880,7 @@ paths:
             $ref: '#/components/schemas/Username'
       responses:
         '204':
-          description: Permission removed successfully.
+          description: Role removed successfully.
         '400':
           description: Invalid namespace id or username.
           content:
@@ -896,20 +896,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
-          description: The authenticated user is not allowed to delete permissions.
+          description: The authenticated user is not allowed to delete roles.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: Namespace or explicit permission not found, or the server is in anonymous mode.
+          description: Namespace or explicit role not found, or the server is in anonymous mode.
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
                   - $ref: '#/components/schemas/ErrorUserNotFound'
-                  - $ref: '#/components/schemas/ErrorPermissionNotFound'
+                  - $ref: '#/components/schemas/ErrorRoleNotFound'
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error.
@@ -924,9 +924,9 @@ paths:
       description: |
         Returns a paginated list of resources within the namespace, ordered by pid in increasing order.
 
-        In anonymous mode, this route is accessible without authentication and without permission checks.
+        In anonymous mode, this route is accessible without authentication and without authorization checks.
 
-        In authenticated mode, the caller must have editor or manager permission for the namespace, or be a superuser.
+        In authenticated mode, the caller must have the editor or manager role for the namespace, or be a superuser.
         If the namespace exists but the caller lacks required access, a 403 response is returned.
         If the namespace does not exist, a 404 response is returned.
 
@@ -1034,9 +1034,9 @@ paths:
         Creates a new resource within the namespace.
         A new PID is generated, unique within the namespace, and returned with the response.
 
-        In anonymous mode, this route is accessible without authentication and without permission checks.
+        In anonymous mode, this route is accessible without authentication and without authorization checks.
 
-        In authenticated mode, the caller must have contributor, editor, or manager permission for the namespace, or be a superuser.
+        In authenticated mode, the caller must have the contributor, editor, or manager role for the namespace, or be a superuser.
         If the namespace exists but the caller lacks required access, a 403 response is returned.
         If the namespace does not exist, a 404 response is returned.
       tags:
@@ -1125,9 +1125,9 @@ paths:
         An empty request body `[]` returns 201 with an empty array.
         The operation is all-or-nothing: if any item fails to be created, none are created and no partial persistence occurs.
 
-        In anonymous mode, this route is accessible without authentication and without permission checks.
+        In anonymous mode, this route is accessible without authentication and without authorization checks.
 
-        In authenticated mode, the caller must have contributor, editor, or manager permission for the namespace, or be a superuser.
+        In authenticated mode, the caller must have the contributor, editor, or manager role for the namespace, or be a superuser.
         If the namespace exists but the caller lacks required access, a 403 response is returned.
         If the namespace does not exist, a 404 response is returned.
       tags:
@@ -1229,18 +1229,18 @@ paths:
       description: |
         Retrieves a single resource by PID within a namespace.
 
-        In anonymous mode, this route is accessible without authentication and without permission checks.
+        In anonymous mode, this route is accessible without authentication and without authorization checks.
 
         In authenticated mode, non-deleted resources may be read by any user, authenticated or not.
-        Users without the `contributor` permission (or being unauthenticated entirely) cannot read non-deleted resources.
+        Users without the `contributor` role (or being unauthenticated entirely) cannot read non-deleted resources.
 
-        Deleted resources require authentication and at least `editor` permission for the namespace, or superuser privileges.
+        Deleted resources require authentication and at least the `editor` role for the namespace, or superuser privileges.
         Such callers receive the full resource object with `deleted: true`.
         Unauthorized callers receive 410 Gone, confirming the resource existed without returning resource data.
 
         If the namespace or resource exists but the caller lacks required access to a non-deleted resource, a 403 response is returned.
         If the namespace or resource does not exist, a 404 response is returned.
-        If a user tries to access a deleted resource but does not have permission to do so, a 410 response is returned.
+        If a user tries to access a deleted resource but is not allowed to do so, a 410 response is returned.
       tags:
         - resources
         - todo
@@ -1263,7 +1263,7 @@ paths:
         '200':
           description: |
             Resource retrieved successfully.
-            For deleted resources, the full object is returned only to authenticated callers with at least `editor` permission or superuser privileges.
+            For deleted resources, the full object is returned only to authenticated callers with at least the `editor` role or superuser privileges.
           content:
             application/json:
               schema:
@@ -1315,9 +1315,9 @@ paths:
         Deleted resources may be modified.
         Setting `deleted` to `false` un-deletes the resource.
 
-        In anonymous mode, this route is accessible without authentication and without permission checks.
+        In anonymous mode, this route is accessible without authentication and without authorization checks.
 
-        In authenticated mode, the caller must have editor or manager permission for the namespace, or be a superuser.
+        In authenticated mode, the caller must have the editor or manager role for the namespace, or be a superuser.
         If the namespace or resource exists but the caller lacks required access, a 403 response is returned.
         If the namespace or resource does not exist, a 404 response is returned.
       tags:
@@ -1773,26 +1773,26 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
-  /user/permissions:
+  /user/roles:
     get:
-      summary: List explicit namespace permissions for a user.
+      summary: List explicit namespace roles for a user.
       description: |
-        Lists namespaces where the user has an explicit non-none permission level.
-        Namespaces without an explicit permission record have the default `none` level and are not listed.
+        Lists namespaces where the user has an explicit non-none role.
+        Namespaces without an explicit role record have the default `none` role and are not listed.
 
-        When not set, the currently authenticated user's permissions are returned.
-        The `username` parameter may be used by superusers to list permissions for another user account, including their own.
+        When not set, the currently authenticated user's roles are returned.
+        The `username` parameter may be used by superusers to list roles for another user account, including their own.
 
         In anonymous mode, the route returns HTTP 404.
       tags:
-        - permissions
+        - roles
       parameters:
         - name: username
           in: query
           required: false
           description: |
-            When not set, the currently authenticated user's permissions are returned.
-            Superusers may set this parameter to list permissions for another user account, including their own.
+            When not set, the currently authenticated user's roles are returned.
+            Superusers may set this parameter to list roles for another user account, including their own.
           schema:
             $ref: '#/components/schemas/Username'
         - name: limit
@@ -1820,11 +1820,11 @@ paths:
       responses:
         '200':
           description: |
-            A paginated list of permissions, sorted by namespace id in increasing order.
+            A paginated list of roles, sorted by namespace id in increasing order.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedUserPermissionsResponse'
+                $ref: '#/components/schemas/PaginatedUserRolesResponse'
         '400':
           description: Invalid query parameter (e.g. limit, offset, or username).
           content:
@@ -3081,10 +3081,10 @@ components:
           type: string
           format: date-time
           nullable: true
-    AssignablePermissionLevel:
+    AssignableRole:
       description: |
-        Permission level that can be assigned via PUT.
-        The `none` level cannot be assigned; use DELETE to remove an explicit permission.
+        Role that can be assigned via PUT.
+        The `none` role cannot be assigned; use DELETE to remove an explicit role.
       type: string
       enum:
         - none
@@ -3092,10 +3092,10 @@ components:
         - editor
         - manager
 
-    PermissionLevel:
+    Role:
       description: |
-        Permission level for a user within a namespace.
-        The default level is `none`.
+        Role for a user within a namespace.
+        The default role is `none`.
       type: string
       enum:
         - none
@@ -3103,34 +3103,34 @@ components:
         - editor
         - manager
       x-enum-descriptions:
-        - Can read any resource by exact namespace and PID; cannot list, create, edit, or manage permissions.
+        - Can read any resource by exact namespace and PID; cannot list, create, edit, or manage roles.
         - Can create resources; cannot read resources.
         - Can create, edit, and list all resources in the namespace.
-        - Editor privileges plus the ability to manage permissions for other users in the namespace.
-    NamespacePermission:
-      description: A user's permission level within a namespace.
+        - Editor privileges plus the ability to manage roles for other users in the namespace.
+    NamespaceRole:
+      description: A user's role within a namespace.
       type: object
       required:
         - username
-        - level
+        - role
       properties:
         username:
           description: Username of the user account.
           allOf:
             - $ref: '#/components/schemas/Username'
-        level:
-          $ref: '#/components/schemas/PermissionLevel'
-    SetNamespacePermissionRequest:
-      description: Request to set a user's permission level in a namespace.
+        role:
+          $ref: '#/components/schemas/Role'
+    SetNamespaceRoleRequest:
+      description: Request to set a user's role in a namespace.
       type: object
       additionalProperties: false
       required:
-        - level
+        - role
       properties:
-        level:
-          $ref: '#/components/schemas/AssignablePermissionLevel'
-    PaginatedNamespacePermissionsResponse:
-      description: Paginated list of namespace permissions.
+        role:
+          $ref: '#/components/schemas/AssignableRole'
+    PaginatedNamespaceRolesResponse:
+      description: Paginated list of namespace roles.
       type: object
       required:
         - total
@@ -3146,22 +3146,22 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/NamespacePermission'
-    UserPermission:
-      description: A permission level for a user within a specific namespace.
+            $ref: '#/components/schemas/NamespaceRole'
+    UserRole:
+      description: A role for a user within a specific namespace.
       type: object
       required:
         - namespace
-        - level
+        - role
       properties:
         namespace:
           description: Identifier of the namespace.
           allOf:
             - $ref: '#/components/schemas/NamespaceId'
-        level:
-          $ref: '#/components/schemas/PermissionLevel'
-    PaginatedUserPermissionsResponse:
-      description: Paginated list of permissions for a user across namespaces.
+        role:
+          $ref: '#/components/schemas/Role'
+    PaginatedUserRolesResponse:
+      description: Paginated list of roles for a user across namespaces.
       type: object
       required:
         - total
@@ -3177,8 +3177,8 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/UserPermission'
-    ErrorPermissionNotFound:
+            $ref: '#/components/schemas/UserRole'
+    ErrorRoleNotFound:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
         - type: object
@@ -3186,9 +3186,9 @@ components:
             error:
               type: string
               enum:
-                - permission_not_found
-          description: No explicit permission exists for the user in this namespace.
-    ErrorInvalidPermissionLevel:
+                - role_not_found
+          description: No explicit role exists for the user in this namespace.
+    ErrorInvalidRole:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
         - type: object
@@ -3196,5 +3196,5 @@ components:
             error:
               type: string
               enum:
-                - invalid_permission_level
-          description: The permission level is not valid or is not assignable via PUT.
+                - invalid_role
+          description: The role is not valid or is not assignable via PUT.

@@ -57,7 +57,7 @@ func (s *Service) ListMounts(ctx context.Context, caller *api.ValidUserInfo, par
 
 // ListNamespaceMounts lists base URIs mounted to a namespace.
 //
-// In authenticated mode, the caller must have at least contributor permission for the namespace.
+// In authenticated mode, the caller must have at least the contributor role for the namespace.
 // In anonymous mode, no authentication is required.
 //
 // It can return the following errors:

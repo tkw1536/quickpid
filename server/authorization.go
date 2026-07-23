@@ -9,7 +9,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) getNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.NamespacePermission, error) {
+func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.NamespaceRole, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return nil, err
@@ -18,14 +18,14 @@ func (h *Server) getNamespacePermission(w http.ResponseWriter, r *http.Request, 
 	if err != nil {
 		return nil, err
 	}
-	permission, err := h.svc.GetNamespacePermission(r.Context(), user, namespace, username)
+	role, err := h.svc.GetNamespaceRole(r.Context(), user, namespace, username)
 	if err != nil {
-		return nil, fmt.Errorf("svc.GetNamespacePermission: %w", err)
+		return nil, fmt.Errorf("svc.GetNamespaceRole: %w", err)
 	}
-	return permission, nil
+	return role, nil
 }
 
-func (h *Server) listNamespacePermissions(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedNamespacePermissionsResponse, error) {
+func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedNamespaceRolesResponse, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return nil, err
@@ -36,17 +36,17 @@ func (h *Server) listNamespacePermissions(w http.ResponseWriter, r *http.Request
 		return nil, err
 	}
 
-	permissions, err := h.svc.ListNamespacePermissions(r.Context(), user, namespace, api.ListNamespacePermissionsParams{
+	roles, err := h.svc.ListNamespaceRoles(r.Context(), user, namespace, api.ListNamespaceRolesParams{
 		Limit:  limit,
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("svc.ListNamespacePermissions: %w", err)
+		return nil, fmt.Errorf("svc.ListNamespaceRoles: %w", err)
 	}
-	return permissions, nil
+	return roles, nil
 }
 
-func (h *Server) setNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.NamespacePermission, error) {
+func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.NamespaceRole, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return nil, err
@@ -56,19 +56,19 @@ func (h *Server) setNamespacePermission(w http.ResponseWriter, r *http.Request, 
 		return nil, err
 	}
 
-	var req api.SetNamespacePermissionRequest
+	var req api.SetNamespaceRoleRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
 	}
 
-	permission, err := h.svc.SetNamespacePermission(r.Context(), user, namespace, username, req)
+	role, err := h.svc.SetNamespaceRole(r.Context(), user, namespace, username, req)
 	if err != nil {
-		return nil, fmt.Errorf("svc.SetNamespacePermission: %w", err)
+		return nil, fmt.Errorf("svc.SetNamespaceRole: %w", err)
 	}
-	return permission, nil
+	return role, nil
 }
 
-func (h *Server) deleteNamespacePermission(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
+func (h *Server) deleteNamespaceRole(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return struct{}{}, err
@@ -78,13 +78,13 @@ func (h *Server) deleteNamespacePermission(w http.ResponseWriter, r *http.Reques
 		return struct{}{}, err
 	}
 
-	if err := h.svc.DeleteNamespacePermission(r.Context(), user, namespace, username); err != nil {
-		return struct{}{}, fmt.Errorf("svc.DeleteNamespacePermission: %w", err)
+	if err := h.svc.DeleteNamespaceRole(r.Context(), user, namespace, username); err != nil {
+		return struct{}{}, fmt.Errorf("svc.DeleteNamespaceRole: %w", err)
 	}
 	return struct{}{}, nil
 }
 
-func (h *Server) listUserPermissions(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedUserPermissionsResponse, error) {
+func (h *Server) listUserRoles(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedUserRolesResponse, error) {
 	target, err := h.parseOptionalUsernameQuery(r)
 	if err != nil {
 		return nil, err
@@ -94,12 +94,12 @@ func (h *Server) listUserPermissions(w http.ResponseWriter, r *http.Request, use
 		return nil, err
 	}
 
-	permissions, err := h.svc.ListUserPermissions(r.Context(), user, target, api.ListUserPermissionsParams{
+	roles, err := h.svc.ListUserRoles(r.Context(), user, target, api.ListUserRolesParams{
 		Limit:  limit,
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("svc.ListUserPermissions: %w", err)
+		return nil, fmt.Errorf("svc.ListUserRoles: %w", err)
 	}
-	return permissions, nil
+	return roles, nil
 }

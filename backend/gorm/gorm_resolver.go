@@ -22,8 +22,8 @@ func (s *Store) ListNamespaces(ctx context.Context, user *api.ValidUsername, par
 
 		q := tx.Model(&namespaceRow{})
 		if user != nil {
-			q = q.Joins("INNER JOIN authz_namespace_permissions ON authz_namespace_permissions.namespace = namespaces.id").
-				Where("authz_namespace_permissions.username = ?", user.String())
+			q = q.Joins("INNER JOIN authz_namespace_roles ON authz_namespace_roles.namespace = namespaces.id").
+				Where("authz_namespace_roles.username = ?", user.String())
 		}
 		if params.Tag != nil {
 			q = q.Where("namespaces.tag = ?", *params.Tag)
@@ -84,10 +84,10 @@ func (s *Store) CreateNamespace(ctx context.Context, namespace api.ValidNamespac
 		}
 
 		if owner != nil {
-			perm := namespacePermissionRow{
+			perm := namespaceRoleRow{
 				Namespace: namespace.String(),
 				Username:  owner.String(),
-				Level:     string(api.PermissionLevelManager),
+				Role:      string(api.RoleManager),
 			}
 			if err := tx.Create(&perm).Error; err != nil {
 				return nil, err

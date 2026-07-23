@@ -96,14 +96,14 @@ func newTestService(t *testing.T) (*service.Service, backend.Store) {
 	if _, err := store.CreateNamespace(ctx, testNS, req, &ownerUsername, now); err != nil {
 		t.Fatalf("CreateNamespace() error = %v", err)
 	}
-	if err := store.SetNamespacePermission(ctx, testNS, editorUsername, api.PermissionLevelEditor); err != nil {
-		t.Fatalf("SetNamespacePermission(editor) error = %v", err)
+	if err := store.SetNamespaceRole(ctx, testNS, editorUsername, api.RoleEditor); err != nil {
+		t.Fatalf("SetNamespaceRole(editor) error = %v", err)
 	}
-	if err := store.SetNamespacePermission(ctx, testNS, contributorUsername, api.PermissionLevelContributor); err != nil {
-		t.Fatalf("SetNamespacePermission(contributor) error = %v", err)
+	if err := store.SetNamespaceRole(ctx, testNS, contributorUsername, api.RoleContributor); err != nil {
+		t.Fatalf("SetNamespaceRole(contributor) error = %v", err)
 	}
-	if err := store.SetNamespacePermission(ctx, testNS, readerUsername, api.PermissionLevelNone); err != nil {
-		t.Fatalf("SetNamespacePermission(reader) error = %v", err)
+	if err := store.SetNamespaceRole(ctx, testNS, readerUsername, api.RoleNone); err != nil {
+		t.Fatalf("SetNamespaceRole(reader) error = %v", err)
 	}
 
 	return service.New(store, runtime, service.Options{}), store
@@ -125,35 +125,35 @@ func userInfo(username string) *api.ValidUserInfo {
 	return &valid
 }
 
-func TestService_GetNamespacePermission(t *testing.T) {
+func TestService_GetNamespaceRole(t *testing.T) {
 	t.Parallel()
 
 	svc, _ := newTestService(t)
 	ctx := context.Background()
 
-	perm, err := svc.GetNamespacePermission(ctx, userInfo("reader"), testNS, readerUsername)
+	perm, err := svc.GetNamespaceRole(ctx, userInfo("reader"), testNS, readerUsername)
 	if err != nil {
-		t.Fatalf("GetNamespacePermission(self) = %v, %v", perm, err)
+		t.Fatalf("GetNamespaceRole(self) = %v, %v", perm, err)
 	}
-	if perm.Level != api.PermissionLevelNone {
-		t.Fatalf("level = %q, want none", perm.Level)
+	if perm.Role != api.RoleNone {
+		t.Fatalf("role = %q, want none", perm.Role)
 	}
 
-	_, err = svc.GetNamespacePermission(ctx, userInfo("reader"), testNS, editorUsername)
+	_, err = svc.GetNamespaceRole(ctx, userInfo("reader"), testNS, editorUsername)
 	if !service.IsForbidden(err) {
-		t.Fatalf("GetNamespacePermission(other) = %v, want forbidden", err)
+		t.Fatalf("GetNamespaceRole(other) = %v, want forbidden", err)
 	}
 
-	perm, err = svc.GetNamespacePermission(ctx, userInfo("owner"), testNS, editorUsername)
+	perm, err = svc.GetNamespaceRole(ctx, userInfo("owner"), testNS, editorUsername)
 	if err != nil {
-		t.Fatalf("GetNamespacePermission(manager) = %v, %v", perm, err)
+		t.Fatalf("GetNamespaceRole(manager) = %v, %v", perm, err)
 	}
-	if perm.Level != api.PermissionLevelEditor {
-		t.Fatalf("level = %q, want editor", perm.Level)
+	if perm.Role != api.RoleEditor {
+		t.Fatalf("role = %q, want editor", perm.Role)
 	}
 }
 
-func TestService_ListUserPermissions(t *testing.T) {
+func TestService_ListUserRoles(t *testing.T) {
 	t.Parallel()
 
 	svc, store := newTestService(t)
@@ -171,54 +171,54 @@ func TestService_ListUserPermissions(t *testing.T) {
 	if _, err := store.CreateNamespace(ctx, ns2, req, &ownerUsername, now); err != nil {
 		t.Fatalf("CreateNamespace(ns2) error = %v", err)
 	}
-	if err := store.SetNamespacePermission(ctx, ns2, editorUsername, api.PermissionLevelContributor); err != nil {
-		t.Fatalf("SetNamespacePermission(editor, ns2) error = %v", err)
+	if err := store.SetNamespaceRole(ctx, ns2, editorUsername, api.RoleContributor); err != nil {
+		t.Fatalf("SetNamespaceRole(editor, ns2) error = %v", err)
 	}
 
-	page, err := svc.ListUserPermissions(ctx, userInfo("editor"), nil, api.ListUserPermissionsParams{Limit: 100})
+	page, err := svc.ListUserRoles(ctx, userInfo("editor"), nil, api.ListUserRolesParams{Limit: 100})
 	if err != nil {
-		t.Fatalf("ListUserPermissions(self) = %v, %v", page, err)
+		t.Fatalf("ListUserRoles(self) = %v, %v", page, err)
 	}
 	if page.Total != 2 || len(page.Items) != 2 {
-		t.Fatalf("ListUserPermissions(self) = %+v, want 2 items", page)
+		t.Fatalf("ListUserRoles(self) = %+v, want 2 items", page)
 	}
-	if page.Items[0].Namespace != testNS.String() || page.Items[0].Level != api.PermissionLevelEditor {
-		t.Fatalf("ListUserPermissions(self)[0] = %+v", page.Items[0])
+	if page.Items[0].Namespace != testNS.String() || page.Items[0].Role != api.RoleEditor {
+		t.Fatalf("ListUserRoles(self)[0] = %+v", page.Items[0])
 	}
-	if page.Items[1].Namespace != ns2.String() || page.Items[1].Level != api.PermissionLevelContributor {
-		t.Fatalf("ListUserPermissions(self)[1] = %+v", page.Items[1])
+	if page.Items[1].Namespace != ns2.String() || page.Items[1].Role != api.RoleContributor {
+		t.Fatalf("ListUserRoles(self)[1] = %+v", page.Items[1])
 	}
 
 	other := editorUsername
-	_, err = svc.ListUserPermissions(ctx, userInfo("owner"), &other, api.ListUserPermissionsParams{Limit: 100})
+	_, err = svc.ListUserRoles(ctx, userInfo("owner"), &other, api.ListUserRolesParams{Limit: 100})
 	if !service.IsForbidden(err) {
-		t.Fatalf("ListUserPermissions(other as non-superuser) = %v, want forbidden", err)
+		t.Fatalf("ListUserRoles(other as non-superuser) = %v, want forbidden", err)
 	}
 
-	page, err = svc.ListUserPermissions(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &other, api.ListUserPermissionsParams{Limit: 100})
+	page, err = svc.ListUserRoles(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &other, api.ListUserRolesParams{Limit: 100})
 	if err != nil {
-		t.Fatalf("ListUserPermissions(superuser) = %v, %v", page, err)
+		t.Fatalf("ListUserRoles(superuser) = %v, %v", page, err)
 	}
 	if page.Total != 2 {
-		t.Fatalf("ListUserPermissions(superuser) total = %d, want 2", page.Total)
+		t.Fatalf("ListUserRoles(superuser) total = %d, want 2", page.Total)
 	}
 
 	missing, err := api.NewUsername("missing")
 	if err != nil {
 		t.Fatalf("NewUsername(missing) error = %v", err)
 	}
-	_, err = svc.ListUserPermissions(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &missing, api.ListUserPermissionsParams{Limit: 100})
+	_, err = svc.ListUserRoles(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &missing, api.ListUserRolesParams{Limit: 100})
 	if code, ok := api.GetErrorString(err); !ok || code != api.UserNotFound {
-		t.Fatalf("ListUserPermissions(missing) = %v, want user_not_found", err)
+		t.Fatalf("ListUserRoles(missing) = %v, want user_not_found", err)
 	}
 
-	_, err = svc.ListUserPermissions(ctx, nil, nil, api.ListUserPermissionsParams{Limit: 100})
+	_, err = svc.ListUserRoles(ctx, nil, nil, api.ListUserRolesParams{Limit: 100})
 	if !service.IsUnauthorized(err) {
-		t.Fatalf("ListUserPermissions(nil caller) = %v, want unauthorized", err)
+		t.Fatalf("ListUserRoles(nil caller) = %v, want unauthorized", err)
 	}
 }
 
-func TestService_ResolverPermissions(t *testing.T) {
+func TestService_ResolverRoles(t *testing.T) {
 	t.Parallel()
 
 	svc, store := newTestService(t)
@@ -275,90 +275,90 @@ func TestService_ResolverPermissions(t *testing.T) {
 		t.Fatalf("contributor CreateResource = %v", err)
 	}
 
-	_, err = svc.SetNamespacePermission(ctx, userInfo("editor"), testNS, readerUsername, api.SetNamespacePermissionRequest{
-		Level: api.PermissionLevelContributor,
+	_, err = svc.SetNamespaceRole(ctx, userInfo("editor"), testNS, readerUsername, api.SetNamespaceRoleRequest{
+		Role: api.RoleContributor,
 	})
 	if !service.IsForbidden(err) {
-		t.Fatalf("editor SetNamespacePermission = %v, want forbidden", err)
+		t.Fatalf("editor SetNamespaceRole = %v, want forbidden", err)
 	}
 }
 
-func TestService_SetNamespacePermissionCannotEscalate(t *testing.T) {
+func TestService_SetNamespaceRoleCannotEscalate(t *testing.T) {
 	t.Parallel()
 
 	svc, _ := newTestService(t)
 	ctx := t.Context()
 
-	_, err := svc.SetNamespacePermission(ctx, userInfo("editor"), testNS, readerUsername, api.SetNamespacePermissionRequest{
-		Level: api.PermissionLevelManager,
+	_, err := svc.SetNamespaceRole(ctx, userInfo("editor"), testNS, readerUsername, api.SetNamespaceRoleRequest{
+		Role: api.RoleManager,
 	})
 	if !service.IsForbidden(err) {
 		t.Fatalf("editor grant manager = %v, want forbidden", err)
 	}
 }
 
-func TestService_SetNamespacePermissionSelfRules(t *testing.T) {
+func TestService_SetNamespaceRoleSelfRules(t *testing.T) {
 	t.Parallel()
 
 	svc, store := newTestService(t)
 	ctx := t.Context()
 
-	_, err := svc.SetNamespacePermission(ctx, userInfo("owner"), testNS, ownerUsername, api.SetNamespacePermissionRequest{
-		Level: api.PermissionLevelEditor,
+	_, err := svc.SetNamespaceRole(ctx, userInfo("owner"), testNS, ownerUsername, api.SetNamespaceRoleRequest{
+		Role: api.RoleEditor,
 	})
 	if !service.IsForbidden(err) {
-		t.Fatalf("owner modify own permission = %v, want forbidden", err)
+		t.Fatalf("owner modify own role = %v, want forbidden", err)
 	}
 
-	level, err := store.GetNamespacePermission(ctx, testNS, ownerUsername)
+	role, err := store.GetNamespaceRole(ctx, testNS, ownerUsername)
 	if err != nil {
-		t.Fatalf("GetNamespacePermission(owner) error = %v", err)
+		t.Fatalf("GetNamespaceRole(owner) error = %v", err)
 	}
-	if level != api.PermissionLevelManager {
-		t.Fatalf("owner level after forbidden update = %q, want manager", level)
+	if role != api.RoleManager {
+		t.Fatalf("owner role after forbidden update = %q, want manager", role)
 	}
 
-	perm, err := svc.SetNamespacePermission(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, testNS, ownerUsername, api.SetNamespacePermissionRequest{
-		Level: api.PermissionLevelEditor,
+	perm, err := svc.SetNamespaceRole(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, testNS, ownerUsername, api.SetNamespaceRoleRequest{
+		Role: api.RoleEditor,
 	})
 	if err != nil {
-		t.Fatalf("superuser modify own permission = %v, %v", perm, err)
+		t.Fatalf("superuser modify own role = %v, %v", perm, err)
 	}
-	if perm.Level != api.PermissionLevelEditor {
-		t.Fatalf("superuser level = %q, want editor", perm.Level)
+	if perm.Role != api.RoleEditor {
+		t.Fatalf("superuser role = %q, want editor", perm.Role)
 	}
 }
 
-func TestService_DeleteNamespacePermissionSelfRules(t *testing.T) {
+func TestService_DeleteNamespaceRoleSelfRules(t *testing.T) {
 	t.Parallel()
 
 	svc, store := newTestService(t)
 	ctx := t.Context()
 
-	err := svc.DeleteNamespacePermission(ctx, userInfo("owner"), testNS, ownerUsername)
+	err := svc.DeleteNamespaceRole(ctx, userInfo("owner"), testNS, ownerUsername)
 	if !service.IsForbidden(err) {
-		t.Fatalf("owner delete own permission = %v, want forbidden", err)
+		t.Fatalf("owner delete own role = %v, want forbidden", err)
 	}
 
-	level, err := store.GetNamespacePermission(ctx, testNS, ownerUsername)
+	role, err := store.GetNamespaceRole(ctx, testNS, ownerUsername)
 	if err != nil {
-		t.Fatalf("GetNamespacePermission(owner) error = %v", err)
+		t.Fatalf("GetNamespaceRole(owner) error = %v", err)
 	}
-	if level != api.PermissionLevelManager {
-		t.Fatalf("owner level after forbidden delete = %q, want manager", level)
+	if role != api.RoleManager {
+		t.Fatalf("owner role after forbidden delete = %q, want manager", role)
 	}
 
-	err = svc.DeleteNamespacePermission(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, testNS, ownerUsername)
+	err = svc.DeleteNamespaceRole(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, testNS, ownerUsername)
 	if err != nil {
-		t.Fatalf("superuser delete own permission = %v", err)
+		t.Fatalf("superuser delete own role = %v", err)
 	}
 
-	level, err = store.GetNamespacePermission(ctx, testNS, ownerUsername)
+	role, err = store.GetNamespaceRole(ctx, testNS, ownerUsername)
 	if err != nil {
-		t.Fatalf("GetNamespacePermission(owner) error = %v", err)
+		t.Fatalf("GetNamespaceRole(owner) error = %v", err)
 	}
-	if level != api.PermissionLevelNone {
-		t.Fatalf("owner level after delete = %q, want none", level)
+	if role != api.RoleNone {
+		t.Fatalf("owner role after delete = %q, want none", role)
 	}
 }
 
@@ -392,12 +392,12 @@ func TestService_AnonymousResolverMode(t *testing.T) {
 		t.Fatalf("namespace id = %q, want test-ns", ns.ID)
 	}
 
-	perm, err := store.GetNamespacePermission(ctx, testNS, someoneUsername)
+	perm, err := store.GetNamespaceRole(ctx, testNS, someoneUsername)
 	if err != nil {
-		t.Fatalf("GetNamespacePermission() error = %v", err)
+		t.Fatalf("GetNamespaceRole() error = %v", err)
 	}
-	if perm != api.PermissionLevelNone {
-		t.Fatalf("GetNamespacePermission() = %q, want none", perm)
+	if perm != api.RoleNone {
+		t.Fatalf("GetNamespaceRole() = %q, want none", perm)
 	}
 
 	page, err := svc.ListNamespaces(ctx, nil, api.ListNamespacesParams{Limit: 10})
@@ -439,7 +439,7 @@ func TestService_AnonymousResolverMode(t *testing.T) {
 	}
 }
 
-func TestService_AnonymousDisablesUserAndPermissionManagement(t *testing.T) {
+func TestService_AnonymousDisablesUserAndRoleManagement(t *testing.T) {
 	t.Parallel()
 
 	svc, _ := newAnonymousTestService(t)
@@ -470,10 +470,10 @@ func TestService_AnonymousDisablesUserAndPermissionManagement(t *testing.T) {
 	if _, err := svc.ListUsers(ctx, userInfo("owner"), api.ListUsersParams{Limit: 10}); !service.IsUnavailableInAnonymousMode(err) {
 		t.Fatalf("ListUsers() = %v, want anonymous mode unavailable", err)
 	}
-	if _, err := svc.GetNamespacePermission(ctx, userInfo("owner"), testNS, ownerUsername); !service.IsUnavailableInAnonymousMode(err) {
-		t.Fatalf("GetNamespacePermission() = %v, want anonymous mode unavailable", err)
+	if _, err := svc.GetNamespaceRole(ctx, userInfo("owner"), testNS, ownerUsername); !service.IsUnavailableInAnonymousMode(err) {
+		t.Fatalf("GetNamespaceRole() = %v, want anonymous mode unavailable", err)
 	}
-	if _, err := svc.ListUserPermissions(ctx, userInfo("owner"), nil, api.ListUserPermissionsParams{Limit: 10}); !service.IsUnavailableInAnonymousMode(err) {
-		t.Fatalf("ListUserPermissions() = %v, want anonymous mode unavailable", err)
+	if _, err := svc.ListUserRoles(ctx, userInfo("owner"), nil, api.ListUserRolesParams{Limit: 10}); !service.IsUnavailableInAnonymousMode(err) {
+		t.Fatalf("ListUserRoles() = %v, want anonymous mode unavailable", err)
 	}
 }
