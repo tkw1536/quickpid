@@ -66,6 +66,10 @@ func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, user *api.Val
 	if err != nil {
 		return nil, err
 	}
+	password, err := h.parsePasswordQuery(r)
+	if err != nil {
+		return nil, err
+	}
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err
@@ -73,6 +77,7 @@ func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, user *api.Val
 
 	users, err := h.svc.ListUsers(r.Context(), user, api.ListUsersParams{
 		Superuser: superuser,
+		Password:  password,
 		Limit:     limit,
 		Offset:    offset,
 	})

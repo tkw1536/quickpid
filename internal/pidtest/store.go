@@ -360,6 +360,35 @@ func testAuthListUsers(t *testing.T, newStore StoreFactory) {
 			t.Fatalf("items[%d].Username = %q, want %q", i, user.Username, want[i])
 		}
 	}
+
+	secret := validPassword(t, "secret")
+	if _, err := b.SetPassword(ctx, user("bob"), &secret); err != nil {
+		t.Fatalf("SetPassword(bob) error = %v", err)
+	}
+
+	withPassword := true
+	page, err = b.ListUsers(ctx, api.ListUsersParams{Password: &withPassword, Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUsers(password=true) error = %v", err)
+	}
+	if page.Total != 1 || len(page.Items) != 1 || page.Items[0].Username != "bob" || !page.Items[0].Password {
+		t.Fatalf("ListUsers(password=true) = %+v, want [bob]", page)
+	}
+
+	withoutPassword := false
+	page, err = b.ListUsers(ctx, api.ListUsersParams{Password: &withoutPassword, Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUsers(password=false) error = %v", err)
+	}
+	if page.Total != 2 || len(page.Items) != 2 {
+		t.Fatalf("ListUsers(password=false) = %+v, want 2 users", page)
+	}
+	wantWithout := []string{"alice", "carol"}
+	for i, listed := range page.Items {
+		if listed.Username != wantWithout[i] || listed.Password {
+			t.Fatalf("ListUsers(password=false) items[%d] = %+v, want %q without password", i, listed, wantWithout[i])
+		}
+	}
 }
 
 // testAuthAutocompleteUsers runs autocomplete users tests.

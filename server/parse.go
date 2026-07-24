@@ -25,6 +25,7 @@ var (
 	errMissingUsernameQuery    = errors.New("missing username query parameter")
 	errMissingQueryParameter   = errors.New("missing query query parameter")
 	errSuperuserInvalid        = errors.New("invalid superuser query parameter")
+	errPasswordInvalid         = errors.New("invalid password query parameter")
 )
 
 // decodeJSON decodes the request body into v.
@@ -230,6 +231,23 @@ func (*Server) parseSuperuserQuery(r *http.Request) (superuser *bool, err error)
 	parsed, err := strconv.ParseBool(query.Get("superuser"))
 	if err != nil {
 		return nil, api.WithErrorString(fmt.Errorf("%w: %w", errSuperuserInvalid, err), api.InvalidQueryParameter)
+	}
+	return &parsed, nil
+}
+
+// parsePasswordQuery parses an optional password filter query parameter.
+//
+// It can return the following errors:
+//
+// - [api.InvalidQueryParameter].
+func (*Server) parsePasswordQuery(r *http.Request) (password *bool, err error) {
+	query := r.URL.Query()
+	if !query.Has("password") {
+		return nil, nil
+	}
+	parsed, err := strconv.ParseBool(query.Get("password"))
+	if err != nil {
+		return nil, api.WithErrorString(fmt.Errorf("%w: %w", errPasswordInvalid, err), api.InvalidQueryParameter)
 	}
 	return &parsed, nil
 }

@@ -45,6 +45,13 @@ func (s *Store) ListUsers(ctx context.Context, params api.ListUsersParams) (*api
 		if params.Superuser != nil {
 			q = q.Where("superuser = ?", *params.Superuser)
 		}
+		if params.Password != nil {
+			if *params.Password {
+				q = q.Where("password_hash IS NOT NULL AND length(password_hash) > 0")
+			} else {
+				q = q.Where("password_hash IS NULL OR length(password_hash) = 0")
+			}
+		}
 		var total int64
 		if err := q.Count(&total).Error; err != nil {
 			return nil, err

@@ -51,6 +51,9 @@ func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.P
 		if params.Superuser != nil && user.superuser != *params.Superuser {
 			continue
 		}
+		if params.Password != nil && (len(user.passwordHash) > 0) != *params.Password {
+			continue
+		}
 		all = append(all, *user.toSpec(username))
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i].Username < all[j].Username })

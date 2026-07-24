@@ -1687,12 +1687,13 @@ paths:
         The `superuser` query parameter may be used to filter results by superuser status.
         When not set, users of all superuser states are included.
 
+        The `password` query parameter may be used to filter results by password status.
+        When not set, users of all password states are included.
+
         In anonymous mode, the route returns HTTP 404.
         In authenticated mode, this route requires superuser privileges.
-        TODO: Filter by password status.
       tags:
         - user
-        - todo
       parameters:
         - name: superuser
           in: query
@@ -1702,6 +1703,17 @@ paths:
             When true, only superusers are returned.
             When false, only non-superusers are returned.
             When not set, users of all superuser states are included.
+            Invalid values return a 400 response.
+          schema:
+            type: boolean
+        - name: password
+          in: query
+          required: false
+          description: |
+            Filter users by whether an HTTP basic password is configured.
+            When true, only users with a password are returned.
+            When false, only users without a password are returned.
+            When not set, users of all password states are included.
             Invalid values return a 400 response.
           schema:
             type: boolean
@@ -1736,7 +1748,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedUsersResponse'
         '400':
-          description: Invalid query parameter (e.g. limit, offset, or superuser).
+          description: Invalid query parameter (e.g. limit, offset, superuser, or password).
           content:
             application/json:
               schema:

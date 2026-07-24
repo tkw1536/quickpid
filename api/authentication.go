@@ -147,6 +147,7 @@ type SetPasswordResponse struct {
 
 type ListUsersParams struct {
 	Superuser *bool
+	Password  *bool
 	Limit     int
 	Offset    int
 }
