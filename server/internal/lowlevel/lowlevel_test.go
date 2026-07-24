@@ -631,11 +631,6 @@ func mustValidUser(t *testing.T, username string, superuser bool) *api.ValidUser
 	return &api.ValidUserInfo{Username: name, Superuser: superuser}
 }
 
-//go:fix inline
-func stringPtr(value string) *string {
-	return new(value)
-}
-
 func basicAuthHeader(username string, password string) string {
 	encoded := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
 	return "Basic " + encoded
