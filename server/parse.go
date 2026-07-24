@@ -24,8 +24,7 @@ var (
 	errDeletedInvalid          = errors.New("invalid deleted query parameter")
 	errMissingUsernameQuery    = errors.New("missing username query parameter")
 	errMissingQueryParameter   = errors.New("missing query query parameter")
-	errSuperuserInvalid        = errors.New("invalid superuser query parameter")
-	errPasswordInvalid         = errors.New("invalid password query parameter")
+	errInvalidBooleanQuery     = errors.New("invalid boolean query parameter")
 )
 
 // decodeJSON decodes the request body into v.
@@ -185,16 +184,15 @@ func (*Server) parseOptionalUsernameQuery(r *http.Request) (*api.ValidUsername, 
 //
 // - [api.InvalidQueryParameter]
 // - [api.InvalidUsername].
-func (*Server) parseRequiredUsernameQuery(r *http.Request) (api.ValidUsername, error) {
-	query := r.URL.Query()
-	if !query.Has("username") {
+func (s *Server) parseRequiredUsernameQuery(r *http.Request) (api.ValidUsername, error) {
+	username, err := s.parseOptionalUsernameQuery(r)
+	if err != nil {
+		return api.ValidUsername{}, err
+	}
+	if username == nil {
 		return api.ValidUsername{}, api.WithErrorString(errMissingUsernameQuery, api.InvalidQueryParameter)
 	}
-	username, err := api.NewUsername(query.Get("username"))
-	if err != nil {
-		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
-	}
-	return username, nil
+	return *username, nil
 }
 
 // parseRequiredAutocompleteQuery parses a required query query parameter.
@@ -218,36 +216,24 @@ func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (api.ValidUsernam
 	return query, nil
 }
 
-// parseSuperuserQuery parses an optional superuser filter query parameter.
+// parseOptionalBooleanQuery parses an optional boolean query parameter.
 //
 // It can return the following errors:
 //
 // - [api.InvalidQueryParameter].
-func (*Server) parseSuperuserQuery(r *http.Request) (superuser *bool, err error) {
+func (*Server) parseOptionalBooleanQuery(r *http.Request, name string) (*bool, error) {
 	query := r.URL.Query()
-	if !query.Has("superuser") {
+	if !query.Has(name) {
 		return nil, nil
 	}
-	parsed, err := strconv.ParseBool(query.Get("superuser"))
-	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("%w: %w", errSuperuserInvalid, err), api.InvalidQueryParameter)
-	}
-	return &parsed, nil
-}
 
-// parsePasswordQuery parses an optional password filter query parameter.
-//
-// It can return the following errors:
-//
-// - [api.InvalidQueryParameter].
-func (*Server) parsePasswordQuery(r *http.Request) (password *bool, err error) {
-	query := r.URL.Query()
-	if !query.Has("password") {
-		return nil, nil
+	value := query.Get(name)
+	switch value {
+	case "true":
+		return new(true), nil
+	case "false":
+		return new(false), nil
+	default:
+		return nil, api.WithErrorString(fmt.Errorf("%w: value %q for %q is not a boolean", errInvalidBooleanQuery, value, name), api.InvalidQueryParameter)
 	}
-	parsed, err := strconv.ParseBool(query.Get("password"))
-	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("%w: %w", errPasswordInvalid, err), api.InvalidQueryParameter)
-	}
-	return &parsed, nil
 }

@@ -89,7 +89,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					func(w http.ResponseWriter, r *http.Request, username *api.ValidUsername) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = username.String()
-						return authProbeResponse{Username: stringPtr(username.String())}, nil
+						return authProbeResponse{Username: new(username.String())}, nil
 					},
 					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
@@ -145,7 +145,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = user
-						return authProbeResponse{Username: stringPtr(user.Username.String()), User: userInfoFromValid(user)}, nil
+						return authProbeResponse{Username: new(user.Username.String()), User: userInfoFromValid(user)}, nil
 					},
 					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
 					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
@@ -176,7 +176,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						var username *string
 						var userInfo *api.UserInfo
 						if user != nil {
-							username = stringPtr(user.Username.String())
+							username = new(user.Username.String())
 							userInfo = userInfoFromValid(user)
 						}
 						return authProbeResponse{Username: username, User: userInfo}, nil
@@ -554,7 +554,7 @@ func expectedOptionalUsernameOutcome(scenario scenario, validUser *api.ValidUser
 	if !called || value == "" {
 		return status, called, nil
 	}
-	return status, called, stringPtr(value)
+	return status, called, new(value)
 }
 
 func expectedUserOutcome(required bool, scenario scenario, validUser *api.ValidUserInfo) (status int, called bool, user *api.ValidUserInfo) {
@@ -631,8 +631,9 @@ func mustValidUser(t *testing.T, username string, superuser bool) *api.ValidUser
 	return &api.ValidUserInfo{Username: name, Superuser: superuser}
 }
 
+//go:fix inline
 func stringPtr(value string) *string {
-	return &value
+	return new(value)
 }
 
 func basicAuthHeader(username string, password string) string {
@@ -644,7 +645,7 @@ func usernameStringPtr(username *api.ValidUsername) *string {
 	if username == nil {
 		return nil
 	}
-	return stringPtr(username.String())
+	return new(username.String())
 }
 
 func assertOptionalStringEqual(t *testing.T, got, want *string) {

@@ -62,11 +62,11 @@ func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, user *a
 }
 
 func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedUsersResponse, error) {
-	superuser, err := h.parseSuperuserQuery(r)
+	superuser, err := h.parseOptionalBooleanQuery(r, "superuser")
 	if err != nil {
 		return nil, err
 	}
-	password, err := h.parsePasswordQuery(r)
+	password, err := h.parseOptionalBooleanQuery(r, "password")
 	if err != nil {
 		return nil, err
 	}
