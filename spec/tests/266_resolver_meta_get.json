@@ -1,0 +1,30 @@
+{
+  "name": "266_resolver_meta_get",
+  "comment": "GET /resolver/info returns the configured meta information.",
+  "steps": [
+    {
+      "name": "meta_ok",
+      "config": {
+        "meta": {
+          "about": "https://example.com/about",
+          "comment": "example resolver",
+          "software": "quickpid",
+          "version": "test"
+        }
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/info"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "about": "https://example.com/about",
+          "comment": "example resolver",
+          "software": "quickpid",
+          "version": "test"
+        }
+      }
+    }
+  ]
+}

@@ -3,6 +3,7 @@ package server
 
 //spellchecker:words github quickpid service
 import (
+	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/service"
 )
 
@@ -23,6 +24,9 @@ type Options struct {
 
 	// Anonymous enables service anonymous mode.
 	Anonymous bool
+
+	// Meta is returned by GET /resolver/info.
+	Meta api.MetaResponse
 }
 
 func (o Options) withValidValues() Options {

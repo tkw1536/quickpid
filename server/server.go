@@ -57,6 +57,12 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.InfoUnavailable,
 		},
 	))
+	h.mux.Handle("GET /resolver/info", lowlevel.HandleNoAuth(
+		h.authHandler,
+		h.getResolverMeta,
+		lowlevel.FixedStatusCode[*api.MetaResponse](http.StatusOK),
+		nil,
+	))
 	h.mux.Handle("GET /resolver/namespaces", lowlevel.HandleOptionalUser(
 		h.authHandler,
 		h.listNamespaces,
@@ -510,6 +516,7 @@ func (h *Server) SetOptions(options Options) {
 	h.ops.DisableSwaggerUI = options.DisableSwaggerUI
 	h.ops.Limits = options.Limits
 	h.ops.InfoEnabled = options.InfoEnabled
+	h.ops.Meta = options.Meta
 
 	h.svc.SetOptions(service.Options{
 		Limits:      options.Limits,

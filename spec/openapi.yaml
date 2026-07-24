@@ -59,16 +59,23 @@ paths:
                 $ref: '#/components/schemas/ErrorInfoUnavailable'
   /resolver/info:
     get:
+      summary: Get meta information about the server.
+      description: |
+        Returns optional public meta information about this server, such as a human-readable
+        comment, an about URL, and the software name and version.
+
+        All fields are optional. When a field is present, it must be a non-empty string.
+        This endpoint always returns 200.
+      security: []
       tags:
         - quickpid
-        - todo
-      summary: Get meta information1
       responses:
         '200':
-          description: 'contact email, version, software, ...'
+          description: Meta information successfully retrieved.
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/MetaResponse'
 
   /resolver/namespaces:
     get:
@@ -2498,6 +2505,35 @@ components:
           type: integer
           format: int64
           minimum: 1
+    MetaResponse:
+      description: |
+        Optional public meta information about the server.
+        All fields are optional. When present, each field must be a non-empty string.
+      type: object
+      additionalProperties: false
+      properties:
+        about:
+          description: |
+            Description of where to find more information about this service.
+            Typically a URL, but not necessarily so.
+          type: string
+          format: uri
+          minLength: 1
+        comment:
+          description: |
+            Human-readable message about this server.
+          type: string
+          minLength: 1
+        software:
+          description: |
+            Name of the software running this server.
+          type: string
+          minLength: 1
+        version:
+          description: |
+            Version of the software running this server.
+          type: string
+          minLength: 1
     UsernameListResponse:
       description: |
         A list of usernames.

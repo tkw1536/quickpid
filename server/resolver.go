@@ -19,6 +19,11 @@ func (h *Server) getResolverInfo(w http.ResponseWriter, r *http.Request) (*api.I
 	return info, nil
 }
 
+func (h *Server) getResolverMeta(w http.ResponseWriter, r *http.Request) (*api.MetaResponse, error) {
+	meta := h.ops.Meta
+	return &meta, nil
+}
+
 func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedNamespacesResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {

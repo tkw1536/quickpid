@@ -7,6 +7,7 @@ package quickpid
 import (
 	"embed"
 	"io/fs"
+	"runtime/debug"
 )
 
 //go:embed spec/openapi.yaml
@@ -37,4 +38,14 @@ const CopyrightNotice = "© Tom Wiesing. All rights reserved."
 // There currently is no license and this function returns the empty string.
 func License() string {
 	return ""
+}
+
+// Version returns the version of this module as reported by the Go runtime
+// build info. It returns the empty string when build info is unavailable.
+func Version() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+	return info.Main.Version
 }

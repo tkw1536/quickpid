@@ -17,6 +17,7 @@ import (
 	"time"
 
 	quickpid "github.com/tkw1536/quickpid"
+	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/server"
 	"github.com/tkw1536/quickpid/service"
@@ -36,6 +37,9 @@ type mainCmd struct {
 	disableInfo    bool
 	anonymous      bool
 	limits         service.Limits
+
+	about   string
+	comment string
 
 	logLevel string
 	logJSON  bool
@@ -156,6 +160,12 @@ func (main *mainCmd) newServerHandler(svc *service.Service) *server.Server {
 			MountPath:        main.mountPath,
 			DisableSwaggerUI: main.disableSwagger,
 			Anonymous:        main.anonymous,
+			Meta: api.MetaResponse{
+				About:    main.about,
+				Comment:  main.comment,
+				Software: "quickpid",
+				Version:  quickpid.Version(),
+			},
 		},
 		svc,
 		main.logger,
@@ -175,6 +185,9 @@ func (main *mainCmd) parseFlags() {
 	flag.BoolVar(&main.disableSwagger, "disable-swagger", main.disableSwagger, "disable swagger UI and spec file being served")
 	flag.BoolVar(&main.disableInfo, "disable-info", main.disableInfo, "disable info endpoint")
 	flag.BoolVar(&main.anonymous, "anon", main.anonymous, "enable anonymous resolver mode without user management")
+
+	flag.StringVar(&main.about, "about", main.about, "content of 'about' field returned by GET /resolver/info")
+	flag.StringVar(&main.comment, "comment", main.comment, "content of 'comment' field returned by GET /resolver/info")
 
 	flag.Int64Var(&main.limits.MaxBodyBytes, "max-body-bytes", main.limits.MaxBodyBytes, "maximum size of request body")
 	flag.IntVar(&main.limits.DefaultPageLimit, "default-page-limit", main.limits.DefaultPageLimit, "default number of items per page")

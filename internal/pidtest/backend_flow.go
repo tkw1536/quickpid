@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/apikey"
 	"github.com/tkw1536/quickpid/internal/httpfixture"
@@ -20,13 +21,14 @@ import (
 )
 
 type stepConfig struct {
-	NamespaceIDs []string  `json:"namespaceIDs,omitzero"`
-	PIDs         []string  `json:"pids,omitzero"`
-	APIKeyIDs    []string  `json:"apiKeyIDs,omitzero"`
-	APIKeys      []string  `json:"apiKeys,omitzero"`
-	Now          time.Time `json:"now,omitzero"`
-	InfoEnabled  bool      `json:"infoEnabled"`
-	Anonymous    bool      `json:"anonymous,omitzero"`
+	NamespaceIDs []string         `json:"namespaceIDs,omitzero"`
+	PIDs         []string         `json:"pids,omitzero"`
+	APIKeyIDs    []string         `json:"apiKeyIDs,omitzero"`
+	APIKeys      []string         `json:"apiKeys,omitzero"`
+	Now          time.Time        `json:"now,omitzero"`
+	InfoEnabled  bool             `json:"infoEnabled"`
+	Anonymous    bool             `json:"anonymous,omitzero"`
+	Meta         api.MetaResponse `json:"meta,omitzero"`
 
 	// EnsureRootUser runs [service.Service.EnsureRootUser] before this step when the store is empty.
 	// Use with apiKeyIDs/apiKeys/now so the bootstrap key is deterministic.
@@ -64,6 +66,7 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 			Limits:      step.Limits,
 			InfoEnabled: step.Config.InfoEnabled,
 			Anonymous:   step.Config.Anonymous,
+			Meta:        step.Config.Meta,
 		})
 
 		runtime.now = step.Config.Now
