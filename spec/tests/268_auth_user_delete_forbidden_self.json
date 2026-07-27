@@ -1,0 +1,57 @@
+{
+  "name": "auth_user_delete_forbidden_self",
+  "comment": "Superusers cannot delete their own account via DELETE /user/; attempting to do so returns 403 forbidden.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "delete_self_forbidden",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/user/?username=root",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "auth_user_delete_unauthorized",
+  "comment": "DELETE /user/ without authentication returns 401 unauthorized.",
+  "steps": [
+    {
+      "name": "delete_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/user/?username=bob"
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

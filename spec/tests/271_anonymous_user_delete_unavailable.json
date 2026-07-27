@@ -1,0 +1,22 @@
+{
+  "name": "anonymous_user_delete_unavailable",
+  "comment": "In anonymous mode, DELETE /user/ returns 404 unavailable_in_anonymous_mode.",
+  "steps": [
+    {
+      "name": "delete_user_disabled",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "DELETE",
+        "path": "/user/?username=alice"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "unavailable_in_anonymous_mode"
+        }
+      }
+    }
+  ]
+}

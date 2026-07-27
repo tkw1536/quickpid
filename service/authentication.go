@@ -216,6 +216,37 @@ func (s *Service) CreateUser(ctx context.Context, caller *api.ValidUserInfo, req
 	return user, nil
 }
 
+// DeleteUser deletes a user account. Caller must be a superuser and cannot delete their own account.
+//
+// It can return the following errors:
+//
+// - [api.UnavailableInAnonymousMode]
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.UserNotFound]
+// - [api.DatabaseError].
+func (s *Service) DeleteUser(ctx context.Context, caller *api.ValidUserInfo, target api.ValidUsername) error {
+	if err := s.requireAuthEnabled(); err != nil {
+		return err
+	}
+	if err := requireSuperuser(caller); err != nil {
+		return err
+	}
+
+	if target.String() == caller.Username.String() {
+		return api.WithErrorString(errForbidden, api.Forbidden)
+	}
+
+	err := s.store.DeleteUser(ctx, target)
+	if mapped, ok := mapAuthBackendError(err); ok {
+		return fmt.Errorf("store.DeleteUser: %w", mapped)
+	}
+	if err != nil {
+		return api.WithErrorString(fmt.Errorf("store.DeleteUser: %w", err), api.DatabaseError)
+	}
+	return nil
+}
+
 // ListUsers lists all user accounts. Caller must be a superuser.
 //
 // It can return the following errors:

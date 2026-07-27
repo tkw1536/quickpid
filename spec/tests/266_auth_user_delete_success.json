@@ -1,0 +1,97 @@
+{
+  "name": "auth_user_delete_success",
+  "comment": "A superuser can delete another user via DELETE /user/?username=..., after which the user is no longer retrievable.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "create_alice",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\": \"alice\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "alice",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "delete_alice",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/user/?username=alice",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 204
+      }
+    },
+    {
+      "name": "alice_not_found",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user/?username=alice",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "user_not_found"
+        }
+      }
+    }
+  ]
+}

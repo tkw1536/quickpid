@@ -1626,6 +1626,68 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
+    delete:
+      summary: Delete a user account.
+      description: |
+        Deletes a user account.
+
+        In anonymous mode, the route returns HTTP 404.
+        In authenticated mode, this route requires superuser privileges.
+
+        The `username` parameter must be set to the username of the account to delete.
+        It is not permitted to delete one's own account.
+      tags:
+        - user
+      parameters:
+        - name: username
+          in: query
+          required: true
+          description: |
+            The username of the account to delete.
+            It is not permitted to delete one's own account.
+          schema:
+            $ref: '#/components/schemas/Username'
+      responses:
+        '204':
+          description: User account deleted successfully.
+        '400':
+          description: Invalid username.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidUsername'
+                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+        '401':
+          description: Authentication is required or the credentials are incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: |
+            The authenticated user is not allowed to perform this deletion.
+            This includes attempts to delete one's own account and use of the `username` parameter without superuser privileges.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: The server is in anonymous mode, or the user does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
   /users/autocomplete:
     get:
       summary: Autocomplete usernames by prefix.

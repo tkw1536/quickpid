@@ -39,6 +39,18 @@ func (h *Server) createUser(w http.ResponseWriter, r *http.Request, user *api.Va
 	return createdUser, nil
 }
 
+func (h *Server) deleteUser(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
+	target, err := h.parseRequiredUsernameQuery(r)
+	if err != nil {
+		return struct{}{}, err
+	}
+
+	if err := h.svc.DeleteUser(r.Context(), user, target); err != nil {
+		return struct{}{}, fmt.Errorf("svc.DeleteUser: %w", err)
+	}
+	return struct{}{}, nil
+}
+
 func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.SetPasswordResponse, error) {
 	target, err := h.parseOptionalUsernameQuery(r)
 	if err != nil {

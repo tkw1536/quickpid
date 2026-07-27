@@ -385,6 +385,20 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
+	h.mux.Handle("DELETE /user/", lowlevel.HandleRequiredUserInAuthMode(
+		h.authHandler,
+		h.deleteUser,
+		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
+		[]api.ErrorString{
+			api.InvalidQueryParameter,
+			api.InvalidUsername,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UserNotFound,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
 	h.mux.Handle("POST /user/password", lowlevel.HandleRequiredUserInAuthMode(
 		h.authHandler,
 		h.setUserPassword,

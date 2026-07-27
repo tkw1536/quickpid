@@ -1,10 +1,11 @@
 //spellchecker:words server
 package server_test
 
-//spellchecker:words context encoding json http httptest reflect strings testing time github quickpid backend memory internal apikey server service
+//spellchecker:words context encoding errors json http httptest reflect strings testing time github quickpid backend memory internal apikey server service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -134,6 +135,30 @@ func assertForbiddenJSON(t *testing.T, rec *httptest.ResponseRecorder) {
 	}
 }
 
+func assertErrorJSON(t *testing.T, rec *httptest.ResponseRecorder, code int, want api.ErrorString) {
+	t.Helper()
+
+	if rec.Code != code {
+		t.Fatalf("status = %d, want %d", rec.Code, code)
+	}
+	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+		t.Fatalf("Content-Type = %q, want application/json", ct)
+	}
+
+	body, err := io.ReadAll(rec.Body)
+	if err != nil {
+		t.Fatalf("ReadAll() error = %v", err)
+	}
+
+	var resp api.ErrorResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v, body = %q", err, body)
+	}
+	if resp.Error != want {
+		t.Fatalf("error = %q, want %q", resp.Error, want)
+	}
+}
+
 var bobUsername api.ValidUsername
 
 func init() {
@@ -211,6 +236,80 @@ func TestUpdateCurrentUser_ForbiddenSelfUpdate(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, req)
 	assertForbiddenJSON(t, rec)
+}
+
+func TestDeleteUser_RequiresSuperuser(t *testing.T) {
+	t.Parallel()
+
+	auth := memory.NewStore()
+	aliceKey := createUserWithKey(t, auth, "alice", false)
+	createUserWithKey(t, auth, "bob", false)
+	rootKey := createUserWithKey(t, auth, "root", true)
+	h := testHandler(t, auth)
+
+	t.Run("unauthenticated", func(t *testing.T) {
+		t.Parallel()
+
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user/?username=bob", nil)
+		h.ServeHTTP(rec, req)
+		assertUnauthorizedJSON(t, rec)
+	})
+
+	t.Run("non-superuser forbidden", func(t *testing.T) {
+		t.Parallel()
+
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user/?username=bob", nil)
+		req.Header.Set("Authorization", "Bearer "+aliceKey)
+		h.ServeHTTP(rec, req)
+		assertForbiddenJSON(t, rec)
+	})
+
+	t.Run("superuser deletes other user", func(t *testing.T) {
+		t.Parallel()
+
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user/?username=bob", nil)
+		req.Header.Set("Authorization", "Bearer "+rootKey)
+		h.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want %d, body = %s", rec.Code, http.StatusNoContent, rec.Body.String())
+		}
+
+		if _, err := auth.GetUser(context.Background(), bobUsername); !errors.Is(err, backend.ErrUserNotFound) {
+			t.Fatalf("GetUser(bob) error = %v, want ErrUserNotFound", err)
+		}
+	})
+}
+
+func TestDeleteUser_ForbiddenSelfDelete(t *testing.T) {
+	t.Parallel()
+
+	auth := memory.NewStore()
+	rootKey := createUserWithKey(t, auth, "root", true)
+	h := testHandler(t, auth)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user/?username=root", nil)
+	req.Header.Set("Authorization", "Bearer "+rootKey)
+	h.ServeHTTP(rec, req)
+	assertForbiddenJSON(t, rec)
+}
+
+func TestDeleteUser_UserNotFound(t *testing.T) {
+	t.Parallel()
+
+	auth := memory.NewStore()
+	rootKey := createUserWithKey(t, auth, "root", true)
+	h := testHandler(t, auth)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user/?username=missing", nil)
+	req.Header.Set("Authorization", "Bearer "+rootKey)
+	h.ServeHTTP(rec, req)
+	assertErrorJSON(t, rec, http.StatusNotFound, api.UserNotFound)
 }
 
 func TestCreateUser_RequiresSuperuser(t *testing.T) {

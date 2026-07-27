@@ -1,9 +1,10 @@
 //spellchecker:words service
 package service_test
 
-//spellchecker:words context testing time github quickpid backend memory internal apikey service
+//spellchecker:words context errors testing time github quickpid backend memory internal apikey service
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -215,6 +216,30 @@ func TestService_ListUserRoles(t *testing.T) {
 	_, err = svc.ListUserRoles(ctx, nil, nil, api.ListUserRolesParams{Limit: 100})
 	if !service.IsUnauthorized(err) {
 		t.Fatalf("ListUserRoles(nil caller) = %v, want unauthorized", err)
+	}
+}
+
+func TestService_DeleteUser(t *testing.T) {
+	t.Parallel()
+
+	svc, store := newTestService(t)
+	ctx := t.Context()
+
+	if err := svc.DeleteUser(ctx, userInfo("owner"), contributorUsername); !service.IsForbidden(err) {
+		t.Fatalf("DeleteUser(non-superuser) = %v, want forbidden", err)
+	}
+
+	superuserCaller := &api.ValidUserInfo{Username: ownerUsername, Superuser: true}
+	if err := svc.DeleteUser(ctx, superuserCaller, ownerUsername); !service.IsForbidden(err) {
+		t.Fatalf("DeleteUser(self as superuser) = %v, want forbidden", err)
+	}
+
+	if err := svc.DeleteUser(ctx, superuserCaller, contributorUsername); err != nil {
+		t.Fatalf("DeleteUser(other as superuser) = %v", err)
+	}
+
+	if _, err := store.GetUser(ctx, contributorUsername); !errors.Is(err, backend.ErrUserNotFound) {
+		t.Fatalf("GetUser(deleted contributor) = %v, want backend.ErrUserNotFound", err)
 	}
 }
 
@@ -526,6 +551,9 @@ func TestService_AnonymousDisablesUserAndRoleManagement(t *testing.T) {
 	}
 	if _, err := svc.ListUsers(ctx, userInfo("owner"), api.ListUsersParams{Limit: 10}); !service.IsUnavailableInAnonymousMode(err) {
 		t.Fatalf("ListUsers() = %v, want anonymous mode unavailable", err)
+	}
+	if err := svc.DeleteUser(ctx, userInfo("owner"), aliceUsername); !service.IsUnavailableInAnonymousMode(err) {
+		t.Fatalf("DeleteUser() = %v, want anonymous mode unavailable", err)
 	}
 	if _, err := svc.GetNamespaceRole(ctx, userInfo("owner"), testNS, ownerUsername); !service.IsUnavailableInAnonymousMode(err) {
 		t.Fatalf("GetNamespaceRole() = %v, want anonymous mode unavailable", err)
