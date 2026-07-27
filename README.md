@@ -94,6 +94,8 @@ Examples:
 ## Future Technical Work
 
 - rework non-flow-tests
+- licensing
+- key revocation: rename to delete
 - work on the TODOs in the openapi spec
 - rework `fmt.Errorf` calls
 - use something other than uuid for namespace generation to drop dependency
