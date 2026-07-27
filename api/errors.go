@@ -48,9 +48,8 @@ const (
 	UserNotFound      ErrorString = "user_not_found"     // User not found
 	KeyNotFound       ErrorString = "key_not_found"      // API key not found
 
-	Unauthorized ErrorString = "unauthorized" // Authentication is required or the bearer token is invalid
-
-	Forbidden ErrorString = "forbidden" // The authenticated user is not allowed to perform this action
+	Unauthorized ErrorString = "unauthorized" // Authentication is required but no valid credentials were provided
+	Forbidden    ErrorString = "forbidden"    // The authenticated user is not allowed to perform this action
 )
 
 // WithErrorString annotates err with the given [ErrorString].

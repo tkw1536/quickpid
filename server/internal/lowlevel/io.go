@@ -12,7 +12,7 @@ import (
 )
 
 // writeJSONResponse writes a JSON response to the client.
-func (h *AuthHandler) writeJSONResponse(w http.ResponseWriter, r *http.Request, status int, v any) {
+func (h *Handler) writeJSONResponse(w http.ResponseWriter, r *http.Request, status int, v any) {
 	if status == http.StatusNoContent {
 		w.WriteHeader(status)
 		return
@@ -25,21 +25,8 @@ func (h *AuthHandler) writeJSONResponse(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
-type credentials struct {
-	bearerToken   string
-	basicUsername string
-	basicPassword string
-	invalid       bool
-}
-
-func (c credentials) hasBearer() bool {
-	return c.bearerToken != ""
-}
-
-func (c credentials) hasBasic() bool {
-	return c.basicUsername != "" || c.basicPassword != ""
-}
-
+// readCredentials reads [credentials] from a request.
+// The request object must not be nil.
 func readCredentials(r *http.Request) credentials {
 	var creds credentials
 
@@ -60,7 +47,7 @@ func readCredentials(r *http.Request) credentials {
 			}
 			creds.basicUsername = username
 			creds.basicPassword = password
-		case strings.TrimSpace(auth) != "":
+		default:
 			creds.invalid = true
 		}
 	}
@@ -72,8 +59,23 @@ func readCredentials(r *http.Request) credentials {
 	return creds
 }
 
+type credentials struct {
+	bearerToken   string
+	basicUsername string
+	basicPassword string
+	invalid       bool
+}
+
+func (c credentials) hasBearer() bool {
+	return c.bearerToken != ""
+}
+
+func (c credentials) hasBasic() bool {
+	return c.basicUsername != "" || c.basicPassword != ""
+}
+
 // Log writes a structured request log entry.
-func (h *AuthHandler) Log(ctx context.Context, r *http.Request, duration time.Duration, status int, extra ...any) {
+func (h *Handler) Log(ctx context.Context, r *http.Request, duration time.Duration, status int, extra ...any) {
 	if h.logger == nil {
 		return
 	}
@@ -103,7 +105,7 @@ func (h *AuthHandler) Log(ctx context.Context, r *http.Request, duration time.Du
 	h.logInternal(ctx, r, level, msg, extra...)
 }
 
-func (h *AuthHandler) logInternal(ctx context.Context, r *http.Request, level slog.Level, msg string, extra ...any) {
+func (h *Handler) logInternal(ctx context.Context, r *http.Request, level slog.Level, msg string, extra ...any) {
 	if h.logger == nil {
 		return
 	}

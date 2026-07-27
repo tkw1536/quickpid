@@ -23,7 +23,7 @@ var errExistingUserNotFound = errors.New("existing user not found")
 func (s *Service) ListNamespaces(ctx context.Context, caller *api.ValidUserInfo, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	// in authenticated mode, require the caller to be authenticated.
 	if !s.AnonymousMode() {
-		if err := s.requireAuthenticated(caller); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
 			return nil, err
 		}
 	}
@@ -55,7 +55,10 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.ValidUserInfo,
 // - [api.DatabaseError].
 func (s *Service) GetNamespace(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
 	if !s.AnonymousMode() {
-		if err := s.requireNamespaceCapability(ctx, caller, namespace, canReadNamespaceMetadata); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
+			return nil, err
+		}
+		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canReadNamespaceMetadata); err != nil {
 			return nil, err
 		}
 	}
@@ -97,7 +100,7 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.ValidUserInfo
 
 	var owner *api.ValidUsername
 	if !s.AnonymousMode() {
-		if err := s.requireAuthenticated(caller); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
 			return nil, err
 		}
 		owner = &caller.Username
@@ -138,7 +141,10 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.ValidUserInfo
 // - [api.DatabaseError].
 func (s *Service) ListResources(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
 	if !s.AnonymousMode() {
-		if err := s.requireNamespaceCapability(ctx, caller, namespace, canListResources); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
+			return nil, err
+		}
+		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canListResources); err != nil {
 			return nil, err
 		}
 	}
@@ -164,7 +170,10 @@ func (s *Service) ListResources(ctx context.Context, caller *api.ValidUserInfo, 
 // - [api.InsufficientEntropy].
 func (s *Service) CreateResource(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, req api.ResourceCreateRequest) (*api.ResourceResponse, error) {
 	if !s.AnonymousMode() {
-		if err := s.requireNamespaceCapability(ctx, caller, namespace, canCreateResource); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
+			return nil, err
+		}
+		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canCreateResource); err != nil {
 			return nil, err
 		}
 	}
@@ -209,7 +218,10 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.ValidUse
 	}
 
 	if !s.AnonymousMode() {
-		if err := s.requireNamespaceCapability(ctx, caller, namespace, canCreateResource); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
+			return nil, err
+		}
+		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canCreateResource); err != nil {
 			return nil, err
 		}
 	}
@@ -293,7 +305,10 @@ func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, na
 // - [api.ResourceNotFound].
 func (s *Service) UpdateResource(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, resourcePID api.ValidPID, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
 	if !s.AnonymousMode() {
-		if err := s.requireNamespaceCapability(ctx, caller, namespace, canUpdateResource); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
+			return nil, err
+		}
+		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canUpdateResource); err != nil {
 			return nil, err
 		}
 	}

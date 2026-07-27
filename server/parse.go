@@ -140,6 +140,10 @@ func (*Server) getPID(r *http.Request) (api.ValidPID, error) {
 }
 
 // getUsername gets the username from the request path.
+//
+// It can return the following errors:
+//
+// - [api.InvalidUsername].
 func (*Server) getUsername(r *http.Request) (api.ValidUsername, error) {
 	username, err := api.NewUsername(r.PathValue("username"))
 	if err != nil {

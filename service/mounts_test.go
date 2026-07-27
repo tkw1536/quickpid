@@ -1,14 +1,13 @@
 //spellchecker:words service
 package service_test
 
-//spellchecker:words context testing github quickpid service
+//spellchecker:words context testing github quickpid
 import (
 	"context"
 	"testing"
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/pid"
-	"github.com/tkw1536/quickpid/service"
 )
 
 func validMountUpsert(t *testing.T, namespace api.ValidNamespaceID) api.ValidMountUpsertRequest {
@@ -84,12 +83,12 @@ func TestService_Mounts_Authenticated(t *testing.T) {
 	upsert := validMountUpsert(t, testNS)
 
 	_, err = svc.SetMount(ctx, nil, baseURI, upsert)
-	if !service.IsUnauthorized(err) {
+	if !isAPIError(err, api.Unauthorized) {
 		t.Fatalf("SetMount(nil) error = %v, want unauthorized", err)
 	}
 
-	_, err = svc.SetMount(ctx, userInfo("reader"), baseURI, upsert)
-	if !service.IsForbidden(err) {
+	_, err = svc.SetMount(ctx, new(userInfo("reader")), baseURI, upsert)
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("SetMount(non-superuser) error = %v, want forbidden", err)
 	}
 
@@ -110,8 +109,8 @@ func TestService_Mounts_Authenticated(t *testing.T) {
 		t.Fatalf("GetMount() = %+v", got)
 	}
 
-	err = svc.DeleteMount(ctx, userInfo("reader"), baseURI)
-	if !service.IsForbidden(err) {
+	err = svc.DeleteMount(ctx, new(userInfo("reader")), baseURI)
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("DeleteMount(non-superuser) error = %v, want forbidden", err)
 	}
 
@@ -135,11 +134,11 @@ func TestService_ListMounts(t *testing.T) {
 	}
 
 	_, err = svc.ListMounts(ctx, nil, api.ListMountsParams{Limit: 10})
-	if !service.IsUnauthorized(err) {
+	if !isAPIError(err, api.Unauthorized) {
 		t.Fatalf("ListMounts(nil) error = %v, want unauthorized", err)
 	}
-	_, err = svc.ListMounts(ctx, userInfo("reader"), api.ListMountsParams{Limit: 10})
-	if !service.IsForbidden(err) {
+	_, err = svc.ListMounts(ctx, new(userInfo("reader")), api.ListMountsParams{Limit: 10})
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("ListMounts(non-superuser) error = %v, want forbidden", err)
 	}
 
@@ -186,15 +185,15 @@ func TestService_ListNamespaceMounts(t *testing.T) {
 	}
 
 	_, err = svc.ListNamespaceMounts(ctx, nil, testNS, api.ListNamespaceMountsParams{Limit: 10})
-	if !service.IsUnauthorized(err) {
+	if !isAPIError(err, api.Unauthorized) {
 		t.Fatalf("ListNamespaceMounts(nil) error = %v, want unauthorized", err)
 	}
-	_, err = svc.ListNamespaceMounts(ctx, userInfo("reader"), testNS, api.ListNamespaceMountsParams{Limit: 10})
-	if !service.IsForbidden(err) {
+	_, err = svc.ListNamespaceMounts(ctx, new(userInfo("reader")), testNS, api.ListNamespaceMountsParams{Limit: 10})
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("ListNamespaceMounts(reader) error = %v, want forbidden", err)
 	}
 
-	page, err := svc.ListNamespaceMounts(ctx, userInfo("contributor"), testNS, api.ListNamespaceMountsParams{Limit: 10})
+	page, err := svc.ListNamespaceMounts(ctx, new(userInfo("contributor")), testNS, api.ListNamespaceMountsParams{Limit: 10})
 	if err != nil {
 		t.Fatalf("ListNamespaceMounts(contributor) error = %v", err)
 	}

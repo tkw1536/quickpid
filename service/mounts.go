@@ -43,7 +43,10 @@ func (s *Service) GetMount(ctx context.Context, baseURI api.ValidBaseURI) (*api.
 // - [api.DatabaseError].
 func (s *Service) ListMounts(ctx context.Context, caller *api.ValidUserInfo, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
 	if !s.AnonymousMode() {
-		if err := requireSuperuser(caller); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
+			return nil, err
+		}
+		if err := requireSuperuser(*caller); err != nil {
 			return nil, err
 		}
 	}
@@ -68,7 +71,10 @@ func (s *Service) ListMounts(ctx context.Context, caller *api.ValidUserInfo, par
 // - [api.DatabaseError].
 func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
 	if !s.AnonymousMode() {
-		if err := s.requireNamespaceCapability(ctx, caller, namespace, canReadNamespaceMetadata); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
+			return nil, err
+		}
+		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canReadNamespaceMetadata); err != nil {
 			return nil, err
 		}
 	}
@@ -96,7 +102,10 @@ func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.ValidUser
 // - [api.DatabaseError].
 func (s *Service) SetMount(ctx context.Context, caller *api.ValidUserInfo, baseURI api.ValidBaseURI, req api.ValidMountUpsertRequest) (*api.MountResponse, error) {
 	if !s.AnonymousMode() {
-		if err := requireSuperuser(caller); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
+			return nil, err
+		}
+		if err := requireSuperuser(*caller); err != nil {
 			return nil, err
 		}
 	}
@@ -127,7 +136,10 @@ func (s *Service) SetMount(ctx context.Context, caller *api.ValidUserInfo, baseU
 // - [api.DatabaseError].
 func (s *Service) DeleteMount(ctx context.Context, caller *api.ValidUserInfo, baseURI api.ValidBaseURI) error {
 	if !s.AnonymousMode() {
-		if err := requireSuperuser(caller); err != nil {
+		if err := requireAuthenticated(caller); err != nil {
+			return err
+		}
+		if err := requireSuperuser(*caller); err != nil {
 			return err
 		}
 	}

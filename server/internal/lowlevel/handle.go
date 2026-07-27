@@ -10,14 +10,12 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/service"
 )
 
-// handle executes the shared request flow used by all exported Handle* functions.
 func handle[T any](
-	h *AuthHandler,
-	auth authConfig,
-	impl func(http.ResponseWriter, *http.Request, *api.ValidUsername, *api.ValidUserInfo) (T, error),
+	h *Handler,
+	s scenario,
+	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
 	successCode func(T) int,
 	allowedErrors []api.ErrorString,
 ) http.HandlerFunc {
@@ -29,14 +27,14 @@ func handle[T any](
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		username, user, err := h.resolveAuth(r, auth)
+		user, err := h.resolveAuth(r, s)
 		if err != nil {
 			duration := time.Since(start)
 			h.writeHandledError(w, r, duration, err, errors)
 			return
 		}
 
-		value, err := impl(w, r, username, user)
+		value, err := impl(w, r, user)
 		duration := time.Since(start)
 
 		if err != nil {
@@ -52,42 +50,30 @@ func handle[T any](
 
 var errUnavailableInAnonymousMode = errors.New("unavailable in anonymous mode")
 
-func resolveAPIError(err error) api.ErrorString {
-	if code, ok := api.GetErrorString(err); ok {
-		return code
-	}
-	switch {
-	case service.IsUnauthorized(err):
-		return api.Unauthorized
-	case service.IsForbidden(err):
-		return api.Forbidden
-	case service.IsUnavailableInAnonymousMode(err):
-		return api.UnavailableInAnonymousMode
-	default:
-		return api.DatabaseError
-	}
-}
-
 var errInvalidAuthenticationCredentials = errors.New("invalid authentication credentials")
 
 // resolveAuth resolves the caller according to the given auth configuration.
 //
 // It returns nil values when auth is disabled or optional auth is not supplied.
-func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*api.ValidUsername, *api.ValidUserInfo, error) {
-	if auth.requirement == authRequirementAuthMode && h.auth.AnonymousMode() {
-		return nil, nil, api.WithErrorString(errUnavailableInAnonymousMode, api.UnavailableInAnonymousMode)
+func (h *Handler) resolveAuth(r *http.Request, scenario scenario) (*api.ValidUserInfo, error) {
+	// if we require auth mode, and we are in anonymous mode
+	// this endpoint is unavailable.
+	if scenario == requiredUser && h.auth.AnonymousMode() {
+		return nil, api.WithErrorString(errUnavailableInAnonymousMode, api.UnavailableInAnonymousMode)
 	}
 
-	if auth.requirement == authRequirementNone {
-		return nil, nil, nil
+	// if we said not to do any auth, don't load anything.
+	if scenario == noAuthentication {
+		return nil, nil
 	}
 
+	// read the credentials from the request.
 	creds := readCredentials(r)
 	if creds.invalid {
-		return nil, nil, api.WithErrorString(errInvalidAuthenticationCredentials, api.Unauthorized)
+		return nil, api.WithErrorString(errInvalidAuthenticationCredentials, api.Unauthorized)
 	}
-	if auth.requirement == authRequirementOptional && !creds.hasBearer() && !creds.hasBasic() {
-		return nil, nil, nil
+	if scenario == optionalUser && !creds.hasBearer() && !creds.hasBasic() {
+		return nil, nil
 	}
 
 	var (
@@ -97,49 +83,39 @@ func (h *AuthHandler) resolveAuth(r *http.Request, auth authConfig) (*api.ValidU
 	switch {
 	case creds.hasBearer():
 		username, err = h.auth.AuthenticateAPIKey(r.Context(), creds.bearerToken)
-		if service.IsUnauthorized(err) {
-			return nil, nil, api.WithErrorString(fmt.Errorf("auth.AuthenticateAPIKey: %w", err), api.Unauthorized)
-		}
 		if err != nil {
-			return nil, nil, api.WithErrorString(fmt.Errorf("auth.AuthenticateAPIKey: %w", err), api.DatabaseError)
+			return nil, api.WithErrorString(fmt.Errorf("invalid API key: %w", err), api.Unauthorized)
 		}
 	case creds.hasBasic():
 		username, err = h.auth.AuthenticatePassword(r.Context(), creds.basicUsername, creds.basicPassword)
-		if service.IsUnauthorized(err) {
-			return nil, nil, api.WithErrorString(fmt.Errorf("auth.AuthenticatePassword: %w", err), api.Unauthorized)
-		}
 		if err != nil {
-			return nil, nil, api.WithErrorString(fmt.Errorf("auth.AuthenticatePassword: %w", err), api.DatabaseError)
+			return nil, api.WithErrorString(fmt.Errorf("invalid username and password: %w", err), api.Unauthorized)
 		}
 	default:
-		return nil, nil, api.WithErrorString(errInvalidAuthenticationCredentials, api.Unauthorized)
-	}
-
-	if !auth.loadUser {
-		return &username, nil, nil
+		return nil, api.WithErrorString(errInvalidAuthenticationCredentials, api.Unauthorized)
 	}
 
 	user, err := h.auth.LoadUser(r.Context(), username)
-	if service.IsUnauthorized(err) {
-		return nil, nil, api.WithErrorString(fmt.Errorf("auth.LoadUser: %w", err), api.Unauthorized)
-	}
 	if err != nil {
-		return nil, nil, api.WithErrorString(fmt.Errorf("auth.LoadUser: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("failed to load user object: %w", err), api.DatabaseError)
 	}
-	return &user.Username, &user, nil
+	return &user, nil
 }
 
 // writeHandledError validates that the error maps to a declared API error, logs it, and writes the JSON response.
-func (h *AuthHandler) writeHandledError(
+func (h *Handler) writeHandledError(
 	w http.ResponseWriter,
 	r *http.Request,
 	duration time.Duration,
 	err error,
 	allowedErrors map[api.ErrorString]struct{},
 ) {
-	specError := resolveAPIError(err)
+	specError, ok := api.GetErrorString(err)
+	if !ok {
+		panic("implementation error: did not carry an error string")
+	}
 	if _, ok := allowedErrors[specError]; !ok {
-		panic("implementation error: unexpected error returned")
+		panic("implementation error: unexpected error " + specError + " returned")
 	}
 
 	h.Log(

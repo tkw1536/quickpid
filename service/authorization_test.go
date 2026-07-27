@@ -118,12 +118,17 @@ func newAnonymousTestService(t *testing.T) (*service.Service, backend.Store) {
 	return service.New(store, runtime, service.Options{Anonymous: true}), store
 }
 
-func userInfo(username string) *api.ValidUserInfo {
+func userInfo(username string) api.ValidUserInfo {
 	valid, err := (&api.UserInfo{Username: username}).Validate()
 	if err != nil {
 		panic(fmt.Sprintf("NewValidUserInfo(%q) error = %v", username, err))
 	}
-	return &valid
+	return valid
+}
+
+func isAPIError(err error, want api.ErrorString) bool {
+	code, ok := api.GetErrorString(err)
+	return ok && code == want
 }
 
 func TestService_GetNamespaceRole(t *testing.T) {
@@ -141,7 +146,7 @@ func TestService_GetNamespaceRole(t *testing.T) {
 	}
 
 	_, err = svc.GetNamespaceRole(ctx, userInfo("reader"), testNS, editorUsername)
-	if !service.IsForbidden(err) {
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("GetNamespaceRole(other) = %v, want forbidden", err)
 	}
 
@@ -192,11 +197,11 @@ func TestService_ListUserRoles(t *testing.T) {
 
 	other := editorUsername
 	_, err = svc.ListUserRoles(ctx, userInfo("owner"), &other, api.ListUserRolesParams{Limit: 100})
-	if !service.IsForbidden(err) {
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("ListUserRoles(other as non-superuser) = %v, want forbidden", err)
 	}
 
-	page, err = svc.ListUserRoles(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &other, api.ListUserRolesParams{Limit: 100})
+	page, err = svc.ListUserRoles(ctx, api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &other, api.ListUserRolesParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListUserRoles(superuser) = %v, %v", page, err)
 	}
@@ -208,14 +213,9 @@ func TestService_ListUserRoles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewUsername(missing) error = %v", err)
 	}
-	_, err = svc.ListUserRoles(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &missing, api.ListUserRolesParams{Limit: 100})
+	_, err = svc.ListUserRoles(ctx, api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &missing, api.ListUserRolesParams{Limit: 100})
 	if code, ok := api.GetErrorString(err); !ok || code != api.UserNotFound {
 		t.Fatalf("ListUserRoles(missing) = %v, want user_not_found", err)
-	}
-
-	_, err = svc.ListUserRoles(ctx, nil, nil, api.ListUserRolesParams{Limit: 100})
-	if !service.IsUnauthorized(err) {
-		t.Fatalf("ListUserRoles(nil caller) = %v, want unauthorized", err)
 	}
 }
 
@@ -225,12 +225,12 @@ func TestService_DeleteUser(t *testing.T) {
 	svc, store := newTestService(t)
 	ctx := t.Context()
 
-	if err := svc.DeleteUser(ctx, userInfo("owner"), contributorUsername); !service.IsForbidden(err) {
+	if err := svc.DeleteUser(ctx, userInfo("owner"), contributorUsername); !isAPIError(err, api.Forbidden) {
 		t.Fatalf("DeleteUser(non-superuser) = %v, want forbidden", err)
 	}
 
-	superuserCaller := &api.ValidUserInfo{Username: ownerUsername, Superuser: true}
-	if err := svc.DeleteUser(ctx, superuserCaller, ownerUsername); !service.IsForbidden(err) {
+	superuserCaller := api.ValidUserInfo{Username: ownerUsername, Superuser: true}
+	if err := svc.DeleteUser(ctx, superuserCaller, ownerUsername); !isAPIError(err, api.Forbidden) {
 		t.Fatalf("DeleteUser(self as superuser) = %v, want forbidden", err)
 	}
 
@@ -250,13 +250,13 @@ func TestService_ResolverRoles(t *testing.T) {
 	ctx := t.Context()
 	now := fixedNow()
 
-	_, err := svc.GetNamespace(ctx, userInfo("contributor"), testNS)
+	_, err := svc.GetNamespace(ctx, new(userInfo("contributor")), testNS)
 	if err != nil {
 		t.Fatalf("contributor GetNamespace = %v", err)
 	}
 
-	_, err = svc.GetNamespace(ctx, userInfo("reader"), testNS)
-	if !service.IsForbidden(err) {
+	_, err = svc.GetNamespace(ctx, new(userInfo("reader")), testNS)
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("reader GetNamespace = %v, want forbidden", err)
 	}
 	code, ok := api.GetErrorString(err)
@@ -274,18 +274,18 @@ func TestService_ResolverRoles(t *testing.T) {
 		t.Fatalf("CreateResource() error = %v", err)
 	}
 
-	_, err = svc.GetResource(ctx, userInfo("reader"), testNS, existingPID)
+	_, err = svc.GetResource(ctx, new(userInfo("reader")), testNS, existingPID)
 	if err != nil {
 		t.Fatalf("reader GetResource = %v", err)
 	}
 
-	_, err = svc.GetResource(ctx, userInfo("contributor"), testNS, existingPID)
+	_, err = svc.GetResource(ctx, new(userInfo("contributor")), testNS, existingPID)
 	if err != nil {
 		t.Fatalf("contributor GetResource = %v", err)
 	}
 
-	_, err = svc.ListResources(ctx, userInfo("contributor"), testNS, api.ListResourcesParams{Limit: 10})
-	if !service.IsForbidden(err) {
+	_, err = svc.ListResources(ctx, new(userInfo("contributor")), testNS, api.ListResourcesParams{Limit: 10})
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("contributor ListResources = %v, want forbidden", err)
 	}
 	code, ok = api.GetErrorString(err)
@@ -293,7 +293,7 @@ func TestService_ResolverRoles(t *testing.T) {
 		t.Fatalf("contributor ListResources error code = %q, %v, want %q", code, ok, api.Forbidden)
 	}
 
-	_, err = svc.CreateResource(ctx, userInfo("contributor"), testNS, api.ResourceCreateRequest{
+	_, err = svc.CreateResource(ctx, new(userInfo("contributor")), testNS, api.ResourceCreateRequest{
 		URL: "https://example.com/new",
 	})
 	if err != nil {
@@ -303,7 +303,7 @@ func TestService_ResolverRoles(t *testing.T) {
 	_, err = svc.SetNamespaceRole(ctx, userInfo("editor"), testNS, readerUsername, api.SetNamespaceRoleRequest{
 		Role: api.RoleContributor,
 	})
-	if !service.IsForbidden(err) {
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("editor SetNamespaceRole = %v, want forbidden", err)
 	}
 }
@@ -349,10 +349,10 @@ func TestService_GetResourceDeletedRedacted(t *testing.T) {
 	}
 
 	assertRedacted(t, nil)
-	assertRedacted(t, userInfo("reader"))
-	assertRedacted(t, userInfo("contributor"))
+	assertRedacted(t, new(userInfo("reader")))
+	assertRedacted(t, new(userInfo("contributor")))
 
-	full, err := svc.GetResource(ctx, userInfo("editor"), testNS, existingPID)
+	full, err := svc.GetResource(ctx, new(userInfo("editor")), testNS, existingPID)
 	if err != nil {
 		t.Fatalf("editor GetResource = %v, %v", full, err)
 	}
@@ -370,7 +370,7 @@ func TestService_SetNamespaceRoleCannotEscalate(t *testing.T) {
 	_, err := svc.SetNamespaceRole(ctx, userInfo("editor"), testNS, readerUsername, api.SetNamespaceRoleRequest{
 		Role: api.RoleManager,
 	})
-	if !service.IsForbidden(err) {
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("editor grant manager = %v, want forbidden", err)
 	}
 }
@@ -384,7 +384,7 @@ func TestService_SetNamespaceRoleSelfRules(t *testing.T) {
 	_, err := svc.SetNamespaceRole(ctx, userInfo("owner"), testNS, ownerUsername, api.SetNamespaceRoleRequest{
 		Role: api.RoleEditor,
 	})
-	if !service.IsForbidden(err) {
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("owner modify own role = %v, want forbidden", err)
 	}
 
@@ -396,7 +396,7 @@ func TestService_SetNamespaceRoleSelfRules(t *testing.T) {
 		t.Fatalf("owner role after forbidden update = %q, want manager", role)
 	}
 
-	perm, err := svc.SetNamespaceRole(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, testNS, ownerUsername, api.SetNamespaceRoleRequest{
+	perm, err := svc.SetNamespaceRole(ctx, api.ValidUserInfo{Username: ownerUsername, Superuser: true}, testNS, ownerUsername, api.SetNamespaceRoleRequest{
 		Role: api.RoleEditor,
 	})
 	if err != nil {
@@ -414,7 +414,7 @@ func TestService_DeleteNamespaceRoleSelfRules(t *testing.T) {
 	ctx := t.Context()
 
 	err := svc.DeleteNamespaceRole(ctx, userInfo("owner"), testNS, ownerUsername)
-	if !service.IsForbidden(err) {
+	if !isAPIError(err, api.Forbidden) {
 		t.Fatalf("owner delete own role = %v, want forbidden", err)
 	}
 
@@ -426,7 +426,7 @@ func TestService_DeleteNamespaceRoleSelfRules(t *testing.T) {
 		t.Fatalf("owner role after forbidden delete = %q, want manager", role)
 	}
 
-	err = svc.DeleteNamespaceRole(ctx, &api.ValidUserInfo{Username: ownerUsername, Superuser: true}, testNS, ownerUsername)
+	err = svc.DeleteNamespaceRole(ctx, api.ValidUserInfo{Username: ownerUsername, Superuser: true}, testNS, ownerUsername)
 	if err != nil {
 		t.Fatalf("superuser delete own role = %v", err)
 	}
@@ -447,7 +447,7 @@ func TestService_Unauthenticated(t *testing.T) {
 	ctx := t.Context()
 
 	_, err := svc.ListNamespaces(ctx, nil, api.ListNamespacesParams{})
-	if !service.IsUnauthorized(err) {
+	if !isAPIError(err, api.Unauthorized) {
 		t.Fatalf("ListNamespaces(nil) = %v, want unauthorized", err)
 	}
 }
@@ -518,47 +518,5 @@ func TestService_AnonymousResolverMode(t *testing.T) {
 	}
 	if count.Total != 1 {
 		t.Fatalf("CountAllResources() total = %d, want 1", count.Total)
-	}
-}
-
-func TestService_AnonymousDisablesUserAndRoleManagement(t *testing.T) {
-	t.Parallel()
-
-	svc, _ := newAnonymousTestService(t)
-	ctx := t.Context()
-
-	if _, err := svc.AuthenticateAPIKey(ctx, "anything"); !service.IsUnauthorized(err) {
-		t.Fatalf("AuthenticateAPIKey() error = %v, want unauthorized", err)
-	}
-	rootUsername, err := api.NewUsername("root")
-	if err != nil {
-		t.Fatalf("NewUsername(root) error = %v", err)
-	}
-	if _, err := svc.LoadUser(ctx, rootUsername); !service.IsUnauthorized(err) {
-		t.Fatalf("LoadUser() error = %v, want unauthorized", err)
-	}
-
-	aliceUsername, err := api.NewUsername("alice")
-	if err != nil {
-		t.Fatalf("NewUsername(alice) error = %v", err)
-	}
-	_, err = svc.CreateUser(ctx, userInfo("owner"), api.ValidUserCreateRequest{Username: aliceUsername})
-	if !service.IsUnavailableInAnonymousMode(err) {
-		t.Fatalf("CreateUser() = %v, want anonymous mode unavailable", err)
-	}
-	if code, ok := api.GetErrorString(err); !ok || code != api.UnavailableInAnonymousMode {
-		t.Fatalf("CreateUser() error code = %q, %v, want %q", code, ok, api.UnavailableInAnonymousMode)
-	}
-	if _, err := svc.ListUsers(ctx, userInfo("owner"), api.ListUsersParams{Limit: 10}); !service.IsUnavailableInAnonymousMode(err) {
-		t.Fatalf("ListUsers() = %v, want anonymous mode unavailable", err)
-	}
-	if err := svc.DeleteUser(ctx, userInfo("owner"), aliceUsername); !service.IsUnavailableInAnonymousMode(err) {
-		t.Fatalf("DeleteUser() = %v, want anonymous mode unavailable", err)
-	}
-	if _, err := svc.GetNamespaceRole(ctx, userInfo("owner"), testNS, ownerUsername); !service.IsUnavailableInAnonymousMode(err) {
-		t.Fatalf("GetNamespaceRole() = %v, want anonymous mode unavailable", err)
-	}
-	if _, err := svc.ListUserRoles(ctx, userInfo("owner"), nil, api.ListUserRolesParams{Limit: 10}); !service.IsUnavailableInAnonymousMode(err) {
-		t.Fatalf("ListUserRoles() = %v, want anonymous mode unavailable", err)
 	}
 }

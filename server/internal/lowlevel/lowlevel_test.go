@@ -1,26 +1,20 @@
 //spellchecker:words lowlevel
 package lowlevel_test
 
-//spellchecker:words context encoding base errors slog http httptest strings testing time github quickpid backend memory internal apikey httpfixture server lowlevel service
+//spellchecker:words context encoding base errors slog http httptest strings testing time github quickpid backend memory internal apikey httpfixture server lowlevel
 import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/backend/memory"
-	"github.com/tkw1536/quickpid/internal/apikey"
 	"github.com/tkw1536/quickpid/internal/httpfixture"
 	"github.com/tkw1536/quickpid/server/internal/lowlevel"
-	"github.com/tkw1536/quickpid/service"
 )
 
 type authProbeResponse struct {
@@ -53,15 +47,15 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 
 	tests := []struct {
 		name string
-		run  func(*testing.T, *lowlevel.AuthHandler, scenario, *api.ValidUserInfo)
+		run  func(*testing.T, *lowlevel.Handler, scenario, *api.ValidUserInfo)
 	}{
 		{
 			name: "HandleNoAuth",
-			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.ValidUserInfo) {
+			run: func(t *testing.T, h *lowlevel.Handler, scenario scenario, validUser *api.ValidUserInfo) {
 				t.Helper()
 
 				var gotCalled bool
-				handler := lowlevel.HandleNoAuth(
+				handler := lowlevel.HandlePublic(
 					h,
 					func(w http.ResponseWriter, r *http.Request) (authProbeResponse, error) {
 						gotCalled = true
@@ -76,99 +70,15 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 			},
 		},
 		{
-			name: "HandleRequiredUsername",
-			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.ValidUserInfo) {
-				t.Helper()
-
-				var (
-					gotCalled bool
-					gotUser   string
-				)
-				handler := lowlevel.HandleRequiredUsername(
-					h,
-					func(w http.ResponseWriter, r *http.Request, username *api.ValidUsername) (authProbeResponse, error) {
-						gotCalled = true
-						gotUser = username.String()
-						return authProbeResponse{Username: new(username.String())}, nil
-					},
-					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
-					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
-				)
-
-				rec := runHandler(t, handler, scenario.authHeaders...)
-				wantStatus, wantCalled, wantUser := expectedUsernameOutcome(true, scenario, validUser)
-				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
-				if wantCalled && gotUser != wantUser {
-					t.Fatalf("username = %q, want %q", gotUser, wantUser)
-				}
-			},
-		},
-		{
-			name: "HandleOptionalUsername",
-			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.ValidUserInfo) {
-				t.Helper()
-
-				var (
-					gotCalled bool
-					gotUser   *string
-				)
-				handler := lowlevel.HandleOptionalUsername(
-					h,
-					func(w http.ResponseWriter, r *http.Request, username *api.ValidUsername) (authProbeResponse, error) {
-						gotCalled = true
-						gotUser = usernameStringPtr(username)
-						return authProbeResponse{Username: usernameStringPtr(username)}, nil
-					},
-					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
-					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
-				)
-
-				rec := runHandler(t, handler, scenario.authHeaders...)
-				wantStatus, wantCalled, wantUser := expectedOptionalUsernameOutcome(scenario, validUser)
-				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
-				if wantCalled {
-					assertOptionalStringEqual(t, gotUser, wantUser)
-				}
-			},
-		},
-		{
-			name: "HandleRequiredUser",
-			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.ValidUserInfo) {
-				t.Helper()
-
-				var (
-					gotCalled bool
-					gotUser   *api.ValidUserInfo
-				)
-				handler := lowlevel.HandleRequiredUser(
-					h,
-					func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (authProbeResponse, error) {
-						gotCalled = true
-						gotUser = user
-						return authProbeResponse{Username: new(user.Username.String()), User: userInfoFromValid(user)}, nil
-					},
-					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
-					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
-				)
-
-				rec := runHandler(t, handler, scenario.authHeaders...)
-				wantStatus, wantCalled, wantUser := expectedUserOutcome(true, scenario, validUser)
-				assertStatusAndCalled(t, rec, gotCalled, wantStatus, wantCalled)
-				if wantCalled {
-					assertOptionalUserEqual(t, gotUser, wantUser)
-				}
-			},
-		},
-		{
 			name: "HandleOptionalUser",
-			run: func(t *testing.T, h *lowlevel.AuthHandler, scenario scenario, validUser *api.ValidUserInfo) {
+			run: func(t *testing.T, h *lowlevel.Handler, scenario scenario, validUser *api.ValidUserInfo) {
 				t.Helper()
 
 				var (
 					gotCalled bool
 					gotUser   *api.ValidUserInfo
 				)
-				handler := lowlevel.HandleOptionalUser(
+				handler := lowlevel.HandleOpen(
 					h,
 					func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (authProbeResponse, error) {
 						gotCalled = true
@@ -222,7 +132,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						lastAPIKey   string
 						lastPassword string
 					)
-					h := lowlevel.NewAuthHandler(&mockAuthService{
+					h := lowlevel.NewHandler(&mockAuthService{
 						authenticateAPIKey: func(_ context.Context, apiKey string) (api.ValidUsername, error) {
 							lastAPIKey = apiKey
 							lastPassword = ""
@@ -230,11 +140,11 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 							case validKnownToken, validMissingToken, userFailToken:
 								return validUser.Username, nil
 							case invalidToken:
-								return api.ValidUsername{}, unauthorizedError{}
+								return api.ValidUsername{}, errUnauthorized
 							case lookupFailToken:
 								return api.ValidUsername{}, errLookupFailure
 							default:
-								return api.ValidUsername{}, unauthorizedError{}
+								return api.ValidUsername{}, errUnauthorized
 							}
 						},
 						authenticatePassword: func(_ context.Context, username string, password string) (api.ValidUsername, error) {
@@ -252,7 +162,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 								}
 								return name, nil
 							default:
-								return api.ValidUsername{}, unauthorizedError{}
+								return api.ValidUsername{}, errUnauthorized
 							}
 						},
 						loadUser: func(_ context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
@@ -260,7 +170,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 							case validKnownToken:
 								return *validUser, nil
 							case validMissingToken:
-								return api.ValidUserInfo{}, unauthorizedError{}
+								return api.ValidUserInfo{}, errUnauthorized
 							case userFailToken:
 								return api.ValidUserInfo{}, errUserFailure
 							}
@@ -268,11 +178,11 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 							case validBasicPassword:
 								return *validUser, nil
 							case "missing-secret":
-								return api.ValidUserInfo{}, unauthorizedError{}
+								return api.ValidUserInfo{}, errUnauthorized
 							case userFailBasicPass:
 								return api.ValidUserInfo{}, errUserFailure
 							default:
-								return api.ValidUserInfo{}, unauthorizedError{}
+								return api.ValidUserInfo{}, errUnauthorized
 							}
 						},
 					}, nil)
@@ -287,8 +197,8 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 func TestHandleNoAuthHonorsSuccessCode(t *testing.T) {
 	t.Parallel()
 
-	h := lowlevel.NewAuthHandler(&mockAuthService{}, nil)
-	handler := lowlevel.HandleNoAuth(
+	h := lowlevel.NewHandler(&mockAuthService{}, nil)
+	handler := lowlevel.HandlePublic(
 		h,
 		func(w http.ResponseWriter, r *http.Request) (*api.RedactedResourceResponse, error) {
 			return &api.RedactedResourceResponse{
@@ -311,69 +221,20 @@ func TestHandleNoAuthHonorsSuccessCode(t *testing.T) {
 	}
 }
 
-func TestHandleRequiredUsernamePanicsWhenUnauthorizedNotAllowed(t *testing.T) {
-	t.Parallel()
-
-	h := lowlevel.NewAuthHandler(&mockAuthService{}, nil)
-	handler := lowlevel.HandleRequiredUsername(
-		h,
-		func(w http.ResponseWriter, r *http.Request, username *api.ValidUsername) (struct{}, error) {
-			t.Fatal("impl should not be called")
-			return struct{}{}, nil
-		},
-		lowlevel.FixedStatusCode[struct{}](http.StatusOK),
-		[]api.ErrorString{api.DatabaseError},
-	)
-
-	defer expectPanic(t)
-	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/probe", nil))
-}
-
-func TestHandleRequiredUserPanicsWhenForbiddenNotAllowed(t *testing.T) {
-	t.Parallel()
-
-	store := memory.NewStore()
-	svc := service.New(store, service.NewRuntime(), service.Options{})
-	key := createUserWithKey(t, store, "alice", false)
-
-	h := lowlevel.NewAuthHandler(svc, nil)
-	handler := lowlevel.HandleRequiredUser(
-		h,
-		func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
-			bobUsername, err := api.NewUsername("bob")
-			if err != nil {
-				return struct{}{}, fmt.Errorf("api.NewUsername: %w", err)
-			}
-			if _, err := svc.CreateUser(r.Context(), user, api.ValidUserCreateRequest{Username: bobUsername, Superuser: true}); err != nil {
-				return struct{}{}, fmt.Errorf("svc.CreateUser: %w", err)
-			}
-			return struct{}{}, nil
-		},
-		lowlevel.FixedStatusCode[struct{}](http.StatusOK),
-		[]api.ErrorString{api.Unauthorized, api.DatabaseError},
-	)
-
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/probe", nil)
-	req.Header.Set("Authorization", "Bearer "+key)
-
-	defer expectPanic(t)
-	handler.ServeHTTP(httptest.NewRecorder(), req)
-}
-
 func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 	t.Parallel()
 
 	var authenticateAPIKeyCalled bool
-	h := lowlevel.NewAuthHandler(&mockAuthService{
+	h := lowlevel.NewHandler(&mockAuthService{
 		anonymousMode: true,
 		authenticateAPIKey: func(context.Context, string) (api.ValidUsername, error) {
 			authenticateAPIKeyCalled = true
-			return api.ValidUsername{}, unauthorizedError{}
+			return api.ValidUsername{}, errUnauthorized
 		},
 	}, nil)
-	handler := lowlevel.HandleRequiredUserInAuthMode(
+	handler := lowlevel.HandleRestricted(
 		h,
-		func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
+		func(w http.ResponseWriter, r *http.Request, _ api.ValidUserInfo) (struct{}, error) {
 			t.Fatal("handler must not be called in anonymous mode")
 			return struct{}{}, nil
 		},
@@ -401,7 +262,7 @@ func TestAuthHandlerLog(t *testing.T) {
 
 	handler := &captureHandler{}
 	logger := slog.New(handler)
-	authHandler := lowlevel.NewAuthHandler(&mockAuthService{}, logger)
+	authHandler := lowlevel.NewHandler(&mockAuthService{}, logger)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/probe?x=1", nil)
 	req.RemoteAddr = "127.0.0.1:9999"
 
@@ -452,32 +313,24 @@ func (m *mockAuthService) AuthenticateAPIKey(ctx context.Context, apiKey string)
 	if m.authenticateAPIKey != nil {
 		return m.authenticateAPIKey(ctx, apiKey)
 	}
-	return api.ValidUsername{}, unauthorizedError{}
+	return api.ValidUsername{}, errUnauthorized
 }
 
 func (m *mockAuthService) AuthenticatePassword(ctx context.Context, username string, password string) (api.ValidUsername, error) {
 	if m.authenticatePassword != nil {
 		return m.authenticatePassword(ctx, username, password)
 	}
-	return api.ValidUsername{}, unauthorizedError{}
+	return api.ValidUsername{}, errUnauthorized
 }
 
 func (m *mockAuthService) LoadUser(ctx context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
 	if m.loadUser != nil {
 		return m.loadUser(ctx, username)
 	}
-	return api.ValidUserInfo{}, unauthorizedError{}
+	return api.ValidUserInfo{}, errUnauthorized
 }
 
-type unauthorizedError struct{}
-
-func (unauthorizedError) Error() string {
-	return "unauthorized"
-}
-
-func (unauthorizedError) Is(target error) bool {
-	return service.IsUnauthorized(target)
-}
+var errUnauthorized = errors.New("unauthorized")
 
 type capturedRecord struct {
 	Level   slog.Level
@@ -527,36 +380,6 @@ func runHandler(t *testing.T, handler http.Handler, authHeaders ...string) *http
 	return rec
 }
 
-func expectedUsernameOutcome(required bool, scenario scenario, validUser *api.ValidUserInfo) (status int, called bool, username string) {
-	if scenario.id == "no-auth" {
-		if required {
-			return http.StatusUnauthorized, false, ""
-		}
-		return http.StatusOK, true, ""
-	}
-
-	switch scenario.id {
-	case "bearer-valid-known", "bearer-valid-missing", "bearer-user-fail", "basic-valid-known", "basic-valid-missing":
-		return http.StatusOK, true, validUser.Username.String()
-	case "basic-user-fail":
-		return http.StatusOK, true, "charlie"
-	case "bearer-invalid", "basic-invalid", "basic-malformed", "mixed-auth":
-		return http.StatusUnauthorized, false, ""
-	case "bearer-lookup-fail":
-		return http.StatusInternalServerError, false, ""
-	default:
-		panic("unexpected scenario")
-	}
-}
-
-func expectedOptionalUsernameOutcome(scenario scenario, validUser *api.ValidUserInfo) (status int, called bool, username *string) {
-	status, called, value := expectedUsernameOutcome(false, scenario, validUser)
-	if !called || value == "" {
-		return status, called, nil
-	}
-	return status, called, new(value)
-}
-
 func expectedUserOutcome(required bool, scenario scenario, validUser *api.ValidUserInfo) (status int, called bool, user *api.ValidUserInfo) {
 	if scenario.id == "no-auth" {
 		if required {
@@ -568,9 +391,9 @@ func expectedUserOutcome(required bool, scenario scenario, validUser *api.ValidU
 	switch scenario.id {
 	case "bearer-valid-known", "basic-valid-known":
 		return http.StatusOK, true, validUser
-	case "bearer-valid-missing", "bearer-invalid", "basic-valid-missing", "basic-invalid", "basic-malformed", "mixed-auth":
+	case "bearer-invalid", "basic-invalid", "basic-malformed", "mixed-auth", "bearer-lookup-fail":
 		return http.StatusUnauthorized, false, nil
-	case "bearer-lookup-fail", "bearer-user-fail", "basic-user-fail":
+	case "bearer-valid-missing", "basic-valid-missing", "bearer-user-fail", "basic-user-fail":
 		return http.StatusInternalServerError, false, nil
 	default:
 		panic("unexpected scenario")
@@ -587,38 +410,10 @@ func assertStatusAndCalled(t *testing.T, rec *httptest.ResponseRecorder, gotCall
 	}
 }
 
-func createUserWithKey(t *testing.T, auth backend.AuthenticationBackend, username string, superuser bool) string {
-	t.Helper()
-
-	ctx := context.Background()
-	now := func() time.Time { return time.Date(2026, 7, 7, 12, 0, 0, 0, time.UTC) }
-
-	valid, err := api.NewUsername(username)
-	if err != nil {
-		t.Fatalf("NewUsername(%q) error = %v", username, err)
-	}
-	if _, err := auth.CreateUser(ctx, api.ValidUserCreateRequest{Username: valid, Superuser: superuser}, now); err != nil {
-		t.Fatalf("CreateUser(%q) error = %v", username, err)
-	}
-
-	rawKey := strings.Repeat("a", 32-len(username)) + username
-	if _, err := auth.CreateKey(ctx, apikey.Default, valid, "key-1", rawKey, api.KeyIssueRequest{Comment: "test"}, now); err != nil {
-		t.Fatalf("CreateKey(%q) error = %v", username, err)
-	}
-	return rawKey
-}
-
 func userInfoFromValid(user *api.ValidUserInfo) *api.UserInfo {
 	return &api.UserInfo{
 		Username:  user.Username.String(),
 		Superuser: user.Superuser,
-	}
-}
-
-func expectPanic(t *testing.T) {
-	t.Helper()
-	if recover() == nil {
-		t.Fatal("expected panic")
 	}
 }
 
@@ -634,25 +429,6 @@ func mustValidUser(t *testing.T, username string, superuser bool) *api.ValidUser
 func basicAuthHeader(username string, password string) string {
 	encoded := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
 	return "Basic " + encoded
-}
-
-func usernameStringPtr(username *api.ValidUsername) *string {
-	if username == nil {
-		return nil
-	}
-	return new(username.String())
-}
-
-func assertOptionalStringEqual(t *testing.T, got, want *string) {
-	t.Helper()
-	switch {
-	case got == nil && want == nil:
-		return
-	case got == nil || want == nil:
-		t.Fatalf("string pointer mismatch: got %v, want %v", got, want)
-	case *got != *want:
-		t.Fatalf("string value = %q, want %q", *got, *want)
-	}
 }
 
 func assertOptionalUserEqual(t *testing.T, got, want *api.ValidUserInfo) {

@@ -9,7 +9,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.NamespaceRole, error) {
+func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.NamespaceRole, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, user *
 	return role, nil
 }
 
-func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedNamespaceRolesResponse, error) {
+func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.PaginatedNamespaceRolesResponse, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, user
 	return roles, nil
 }
 
-func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.NamespaceRole, error) {
+func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.NamespaceRole, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, user *
 	return role, nil
 }
 
-func (h *Server) deleteNamespaceRole(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
+func (h *Server) deleteNamespaceRole(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
 	namespace, err := h.getNamespace(r)
 	if err != nil {
 		return struct{}{}, err
@@ -78,13 +78,13 @@ func (h *Server) deleteNamespaceRole(w http.ResponseWriter, r *http.Request, use
 		return struct{}{}, err
 	}
 
-	if err := h.svc.DeleteNamespaceRole(r.Context(), user, namespace, username); err != nil {
+	if err := h.svc.DeleteNamespaceRole(r.Context(), caller, namespace, username); err != nil {
 		return struct{}{}, fmt.Errorf("svc.DeleteNamespaceRole: %w", err)
 	}
 	return struct{}{}, nil
 }
 
-func (h *Server) listUserRoles(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedUserRolesResponse, error) {
+func (h *Server) listUserRoles(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.PaginatedUserRolesResponse, error) {
 	target, err := h.parseOptionalUsernameQuery(r)
 	if err != nil {
 		return nil, err
