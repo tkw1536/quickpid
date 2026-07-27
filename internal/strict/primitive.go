@@ -7,12 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 )
 
 var (
 	errNotAString  = errors.New("can only unmarshal string literal")
 	errNotABoolean = errors.New("can only unmarshal boolean literal")
 	errNotAnArray  = errors.New("can only unmarshal JSON array")
+	errNotRFC3339  = errors.New("can only unmarshal RFC3339 time string")
 )
 
 // String rejects JSON null, and requires a string literal.
@@ -49,6 +51,33 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 	}
 	*b = Bool(boolean)
 	return nil
+}
+
+// Time rejects JSON null, requires a string literal, and parses RFC3339.
+type Time time.Time
+
+func (t *Time) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	tok, err := dec.Token()
+	if err != nil {
+		return fmt.Errorf("Decoder.Token: %w", err)
+	}
+
+	str, ok := tok.(string)
+	if !ok {
+		return errNotAString
+	}
+	parsed, err := time.Parse(time.RFC3339, str)
+	if err != nil {
+		return fmt.Errorf("%w: %w", errNotRFC3339, err)
+	}
+	*t = Time(parsed)
+	return nil
+}
+
+// Time returns the underlying [time.Time] value.
+func (t Time) Time() time.Time {
+	return time.Time(t)
 }
 
 // StringSlice rejects JSON null and non-arrays, and requires each element to be a string literal.

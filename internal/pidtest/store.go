@@ -184,7 +184,7 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
 
-	expires := "2027-01-01T00:00:00Z"
+	expires := time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)
 	//spellchecker:words lifecyclekey
 	rawKey := testAPIKey("lifecyclekey000000000000000")
 	created, err := b.CreateKey(ctx, apikey.Default, user("alice"), "key-1", rawKey, api.KeyIssueRequest{
@@ -194,10 +194,10 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 	if err != nil {
 		t.Fatalf("CreateKey() error = %v", err)
 	}
-	if created.ID != "key-1" || created.Comment != "laptop" || created.CreatedAt != "2026-07-05T12:00:00Z" {
+	if created.ID != "key-1" || created.Comment != "laptop" || !created.CreatedAt.Equal(now()) {
 		t.Fatalf("CreateKey() = %+v", created)
 	}
-	if created.ExpiresAt == nil || *created.ExpiresAt != expires {
+	if created.ExpiresAt == nil || !created.ExpiresAt.Equal(expires) {
 		t.Fatalf("CreateKey() expires_at = %+v", created.ExpiresAt)
 	}
 
@@ -217,15 +217,6 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("GetKey() = %+v", got)
 	}
 
-	updatedComment := "desktop"
-	updated, err := b.UpdateKey(ctx, apikey.Default, user("alice"), "key-1", api.KeyUpdateRequest{Comment: &updatedComment}, now)
-	if err != nil {
-		t.Fatalf("UpdateKey() error = %v", err)
-	}
-	if updated.Comment != "desktop" {
-		t.Fatalf("UpdateKey() = %+v", updated)
-	}
-
 	username, err := b.LookupUserByKey(ctx, apikey.Default, rawKey)
 	if err != nil {
 		t.Fatalf("LookupUserByKey() error = %v", err)
@@ -238,7 +229,7 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 	if err != nil {
 		t.Fatalf("RevokeKey() error = %v", err)
 	}
-	if revoked.ID != "key-1" || revoked.Comment != "desktop" {
+	if revoked.ID != "key-1" || revoked.Comment != "laptop" {
 		t.Fatalf("RevokeKey() = %+v", revoked)
 	}
 

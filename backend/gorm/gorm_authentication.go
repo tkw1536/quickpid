@@ -257,30 +257,6 @@ func (s *Store) GetKey(ctx context.Context, _ apikey.Format, username api.ValidU
 	})
 }
 
-func (s *Store) UpdateKey(ctx context.Context, _ apikey.Format, username api.ValidUsername, keyID string, req api.KeyUpdateRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
-		if err := ensureUserExists(tx, username); err != nil {
-			return nil, err
-		}
-		row, err := findKey(tx, username, keyID)
-		if err != nil {
-			return nil, err
-		}
-
-		if req.Comment != nil {
-			row.Comment = *req.Comment
-		}
-		if req.ExpiresAt != nil {
-			row.ExpiresAt = *req.ExpiresAt
-		}
-		if err := tx.Save(&row).Error; err != nil {
-			return nil, err
-		}
-		info := row.toSpec()
-		return &info, nil
-	})
-}
-
 func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {

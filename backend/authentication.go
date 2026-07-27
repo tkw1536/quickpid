@@ -75,12 +75,6 @@ type AuthenticationBackend interface {
 	// Should return [ErrKeyNotFound] if the key does not exist.
 	GetKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error)
 
-	// UpdateKey updates metadata for an existing API key.
-	//
-	// Should return [ErrUserNotFound] if the user does not exist.
-	// Should return [ErrKeyNotFound] if the key does not exist.
-	UpdateKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string, req api.KeyUpdateRequest, now func() time.Time) (*api.APIKeyInfo, error)
-
 	// Revokes an API key and returns its final metadata.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.

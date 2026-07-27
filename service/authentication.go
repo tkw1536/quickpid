@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
@@ -309,11 +308,7 @@ func (s *Service) IssueKey(ctx context.Context, caller *api.ValidUserInfo, targe
 		return nil, err
 	}
 	if req.ExpiresAt != nil {
-		expiresAt, err := time.Parse(time.RFC3339, *req.ExpiresAt)
-		if err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("time.Parse: %w", err), api.InvalidQueryParameter)
-		}
-		if !expiresAt.After(s.runtime.Now()) {
+		if !req.ExpiresAt.After(s.runtime.Now()) {
 			return nil, api.WithErrorString(errExpiresAtInPast, api.InvalidQueryParameter)
 		}
 	}

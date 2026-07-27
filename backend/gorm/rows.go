@@ -33,7 +33,7 @@ func (n namespaceRow) toSpec() api.NamespaceResponse {
 			Pattern:    n.PIDPattern,
 			Characters: n.PIDChars,
 		},
-		DateCreated: n.DateCreated.UTC().Format(time.RFC3339),
+		DateCreated: n.DateCreated.UTC(),
 	}
 }
 
@@ -135,10 +135,10 @@ type apiKeyRow struct {
 	Username string `gorm:"column:username;type:text;not null;primaryKey;index:idx_auth_api_keys_user_id,priority:1"`
 	ID       string `gorm:"column:id;type:text;not null;primaryKey;index:idx_auth_api_keys_user_id,priority:2"`
 
-	Comment   string    `gorm:"column:comment;type:text;not null"`
-	CreatedAt time.Time `gorm:"column:created_at;not null"`
-	ExpiresAt *string   `gorm:"column:expires_at;type:text"`
-	Revoked   bool      `gorm:"column:revoked;not null;default:false"`
+	Comment   string     `gorm:"column:comment;type:text;not null"`
+	CreatedAt time.Time  `gorm:"column:created_at;not null"`
+	ExpiresAt *time.Time `gorm:"column:expires_at"`
+	Revoked   bool       `gorm:"column:revoked;not null;default:false"`
 
 	Prefix string `gorm:"column:prefix;type:text;not null;index"`
 	Digest []byte `gorm:"column:digest;type:blob;not null"`
@@ -147,11 +147,16 @@ type apiKeyRow struct {
 func (apiKeyRow) TableName() string { return "auth_api_keys" }
 
 func (k apiKeyRow) toSpec() api.APIKeyInfo {
+	expiresAt := k.ExpiresAt
+	if expiresAt != nil {
+		utc := expiresAt.UTC()
+		expiresAt = &utc
+	}
 	return api.APIKeyInfo{
 		ID:        k.ID,
 		Comment:   k.Comment,
-		CreatedAt: k.CreatedAt.UTC().Format(time.RFC3339),
-		ExpiresAt: k.ExpiresAt,
+		CreatedAt: k.CreatedAt.UTC(),
+		ExpiresAt: expiresAt,
 	}
 }
 

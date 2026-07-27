@@ -173,8 +173,8 @@ func (s *Store) CreateKey(_ context.Context, format apikey.Format, username api.
 	info := api.APIKeyInfo{
 		ID:        keyID,
 		Comment:   req.Comment,
-		CreatedAt: now().UTC().Format(time.RFC3339),
-		ExpiresAt: cloneStringPtr(req.ExpiresAt),
+		CreatedAt: now().UTC(),
+		ExpiresAt: cloneTimePtr(req.ExpiresAt),
 	}
 	hashed, err := format.Hash(key)
 	if err != nil {
@@ -243,28 +243,6 @@ func (s *Store) GetKey(_ context.Context, _ apikey.Format, username api.ValidUse
 	return cloneAPIKeyInfo(&key.info), nil
 }
 
-func (s *Store) UpdateKey(_ context.Context, _ apikey.Format, username api.ValidUsername, keyID string, req api.KeyUpdateRequest, _ func() time.Time) (*api.APIKeyInfo, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	user, err := s.userLocked(username.String())
-	if err != nil {
-		return nil, err
-	}
-	key, ok := user.keys[keyID]
-	if !ok {
-		return nil, backend.ErrKeyNotFound
-	}
-
-	if req.Comment != nil {
-		key.info.Comment = *req.Comment
-	}
-	if req.ExpiresAt != nil {
-		key.info.ExpiresAt = cloneStringPtr(*req.ExpiresAt)
-	}
-	return cloneAPIKeyInfo(&key.info), nil
-}
-
 func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -316,7 +294,7 @@ func (s *Store) userLocked(username string) (*userRecord, error) {
 	return user, nil
 }
 
-func cloneStringPtr(v *string) *string {
+func cloneTimePtr(v *time.Time) *time.Time {
 	if v == nil {
 		return nil
 	}
@@ -329,6 +307,6 @@ func cloneAPIKeyInfo(info *api.APIKeyInfo) *api.APIKeyInfo {
 		return nil
 	}
 	out := *info
-	out.ExpiresAt = cloneStringPtr(info.ExpiresAt)
+	out.ExpiresAt = cloneTimePtr(info.ExpiresAt)
 	return &out
 }

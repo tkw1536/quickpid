@@ -1,11 +1,12 @@
 package api_test
 
-//spellchecker:words encoding json reflect strings testing github quickpid
+//spellchecker:words encoding json reflect strings testing time github quickpid
 import (
 	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/tkw1536/quickpid/api"
 )
@@ -296,12 +297,18 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 		want      api.KeyIssueRequest
 	}{
 		{
-			name:    "ok_commentOnly",
-			body:    `{"comment":"dev key"}`,
+			name:      "fail_missingExpiresAt",
+			body:      `{"comment":"dev key"}`,
+			wantErr:   true,
+			wantErrIn: []string{"missing required field", "expires_at"},
+		},
+		{
+			name:    "ok_expiresAtSet",
+			body:    `{"comment":"dev key","expires_at":"2026-12-31T00:00:00Z"}`,
 			wantErr: false,
 			want: api.KeyIssueRequest{
 				Comment:   "dev key",
-				ExpiresAt: nil,
+				ExpiresAt: ptrTime(time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC)),
 			},
 		},
 		{
@@ -324,13 +331,13 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			name:      "fail_unknownField",
-			body:      `{"comment":"dev key","unknown":123}`,
+			body:      `{"comment":"dev key","expires_at":null,"unknown":123}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
 		},
 		{
 			name:      "fail_commentNull",
-			body:      `{"comment":null}`,
+			body:      `{"comment":null,"expires_at":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields"},
 		},
@@ -344,8 +351,14 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 			},
 		},
 		{
+			name:      "fail_expiresAtMalformed",
+			body:      `{"comment":"dev key","expires_at":"not-a-time"}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal fields"},
+		},
+		{
 			name:      "fail_usernameNull",
-			body:      `{"comment":"dev key","username":null}`,
+			body:      `{"comment":"dev key","expires_at":null,"username":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"unknown field", "username"},
 		},
@@ -441,106 +454,6 @@ func TestKeyRevokeRequest_UnmarshalJSON(t *testing.T) {
 	}
 }
 
-func TestUpdateKeyRequest_UnmarshalJSON(t *testing.T) {
-	t.Parallel()
-
-	t.Run("comment", func(t *testing.T) {
-		t.Parallel()
-
-		tests := []struct {
-			name      string
-			body      string
-			wantErr   bool
-			wantErrIn []string
-			want      api.KeyUpdateRequest
-		}{
-			{name: "absent", body: `{}`, want: api.KeyUpdateRequest{Comment: nil, ExpiresAt: nil}},
-			{name: "string", body: `{"comment":"updated"}`, want: api.KeyUpdateRequest{Comment: new("updated"), ExpiresAt: nil}},
-			{name: "emptyString", body: `{"comment":""}`, want: api.KeyUpdateRequest{Comment: new(""), ExpiresAt: nil}},
-			{name: "null_isError", body: `{"comment":null}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "number_isError", body: `{"comment":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "bool_isError", body: `{"comment":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "object_isError", body: `{"comment":{}}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "unknownField_isError", body: `{"comment":"updated","unknown":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"}},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				t.Parallel()
-
-				var req api.KeyUpdateRequest
-				err := json.Unmarshal([]byte(tt.body), &req)
-				if (err != nil) != tt.wantErr {
-					t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
-				}
-				if err != nil {
-					if len(tt.wantErrIn) > 0 {
-						es := err.Error()
-						for _, wantIn := range tt.wantErrIn {
-							if !strings.Contains(es, wantIn) {
-								t.Fatalf("error: got %q want substring %q", es, wantIn)
-							}
-						}
-					}
-					return
-				}
-				if !reflect.DeepEqual(req, tt.want) {
-					t.Fatalf("req: got %+v want %+v", req, tt.want)
-				}
-			})
-		}
-	})
-
-	t.Run("expires_at", func(t *testing.T) {
-		t.Parallel()
-
-		tests := []struct {
-			name      string
-			body      string
-			wantErr   bool
-			wantErrIn []string
-			want      api.KeyUpdateRequest
-		}{
-			{name: "absent", body: `{}`, want: api.KeyUpdateRequest{Comment: nil, ExpiresAt: nil}},
-			{
-				name: "null",
-				body: `{"expires_at":null}`,
-				want: api.KeyUpdateRequest{Comment: nil, ExpiresAt: new(*string)},
-			},
-			{
-				name: "string",
-				body: `{"expires_at":"2026-12-31T00:00:00Z"}`,
-				want: api.KeyUpdateRequest{Comment: nil, ExpiresAt: new(new("2026-12-31T00:00:00Z"))},
-			},
-			{name: "number_isError", body: `{"expires_at":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "bool_isError", body: `{"expires_at":true}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-			{name: "object_isError", body: `{"expires_at":{}}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				t.Parallel()
-
-				var req api.KeyUpdateRequest
-				err := json.Unmarshal([]byte(tt.body), &req)
-				if (err != nil) != tt.wantErr {
-					t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
-				}
-				if err != nil {
-					if len(tt.wantErrIn) > 0 {
-						es := err.Error()
-						for _, wantIn := range tt.wantErrIn {
-							if !strings.Contains(es, wantIn) {
-								t.Fatalf("error: got %q want substring %q", es, wantIn)
-							}
-						}
-					}
-					return
-				}
-				if !reflect.DeepEqual(req, tt.want) {
-					t.Fatalf("req: got %+v want %+v", req, tt.want)
-				}
-			})
-		}
-	})
+func ptrTime(t time.Time) *time.Time {
+	return &t
 }

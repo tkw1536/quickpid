@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/tkw1536/quickpid/internal/strict"
 	"github.com/tkw1536/quickpid/pid"
@@ -48,7 +49,7 @@ type NamespaceResponse struct {
 	ID          string     `json:"id"`
 	Tag         string     `json:"tag"`
 	PIDFormat   pid.Format `json:"pid_format"`
-	DateCreated string     `json:"date_created"`
+	DateCreated time.Time  `json:"date_created"`
 }
 
 type PaginatedNamespacesResponse struct {

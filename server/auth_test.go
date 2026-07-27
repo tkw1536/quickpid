@@ -358,7 +358,7 @@ func TestIssueAndRevokeKey(t *testing.T) {
 	h := testHandler(t, auth)
 
 	rec := httptest.NewRecorder()
-	issueReq := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/key", strings.NewReader(`{"comment":"new key"}`))
+	issueReq := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/key", strings.NewReader(`{"comment":"new key","expires_at":null}`))
 	issueReq.Header.Set("Authorization", "Bearer "+aliceKey)
 	issueReq.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, issueReq)

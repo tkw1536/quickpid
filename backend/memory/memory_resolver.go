@@ -68,12 +68,11 @@ func (s *Store) CreateNamespace(_ context.Context, namespace api.ValidNamespaceI
 		return nil, backend.ErrDuplicateNamespaceID
 	}
 
-	created := now().UTC().Format(time.RFC3339)
 	ns := api.NamespaceResponse{
 		ID:          namespace.String(),
 		Tag:         req.Tag,
 		PIDFormat:   req.PIDFormat,
-		DateCreated: created,
+		DateCreated: now().UTC(),
 	}
 	s.namespaces[namespace.String()] = ns
 	s.resources[namespace.String()] = make(map[string]api.ResourceResponse)

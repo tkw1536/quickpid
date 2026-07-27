@@ -3,6 +3,7 @@ package api
 //spellchecker:words github quickpid internal strict
 import (
 	"fmt"
+	"time"
 
 	"github.com/tkw1536/quickpid/internal/strict"
 )
@@ -173,14 +174,14 @@ type PaginatedAPIKeysResponse struct {
 //
 // The target account is selected with the username query parameter, not the request body.
 type KeyIssueRequest struct {
-	Comment   string  `json:"comment"`
-	ExpiresAt *string `json:"expires_at"`
+	Comment   string     `json:"comment"`
+	ExpiresAt *time.Time `json:"expires_at"`
 }
 
 func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Comment   strict.Optional[strict.String] `json:"comment"`
-		ExpiresAt strict.Optional[*string]       `json:"expires_at"`
+		ExpiresAt strict.Optional[*strict.Time]  `json:"expires_at"`
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
@@ -190,8 +191,14 @@ func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("%w: comment", errMissingRequiredField)
 	}
 	r.Comment = string(decoded.Comment.Value)
-	if decoded.ExpiresAt.Present {
-		r.ExpiresAt = decoded.ExpiresAt.Value
+	if !decoded.ExpiresAt.Present {
+		return fmt.Errorf("%w: expires_at", errMissingRequiredField)
+	}
+	if decoded.ExpiresAt.Value == nil {
+		r.ExpiresAt = nil
+	} else {
+		ts := decoded.ExpiresAt.Value.Time()
+		r.ExpiresAt = &ts
 	}
 	return nil
 }
@@ -227,32 +234,10 @@ type RevokeKeyResponse struct {
 	APIKeyInfo
 }
 
-// KeyUpdateRequest updates metadata for an existing API key.
-//
-// A nil pointer indicates that no update should be performed on that field.
-type KeyUpdateRequest struct {
-	Comment   *string  `json:"comment"`
-	ExpiresAt **string `json:"expires_at"`
-}
-
-func (r *KeyUpdateRequest) UnmarshalJSON(data []byte) error {
-	type internal struct {
-		Comment   strict.Optional[strict.String] `json:"comment"`
-		ExpiresAt strict.Optional[*string]       `json:"expires_at"`
-	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
-	}
-	r.Comment = strict.OptionalStringToPointer(decoded.Comment)
-	r.ExpiresAt = decoded.ExpiresAt.ToPointer()
-	return nil
-}
-
 // APIKeyInfo describes an API key without the secret value.
 type APIKeyInfo struct {
-	ID        string  `json:"id"`
-	Comment   string  `json:"comment"`
-	CreatedAt string  `json:"created_at"`
-	ExpiresAt *string `json:"expires_at"`
+	ID        string     `json:"id"`
+	Comment   string     `json:"comment"`
+	CreatedAt time.Time  `json:"created_at"`
+	ExpiresAt *time.Time `json:"expires_at"`
 }
