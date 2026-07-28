@@ -147,6 +147,10 @@ func (s *Service) SetUserPassword(ctx context.Context, caller api.ValidUserInfo,
 	if err != nil {
 		return nil, err
 	}
+	// it is not permitted to clear your own password (even as a superuser)
+	if username.String() == caller.Username.String() && req.Password == nil {
+		return nil, api.WithErrorString(errForbiddenSelf, api.Forbidden)
+	}
 	hasPassword, err := s.store.SetPassword(ctx, username, req.Password)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, fmt.Errorf("store.SetPassword: %w", mapped)

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: QuickPID API
-  description: "API for managing PIDs across namespaces and user accounts with API keys. TODO: Move authenticated / anonymous mode. TODO: /resolve pair of base URI and PID directly. "
+  description: "API for managing PIDs across namespaces and user accounts with API keys. TODO: Move authenticated / anonymous mode. " 
   version: 3.0.0
   license:
     name: Creative Commons Attribution-ShareAlike 4.0 International
@@ -2204,12 +2204,11 @@ paths:
 
         Set `password` to a non-empty string to configure a password.
         Set `password` to `null` to clear it.
+        It is forbidden to clear your own password.
 
         In anonymous mode, the route returns HTTP 404.
-        TODO: Don't allow clearing your own password.
       tags:
         - credentials
-        - todo
       parameters:
         - name: username
           in: query
@@ -2252,7 +2251,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
-          description: Only superusers may set the `username` parameter for another user.
+          description: Only superusers may set the `username` parameter for another user or it is forbidden to clear your own password.
           content:
             application/json:
               schema:

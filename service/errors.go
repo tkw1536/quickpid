@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	errUnauthorized = errors.New("unauthorized")
-	errForbidden    = errors.New("forbidden")
+	errUnauthorized  = errors.New("unauthorized")
+	errForbidden     = errors.New("forbidden")
+	errForbiddenSelf = errors.New("forbidden to clear your own password")
 
 	errInsufficientEntropy = errors.New("insufficient entropy")
 	errBadPID              = errors.New("bad pid generated")
