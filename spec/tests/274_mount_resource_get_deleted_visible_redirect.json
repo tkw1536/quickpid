@@ -1,0 +1,256 @@
+{
+  "name": "274_mount_resource_get_deleted_visible_redirect",
+  "comment": "GET /resolver/mounts/{base_uri}/{pid} returns 302 for a soft-deleted mounted resource when the caller is allowed to see the full deleted resource.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200
+      }
+    },
+    {
+      "name": "create_owner",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"owner\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "create_editor",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "issue_owner_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "owner-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key?username=owner",
+        "body": "{\"comment\":\"owner\",\"expires_at\":null}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "issue_editor_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "editor-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key?username=editor",
+        "body": "{\"comment\":\"editor\",\"expires_at\":null}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "owner_creates_namespace",
+      "config": {
+        "namespaceIDs": [
+          "mount-visible-ns"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"perm-ns\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "create_resource",
+      "config": {
+        "pids": [
+          "aaa-bbb"
+        ],
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/mount-visible-ns/resources",
+        "body": "{\"url\":\"https://example.com/r\",\"metadata\":\"m\",\"tags\":[\"t\"]}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "owner_grants_editor",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/namespaces/mount-visible-ns/roles/editor",
+        "body": "{\"role\":\"editor\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200
+      }
+    },
+    {
+      "name": "put_mount",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fvisible%2F",
+        "body": "{\"namespace\":\"mount-visible-ns\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200
+      }
+    },
+    {
+      "name": "owner_marks_deleted",
+      "config": {
+        "now": "2020-01-02T03:04:05Z"
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/mount-visible-ns/resources/aaa-bbb",
+        "body": "{\"deleted\":true}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200
+      }
+    },
+    {
+      "name": "editor_resolves_deleted",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fvisible%2F/aaa-bbb",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaeditor"
+          ]
+        ]
+      },
+      "response": {
+        "code": 302,
+        "headers": [
+          [
+            "Location",
+            "/resolver/namespaces/mount-visible-ns/resources/aaa-bbb"
+          ]
+        ],
+        "body": {
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": true,
+          "metadata": "m",
+          "pid": "aaa-bbb",
+          "url": "https://example.com/r",
+          "tags": [
+            "t"
+          ]
+        }
+      }
+    }
+  ]
+}

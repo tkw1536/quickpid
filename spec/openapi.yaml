@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: QuickPID API
-  description: "API for managing PIDs across namespaces and user accounts with API keys. TODO: Move authenticated / anonymous mode. TODO: /resolve pair of base URI and PID directly. TODO: Delete user route (superuser only)."
+  description: "API for managing PIDs across namespaces and user accounts with API keys. TODO: Move authenticated / anonymous mode. TODO: /resolve pair of base URI and PID directly. "
   version: 3.0.0
   license:
     name: Creative Commons Attribution-ShareAlike 4.0 International
@@ -486,6 +486,90 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMountNotFound'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /resolver/mounts/{base_uri}/{pid}:
+    get:
+      summary: Resolve a resource using a mounted base URI and PID.
+      description: |
+        Resolves the given base URI to a namespace mount, then resolves the PID within that namespace.
+
+        The `base_uri` path parameter must be a single path segment containing a percent-encoded absolute URI
+        (for example, encode `https://example.com/prefix/` as `https%3A%2F%2Fexample.com%2Fprefix%2F`).
+
+        On success, this endpoint returns HTTP 302 with a `Location` header pointing to
+        `/resolver/namespaces/{namespace}/resources/{pid}`.
+
+        In anonymous mode, this route is accessible without authentication and without authorization checks.
+
+        In authenticated mode, it applies the same resource visibility rules as
+        `GET /resolver/namespaces/{namespace}/resources/{pid}`:
+
+        - Non-deleted resources resolve for any caller, authenticated or not.
+        - Deleted resources also resolve for callers who can only see the redacted/censored form.
+        - Deleted resources require valid credentials if credentials are supplied, and may return `401`
+          when the supplied credentials are invalid.
+
+        If the mount, namespace, or resource does not exist, a 404 response is returned.
+      tags:
+        - mounts
+        - resources
+      parameters:
+        - name: base_uri
+          in: path
+          required: true
+          description: |
+            Absolute base URI of the mount, percent-encoded as a single path segment.
+          schema:
+            $ref: '#/components/schemas/BaseURI'
+        - name: pid
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/PID'
+      responses:
+        '302':
+          description: Resource resolved successfully.
+          headers:
+            Location:
+              description: Relative resolver path for the resolved namespace resource.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ResourceResponse'
+                  - $ref: '#/components/schemas/RedactedResourceResponse'
+        '400':
+          description: Invalid base URI or PID.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidBaseURI'
+                  - $ref: '#/components/schemas/ErrorInvalidPID'
+        '401':
+          description: Authentication is required or the supplied credentials are incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '404':
+          description: Mount, namespace, or resource does not exist.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorMountNotFound'
+                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                  - $ref: '#/components/schemas/ErrorResourceNotFound'
         '500':
           description: Internal server error.
           content:

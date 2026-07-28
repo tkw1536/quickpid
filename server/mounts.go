@@ -21,6 +21,35 @@ func (h *Server) getMount(w http.ResponseWriter, r *http.Request) (*api.MountRes
 	return mount, nil
 }
 
+func (h *Server) resolveMountedResource(w http.ResponseWriter, r *http.Request, caller *api.ValidUserInfo) (api.ResourceGetResult, error) {
+	baseURI, err := h.getBaseURI(r)
+	if err != nil {
+		return nil, err
+	}
+	resourcePID, err := h.getPID(r)
+	if err != nil {
+		return nil, err
+	}
+
+	mount, err := h.svc.GetMount(r.Context(), baseURI)
+	if err != nil {
+		return nil, fmt.Errorf("svc.GetMount: %w", err)
+	}
+
+	namespace, err := api.NewNamespaceID(mount.Namespace)
+	if err != nil {
+		return nil, api.WithErrorString(fmt.Errorf("api.NewNamespaceID: %w", err), api.DatabaseError)
+	}
+
+	resource, err := h.svc.GetResource(r.Context(), caller, namespace, resourcePID)
+	if err != nil {
+		return nil, fmt.Errorf("svc.GetResource: %w", err)
+	}
+
+	w.Header().Set("Location", h.ops.MountPath+"/resolver/namespaces/"+namespace.String()+"/resources/"+resourcePID.String())
+	return resource, nil
+}
+
 func (h *Server) listMounts(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedMountsResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {

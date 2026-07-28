@@ -1,0 +1,54 @@
+{
+  "name": "275_mount_resource_get_not_found",
+  "comment": "GET /resolver/mounts/{base_uri}/{pid} returns 404 when the mount exists but the resource does not.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "mount-missing-res"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"missing-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "put_mount",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fmissing%2F",
+        "body": "{\"namespace\":\"mount-missing-res\"}"
+      },
+      "response": {
+        "code": 200
+      }
+    },
+    {
+      "name": "resolve_missing_resource",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fmissing%2F/zzz-zzz"
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "resource_not_found"
+        }
+      }
+    }
+  ]
+}

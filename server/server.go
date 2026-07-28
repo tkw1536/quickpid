@@ -107,6 +107,20 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
+	h.mux.Handle("GET /resolver/mounts/{base_uri}/{pid}", lowlevel.HandleOpen(
+		h.authHandler,
+		h.resolveMountedResource,
+		lowlevel.FixedStatusCode[api.ResourceGetResult](http.StatusFound),
+		[]api.ErrorString{
+			api.InvalidBaseURI,
+			api.InvalidPID,
+			api.Unauthorized,
+			api.MountNotFound,
+			api.NamespaceNotFound,
+			api.ResourceNotFound,
+			api.DatabaseError,
+		},
+	))
 	h.mux.Handle("PUT /resolver/mounts/{base_uri}", lowlevel.HandleOpen(
 		h.authHandler,
 		h.setMount,
@@ -239,7 +253,6 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.InvalidNamespaceID,
 			api.InvalidPID,
 			api.Unauthorized,
-			api.Forbidden,
 			api.NamespaceNotFound,
 			api.ResourceNotFound,
 			api.DatabaseError,

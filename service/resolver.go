@@ -248,7 +248,6 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.ValidUse
 // It can return the following errors:
 //
 // - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound]
 // - [api.DatabaseError].

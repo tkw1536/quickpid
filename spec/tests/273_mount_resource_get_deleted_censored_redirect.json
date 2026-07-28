@@ -1,0 +1,94 @@
+{
+  "name": "273_mount_resource_get_deleted_censored_redirect",
+  "comment": "GET /resolver/mounts/{base_uri}/{pid} returns 302 for a soft-deleted mounted resource even when the caller would only see the redacted resource on the namespace route.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "mount-deleted-ns"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"mount-del\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "create_resource",
+      "config": {
+        "pids": [
+          "xjc-cjy"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/mount-deleted-ns/resources",
+        "body": "{\"url\":\"https://example.com/r\",\"metadata\":\"m\",\"tags\":[\"t\"]}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "put_mount",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fdeleted%2F",
+        "body": "{\"namespace\":\"mount-deleted-ns\"}"
+      },
+      "response": {
+        "code": 200
+      }
+    },
+    {
+      "name": "mark_deleted",
+      "config": {
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/mount-deleted-ns/resources/xjc-cjy",
+        "body": "{\"deleted\":true}"
+      },
+      "response": {
+        "code": 200
+      }
+    },
+    {
+      "name": "resolve_deleted_unauthenticated",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts/https%3A%2F%2Fexample.com%2Fdeleted%2F/xjc-cjy"
+      },
+      "response": {
+        "code": 302,
+        "headers": [
+          [
+            "Location",
+            "/resolver/namespaces/mount-deleted-ns/resources/xjc-cjy"
+          ]
+        ],
+        "body": {
+          "pid": "xjc-cjy",
+          "date_created": "2020-01-02T03:04:05Z",
+          "date_updated": "2020-01-02T03:04:05Z",
+          "deleted": true
+        }
+      }
+    }
+  ]
+}
