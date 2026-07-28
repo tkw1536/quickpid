@@ -111,6 +111,7 @@ type ResourceResponse struct {
 // It is either a [ResourceResponse] or a [RedactedResourceResponse].
 type ResourceGetResult interface {
 	resourceGetResult()
+	json.Marshaler
 }
 
 func (r ResourceResponse) MarshalJSON() ([]byte, error) {
