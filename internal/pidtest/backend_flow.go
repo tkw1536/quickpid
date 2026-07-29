@@ -3,6 +3,7 @@ package pidtest
 
 //spellchecker:words context errors slog slices testing time github quickpid backend internal apikey httpfixture server service
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -59,7 +60,20 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 
 	var runtime testRuntime
 	svc := service.New(s, &runtime, service.Options{})
-	handler := server.NewServer(server.Options{}, svc, nil)
+
+	// Buffer all log output, and dump it to the console if the test fails.
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
+	t.Cleanup(func() {
+		if !t.Failed() {
+			return
+		}
+		_, _ = t.Output().Write([]byte("--- FAILED TEST LOG\n"))
+		_, _ = t.Output().Write(buf.Bytes())
+		_, _ = t.Output().Write([]byte("--- END FAILED TEST LOG\n"))
+	})
+
+	handler := server.NewServer(server.Options{}, svc, logger)
 
 	for _, step := range f.Steps {
 		handler.SetOptions(server.Options{
