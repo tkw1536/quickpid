@@ -26,7 +26,7 @@ func (s *Store) CreateUser(_ context.Context, req api.ValidUserCreateRequest, _ 
 	s.users[req.Username.String()] = &userRecord{
 		superuser: req.Superuser,
 		keys:      make(map[string]*keyRecord),
-		revoked:   make(map[string]*api.APIKeyInfo),
+		revoked:   make(map[string]struct{}),
 	}
 	return s.users[req.Username.String()].toSpec(req.Username.String()), nil
 }
@@ -228,25 +228,23 @@ func (s *Store) ListKeys(_ context.Context, _ apikey.Format, username api.ValidU
 	return &api.PaginatedAPIKeysResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
+func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username api.ValidUsername, keyID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	user, err := s.userLocked(username.String())
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if revoked, ok := user.revoked[keyID]; ok {
-		return cloneAPIKeyInfo(revoked), nil
+	if _, ok := user.revoked[keyID]; ok {
+		return nil
 	}
-	key, ok := user.keys[keyID]
-	if !ok {
-		return nil, backend.ErrKeyNotFound
+	if _, ok := user.keys[keyID]; !ok {
+		return backend.ErrKeyNotFound
 	}
-	info := cloneAPIKeyInfo(&key.info)
-	user.revoked[keyID] = info
+	user.revoked[keyID] = struct{}{}
 	delete(user.keys, keyID)
-	return info, nil
+	return nil
 }
 
 func (s *Store) LookupUserByKey(_ context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error) {

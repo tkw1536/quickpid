@@ -489,7 +489,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /user/key/revoke", lowlevel.HandleRestricted(
 		h.authHandler,
 		h.revokeKey,
-		lowlevel.FixedStatusCode[*api.RevokeKeyResponse](http.StatusOK),
+		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorString{
 			api.BodySizeExceeded,
 			api.BodyMissing,

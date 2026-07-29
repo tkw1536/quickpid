@@ -148,21 +148,20 @@ func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, caller api.Val
 	return response, nil
 }
 
-func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.RevokeKeyResponse, error) {
+func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
 	target, err := h.parseOptionalUsernameQuery(r)
 	if err != nil {
-		return nil, err
+		return struct{}{}, err
 	}
 	var req api.KeyRevokeRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
-		return nil, err
+		return struct{}{}, err
 	}
 
-	response, err := h.svc.RevokeKey(r.Context(), caller, target, req)
-	if err != nil {
-		return nil, fmt.Errorf("svc.RevokeKey: %w", err)
+	if err := h.svc.RevokeKey(r.Context(), caller, target, req); err != nil {
+		return struct{}{}, fmt.Errorf("svc.RevokeKey: %w", err)
 	}
-	return response, nil
+	return struct{}{}, nil
 }
 
 func (h *Server) updateCurrentUser(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.UserInfo, error) {

@@ -243,25 +243,26 @@ func (s *Store) ListKeys(ctx context.Context, _ apikey.Format, username api.Vali
 	})
 }
 
-func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
+func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username api.ValidUsername, keyID string) error {
+	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
+		var zero struct{}
 		if err := ensureUserExists(tx, username); err != nil {
-			return nil, err
+			return zero, err
 		}
 		row, err := findKeyIncludingRevoked(tx, username, keyID)
 		if err != nil {
-			return nil, err
+			return zero, err
 		}
-		info := row.toSpec()
 		if row.Revoked {
-			return &info, nil
+			return zero, nil
 		}
 		row.Revoked = true
 		if err := tx.Save(&row).Error; err != nil {
-			return nil, err
+			return zero, err
 		}
-		return &info, nil
+		return zero, nil
 	})
+	return err
 }
 
 func (s *Store) LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error) {

@@ -70,11 +70,12 @@ type AuthenticationBackend interface {
 	// Should return [ErrUserNotFound] if the user does not exist.
 	ListKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error)
 
-	// Revokes an API key by updating it's expiry time to the zero value for time.Time.
+	// Revokes an API key.
+	// Revoking an already-revoked key succeeds (idempotent).
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	// Should return [ErrKeyNotFound] if the key does not exist.
-	RevokeKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error)
+	RevokeKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string) error
 
 	// Looks up an api and returns it along with it's username.
 	// The returned key may or may not be valid.

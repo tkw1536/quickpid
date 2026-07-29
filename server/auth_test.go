@@ -480,8 +480,8 @@ func TestIssueAndRevokeKey(t *testing.T) {
 	revokeReq.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, revokeReq)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("revoke status = %d, want %d, body = %s", rec.Code, http.StatusOK, rec.Body.String())
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("revoke status = %d, want %d, body = %s", rec.Code, http.StatusNoContent, rec.Body.String())
 	}
 }
 

@@ -137,13 +137,7 @@
         ]
       },
       "response": {
-        "code": 200,
-        "body": {
-          "comment": "new key",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": null,
-          "id": "issued-key-1"
-        }
+        "code": 204
       }
     },
     {

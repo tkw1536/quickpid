@@ -2283,7 +2283,7 @@ paths:
       summary: Revoke an API key for a user account.
       description: |
         Revokes an API key.
-        This operation is idempotent: revoking an already-revoked key returns 200.
+        This operation is idempotent: revoking an already-revoked key returns 204.
 
         When not set, the currently authenticated user's keys are targeted.
         The `username` parameter may be used by superusers to revoke a key for another user account, including their own.
@@ -2310,12 +2310,8 @@ paths:
             schema:
               $ref: '#/components/schemas/RevokeKeyRequest'
       responses:
-        '200':
+        '204':
           description: API key revoked successfully, including when the key was already revoked.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RevokeKeyResponse'
         '400':
           description: Invalid request body or query parameter.
           content:
@@ -3252,10 +3248,6 @@ components:
           description: Server-assigned id of the API key to revoke.
           allOf:
             - $ref: '#/components/schemas/APIKeyId'
-    RevokeKeyResponse:
-      description: A revoked API key.
-      allOf:
-        - $ref: '#/components/schemas/APIKeyInfo'
     APIKeyId:
       description: Server-assigned API key id.
       type: string

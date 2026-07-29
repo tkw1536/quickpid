@@ -39,7 +39,7 @@ type userRecord struct {
 	superuser    bool
 	passwordHash []byte
 	keys         map[string]*keyRecord
-	revoked      map[string]*api.APIKeyInfo
+	revoked      map[string]struct{}
 }
 
 func (u *userRecord) toSpec(username string) *api.UserInfo {

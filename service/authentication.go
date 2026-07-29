@@ -448,19 +448,19 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 // - [api.UserNotFound]
 // - [api.KeyNotFound]
 // - [api.DatabaseError].
-func (s *Service) RevokeKey(ctx context.Context, caller api.ValidUserInfo, target *api.ValidUsername, req api.KeyRevokeRequest) (*api.RevokeKeyResponse, error) {
+func (s *Service) RevokeKey(ctx context.Context, caller api.ValidUserInfo, target *api.ValidUsername, req api.KeyRevokeRequest) error {
 	username, err := resolveTarget(caller, target)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	info, err := s.store.RevokeKey(ctx, s.apiKeyFormat(), username, req.ID)
+	err = s.store.RevokeKey(ctx, s.apiKeyFormat(), username, req.ID)
 	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, fmt.Errorf("store.RevokeKey: %w", mapped)
+		return fmt.Errorf("store.RevokeKey: %w", mapped)
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("store.RevokeKey: %w", err), api.DatabaseError)
+		return api.WithErrorString(fmt.Errorf("store.RevokeKey: %w", err), api.DatabaseError)
 	}
-	return &api.RevokeKeyResponse{APIKeyInfo: *info}, nil
+	return nil
 }
 
 // UpdateUser updates a user account. Caller must be a superuser and cannot update their own account.

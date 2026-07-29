@@ -229,11 +229,6 @@ func (r *KeyRevokeRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// RevokeKeyResponse is returned when an API key is revoked.
-type RevokeKeyResponse struct {
-	APIKeyInfo
-}
-
 // APIKeyInfo describes an API key without the secret value.
 type APIKeyInfo struct {
 	ID        string    `json:"id"`

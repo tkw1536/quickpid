@@ -220,12 +220,8 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("LookupUserByKey() = %+v", key)
 	}
 
-	revoked, err := b.RevokeKey(ctx, apikey.Default, user("alice"), "key-1")
-	if err != nil {
+	if err := b.RevokeKey(ctx, apikey.Default, user("alice"), "key-1"); err != nil {
 		t.Fatalf("RevokeKey() error = %v", err)
-	}
-	if revoked.ID != "key-1" || revoked.Comment != "laptop" {
-		t.Fatalf("RevokeKey() = %+v", revoked)
 	}
 
 	if _, _, err := b.LookupUserByKey(ctx, apikey.Default, rawKey); !errors.Is(err, backend.ErrInvalidKey) {
@@ -256,7 +252,7 @@ func testAuthNotFoundErrors(t *testing.T, newStore StoreFactory) {
 	if _, err := b.CreateUser(ctx, userReq("alice"), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	if _, err := b.RevokeKey(ctx, apikey.Default, user("alice"), "missing"); !errors.Is(err, backend.ErrKeyNotFound) {
+	if err := b.RevokeKey(ctx, apikey.Default, user("alice"), "missing"); !errors.Is(err, backend.ErrKeyNotFound) {
 		t.Fatalf("RevokeKey() error = %v, want ErrKeyNotFound", err)
 	}
 	if _, _, err := b.LookupUserByKey(ctx, apikey.Default, testAPIKey("unknown000000000000000000")); !errors.Is(err, backend.ErrInvalidKey) {
