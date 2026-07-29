@@ -84,7 +84,7 @@ func (h *Handler) resolveAuth(r *http.Request, scenario scenario) (*api.ValidUse
 	case creds.hasBearer():
 		username, err = h.auth.AuthenticateAPIKey(r.Context(), creds.bearerToken)
 		if err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("invalid API key: %w", err), api.Unauthorized)
+			return nil, api.WithErrorString(fmt.Errorf("invalid api key: %w", err), api.Unauthorized)
 		}
 	case creds.hasBasic():
 		username, err = h.auth.AuthenticatePassword(r.Context(), creds.basicUsername, creds.basicPassword)

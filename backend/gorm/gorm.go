@@ -88,16 +88,26 @@ var (
 )
 
 func withTx[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
+	v, _, err := withTx2(db, func(d *gorm.DB) (V, struct{}, error) {
+		v, err := fn(d)
+		return v, struct{}{}, err
+	})
+	return v, err
+}
+
+func withTx2[V, W any](db *gorm.DB, fn func(*gorm.DB) (V, W, error)) (V, W, error) {
 	var out V
+	var out2 W
 	if err := db.Transaction(func(tx *gorm.DB) error {
 		var err error
-		out, err = fn(tx)
+		out, out2, err = fn(tx)
 		return err
 	}); err != nil {
 		var zero V
-		return zero, fmt.Errorf("gorm.DB.Transaction: %w", err)
+		var zero2 W
+		return zero, zero2, fmt.Errorf("database transaction failed: %w", err)
 	}
-	return out, nil
+	return out, out2, nil
 }
 
 func isUniqueConstraintError(err error) bool {

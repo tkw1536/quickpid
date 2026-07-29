@@ -243,20 +243,6 @@ func (s *Store) ListKeys(ctx context.Context, _ apikey.Format, username api.Vali
 	})
 }
 
-func (s *Store) GetKey(ctx context.Context, _ apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
-		if err := ensureUserExists(tx, username); err != nil {
-			return nil, err
-		}
-		row, err := findKey(tx, username, keyID)
-		if err != nil {
-			return nil, err
-		}
-		info := row.toSpec()
-		return &info, nil
-	})
-}
-
 func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
@@ -278,25 +264,25 @@ func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username api.Val
 	})
 }
 
-func (s *Store) LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (string, error) {
+func (s *Store) LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error) {
+	return withTx2(s.db.WithContext(ctx), func(tx *gorm.DB) (string, *api.APIKeyInfo, error) {
 		lookupPrefix, err := format.Prefix(key)
 		if err != nil {
-			return "", backend.ErrInvalidKey
+			return "", nil, fmt.Errorf("%w: invalid key prefix", backend.ErrInvalidKey)
 		}
 
 		var rows []apiKeyRow
 		if err := tx.Where("prefix = ?", lookupPrefix).Find(&rows).Error; err != nil {
-			return "", err
+			return "", nil, err
 		}
 		for _, row := range rows {
 			if row.Revoked {
 				continue
 			}
 			if format.Verify(key, apikey.Stored{Prefix: row.Prefix, Digest: row.Digest}) {
-				return row.Username, nil
+				return row.Username, new(row.toSpec()), nil
 			}
 		}
-		return "", backend.ErrInvalidKey
+		return "", nil, fmt.Errorf("%w: no valid key found", backend.ErrInvalidKey)
 	})
 }

@@ -77,7 +77,7 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 
 	for _, step := range f.Steps {
 		handler.SetOptions(server.Options{
-			Limits:      step.Limits,
+			Limits:      effectiveFlowLimits(step.Limits),
 			InfoEnabled: step.Config.InfoEnabled,
 			Anonymous:   step.Config.Anonymous,
 			Meta:        step.Config.Meta,
@@ -117,6 +117,37 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 			runtime.t = nil
 		})
 	}
+}
+
+func effectiveFlowLimits(overrides service.Limits) service.Limits {
+	limits := service.DefaultLimits()
+
+	if overrides.MaxBodyBytes != 0 {
+		limits.MaxBodyBytes = overrides.MaxBodyBytes
+	}
+	if overrides.DefaultPageLimit != 0 {
+		limits.DefaultPageLimit = overrides.DefaultPageLimit
+	}
+	if overrides.MaxPageLimit != 0 {
+		limits.MaxPageLimit = overrides.MaxPageLimit
+	}
+	if overrides.MaxBatchItems != 0 {
+		limits.MaxBatchItems = overrides.MaxBatchItems
+	}
+	if overrides.MaxAutocompleteUsers != 0 {
+		limits.MaxAutocompleteUsers = overrides.MaxAutocompleteUsers
+	}
+	if overrides.MaxNamespaceIDAttempts != 0 {
+		limits.MaxNamespaceIDAttempts = overrides.MaxNamespaceIDAttempts
+	}
+	if overrides.MaxPIDAttempts != 0 {
+		limits.MaxPIDAttempts = overrides.MaxPIDAttempts
+	}
+	if overrides.MaxAPIKeyAttempts != 0 {
+		limits.MaxAPIKeyAttempts = overrides.MaxAPIKeyAttempts
+	}
+
+	return limits
 }
 
 func applyStepSetup(ctx context.Context, svc *service.Service, cfg stepConfig) error {

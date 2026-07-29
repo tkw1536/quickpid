@@ -1,0 +1,332 @@
+{
+  "name": "277_auth_user_key_get_pagination_skips_expired",
+  "comment": "GET /user/key applies limit/offset over still-valid keys only, so expired keys do not consume pagination slots.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "create_alice",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user/",
+        "body": "{\"username\": \"alice\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "alice",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "issue_a_auth",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "a-auth"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key?username=alice",
+        "body": "{\"comment\": \"auth\", \"expires_at\": null}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "auth",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "a-auth",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
+        }
+      }
+    },
+    {
+      "name": "issue_b_keep",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "b-keep"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaabkeep"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"keep-b\", \"expires_at\": null}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "keep-b",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "b-keep",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaabkeep"
+        }
+      }
+    },
+    {
+      "name": "issue_c_gone",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "c-gone"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaacgone"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"gone-c\", \"expires_at\": \"2026-07-06T12:00:00Z\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "gone-c",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": "2026-07-06T12:00:00Z",
+          "id": "c-gone",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaacgone"
+        }
+      }
+    },
+    {
+      "name": "issue_d_keep",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "d-keep"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaadkeep"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"keep-d\", \"expires_at\": null}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "keep-d",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "d-keep",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaadkeep"
+        }
+      }
+    },
+    {
+      "name": "issue_e_gone",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "e-gone"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaegone"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"gone-e\", \"expires_at\": \"2026-07-06T12:00:00Z\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "gone-e",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": "2026-07-06T12:00:00Z",
+          "id": "e-gone",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaegone"
+        }
+      }
+    },
+    {
+      "name": "issue_f_keep",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "f-keep"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaafkeep"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"keep-f\", \"expires_at\": null}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "keep-f",
+          "created_at": "2026-07-05T12:00:00Z",
+          "expires_at": null,
+          "id": "f-keep",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaafkeep"
+        }
+      }
+    },
+    {
+      "name": "list_first_page",
+      "config": {
+        "now": "2026-07-07T12:00:00Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/key?limit=2&offset=0",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "offset": 0,
+          "total": 4,
+          "items": [
+            {
+              "comment": "auth",
+              "created_at": "2026-07-05T12:00:00Z",
+              "expires_at": null,
+              "id": "a-auth"
+            },
+            {
+              "comment": "keep-b",
+              "created_at": "2026-07-05T12:00:00Z",
+              "expires_at": null,
+              "id": "b-keep"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "list_second_page",
+      "config": {
+        "now": "2026-07-07T12:00:00Z"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user/key?limit=2&offset=2",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "offset": 2,
+          "total": 4,
+          "items": [
+            {
+              "comment": "keep-d",
+              "created_at": "2026-07-05T12:00:00Z",
+              "expires_at": null,
+              "id": "d-keep"
+            },
+            {
+              "comment": "keep-f",
+              "created_at": "2026-07-05T12:00:00Z",
+              "expires_at": null,
+              "id": "f-keep"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -236,8 +236,19 @@ type RevokeKeyResponse struct {
 
 // APIKeyInfo describes an API key without the secret value.
 type APIKeyInfo struct {
-	ID        string     `json:"id"`
-	Comment   string     `json:"comment"`
-	CreatedAt time.Time  `json:"created_at"`
+	ID        string    `json:"id"`
+	Comment   string    `json:"comment"`
+	CreatedAt time.Time `json:"created_at"`
+
+	// ExpiresAt optionally holds the time at which this key will expire.
+	// If it is nil, the key never expires.
+	// If it is a pointer to the zero time, the key is revoked.
 	ExpiresAt *time.Time `json:"expires_at"`
+}
+
+// Valid checks if this key is valid for the given time.
+//
+// The time function is only called when ExpiresAt is not nil and not the zero time.
+func (k *APIKeyInfo) Valid(now func() time.Time) bool {
+	return k.ExpiresAt == nil || (!k.ExpiresAt.IsZero() && k.ExpiresAt.After(now()))
 }

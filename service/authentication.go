@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
@@ -14,23 +15,20 @@ import (
 )
 
 // AuthenticateAPIKey looks up the username for a valid API key.
-//
-// It can return the following errors:
-//
-// - [errUnauthorized] when the key is missing or invalid.
-//
-// Other failures are returned as plain (unannotated) errors.
 func (s *Service) AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, error) {
 	if s.AnonymousMode() || apiKey == "" {
 		return api.ValidUsername{}, errUnauthorized
 	}
 
-	username, err := s.store.LookupUserByKey(ctx, s.apiKeyFormat(), apiKey)
+	username, key, err := s.store.LookupUserByKey(ctx, s.apiKeyFormat(), apiKey)
 	if errors.Is(err, backend.ErrInvalidKey) {
-		return api.ValidUsername{}, errUnauthorized
+		return api.ValidUsername{}, fmt.Errorf("database found no key associated with the given user: %w", err)
 	}
 	if err != nil {
-		return api.ValidUsername{}, fmt.Errorf("store.LookupUserByKey: %w", err)
+		return api.ValidUsername{}, fmt.Errorf("unknown error while looking up key: %w", err)
+	}
+	if !key.Valid(s.runtime.Now) {
+		return api.ValidUsername{}, fmt.Errorf("key is expired: %w", errUnauthorized)
 	}
 
 	name, err := api.NewUsername(username)
@@ -275,7 +273,7 @@ func (s *Service) ListKeys(ctx context.Context, caller api.ValidUserInfo, target
 	if err != nil {
 		return nil, err
 	}
-	page, err := s.store.ListKeys(ctx, s.apiKeyFormat(), username, params)
+	page, err := s.listValidKeys(ctx, s.apiKeyFormat(), username, params)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, fmt.Errorf("store.ListKeys: %w", mapped)
 	}
@@ -283,6 +281,88 @@ func (s *Service) ListKeys(ctx context.Context, caller api.ValidUserInfo, target
 		return nil, api.WithErrorString(fmt.Errorf("store.ListKeys: %w", err), api.DatabaseError)
 	}
 	return page, nil
+}
+
+// listValidKeys is like [s.store.ListKeys], but only contains keys that are still valid according to the runtime.
+func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+	// The current api response
+	//
+	// The Total field will be updated as we encounter valid keys.
+	var res api.PaginatedAPIKeysResponse
+
+	// We want to check for all keys at a consistent time.
+	// We also don't get the time if we don't need it.
+	//
+	// So we use [sync.OnceValue] for memoization
+	// even though it will never be called concurrently.
+	now := sync.OnceValue(s.runtime.Now)
+
+	for key := range s.listAllKeys(ctx, format, username, params) {
+		if key.err != nil {
+			return nil, key.err
+		}
+
+		// skip invalid keys
+		if !key.info.Valid(now) {
+			continue
+		}
+		res.Total++
+
+		// only add keys according to the underlying offset and limit.
+		if res.Total > params.Offset && len(res.Items) < params.Limit {
+			res.Items = append(res.Items, key.info)
+		}
+	}
+
+	res.Offset = params.Offset
+	return &res, nil
+}
+
+type keyInfoOrError struct {
+	err  error
+	info api.APIKeyInfo
+}
+
+// listAllKeys returns a channel that yields all keys for username.
+//
+// This ignores offset and limit of [ListKeysParams], but should respect any future parameters.
+func (s *Service) listAllKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) chan keyInfoOrError {
+	ch := make(chan keyInfoOrError)
+	go func() {
+		defer close(ch)
+
+		// Determine the maximum page limit
+		// for the configured size.
+		limits := s.Options().Limits
+		params.Limit = limits.MaxPageLimit
+		if params.Limit < 1 {
+			params.Limit = limits.DefaultPageLimit
+		}
+
+		params.Offset = 0
+
+		for {
+			// list the current page or bail out in case of an error.
+			page, err := s.store.ListKeys(ctx, format, username, params)
+			if err != nil {
+				ch <- keyInfoOrError{err: err}
+				return
+			}
+
+			// yield individual items.
+			for _, info := range page.Items {
+				ch <- keyInfoOrError{info: info}
+			}
+
+			// check if the next page still exists.
+			params.Offset += len(page.Items)
+			if len(page.Items) == 0 || params.Offset >= page.Total {
+				return
+			}
+		}
+	}()
+
+	return ch
 }
 
 // IssueKey issues a new API key for caller or another user when caller is a superuser.

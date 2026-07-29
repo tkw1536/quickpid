@@ -65,26 +65,22 @@ type AuthenticationBackend interface {
 	CreateKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error)
 
 	// ListKeys lists API keys for the given user, ordered ascending by id.
+	// The key list may include keys that are no longer valid.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	ListKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error)
 
-	// Gets an API key for the given user.
-	//
-	// Should return [ErrUserNotFound] if the user does not exist.
-	// Should return [ErrKeyNotFound] if the key does not exist.
-	GetKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error)
-
-	// Revokes an API key and returns its final metadata.
+	// Revokes an API key by updating it's expiry time to the zero value for time.Time.
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	// Should return [ErrKeyNotFound] if the key does not exist.
 	RevokeKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error)
 
-	// Looks up the username for a valid API key.
+	// Looks up an api and returns it along with it's username.
+	// The returned key may or may not be valid.
 	//
 	// Should return [ErrInvalidKey] if no matching key exists.
-	LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, error)
+	LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error)
 
 	WithShutdownMethod
 }

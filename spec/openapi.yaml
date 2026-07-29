@@ -2026,15 +2026,14 @@ paths:
       summary: List API keys for a user account.
       description: |
         Returns a paginated list of API keys.
+        The list does not include keys that are no longer valid.
 
         When not set, the currently authenticated user's keys are returned.
         The `username` parameter may be used by superusers to list keys for another user account, including their own.
-        TODO: Add expired option
 
         In anonymous mode, the route returns HTTP 404.
       tags:
         - credentials
-        - todo
       parameters:
         - name: username
           in: query

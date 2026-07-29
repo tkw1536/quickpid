@@ -228,21 +228,6 @@ func (s *Store) ListKeys(_ context.Context, _ apikey.Format, username api.ValidU
 	return &api.PaginatedAPIKeysResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) GetKey(_ context.Context, _ apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	user, err := s.userLocked(username.String())
-	if err != nil {
-		return nil, err
-	}
-	key, ok := user.keys[keyID]
-	if !ok {
-		return nil, backend.ErrKeyNotFound
-	}
-	return cloneAPIKeyInfo(&key.info), nil
-}
-
 func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username api.ValidUsername, keyID string) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -264,13 +249,13 @@ func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username api.Valid
 	return info, nil
 }
 
-func (s *Store) LookupUserByKey(_ context.Context, format apikey.Format, key string) (string, error) {
+func (s *Store) LookupUserByKey(_ context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	lookupPrefix, err := format.Prefix(key)
 	if err != nil {
-		return "", backend.ErrInvalidKey
+		return "", nil, fmt.Errorf("%w: invalid key prefix", backend.ErrInvalidKey)
 	}
 
 	for username, user := range s.users {
@@ -279,11 +264,11 @@ func (s *Store) LookupUserByKey(_ context.Context, format apikey.Format, key str
 				continue
 			}
 			if format.Verify(key, apikey.Stored{Prefix: record.prefix, Digest: record.digest}) {
-				return username, nil
+				return username, new(record.info), nil
 			}
 		}
 	}
-	return "", backend.ErrInvalidKey
+	return "", nil, fmt.Errorf("%w: no matching key found", backend.ErrInvalidKey)
 }
 
 func (s *Store) userLocked(username string) (*userRecord, error) {

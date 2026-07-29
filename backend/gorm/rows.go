@@ -222,17 +222,6 @@ func findUser(tx *gorm.DB, username api.ValidUsername) (userRow, error) {
 	return row, nil
 }
 
-func findKey(tx *gorm.DB, username api.ValidUsername, keyID string) (apiKeyRow, error) {
-	var row apiKeyRow
-	if err := tx.First(&row, "username = ? AND id = ? AND revoked = ?", username.String(), keyID, false).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return apiKeyRow{}, errKeyNotFound
-		}
-		return apiKeyRow{}, err
-	}
-	return row, nil
-}
-
 func findKeyIncludingRevoked(tx *gorm.DB, username api.ValidUsername, keyID string) (apiKeyRow, error) {
 	var row apiKeyRow
 	if err := tx.First(&row, "username = ? AND id = ?", username.String(), keyID).Error; err != nil {

@@ -209,20 +209,15 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("ListKeys() = %+v", page)
 	}
 
-	got, err := b.GetKey(ctx, apikey.Default, user("alice"), "key-1")
-	if err != nil {
-		t.Fatalf("GetKey() error = %v", err)
-	}
-	if got.Comment != "laptop" {
-		t.Fatalf("GetKey() = %+v", got)
-	}
-
-	username, err := b.LookupUserByKey(ctx, apikey.Default, rawKey)
+	username, key, err := b.LookupUserByKey(ctx, apikey.Default, rawKey)
 	if err != nil {
 		t.Fatalf("LookupUserByKey() error = %v", err)
 	}
 	if username != "alice" {
 		t.Fatalf("LookupUserByKey() = %q, want alice", username)
+	}
+	if key == nil || key.ID != "key-1" || key.Comment != "laptop" || !key.CreatedAt.Equal(now()) {
+		t.Fatalf("LookupUserByKey() = %+v", key)
 	}
 
 	revoked, err := b.RevokeKey(ctx, apikey.Default, user("alice"), "key-1")
@@ -233,11 +228,7 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("RevokeKey() = %+v", revoked)
 	}
 
-	if _, err := b.GetKey(ctx, apikey.Default, user("alice"), "key-1"); !errors.Is(err, backend.ErrKeyNotFound) {
-		t.Fatalf("GetKey() after revoke error = %v, want ErrKeyNotFound", err)
-	}
-
-	if _, err := b.LookupUserByKey(ctx, apikey.Default, rawKey); !errors.Is(err, backend.ErrInvalidKey) {
+	if _, _, err := b.LookupUserByKey(ctx, apikey.Default, rawKey); !errors.Is(err, backend.ErrInvalidKey) {
 		t.Fatalf("LookupUserByKey() after revoke error = %v, want ErrInvalidKey", err)
 	}
 }
@@ -265,13 +256,10 @@ func testAuthNotFoundErrors(t *testing.T, newStore StoreFactory) {
 	if _, err := b.CreateUser(ctx, userReq("alice"), now); err != nil {
 		t.Fatalf("CreateUser() error = %v", err)
 	}
-	if _, err := b.GetKey(ctx, apikey.Default, user("alice"), "missing"); !errors.Is(err, backend.ErrKeyNotFound) {
-		t.Fatalf("GetKey() error = %v, want ErrKeyNotFound", err)
-	}
 	if _, err := b.RevokeKey(ctx, apikey.Default, user("alice"), "missing"); !errors.Is(err, backend.ErrKeyNotFound) {
 		t.Fatalf("RevokeKey() error = %v, want ErrKeyNotFound", err)
 	}
-	if _, err := b.LookupUserByKey(ctx, apikey.Default, testAPIKey("unknown000000000000000000")); !errors.Is(err, backend.ErrInvalidKey) {
+	if _, _, err := b.LookupUserByKey(ctx, apikey.Default, testAPIKey("unknown000000000000000000")); !errors.Is(err, backend.ErrInvalidKey) {
 		t.Fatalf("LookupUserByKey() error = %v, want ErrInvalidKey", err)
 	}
 }
