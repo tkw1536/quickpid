@@ -5,7 +5,6 @@ package service
 import (
 	"crypto/rand"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,17 +33,15 @@ type Runtime interface {
 // NewRuntime returns a new [Runtime] implementation that uses [rand.Reader] to generate
 // namespace IDs, API key IDs, and PIDs, and returns the real current time.
 func NewRuntime() Runtime {
-	return runtime{
-		random: rand.Reader,
-	}
+	return runtime{}
 }
 
 type runtime struct {
-	random io.Reader
 }
 
 func (r runtime) NewNamespaceID() (string, error) {
-	id, err := uuid.NewRandomFromReader(r.random)
+	// TODO: In go1.27, use uuid.NewV4.
+	id, err := uuid.NewRandomFromReader(rand.Reader)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate UUID: %w", err)
 	}
@@ -52,7 +49,8 @@ func (r runtime) NewNamespaceID() (string, error) {
 }
 
 func (r runtime) NewAPIKeyID() (string, error) {
-	id, err := uuid.NewRandomFromReader(r.random)
+	// TODO: In go1.27, use uuid.NewV4.
+	id, err := uuid.NewRandomFromReader(rand.Reader)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate UUID: %w", err)
 	}
@@ -60,7 +58,7 @@ func (r runtime) NewAPIKeyID() (string, error) {
 }
 
 func (r runtime) NewAPIKey(format apikey.Format) (string, error) {
-	key, err := format.Generate(r.random)
+	key, err := format.Generate(rand.Reader)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate API key in specified format: %w", err)
 	}
@@ -68,7 +66,7 @@ func (r runtime) NewAPIKey(format apikey.Format) (string, error) {
 }
 
 func (r runtime) NewPID(format pid.Format) (string, error) {
-	pid, err := format.Generate(r.random)
+	pid, err := format.Generate(rand.Reader)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate PID in specified format: %w", err)
 	}

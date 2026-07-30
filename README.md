@@ -90,10 +90,12 @@ Examples:
 
 ## Future Technical Work
 
-- rework non-flow-tests
-- key revocation: rename to delete
-- [vacuum](https://github.com/daveshanley/vacuum) on CI for validation 
-- use something other than uuid for namespace generation to drop dependency
+- [vacuum](https://github.com/daveshanley/vacuum) on CI for validation
+- update to go1.27 once it is released and:
+  - use generic methods for lowlevel handler
+  - use the `uuid` package for namespace id generation
+  - update to `json/v2`
+- various other code cleanup
 
 ## LICENSE
 
