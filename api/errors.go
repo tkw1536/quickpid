@@ -134,8 +134,14 @@ func (e ErrorString) HTTPCode() int {
 
 // various internal sentinel errors.
 var (
-	errMissingRequiredField    = errors.New("missing required field")
 	errInvalidRole             = errors.New("invalid role")
 	errFailedToUnmarshalFields = errors.New("failed to unmarshal fields")
 	errInvalidPIDFormat        = errors.New("invalid PID format")
 )
+
+// missingRequiredFieldError is an error that is returned when a required field is missing.
+type missingRequiredFieldError string
+
+func (err missingRequiredFieldError) Error() string {
+	return fmt.Sprintf("missing required field: %q", string(err))
+}

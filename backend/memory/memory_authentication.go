@@ -141,7 +141,7 @@ func (s *Store) SetPassword(_ context.Context, username api.ValidUsername, newPa
 
 	hash, err := password.Hash(newPassword.String())
 	if err != nil {
-		return false, fmt.Errorf("password.Hash: %w", err)
+		return false, fmt.Errorf("failed to hash password: %w", err)
 	}
 	user.passwordHash = hash
 	return true, nil
@@ -178,7 +178,7 @@ func (s *Store) CreateKey(_ context.Context, format apikey.Format, username api.
 	}
 	hashed, err := format.Hash(key)
 	if err != nil {
-		return nil, fmt.Errorf("apikey.Format.Hash: %w", err)
+		return nil, fmt.Errorf("failed to hash key: %w", err)
 	}
 	if user.keys[keyID] != nil {
 		return nil, backend.ErrKeyCollision

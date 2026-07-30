@@ -30,11 +30,11 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
 	if !decoded.Tag.Present {
-		return fmt.Errorf("%w: tag", errMissingRequiredField)
+		return missingRequiredFieldError("tag")
 	}
 	r.Tag = string(decoded.Tag.Value)
 	if !decoded.PIDFormat.Present {
-		return fmt.Errorf("%w: pid_format", errMissingRequiredField)
+		return missingRequiredFieldError("pid_format")
 	}
 	r.PIDFormat = decoded.PIDFormat.Value
 	if err := r.PIDFormat.Validate(); err != nil {
@@ -78,17 +78,17 @@ func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	}
 
 	if !decoded.URL.Present {
-		return fmt.Errorf("%w: url", errMissingRequiredField)
+		return missingRequiredFieldError("url")
 	}
 	r.URL = string(decoded.URL.Value)
 
 	if !decoded.Metadata.Present {
-		return fmt.Errorf("%w: metadata", errMissingRequiredField)
+		return missingRequiredFieldError("metadata")
 	}
 	r.Metadata = decoded.Metadata.Value
 
 	if !decoded.Tags.Present {
-		return fmt.Errorf("%w: tags", errMissingRequiredField)
+		return missingRequiredFieldError("tags")
 	}
 	r.Tags = decoded.Tags.Value.Strings()
 
@@ -138,7 +138,7 @@ func (r ResourceResponse) MarshalJSON() ([]byte, error) {
 		Deleted:     r.Deleted,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("json.Marshal: %w", err)
+		return nil, fmt.Errorf("failed to marshal resource response: %w", err)
 	}
 	return bytes, nil
 }
@@ -182,7 +182,7 @@ func (r RedactedResourceResponse) MarshalJSON() ([]byte, error) {
 		Deleted:     true,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("json.Marshal: %w", err)
+		return nil, fmt.Errorf("failed to marshal redacted resource response: %w", err)
 	}
 	return bytes, nil
 }
@@ -219,7 +219,7 @@ func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal fields: %w", err)
+		return fmt.Errorf("failed to unmarshal resource update request: %w", err)
 	}
 	r.URL = strict.OptionalStringToPointer(decoded.URL)
 	r.Metadata = decoded.Metadata.ToPointer()

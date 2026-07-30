@@ -76,7 +76,7 @@ func Migrate(db *gorm.DB) error {
 		&namespaceRoleRow{},
 		&mountRow{},
 	); err != nil {
-		return fmt.Errorf("gorm.DB.AutoMigrate: %w", err)
+		return fmt.Errorf("failed to auto-migrate database: %w", err)
 	}
 	return nil
 }

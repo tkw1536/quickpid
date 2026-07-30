@@ -16,7 +16,7 @@ func (h *Server) getMount(w http.ResponseWriter, r *http.Request) (*api.MountRes
 	}
 	mount, err := h.svc.GetMount(r.Context(), baseURI)
 	if err != nil {
-		return nil, fmt.Errorf("svc.GetMount: %w", err)
+		return nil, fmt.Errorf("failed to get mount: %w", err)
 	}
 	return mount, nil
 }
@@ -33,17 +33,17 @@ func (h *Server) resolveMountedResource(w http.ResponseWriter, r *http.Request, 
 
 	mount, err := h.svc.GetMount(r.Context(), baseURI)
 	if err != nil {
-		return nil, fmt.Errorf("svc.GetMount: %w", err)
+		return nil, fmt.Errorf("failed to get mount: %w", err)
 	}
 
 	namespace, err := api.NewNamespaceID(mount.Namespace)
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("api.NewNamespaceID: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("backend returned invalid namespace id: %w", err), api.DatabaseError)
 	}
 
 	resource, err := h.svc.GetResource(r.Context(), caller, namespace, resourcePID)
 	if err != nil {
-		return nil, fmt.Errorf("svc.GetResource: %w", err)
+		return nil, fmt.Errorf("failed to get resource: %w", err)
 	}
 
 	w.Header().Set("Location", h.ops.MountPath+"/resolver/namespaces/"+namespace.String()+"/resources/"+resourcePID.String())
@@ -61,7 +61,7 @@ func (h *Server) listMounts(w http.ResponseWriter, r *http.Request, user *api.Va
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("svc.ListMounts: %w", err)
+		return nil, fmt.Errorf("failed to list mounts: %w", err)
 	}
 	return mounts, nil
 }
@@ -81,7 +81,7 @@ func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, use
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("svc.ListNamespaceMounts: %w", err)
+		return nil, fmt.Errorf("failed to list namespace mounts: %w", err)
 	}
 	return mounts, nil
 }
@@ -104,7 +104,7 @@ func (h *Server) setMount(w http.ResponseWriter, r *http.Request, user *api.Vali
 
 	mount, err := h.svc.SetMount(r.Context(), user, baseURI, validReq)
 	if err != nil {
-		return nil, fmt.Errorf("svc.SetMount: %w", err)
+		return nil, fmt.Errorf("failed to set mount: %w", err)
 	}
 	return mount, nil
 }
@@ -115,7 +115,7 @@ func (h *Server) deleteMount(w http.ResponseWriter, r *http.Request, user *api.V
 		return struct{}{}, err
 	}
 	if err := h.svc.DeleteMount(r.Context(), user, baseURI); err != nil {
-		return struct{}{}, fmt.Errorf("svc.DeleteMount: %w", err)
+		return struct{}{}, fmt.Errorf("failed to delete mount: %w", err)
 	}
 	return struct{}{}, nil
 }

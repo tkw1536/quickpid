@@ -14,7 +14,7 @@ import (
 func (h *Server) getResolverInfo(w http.ResponseWriter, r *http.Request) (*api.InfoResponse, error) {
 	info, err := h.svc.GetResolverInfo()
 	if err != nil {
-		return nil, fmt.Errorf("store.GetResolverInfo: %w", err)
+		return nil, fmt.Errorf("failed to get resolver info: %w", err)
 	}
 	return info, nil
 }
@@ -43,7 +43,7 @@ func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, user *ap
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("store.ListNamespaces: %w", err)
+		return nil, fmt.Errorf("failed to list namespaces: %w", err)
 	}
 	return namespaces, nil
 }
@@ -55,7 +55,7 @@ func (h *Server) getNamespaceDetail(w http.ResponseWriter, r *http.Request, user
 	}
 	res, err := h.svc.GetNamespace(r.Context(), user, namespace)
 	if err != nil {
-		return nil, fmt.Errorf("store.GetNamespace: %w", err)
+		return nil, fmt.Errorf("failed to get namespace: %w", err)
 	}
 	return res, nil
 }
@@ -63,7 +63,7 @@ func (h *Server) getNamespaceDetail(w http.ResponseWriter, r *http.Request, user
 func (h *Server) countAllResources(w http.ResponseWriter, r *http.Request) (*api.ResourceCountResponse, error) {
 	count, err := h.svc.CountAllResources(r.Context())
 	if err != nil {
-		return nil, fmt.Errorf("store.CountAllResources: %w", err)
+		return nil, fmt.Errorf("failed to count all resources: %w", err)
 	}
 	return count, nil
 }
@@ -75,7 +75,7 @@ func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, user *a
 	}
 	namespace, err := h.svc.CreateNamespace(r.Context(), user, req)
 	if err != nil {
-		return nil, fmt.Errorf("store.CreateNamespace: %w", err)
+		return nil, fmt.Errorf("failed to create namespace: %w", err)
 	}
 	return namespace, nil
 }
@@ -114,7 +114,7 @@ func (h *Server) listResources(w http.ResponseWriter, r *http.Request, user *api
 		Offset:  offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("store.ListResources: %w", err)
+		return nil, fmt.Errorf("failed to list resources: %w", err)
 	}
 	return resources, nil
 }
@@ -132,7 +132,7 @@ func (h *Server) createResource(w http.ResponseWriter, r *http.Request, user *ap
 
 	resource, err := h.svc.CreateResource(r.Context(), user, namespace, req)
 	if err != nil {
-		return nil, fmt.Errorf("store.CreateResource: %w", err)
+		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 	return resource, nil
 }
@@ -150,7 +150,7 @@ func (h *Server) batchCreateResources(w http.ResponseWriter, r *http.Request, us
 
 	resources, err := h.svc.BatchCreateResources(r.Context(), user, namespace, reqs)
 	if err != nil {
-		return nil, fmt.Errorf("store.BatchCreateResources: %w", err)
+		return nil, fmt.Errorf("failed to batch create resources: %w", err)
 	}
 	return resources, nil
 }
@@ -167,7 +167,7 @@ func (h *Server) getResource(w http.ResponseWriter, r *http.Request, user *api.V
 
 	resource, err := h.svc.GetResource(r.Context(), user, namespace, resourcePID)
 	if err != nil {
-		return nil, fmt.Errorf("store.GetResource: %w", err)
+		return nil, fmt.Errorf("failed to get resource: %w", err)
 	}
 	return resource, nil
 }
@@ -189,7 +189,7 @@ func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, user *ap
 
 	resource, err := h.svc.UpdateResource(r.Context(), user, namespace, resourcePID, req)
 	if err != nil {
-		return nil, fmt.Errorf("store.UpdateResource: %w", err)
+		return nil, fmt.Errorf("failed to update resource: %w", err)
 	}
 	return resource, nil
 }

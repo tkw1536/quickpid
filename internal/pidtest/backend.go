@@ -39,7 +39,7 @@ func loadTestData() ([]flow, error) {
 
 	entries, err := fs.ReadDir(testDataFS, ".")
 	if err != nil {
-		return nil, fmt.Errorf("fs.ReadDir: %w", err)
+		return nil, fmt.Errorf("failed to read test data directory: %w", err)
 	}
 
 	names := make([]string, 0, len(entries))
@@ -55,11 +55,11 @@ func loadTestData() ([]flow, error) {
 	for _, name := range names {
 		b, err := fs.ReadFile(testDataFS, name)
 		if err != nil {
-			return nil, fmt.Errorf("fs.ReadFile; %w", err)
+			return nil, fmt.Errorf("failed to read test data file: %w", err)
 		}
 		var f flow
 		if err := json.Unmarshal(b, &f); err != nil {
-			return nil, fmt.Errorf("unmarshal %s: %w", name, err)
+			return nil, fmt.Errorf("failed to unmarshal test data file: %w", err)
 		}
 		out = append(out, f)
 	}

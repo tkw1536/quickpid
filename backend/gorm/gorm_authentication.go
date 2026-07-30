@@ -149,7 +149,7 @@ func (s *Store) SetPassword(ctx context.Context, username api.ValidUsername, new
 		} else {
 			hash, hashErr := password.Hash(newPassword.String())
 			if hashErr != nil {
-				return false, fmt.Errorf("password.Hash: %w", hashErr)
+				return false, fmt.Errorf("failed to hash password: %w", hashErr)
 			}
 			row.PasswordHash = hash
 		}
@@ -181,7 +181,7 @@ func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username ap
 
 		hashed, err := format.Hash(key)
 		if err != nil {
-			return nil, fmt.Errorf("apikey.Format.Hash: %w", err)
+			return nil, fmt.Errorf("failed to hash key: %w", err)
 		}
 
 		createdAt := now().UTC()

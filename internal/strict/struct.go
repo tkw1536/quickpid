@@ -25,7 +25,7 @@ func MustBeStruct(data []byte) error {
 func mustBeStruct(dec *json.Decoder) error {
 	tok, err := dec.Token()
 	if err != nil {
-		return fmt.Errorf("decoder.Token: %w", err)
+		return fmt.Errorf("failed to read first token: %w", err)
 	}
 	if tok == json.Delim('{') {
 		return nil
@@ -44,23 +44,23 @@ func UnmarshalStruct[T any](data []byte) (out T, err error) {
 	// check that it's a struct
 	bytesReader := bytes.NewReader(data)
 	if err := mustBeStruct(json.NewDecoder(bytesReader)); err != nil {
-		return out, fmt.Errorf("Reader.Seek: %w", err)
+		return out, fmt.Errorf("failed to check that data is a struct: %w", err)
 	}
 
 	// reset the reader and create a new decoder
 	if _, err := bytesReader.Seek(0, io.SeekStart); err != nil {
-		return out, fmt.Errorf("Reader.Seek: %w", err)
+		return out, fmt.Errorf("failed to reset reader: %w", err)
 	}
 	dec := json.NewDecoder(bytesReader)
 	dec.DisallowUnknownFields()
 
 	if err := dec.Decode(&out); err != nil {
-		return out, fmt.Errorf("json.Decode: %w", err)
+		return out, fmt.Errorf("failed to decode json: %w", err)
 	}
 
 	// check that there isn't any trailing data
 	if _, err := dec.Token(); err != io.EOF {
-		return out, fmt.Errorf("json.Decode: %w", err)
+		return out, fmt.Errorf("json has trailing data: %w", err)
 	}
 	return out, nil
 }

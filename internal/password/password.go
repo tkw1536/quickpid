@@ -14,7 +14,7 @@ import (
 func Hash(plaintext string) ([]byte, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(plaintext), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, fmt.Errorf("bcrypt.GenerateFromPassword: %w", err)
+		return nil, fmt.Errorf("failed to generate bcrypt hash: %w", err)
 	}
 	return hash, nil
 }

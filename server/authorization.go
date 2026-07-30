@@ -20,7 +20,7 @@ func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, user a
 	}
 	role, err := h.svc.GetNamespaceRole(r.Context(), user, namespace, username)
 	if err != nil {
-		return nil, fmt.Errorf("svc.GetNamespaceRole: %w", err)
+		return nil, fmt.Errorf("failed to get namespace role: %w", err)
 	}
 	return role, nil
 }
@@ -41,7 +41,7 @@ func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, user
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("svc.ListNamespaceRoles: %w", err)
+		return nil, fmt.Errorf("failed to list namespace roles: %w", err)
 	}
 	return roles, nil
 }
@@ -63,7 +63,7 @@ func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, user a
 
 	role, err := h.svc.SetNamespaceRole(r.Context(), user, namespace, username, req)
 	if err != nil {
-		return nil, fmt.Errorf("svc.SetNamespaceRole: %w", err)
+		return nil, fmt.Errorf("failed to set namespace role: %w", err)
 	}
 	return role, nil
 }
@@ -79,7 +79,7 @@ func (h *Server) deleteNamespaceRole(w http.ResponseWriter, r *http.Request, cal
 	}
 
 	if err := h.svc.DeleteNamespaceRole(r.Context(), caller, namespace, username); err != nil {
-		return struct{}{}, fmt.Errorf("svc.DeleteNamespaceRole: %w", err)
+		return struct{}{}, fmt.Errorf("failed to delete namespace role: %w", err)
 	}
 	return struct{}{}, nil
 }
@@ -99,7 +99,7 @@ func (h *Server) listUserRoles(w http.ResponseWriter, r *http.Request, user api.
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("svc.ListUserRoles: %w", err)
+		return nil, fmt.Errorf("failed to list user roles: %w", err)
 	}
 	return roles, nil
 }

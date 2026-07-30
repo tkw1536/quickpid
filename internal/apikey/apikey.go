@@ -96,7 +96,7 @@ func (f Format) Generate(rand io.Reader) (string, error) {
 	for i := range runes {
 		r, err := f.Charset.Pick(rand)
 		if err != nil {
-			return "", fmt.Errorf("Charset.Pick: %w", err)
+			return "", fmt.Errorf("failed to pick character from charset: %w", err)
 		}
 		runes[i] = r
 	}

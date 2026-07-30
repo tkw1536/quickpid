@@ -24,7 +24,7 @@ func (s *String) UnmarshalJSON(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	tok, err := dec.Token()
 	if err != nil {
-		return fmt.Errorf("Decoder.Token: %w", err)
+		return fmt.Errorf("failed to read first token: %w", err)
 	}
 
 	str, ok := tok.(string)
@@ -42,7 +42,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	tok, err := dec.Token()
 	if err != nil {
-		return fmt.Errorf("decoder.Token: %w", err)
+		return fmt.Errorf("failed to read first token: %w", err)
 	}
 
 	boolean, ok := tok.(bool)
@@ -60,7 +60,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	tok, err := dec.Token()
 	if err != nil {
-		return fmt.Errorf("Decoder.Token: %w", err)
+		return fmt.Errorf("failed to read first token: %w", err)
 	}
 
 	str, ok := tok.(string)
@@ -87,7 +87,7 @@ func (s *StringSlice) UnmarshalJSON(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	tok, err := dec.Token()
 	if err != nil {
-		return fmt.Errorf("Decoder.Token: %w", err)
+		return fmt.Errorf("failed to read first token: %w", err)
 	}
 	if tok != json.Delim('[') {
 		return errNotAnArray
@@ -97,13 +97,13 @@ func (s *StringSlice) UnmarshalJSON(data []byte) error {
 	for dec.More() {
 		var elem String
 		if err := dec.Decode(&elem); err != nil {
-			return fmt.Errorf("json.Decode: %w", err)
+			return fmt.Errorf("failed to decode json: %w", err)
 		}
 		out = append(out, elem)
 	}
 	tok, err = dec.Token()
 	if err != nil {
-		return fmt.Errorf("Decoder.Token: %w", err)
+		return fmt.Errorf("failed to read last token: %w", err)
 	}
 	if tok != json.Delim(']') {
 		return errNotAnArray

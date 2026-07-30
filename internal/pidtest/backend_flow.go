@@ -155,7 +155,7 @@ func applyStepSetup(ctx context.Context, svc *service.Service, cfg stepConfig) e
 		return nil
 	}
 	if err := svc.EnsureRootUser(ctx, slog.New(slog.DiscardHandler)); err != nil {
-		return fmt.Errorf("Service.EnsureRootUser: %w", err)
+		return fmt.Errorf("failed to create root user: %w", err)
 	}
 	return nil
 }

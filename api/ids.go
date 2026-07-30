@@ -139,23 +139,27 @@ func (u ValidBaseURI) String() string {
 	return u.value
 }
 
-var errInvalidBaseURI = errors.New("invalid base uri")
+var (
+	errNotAbsoluteURI   = errors.New("not an absolute URI")
+	errFragmentNotEmpty = errors.New("fragment is not empty")
+	errRawQueryNotEmpty = errors.New("raw query is not empty")
+)
 
 // NewBaseURI creates a new BaseURI.
 // The value must be a valid absolute URI as accepted by [url.ParseRequestURI] with a non-empty scheme.
 func NewBaseURI(value string) (ValidBaseURI, error) {
 	parsed, err := url.Parse(value)
 	if err != nil {
-		return ValidBaseURI{}, fmt.Errorf("%w: failed to parse: %w", errInvalidBaseURI, err)
+		return ValidBaseURI{}, fmt.Errorf("failed to parse as url: %w", err)
 	}
 	if !parsed.IsAbs() {
-		return ValidBaseURI{}, fmt.Errorf("%w: not an absolute URI", errInvalidBaseURI)
+		return ValidBaseURI{}, errNotAbsoluteURI
 	}
 	if parsed.Fragment != "" {
-		return ValidBaseURI{}, fmt.Errorf("%w: fragment is not empty", errInvalidBaseURI)
+		return ValidBaseURI{}, errFragmentNotEmpty
 	}
 	if parsed.RawQuery != "" {
-		return ValidBaseURI{}, fmt.Errorf("%w: raw query is not empty", errInvalidBaseURI)
+		return ValidBaseURI{}, errRawQueryNotEmpty
 	}
 	return ValidBaseURI{valid: true, value: value}, nil
 }

@@ -47,7 +47,7 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) error
 			// This if most likely this happens when the underlying network connection had some error;
 			// meaning the client will never see if anyways.
 			decodeErr = api.WithErrorString(
-				errorsx.Combine(decodeErr, fmt.Errorf("body.Close: %w", err)),
+				errorsx.Combine(decodeErr, fmt.Errorf("failed to close body: %w", err)),
 				api.BodyInvalidJSON,
 			)
 		}
@@ -58,12 +58,12 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) error
 
 	if err := dec.Decode(v); err != nil {
 		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-			return api.WithErrorString(fmt.Errorf("json.Decode: %w", err), api.BodySizeExceeded)
+			return api.WithErrorString(fmt.Errorf("maximum body size exceeded: %w", err), api.BodySizeExceeded)
 		}
 		if errors.Is(err, io.EOF) {
-			return api.WithErrorString(fmt.Errorf("json.Decode: %w", err), api.BodyMissing)
+			return api.WithErrorString(fmt.Errorf("body is missing or incomplete: %w", err), api.BodyMissing)
 		}
-		return api.WithErrorString(fmt.Errorf("json.Decode: %w", err), api.BodyInvalidJSON)
+		return api.WithErrorString(fmt.Errorf("invalid json provided: %w", err), api.BodyInvalidJSON)
 	}
 	_, err := dec.Token()
 	if !errors.Is(err, io.EOF) || err == nil {
@@ -121,7 +121,7 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, err er
 func (*Server) getNamespace(r *http.Request) (api.ValidNamespaceID, error) {
 	namespace, err := api.NewNamespaceID(r.PathValue("namespace"))
 	if err != nil {
-		return api.ValidNamespaceID{}, api.WithErrorString(fmt.Errorf("api.NewNamespaceID: %w", err), api.InvalidNamespaceID)
+		return api.ValidNamespaceID{}, api.WithErrorString(fmt.Errorf("failed to parse namespace id: %w", err), api.InvalidNamespaceID)
 	}
 	return namespace, nil
 }
@@ -134,7 +134,7 @@ func (*Server) getNamespace(r *http.Request) (api.ValidNamespaceID, error) {
 func (*Server) getPID(r *http.Request) (api.ValidPID, error) {
 	pid, err := api.NewPID(r.PathValue("pid"))
 	if err != nil {
-		return api.ValidPID{}, api.WithErrorString(fmt.Errorf("api.NewPID: %w", err), api.InvalidPID)
+		return api.ValidPID{}, api.WithErrorString(fmt.Errorf("failed to parse pid: %w", err), api.InvalidPID)
 	}
 	return pid, nil
 }
@@ -147,7 +147,7 @@ func (*Server) getPID(r *http.Request) (api.ValidPID, error) {
 func (*Server) getUsername(r *http.Request) (api.ValidUsername, error) {
 	username, err := api.NewUsername(r.PathValue("username"))
 	if err != nil {
-		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
+		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
 	}
 	return username, nil
 }
@@ -160,7 +160,7 @@ func (*Server) getUsername(r *http.Request) (api.ValidUsername, error) {
 func (*Server) getBaseURI(r *http.Request) (api.ValidBaseURI, error) {
 	baseURI, err := api.NewBaseURI(r.PathValue("base_uri"))
 	if err != nil {
-		return api.ValidBaseURI{}, api.WithErrorString(fmt.Errorf("api.NewBaseURI: %w", err), api.InvalidBaseURI)
+		return api.ValidBaseURI{}, api.WithErrorString(fmt.Errorf("failed to parse base uri: %w", err), api.InvalidBaseURI)
 	}
 	return baseURI, nil
 }
@@ -177,7 +177,7 @@ func (*Server) parseOptionalUsernameQuery(r *http.Request) (*api.ValidUsername, 
 	}
 	username, err := api.NewUsername(query.Get("username"))
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
+		return nil, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
 	}
 	return &username, nil
 }
@@ -215,7 +215,7 @@ func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (api.ValidUsernam
 	}
 	query, err := api.NewUsername(q.Get("query"))
 	if err != nil {
-		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("api.NewUsername: %w", err), api.InvalidUsername)
+		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
 	}
 	return query, nil
 }

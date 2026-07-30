@@ -17,9 +17,11 @@ type Format struct {
 	Characters CharacterSet `json:"characters"`
 }
 
-var (
-	errMissingRequiredField = errors.New("missing required field")
-)
+type missingRequiredFieldError string
+
+func (err missingRequiredFieldError) Error() string {
+	return fmt.Sprintf("missing required field: %q", string(err))
+}
 
 func (f *Format) UnmarshalJSON(data []byte) error {
 	type internal struct {
@@ -32,12 +34,12 @@ func (f *Format) UnmarshalJSON(data []byte) error {
 	}
 
 	if !decoded.Pattern.Present {
-		return fmt.Errorf("%w: pattern", errMissingRequiredField)
+		return missingRequiredFieldError("pattern")
 	}
 	f.Pattern = Pattern(decoded.Pattern.Value)
 
 	if !decoded.Characters.Present {
-		return fmt.Errorf("%w: characters", errMissingRequiredField)
+		return missingRequiredFieldError("characters")
 	}
 	f.Characters = CharacterSet(decoded.Characters.Value)
 

@@ -46,7 +46,7 @@ type runtime struct {
 func (r runtime) NewNamespaceID() (string, error) {
 	id, err := uuid.NewRandomFromReader(r.random)
 	if err != nil {
-		return "", fmt.Errorf("uuid.NewRandomFromReader: %w", err)
+		return "", fmt.Errorf("failed to generate UUID: %w", err)
 	}
 	return id.String(), nil
 }
@@ -54,7 +54,7 @@ func (r runtime) NewNamespaceID() (string, error) {
 func (r runtime) NewAPIKeyID() (string, error) {
 	id, err := uuid.NewRandomFromReader(r.random)
 	if err != nil {
-		return "", fmt.Errorf("uuid.NewRandomFromReader: %w", err)
+		return "", fmt.Errorf("failed to generate UUID: %w", err)
 	}
 	return id.String(), nil
 }
@@ -62,7 +62,7 @@ func (r runtime) NewAPIKeyID() (string, error) {
 func (r runtime) NewAPIKey(format apikey.Format) (string, error) {
 	key, err := format.Generate(r.random)
 	if err != nil {
-		return "", fmt.Errorf("api.Format.Generate: %w", err)
+		return "", fmt.Errorf("failed to generate API key in specified format: %w", err)
 	}
 	return key, nil
 }
@@ -70,7 +70,7 @@ func (r runtime) NewAPIKey(format apikey.Format) (string, error) {
 func (r runtime) NewPID(format pid.Format) (string, error) {
 	pid, err := format.Generate(r.random)
 	if err != nil {
-		return "", fmt.Errorf("pid.Format.Generate: %w", err)
+		return "", fmt.Errorf("failed to generate PID in specified format: %w", err)
 	}
 	return pid, nil
 }

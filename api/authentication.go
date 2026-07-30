@@ -24,7 +24,7 @@ func (r *UserCreateRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 	if !decoded.Username.Present {
-		return fmt.Errorf("%w: username", errMissingRequiredField)
+		return missingRequiredFieldError("username")
 	}
 	r.Username = string(decoded.Username.Value)
 	if decoded.Superuser.Present {
@@ -113,7 +113,7 @@ func (r *SetPasswordRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
 	if !decoded.Password.Present {
-		return fmt.Errorf("%w: password", errMissingRequiredField)
+		return missingRequiredFieldError("password")
 	}
 	r.Password = decoded.Password.ToPointer()
 	return nil
@@ -122,7 +122,7 @@ func (r *SetPasswordRequest) UnmarshalJSON(data []byte) error {
 // Validate checks if the given request is valid.
 func (r *SetPasswordRequest) Validate() (ValidSetPasswordRequest, error) {
 	if r.Password == nil {
-		return ValidSetPasswordRequest{}, fmt.Errorf("%w: password", errMissingRequiredField)
+		return ValidSetPasswordRequest{}, missingRequiredFieldError("password")
 	}
 	if *r.Password == nil {
 		return ValidSetPasswordRequest{}, nil
@@ -188,11 +188,11 @@ func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
 	if !decoded.Comment.Present {
-		return fmt.Errorf("%w: comment", errMissingRequiredField)
+		return missingRequiredFieldError("comment")
 	}
 	r.Comment = string(decoded.Comment.Value)
 	if !decoded.ExpiresAt.Present {
-		return fmt.Errorf("%w: expires_at", errMissingRequiredField)
+		return missingRequiredFieldError("expires_at")
 	}
 	if decoded.ExpiresAt.Value == nil {
 		r.ExpiresAt = nil
@@ -223,7 +223,7 @@ func (r *KeyRevokeRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
 	if !decoded.ID.Present {
-		return fmt.Errorf("%w: id", errMissingRequiredField)
+		return missingRequiredFieldError("id")
 	}
 	r.ID = string(decoded.ID.Value)
 	return nil

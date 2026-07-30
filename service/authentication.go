@@ -33,7 +33,7 @@ func (s *Service) AuthenticateAPIKey(ctx context.Context, apiKey string) (api.Va
 
 	name, err := api.NewUsername(username)
 	if err != nil {
-		return api.ValidUsername{}, fmt.Errorf("api.NewUsername: %w", err)
+		return api.ValidUsername{}, fmt.Errorf("backend returned invalid username: %w", err)
 	}
 	return name, nil
 }
@@ -48,19 +48,19 @@ func (s *Service) AuthenticatePassword(ctx context.Context, username string, pas
 
 	validUsername, err := api.NewUsername(username)
 	if err != nil {
-		return api.ValidUsername{}, api.WithErrorString(errUnauthorized, api.Unauthorized)
+		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("invalid username provided: %w", err), api.Unauthorized)
 	}
 	validPassword, err := api.NewPassword(password)
 	if err != nil {
-		return api.ValidUsername{}, api.WithErrorString(errUnauthorized, api.Unauthorized)
+		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.Unauthorized)
 	}
 
 	ok, err := s.store.CheckPassword(ctx, validUsername, validPassword)
 	if errors.Is(err, backend.ErrUserNotFound) {
-		return api.ValidUsername{}, api.WithErrorString(errUnauthorized, api.Unauthorized)
+		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("user not found: %w", err), api.Unauthorized)
 	}
 	if err != nil {
-		return api.ValidUsername{}, fmt.Errorf("store.CheckPassword: %w", err)
+		return api.ValidUsername{}, fmt.Errorf("backend reported the username password combination is invalid: %w", err)
 	}
 	if !ok {
 		return api.ValidUsername{}, api.WithErrorString(errUnauthorized, api.Unauthorized)
@@ -82,14 +82,14 @@ func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api
 
 	user, err := s.store.GetUser(ctx, username)
 	if errors.Is(err, backend.ErrUserNotFound) {
-		return api.ValidUserInfo{}, api.WithErrorString(errUnauthorized, api.UserNotFound)
+		return api.ValidUserInfo{}, api.WithErrorString(fmt.Errorf("user not found: %w", err), api.UserNotFound)
 	}
 	if err != nil {
-		return api.ValidUserInfo{}, fmt.Errorf("store.GetUser: %w", err)
+		return api.ValidUserInfo{}, fmt.Errorf("backend failed to get user: %w", err)
 	}
 	info, err := user.Validate()
 	if err != nil {
-		return api.ValidUserInfo{}, fmt.Errorf("user.Validate: %w", api.WithErrorString(err, api.DatabaseError))
+		return api.ValidUserInfo{}, api.WithErrorString(fmt.Errorf("backend returned invalid user: %w", err), api.DatabaseError)
 	}
 	return info, nil
 }
@@ -108,10 +108,10 @@ func (s *Service) GetUserAccount(ctx context.Context, caller api.ValidUserInfo, 
 	}
 	user, err := s.store.GetUser(ctx, username)
 	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, fmt.Errorf("store.GetUser: %w", mapped)
+		return nil, mapped
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("store.GetUser: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("backend failed to get user: %w", err), api.DatabaseError)
 	}
 	return user, nil
 }
@@ -125,10 +125,10 @@ func (s *Service) GetUserAccount(ctx context.Context, caller api.ValidUserInfo, 
 func (s *Service) GetUser(ctx context.Context, caller api.ValidUserInfo) (*api.UserInfo, error) {
 	user, err := s.store.GetUser(ctx, caller.Username)
 	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, fmt.Errorf("store.GetUser: %w", mapped)
+		return nil, mapped
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("store.GetUser: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("backend failed to get user: %w", err), api.DatabaseError)
 	}
 	return user, nil
 }
@@ -151,10 +151,10 @@ func (s *Service) SetUserPassword(ctx context.Context, caller api.ValidUserInfo,
 	}
 	hasPassword, err := s.store.SetPassword(ctx, username, req.Password)
 	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, fmt.Errorf("store.SetPassword: %w", mapped)
+		return nil, mapped
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("store.SetPassword: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("backend failed to set password: %w", err), api.DatabaseError)
 	}
 	return &api.SetPasswordResponse{Password: hasPassword}, nil
 }
@@ -163,10 +163,10 @@ func (s *Service) SetUserPassword(ctx context.Context, caller api.ValidUserInfo,
 func (s *Service) CheckPassword(ctx context.Context, username api.ValidUsername, password api.ValidPassword) (bool, error) {
 	ok, err := s.store.CheckPassword(ctx, username, password)
 	if mapped, handled := mapAuthBackendError(err); handled {
-		return false, fmt.Errorf("store.CheckPassword: %w", mapped)
+		return false, mapped
 	}
 	if err != nil {
-		return false, fmt.Errorf("store.CheckPassword: %w", err)
+		return false, fmt.Errorf("backend reported the username password combination is invalid: %w", err)
 	}
 	return ok, nil
 }
@@ -189,10 +189,10 @@ func (s *Service) CreateUser(ctx context.Context, caller api.ValidUserInfo, req 
 
 	user, err := s.store.CreateUser(ctx, req, s.runtime.Now)
 	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, fmt.Errorf("store.CreateUser: %w", mapped)
+		return nil, mapped
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("store.CreateUser: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("backend failed to create user: %w", err), api.DatabaseError)
 	}
 	return user, nil
 }
@@ -211,15 +211,15 @@ func (s *Service) DeleteUser(ctx context.Context, caller api.ValidUserInfo, targ
 	}
 
 	if target.String() == caller.Username.String() {
-		return api.WithErrorString(errForbidden, api.Forbidden)
+		return api.WithErrorString(fmt.Errorf("cannot delete own account: %w", errForbidden), api.Forbidden)
 	}
 
 	err := s.store.DeleteUser(ctx, target)
 	if mapped, ok := mapAuthBackendError(err); ok {
-		return fmt.Errorf("store.DeleteUser: %w", mapped)
+		return mapped
 	}
 	if err != nil {
-		return api.WithErrorString(fmt.Errorf("store.DeleteUser: %w", err), api.DatabaseError)
+		return api.WithErrorString(fmt.Errorf("backend failed to delete user: %w", err), api.DatabaseError)
 	}
 	return nil
 }
@@ -238,7 +238,7 @@ func (s *Service) ListUsers(ctx context.Context, caller api.ValidUserInfo, param
 
 	page, err := s.store.ListUsers(ctx, params)
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("store.ListUsers: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("backend failed to list users: %w", err), api.DatabaseError)
 	}
 	return page, nil
 }
@@ -255,7 +255,7 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller api.ValidUserInf
 
 	usernames, err := s.store.AutocompleteUsers(ctx, query, limit)
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("store.AutocompleteUsers: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("backend failed to autocomplete users: %w", err), api.DatabaseError)
 	}
 	return usernames, nil
 }
@@ -275,10 +275,10 @@ func (s *Service) ListKeys(ctx context.Context, caller api.ValidUserInfo, target
 	}
 	page, err := s.listValidKeys(ctx, s.apiKeyFormat(), username, params)
 	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, fmt.Errorf("store.ListKeys: %w", mapped)
+		return nil, mapped
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("store.ListKeys: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("backend failed to list keys: %w", err), api.DatabaseError)
 	}
 	return page, nil
 }
@@ -389,9 +389,9 @@ func (s *Service) IssueKey(ctx context.Context, caller api.ValidUserInfo, target
 
 	if _, err := s.store.GetUser(ctx, username); err != nil {
 		if mapped, ok := mapAuthBackendError(err); ok {
-			return nil, fmt.Errorf("store.GetUser: %w", mapped)
+			return nil, mapped
 		}
-		return nil, api.WithErrorString(fmt.Errorf("store.GetUser: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("backend failed to get user: %w", err), api.DatabaseError)
 	}
 
 	issued, err := s.issueAPIKey(ctx, username, req)
@@ -418,12 +418,12 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 	for range maxAttempts {
 		keyID, err := s.runtime.NewAPIKeyID()
 		if err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("runtime.NewAPIKeyID: %w", err), api.BadIDGeneration)
+			return nil, api.WithErrorString(fmt.Errorf("failed to generate new api key id: %w", err), api.BadIDGeneration)
 		}
 
 		rawKey, err := s.runtime.NewAPIKey(format)
 		if err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("runtime.NewAPIKey: %w", err), api.BadIDGeneration)
+			return nil, api.WithErrorString(fmt.Errorf("failed to generate new api key: %w", err), api.BadIDGeneration)
 		}
 
 		info, err := s.store.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
@@ -431,10 +431,10 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 			return &api.IssueKeyResponse{APIKeyInfo: *info, Key: rawKey}, nil
 		}
 		if mapped, ok := mapAuthBackendError(err); ok {
-			return nil, fmt.Errorf("store.CreateKey: %w", mapped)
+			return nil, mapped
 		}
 		if !errors.Is(err, backend.ErrKeyCollision) {
-			return nil, api.WithErrorString(fmt.Errorf("store.CreateKey: %w", err), api.DatabaseError)
+			return nil, api.WithErrorString(fmt.Errorf("backend failed to create key: %w", err), api.DatabaseError)
 		}
 	}
 	return nil, api.WithErrorString(fmt.Errorf("%w: gave up api key generation after %d attempts", errInsufficientEntropy, maxAttempts), api.InsufficientEntropy)
@@ -455,10 +455,10 @@ func (s *Service) RevokeKey(ctx context.Context, caller api.ValidUserInfo, targe
 	}
 	err = s.store.RevokeKey(ctx, s.apiKeyFormat(), username, req.ID)
 	if mapped, ok := mapAuthBackendError(err); ok {
-		return fmt.Errorf("store.RevokeKey: %w", mapped)
+		return mapped
 	}
 	if err != nil {
-		return api.WithErrorString(fmt.Errorf("store.RevokeKey: %w", err), api.DatabaseError)
+		return api.WithErrorString(fmt.Errorf("backend failed to revoke key: %w", err), api.DatabaseError)
 	}
 	return nil
 }
@@ -482,10 +482,10 @@ func (s *Service) UpdateUser(ctx context.Context, caller api.ValidUserInfo, targ
 
 	user, err := s.store.UpdateUser(ctx, target, req)
 	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, fmt.Errorf("store.UpdateUser: %w", mapped)
+		return nil, mapped
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("store.UpdateUser: %w", err), api.DatabaseError)
+		return nil, api.WithErrorString(fmt.Errorf("backend failed to update user: %w", err), api.DatabaseError)
 	}
 	return user, nil
 }
@@ -530,11 +530,11 @@ func (s *Service) apiKeyFormat() apikey.Format {
 func mapAuthBackendError(err error) (error, bool) {
 	switch {
 	case errors.Is(err, backend.ErrDuplicateUsername):
-		return api.WithErrorString(err, api.DuplicateUsername), true
+		return api.WithErrorString(fmt.Errorf("duplicate username: %w", err), api.DuplicateUsername), true
 	case errors.Is(err, backend.ErrUserNotFound):
-		return api.WithErrorString(err, api.UserNotFound), true
+		return api.WithErrorString(fmt.Errorf("user not found: %w", err), api.UserNotFound), true
 	case errors.Is(err, backend.ErrKeyNotFound):
-		return api.WithErrorString(err, api.KeyNotFound), true
+		return api.WithErrorString(fmt.Errorf("key not found: %w", err), api.KeyNotFound), true
 	default:
 		return nil, false
 	}
@@ -567,7 +567,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 	}
 	page, err := s.store.ListUsers(ctx, api.ListUsersParams{Limit: 1})
 	if err != nil {
-		return fmt.Errorf("store.ListUsers: %w", err)
+		return fmt.Errorf("failed to list users: %w", err)
 	}
 	if page.Total > 0 {
 		return nil

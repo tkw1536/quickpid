@@ -27,7 +27,7 @@ func (r *MountUpsertRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
 	if !decoded.Namespace.Present {
-		return fmt.Errorf("%w: namespace", errMissingRequiredField)
+		return missingRequiredFieldError("namespace")
 	}
 	r.Namespace = string(decoded.Namespace.Value)
 	return nil

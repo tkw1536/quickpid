@@ -88,17 +88,17 @@ func TestNewBaseURI(t *testing.T) {
 		{
 			name:    "invalid_empty",
 			input:   "",
-			wantErr: "invalid base uri: not an absolute URI",
+			wantErr: "not an absolute URI",
 		},
 		{
 			name:    "invalid_relative",
 			input:   "/relative/path",
-			wantErr: "invalid base uri: not an absolute URI",
+			wantErr: "not an absolute URI",
 		},
 		{
 			name:    "invalid_no_scheme",
 			input:   "example.com/foo",
-			wantErr: "invalid base uri: not an absolute URI",
+			wantErr: "not an absolute URI",
 		},
 	}
 

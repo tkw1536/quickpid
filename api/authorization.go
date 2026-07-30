@@ -47,7 +47,7 @@ func (r *SetNamespaceRoleRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
 	if !decoded.Role.Present {
-		return fmt.Errorf("%w: role", errMissingRequiredField)
+		return missingRequiredFieldError("role")
 	}
 	r.Role = Role(decoded.Role.Value)
 	if r.Role.Validate() != nil {

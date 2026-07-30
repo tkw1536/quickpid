@@ -16,7 +16,7 @@ func (h *Server) getCurrentUserHTTP(w http.ResponseWriter, r *http.Request, user
 	}
 	currentUser, err := h.svc.GetUserAccount(r.Context(), user, target)
 	if err != nil {
-		return nil, fmt.Errorf("svc.GetUserAccount: %w", err)
+		return nil, fmt.Errorf("failed to get user account: %w", err)
 	}
 	return currentUser, nil
 }
@@ -34,7 +34,7 @@ func (h *Server) createUser(w http.ResponseWriter, r *http.Request, caller api.V
 
 	createdUser, err := h.svc.CreateUser(r.Context(), caller, validReq)
 	if err != nil {
-		return nil, fmt.Errorf("svc.CreateUser: %w", err)
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 	return createdUser, nil
 }
@@ -46,7 +46,7 @@ func (h *Server) deleteUser(w http.ResponseWriter, r *http.Request, caller api.V
 	}
 
 	if err := h.svc.DeleteUser(r.Context(), caller, target); err != nil {
-		return struct{}{}, fmt.Errorf("svc.DeleteUser: %w", err)
+		return struct{}{}, fmt.Errorf("failed to delete user: %w", err)
 	}
 	return struct{}{}, nil
 }
@@ -68,7 +68,7 @@ func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, caller 
 
 	response, err := h.svc.SetUserPassword(r.Context(), caller, target, validReq)
 	if err != nil {
-		return nil, fmt.Errorf("svc.SetUserPassword: %w", err)
+		return nil, fmt.Errorf("failed to set user password: %w", err)
 	}
 	return response, nil
 }
@@ -94,7 +94,7 @@ func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, caller api.Va
 		Offset:    offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("svc.ListUsers: %w", err)
+		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
 	return users, nil
 }
@@ -106,7 +106,7 @@ func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, calle
 	}
 	usernames, err := h.svc.AutocompleteUsers(r.Context(), caller, query.String())
 	if err != nil {
-		return nil, fmt.Errorf("svc.AutocompleteUsers: %w", err)
+		return nil, fmt.Errorf("failed to autocomplete users: %w", err)
 	}
 	return usernames, nil
 }
@@ -126,7 +126,7 @@ func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, caller api.Val
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("svc.ListKeys: %w", err)
+		return nil, fmt.Errorf("failed to list keys: %w", err)
 	}
 	return keys, nil
 }
@@ -143,7 +143,7 @@ func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, caller api.Val
 
 	response, err := h.svc.IssueKey(r.Context(), caller, target, req)
 	if err != nil {
-		return nil, fmt.Errorf("svc.IssueKey: %w", err)
+		return nil, fmt.Errorf("failed to issue key: %w", err)
 	}
 	return response, nil
 }
@@ -159,7 +159,7 @@ func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, caller api.Va
 	}
 
 	if err := h.svc.RevokeKey(r.Context(), caller, target, req); err != nil {
-		return struct{}{}, fmt.Errorf("svc.RevokeKey: %w", err)
+		return struct{}{}, fmt.Errorf("failed to revoke key: %w", err)
 	}
 	return struct{}{}, nil
 }
@@ -176,7 +176,7 @@ func (h *Server) updateCurrentUser(w http.ResponseWriter, r *http.Request, calle
 
 	updatedUser, err := h.svc.UpdateUser(r.Context(), caller, target, req)
 	if err != nil {
-		return nil, fmt.Errorf("svc.UpdateUser: %w", err)
+		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 	return updatedUser, nil
 }

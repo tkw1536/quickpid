@@ -22,12 +22,12 @@ func Rewrite(input []byte, server Server) ([]byte, error) {
 	// decode the yaml node
 	var node yaml.Node
 	if err := yaml.Unmarshal(input, &node); err != nil {
-		return nil, fmt.Errorf("yaml.Unmarshal: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal yaml: %w", err)
 	}
 
 	root, err := yamlx.Find(&node)
 	if err != nil {
-		return nil, fmt.Errorf("yamlx.Find: %w", err)
+		return nil, fmt.Errorf("failed to find root node: %w", err)
 	}
 
 	serversNode, err := openapiYAMLNode([]map[string]string{{"url": server.MountPath}})
@@ -35,17 +35,17 @@ func Rewrite(input []byte, server Server) ([]byte, error) {
 		return nil, err
 	}
 	if err := yamlx.Assign(root, "servers", *serversNode); err != nil {
-		return nil, fmt.Errorf("yamlx.Assign: %w", err)
+		return nil, fmt.Errorf("failed to assign servers node: %w", err)
 	}
 
 	// re en-code the document into bytes.
 	var buf bytes.Buffer
 	enc := yaml.NewEncoder(&buf)
 	if err := enc.Encode(&node); err != nil {
-		return nil, fmt.Errorf("encoder.Encode: %w", err)
+		return nil, fmt.Errorf("failed to encode yaml: %w", err)
 	}
 	if err := enc.Close(); err != nil {
-		return nil, fmt.Errorf("Encoder.Close: %w", err)
+		return nil, fmt.Errorf("failed to close encoder: %w", err)
 	}
 	return buf.Bytes(), nil
 }
@@ -53,11 +53,11 @@ func Rewrite(input []byte, server Server) ([]byte, error) {
 func openapiYAMLNode(value any) (*yaml.Node, error) {
 	node, err := yamlx.Marshal(value)
 	if err != nil {
-		return nil, fmt.Errorf("yamlx.Marshal: %w", err)
+		return nil, fmt.Errorf("failed to marshal yaml: %w", err)
 	}
 	root, err := yamlx.Find(node)
 	if err != nil {
-		return nil, fmt.Errorf("yamlx.Find: %w", err)
+		return nil, fmt.Errorf("failed to find root node: %w", err)
 	}
 	return root, nil
 }
