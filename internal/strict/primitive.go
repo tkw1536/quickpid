@@ -76,8 +76,8 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 }
 
 // Time returns the underlying [time.Time] value.
-func (t Time) Time() time.Time {
-	return time.Time(t)
+func (t *Time) Time() time.Time {
+	return time.Time(*t)
 }
 
 // StringSlice rejects JSON null and non-arrays, and requires each element to be a string literal.
