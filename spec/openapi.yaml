@@ -1,7 +1,27 @@
 openapi: 3.0.0
 info:
   title: QuickPID API
-  description: "API for managing PIDs across namespaces and user accounts with API keys. TODO: Move authenticated / anonymous mode. " 
+  description: |
+    The QuickPID API is used for managing PIDs across namespaces, along with associated user accounts and rights management.
+
+    The API is designed with a lot of verbosity in mind.
+    In particular, all routes always require explicit parameters and in most cases are not defaulted automatically.
+    Implementations should also validate objects passed, and return appropriate error codes when they do not match.
+
+    The API roughly splits into a `Resolver API` and a `Management API`.
+    The Resolver API is responsible for creating PIDs, whereas the management API is responsible for authentication and authorization. 
+    Routes in the Resolver API are found in the `quickpid`, `namespaces`, `resources` and `mounts` tags below.
+    Routes in the Management API are found in the `user`, `roles` and `credentials` tags below.
+
+    In principle, the API can be run in one of two modes:
+
+    - "Anonymous Mode": 
+      The Management API is disabled, and no authentication for any API routes is required.
+      This corresponds to just running the Resolver API in the architecture sketch above.
+      
+    - "Authenticated Mode": 
+      Both Management and Resolver API are active.
+      Users need to authenticate to access specific resolver routes.
   version: 3.0.0
   license:
     name: Creative Commons Attribution-ShareAlike 4.0 International
@@ -9,7 +29,7 @@ info:
 
 tags:
   - name: quickpid
-    description: Generic information about the server.
+    description: Generic API server information. 
   - name: namespaces
     description: Operations related to namespaces.
   - name: resources
@@ -33,12 +53,12 @@ security:
 paths:
   /resolver:
     get:
-      summary: Return information regarding the API's limits and other configuration.
+      summary: Return information regarding this API's limits and other configuration.
       description: |
         This endpoint returns internal limits and configuration information.
         An implementation MAY refuse to expose any information, in which case a 404 response is expected.
 
-        The endpoint (if enabled) crucially also returns if the server requires authentication or if it is in "anonymous" mode.
+        The endpoint (if enabled) crucially also returns if the server requires authentication or if it is in anonymous mode.
         In anonymous mode, no authentication is required for any of the other endpoints, and no authorization checks are performed.
         This is intended for use cases where the API runs behind a separate system which handles authentication and authorization on it's own.
       security: []
