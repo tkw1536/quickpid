@@ -1,6 +1,6 @@
 package api
 
-//spellchecker:words github quickpid internal strict
+//spellchecker:words time github quickpid internal strict
 import (
 	"fmt"
 	"time"

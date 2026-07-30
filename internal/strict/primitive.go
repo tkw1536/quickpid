@@ -1,7 +1,7 @@
 //spellchecker:words strict
 package strict
 
-//spellchecker:words bytes encoding json errors
+//spellchecker:words bytes encoding json errors time
 import (
 	"bytes"
 	"encoding/json"

@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server_test
 
-//spellchecker:words context encoding errors json http httptest reflect strings testing time github quickpid backend memory internal apikey server service
+//spellchecker:words context encoding json errors http httptest reflect strings testing time github quickpid backend memory internal apikey server service
 import (
 	"context"
 	"encoding/json"

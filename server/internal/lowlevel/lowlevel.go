@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words context slog http github quickpid
+//spellchecker:words context errors slog github quickpid
 import (
 	"context"
 	"errors"
@@ -9,6 +9,8 @@ import (
 
 	"github.com/tkw1536/quickpid/api"
 )
+
+//spellchecker:words marshallable
 
 // Handler generates [http.HandlerFunc]s for quickpid-based functionality.
 //

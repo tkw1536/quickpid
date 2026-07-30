@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel_test
 
-//spellchecker:words context encoding base errors slog http httptest strings testing time github quickpid backend memory internal apikey httpfixture server lowlevel
+//spellchecker:words context encoding base errors slog http httptest testing time github quickpid internal httpfixture server lowlevel
 import (
 	"context"
 	"encoding/base64"

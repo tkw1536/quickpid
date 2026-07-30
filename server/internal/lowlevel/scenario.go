@@ -1,6 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel
 
+//spellchecker:words http github quickpid
 import (
 	"net/http"
 

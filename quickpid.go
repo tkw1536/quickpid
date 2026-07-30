@@ -3,7 +3,7 @@
 //spellchecker:words quickpid
 package quickpid
 
-//spellchecker:words embed
+//spellchecker:words embed runtime debug
 import (
 	"embed"
 	"io/fs"

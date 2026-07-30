@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words errors slog http time github quickpid service
+//spellchecker:words errors slog http time github quickpid
 import (
 	"errors"
 	"fmt"

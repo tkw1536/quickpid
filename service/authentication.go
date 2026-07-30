@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors slog time github quickpid backend internal apikey
+//spellchecker:words context errors slog sync github quickpid backend internal apikey
 import (
 	"context"
 	"errors"
