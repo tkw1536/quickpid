@@ -92,7 +92,6 @@ Examples:
 
 - rework non-flow-tests
 - key revocation: rename to delete
-- work on the TODOs in the openapi spec
 - [vacuum](https://github.com/daveshanley/vacuum) on CI for validation 
 - use something other than uuid for namespace generation to drop dependency
 
