@@ -1,8 +1,5 @@
 # quickpid
 
-This is a branch of [github.com/tkw1536/quickpid](https://github.com/tkw1536/quickpid).
-Because it is my personal copyright, the original license is removed, and you're not allowed to use run this yet.
-
 [![CI](https://github.com/tkw1536/quickpid/actions/workflows/go.yaml/badge.svg)](https://github.com/tkw1536/quickpid/actions/workflows/go.yaml)
 
 In the scientific community it is common to issue [persistent identifiers](https://en.wikipedia.org/wiki/Persistent_identifier) -- or PIDs for short -- to objects to be able to identify and refer to them unambiguously.
@@ -94,7 +91,6 @@ Examples:
 ## Future Technical Work
 
 - rework non-flow-tests
-- licensing
 - key revocation: rename to delete
 - work on the TODOs in the openapi spec
 - [vacuum](https://github.com/daveshanley/vacuum) on CI for validation 
@@ -102,7 +98,7 @@ Examples:
 
 ## LICENSE
 
-The code in this repository is unlicensed.
+The code in this repository is &copy; Tom Wiesing and available under the terms of the [GNU Affero General Public License 3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) license, see [the LICENSE file](./LICENSE).
 
 The [`spec` directory](./spec/README.md), which contains the API specification and test cases, is licensed separately to enable re-use.
 In addition to being available under AGPL, it is also available under the terms of the [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/) license.

@@ -31,13 +31,16 @@ func GetTestData() fs.FS {
 }
 
 // CopyrightNotice is the copyright notice for the project.
-const CopyrightNotice = "© Tom Wiesing. All rights reserved."
+const CopyrightNotice = "© Tom Wiesing. Available under AGPL 3.0."
+
+//go:embed LICENSE
+var license string
 
 // License returns the full text of the license file.
 //
 // There currently is no license and this function returns the empty string.
 func License() string {
-	return ""
+	return license
 }
 
 // Version returns the version of this module as reported by the Go runtime
