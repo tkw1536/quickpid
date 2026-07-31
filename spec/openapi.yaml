@@ -54,6 +54,7 @@ paths:
   /resolver:
     get:
       summary: Return information regarding this API's limits and other configuration.
+      operationId: getResolverInfo
       description: |
         This endpoint returns internal limits and configuration information.
         An implementation MAY refuse to expose any information, in which case a 404 response is expected.
@@ -82,6 +83,7 @@ paths:
   /resolver/info:
     get:
       summary: Get meta information about the server.
+      operationId: getServerInfo
       description: |
         Returns optional public meta information about this server, such as a human-readable
         comment, an about URL, and the software name and version.
@@ -103,6 +105,7 @@ paths:
   /resolver/namespaces:
     get:
       summary: List namespaces available on the resolver.
+      operationId: listNamespaces
       description: |
         This endpoint returns a list of namespaces available on the server.
         They can be additionally filtered by several parameters.
@@ -184,6 +187,7 @@ paths:
 
     post:
       summary: Creates a new namespace.
+      operationId: createNamespace
       description: |
         This endpoint creates a new namespace with a server-assigned id.
 
@@ -258,6 +262,7 @@ paths:
   /resolver/resources/count:
     get:
       summary: Return the total number of resources (issued PIDs) stored across all namespaces.
+      operationId: getResourceCount
       description: |
         This endpoint returns the total number of resources (issued PIDs) across all namespaces.
         This includes soft-deleted resources.
@@ -287,6 +292,7 @@ paths:
   /resolver/mounts:
     get:
       summary: List all namespace mounts.
+      operationId: listMounts
       description: |
         Returns a paginated list of all mounts.
         Results are ordered ascending by namespace id, then by base URI.
@@ -360,6 +366,7 @@ paths:
   /resolver/mounts/{base_uri}:
     get:
       summary: Resolve a namespace mount by base URI.
+      operationId: resolveMountByBaseURI
       description: |
         Returns the namespace id mapped from the given base URI.
 
@@ -410,6 +417,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
     put:
       summary: Create or replace a namespace mount.
+      operationId: upsertNamespaceMount
       description: |
         Creates or replaces the unidirectional mapping from the given base URI to a namespace id.
         There may only be at most one mapping per base URI; multiple base URIs may map to the same namespace.
@@ -494,6 +502,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
     delete:
       summary: Delete a namespace mount.
+      operationId: deleteNamespaceMount
       description: |
         Removes the mapping for the given base URI.
 
@@ -555,6 +564,7 @@ paths:
   /resolver/mounts/{base_uri}/{pid}:
     get:
       summary: Resolve a resource using a mounted base URI and PID.
+      operationId: resolveResourceByMountAndPID
       description: |
         Resolves the given base URI to a namespace mount, then resolves the PID within that namespace.
 
@@ -644,6 +654,7 @@ paths:
   /resolver/namespaces/{namespace}:
     get:
       summary: Retrieve a single namespace by id.
+      operationId: getNamespace
       description: |
         This endpoint returns a single namespace by id.
 
@@ -714,6 +725,7 @@ paths:
   /resolver/namespaces/{namespace}/mounts:
     get:
       summary: List mounts for a namespace.
+      operationId: listNamespaceMounts
       description: |
         Returns a paginated list of base URIs mounted to the given namespace.
         Results are ordered ascending by base URI.
@@ -801,6 +813,7 @@ paths:
   /resolver/namespaces/{namespace}/roles:
     get:
       summary: List explicit namespace roles.
+      operationId: listNamespaceRoles
       description: |
         Lists users who have an explicit non-none role in the namespace.
         Users without an explicit role record have the default `none` role and are not listed.
@@ -888,6 +901,7 @@ paths:
   /resolver/namespaces/{namespace}/roles/{username}:
     get:
       summary: Get a user's role in a namespace.
+      operationId: getNamespaceRole
       description: |
         Retrieves the role of a specific user in a namespace.
         If no explicit role record exists, the response returns `role: none`.
@@ -956,6 +970,7 @@ paths:
 
     put:
       summary: Set a user's role in a namespace.
+      operationId: setNamespaceRole
       description: |
         Sets the role of a specific user in a namespace.
         The `none` role cannot be set via this endpoint; use DELETE to remove an explicit role.
@@ -1044,6 +1059,7 @@ paths:
 
     delete:
       summary: Remove a user's explicit role in a namespace.
+      operationId: removeNamespaceRole
       description: |
         Removes an explicit role record, reverting the user to the default `none` role.
 
@@ -1111,6 +1127,7 @@ paths:
   /resolver/namespaces/{namespace}/resources:
     get:
       summary: List resources within a namespace.
+      operationId: listResources
       description: |
         Returns a paginated list of resources within the namespace, ordered by pid in increasing order.
 
@@ -1226,6 +1243,7 @@ paths:
 
     post:
       summary: Create a resource within a namespace.
+      operationId: createResource
       description: |
         Creates a new resource within the namespace.
         A new PID is generated, unique within the namespace, and returned with the response.
@@ -1323,6 +1341,7 @@ paths:
   /resolver/namespaces/{namespace}/resources/batch:
     post:
       summary: Create several resources within a namespace.
+      operationId: createResourceBatch
       description: |
         Creates multiple resources in a single request.
         This is equivalent to calling the createResource operation repeatedly.
@@ -1441,6 +1460,7 @@ paths:
   /resolver/namespaces/{namespace}/resources/{pid}:
     get:
       summary: Retrieve a resource by PID within a namespace.
+      operationId: getResource
       description: |
         Retrieves a single resource by PID within a namespace.
 
@@ -1526,6 +1546,7 @@ paths:
 
     patch:
       summary: Update a resource by PID within a namespace.
+      operationId: updateResource
       description: |
         Updates a resource using patch semantics.
         Omitted fields are not changed.
@@ -1630,6 +1651,7 @@ paths:
   /user/:
     get:
       summary: Return information about a user account.
+      operationId: getUserInfo
       description: |
         Returns information about a user account.
 
@@ -1699,6 +1721,7 @@ paths:
 
     patch:
       summary: Update a user account.
+      operationId: updateUser
       description: |
         Updates fields on a user account.
 
@@ -1791,6 +1814,7 @@ paths:
 
     post:
       summary: Create a new user account.
+      operationId: createUser
       description: |
         Creates a new user account.
 
@@ -1874,6 +1898,7 @@ paths:
 
     delete:
       summary: Delete a user account.
+      operationId: deleteUser
       description: |
         Deletes a user account.
 
@@ -1942,6 +1967,7 @@ paths:
   /users/autocomplete:
     get:
       summary: Autocomplete usernames by prefix.
+      operationId: autocompleteUsers
       description: |
         Returns a list of usernames that begin with the given query prefix, sorted in increasing order.
 
@@ -2006,6 +2032,7 @@ paths:
   /users/:
     get:
       summary: List all user accounts.
+      operationId: listUsers
       description: |
         Returns a paginated list of user accounts.
 
@@ -2114,6 +2141,7 @@ paths:
   /user/roles:
     get:
       summary: List explicit namespace roles for a user.
+      operationId: getUserRoles
       description: |
         Lists namespaces where the user has an explicit non-none role.
         Namespaces without an explicit role record have the default `none` role and are not listed.
@@ -2208,6 +2236,7 @@ paths:
   /user/key:
     get:
       summary: List API keys for a user account.
+      operationId: listUserKeys
       description: |
         Returns a paginated list of API keys.
         The list does not include keys that are no longer valid.
@@ -2301,6 +2330,7 @@ paths:
 
     post:
       summary: Issue a new API key.
+      operationId: issueUserKey
       description: |
         Issues a new API key.
 
@@ -2393,6 +2423,7 @@ paths:
   /user/password:
     post:
       summary: Set or clear a user password.
+      operationId: setUserPassword
       description: |
         Sets or clears an HTTP basic password for a user account.
 
@@ -2487,6 +2518,7 @@ paths:
   /user/key/revoke:
     post:
       summary: Revoke an API key for a user account.
+      operationId: revokeUserKey
       description: |
         Revokes an API key.
         This operation is idempotent: revoking an already-revoked key returns 204.
