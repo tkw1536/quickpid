@@ -167,8 +167,7 @@ paths:
             application/json:
               example: { error: "invalid_query_parameter" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+                $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required or the credentials are incorrect.
           content:
@@ -182,8 +181,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
     post:
       summary: Creates a new namespace.
@@ -239,8 +237,7 @@ paths:
             application/json:
               example: { error: "body_size_exceeded" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error or ID generation failure.
           content:
@@ -256,8 +253,7 @@ paths:
             application/json:
               example: { error: "insufficient_entropy" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorInsufficientEntropy'
+                $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
   /resolver/resources/count:
     get:
@@ -286,8 +282,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /resolver/mounts:
     get:
@@ -360,8 +355,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /resolver/mounts/{base_uri}:
     get:
@@ -413,8 +407,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
     put:
       summary: Create or replace a namespace mount.
       operationId: upsertNamespaceMount
@@ -491,16 +484,14 @@ paths:
             application/json:
               example: { error: "body_size_exceeded" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error.
           content:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
     delete:
       summary: Delete a namespace mount.
       operationId: deleteNamespaceMount
@@ -559,8 +550,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /resolver/mounts/{base_uri}/{pid}:
     get:
@@ -649,8 +639,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /resolver/namespaces/{namespace}:
     get:
@@ -720,8 +709,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /resolver/namespaces/{namespace}/mounts:
     get:
@@ -808,8 +796,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /resolver/namespaces/{namespace}/roles:
     get:
@@ -1232,16 +1219,14 @@ paths:
             application/json:
               example: { error: "namespace_not_found" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
           description: Internal server error.
           content:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
     post:
       summary: Create a resource within a namespace.
@@ -1313,16 +1298,14 @@ paths:
             application/json:
               example: { error: "body_size_exceeded" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '404':
           description: Namespace does not exist.
           content:
             application/json:
               example: { error: "namespace_not_found" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
           description: Internal server error or PID generation failure.
           content:
@@ -1338,8 +1321,7 @@ paths:
             application/json:
               example: { error: "insufficient_entropy" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorInsufficientEntropy'
+                $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
   /resolver/namespaces/{namespace}/resources/batch:
     post:
@@ -1424,24 +1406,21 @@ paths:
             application/json:
               example: { error: "body_size_exceeded" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '404':
           description: Namespace does not exist.
           content:
             application/json:
               example: { error: "namespace_not_found" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
+                $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '422':
           description: Number of items in the batch exceeds the configured maximum.
           content:
             application/json:
               example: {}
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorItemLimitExceeded'
+                $ref: '#/components/schemas/ErrorItemLimitExceeded'
         '500':
           description: Internal server error or PID generation failure.
           content:
@@ -1457,8 +1436,7 @@ paths:
             application/json:
               example: { error: "insufficient_entropy" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorInsufficientEntropy'
+                $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
   /resolver/namespaces/{namespace}/resources/{pid}:
     get:
@@ -1544,8 +1522,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
     patch:
       summary: Update a resource by PID within a namespace.
@@ -1640,16 +1617,14 @@ paths:
             application/json:
               example: { error: "body_size_exceeded" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error.
           content:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /user:
     get:
@@ -1719,8 +1694,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
     patch:
       summary: Update a user account.
@@ -1804,16 +1778,14 @@ paths:
             application/json:
               example: { error: "body_size_exceeded" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error.
           content:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
     post:
       summary: Create a new user account.
@@ -1880,24 +1852,21 @@ paths:
             application/json:
               example: { error: "duplicate_username" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDuplicateUsername'
+                $ref: '#/components/schemas/ErrorDuplicateUsername'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
               example: { error: "body_size_exceeded" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error.
           content:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
     delete:
       summary: Delete a user account.
@@ -1964,8 +1933,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /users/autocomplete:
     get:
@@ -2029,8 +1997,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /users:
     get:
@@ -2109,8 +2076,7 @@ paths:
             application/json:
               example: { error: "invalid_query_parameter" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+                $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required, the credentials are incorrect, or the authenticated user does not exist.
           content:
@@ -2138,8 +2104,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /user/roles:
     get:
@@ -2233,8 +2198,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /user/key:
     get:
@@ -2328,8 +2292,7 @@ paths:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
     post:
       summary: Issue a new API key.
@@ -2412,16 +2375,14 @@ paths:
             application/json:
               example: { error: "body_size_exceeded" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error.
           content:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /user/password:
     post:
@@ -2507,16 +2468,14 @@ paths:
             application/json:
               example: { error: "body_size_exceeded" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error.
           content:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
   /user/key/revoke:
     post:
@@ -2595,16 +2554,14 @@ paths:
             application/json:
               example: { error: "body_size_exceeded" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorBodySizeExceeded'
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error.
           content:
             application/json:
               example: { error: "database_error" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                $ref: '#/components/schemas/ErrorDatabaseError'
 
 components:
   securitySchemes:
