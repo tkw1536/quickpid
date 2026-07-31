@@ -69,12 +69,14 @@ paths:
           description: Limits successfully retrieved.
           content:
             application/json:
+              example: { max_body_bytes: 1048576, default_page_limit: 50, max_page_limit: 200, max_batch_items: 100, authentication: true, max_autocomplete_users: 10 }
               schema:
                 $ref: '#/components/schemas/InfoResponse'
         '404':
           description: Configuration is unavailable.
           content:
             application/json:
+              example: { error: "info_unavailable" }
               schema:
                 $ref: '#/components/schemas/ErrorInfoUnavailable'
   /resolver/info:
@@ -94,6 +96,7 @@ paths:
           description: Meta information successfully retrieved.
           content:
             application/json:
+              example: { about: "https://quickpid.example/about", comment: "Public resolver for example data", software: "quickpid", version: "3.0.0" }
               schema:
                 $ref: '#/components/schemas/MetaResponse'
 
@@ -152,12 +155,14 @@ paths:
             A paginated list of namespaces, sorted by their id in increasing order.
           content:
             application/json:
+              example: { total: 1, offset: 0, items: [ { id: "ns_123", tag: "project-a", pid_format: { pattern: "***-***", characters: "readable" }, date_created: "2026-07-30T10:00:00Z" } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedNamespacesResponse'
         '400':
           description: Invalid query parameter (e.g. limit or offset).
           content:
             application/json:
+              example: { error: "invalid_query_parameter" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
@@ -165,12 +170,14 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -194,6 +201,7 @@ paths:
           If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
+            example: { tag: "project-a", pid_format: { pattern: "***-***", characters: "readable" } }
             schema:
               $ref: '#/components/schemas/NamespaceCreateRequest'
 
@@ -202,12 +210,14 @@ paths:
           description: Namespace created successfully.
           content:
             application/json:
+              example: { id: "ns_123", tag: "project-a", pid_format: { pattern: "***-***", characters: "readable" }, date_created: "2026-07-30T10:00:00Z" }
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
           description: Invalid request body.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -216,12 +226,14 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodySizeExceeded'
@@ -229,6 +241,7 @@ paths:
           description: Internal server error or ID generation failure.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -237,6 +250,7 @@ paths:
           description: Could not allocate a namespace id after repeated attempts.
           content:
             application/json:
+              example: { error: "insufficient_entropy" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInsufficientEntropy'
@@ -258,12 +272,14 @@ paths:
             Includes soft-deleted resources.
           content:
             application/json:
+              example: { total: 42 }
               schema:
                 $ref: '#/components/schemas/ResourceCountResponse'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -308,30 +324,35 @@ paths:
             A paginated list of mounts, sorted by namespace id then base URI in increasing order.
           content:
             application/json:
+              example: { total: 1, offset: 0, items: [ { base_uri: "https://example.org/base/", namespace: "ns_123" } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedMountsResponse'
         '400':
           description: Invalid query parameter (e.g. limit or offset).
           content:
             application/json:
+              example: { error: "invalid_query_parameter" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The authenticated user is not allowed to list all mounts.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -362,24 +383,28 @@ paths:
           description: Mount found.
           content:
             application/json:
+              example: { base_uri: "https://example.org/base/", namespace: "ns_123" }
               schema:
                 $ref: '#/components/schemas/Mount'
         '400':
           description: Invalid base URI.
           content:
             application/json:
+              example: { error: "invalid_base_uri" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidBaseURI'
         '404':
           description: Mount does not exist.
           content:
             application/json:
+              example: { error: "mount_not_found" }
               schema:
                 $ref: '#/components/schemas/ErrorMountNotFound'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -408,6 +433,7 @@ paths:
         required: true
         content:
           application/json:
+            example: { namespace: "ns_123" }
             schema:
               $ref: '#/components/schemas/MountUpsertRequest'
       responses:
@@ -415,12 +441,14 @@ paths:
           description: Mount created or replaced.
           content:
             application/json:
+              example: { base_uri: "https://example.org/base/", namespace: "ns_123" }
               schema:
                 $ref: '#/components/schemas/Mount'
         '400':
           description: Invalid request body or base URI.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -431,24 +459,28 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The authenticated user is not allowed to manage mounts.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace does not exist.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '413':
           description: Request body exceeds the configured size limit.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodySizeExceeded'
@@ -456,6 +488,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -486,30 +519,35 @@ paths:
           description: Invalid base URI.
           content:
             application/json:
+              example: { error: "invalid_base_uri" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidBaseURI'
         '401':
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The authenticated user is not allowed to manage mounts.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Mount does not exist.
           content:
             application/json:
+              example: { error: "mount_not_found" }
               schema:
                 $ref: '#/components/schemas/ErrorMountNotFound'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -563,6 +601,7 @@ paths:
                 type: string
           content:
             application/json:
+              example: { pid: "abc-def", url: "https://example.org/resource", metadata: "sample metadata", date_created: "2026-07-30T10:00:00Z", date_updated: "2026-07-30T10:00:00Z", tags: [ "sample" ], deleted: false }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ResourceResponse'
@@ -571,6 +610,7 @@ paths:
           description: Invalid base URI or PID.
           content:
             application/json:
+              example: { error: "invalid_base_uri" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidBaseURI'
@@ -579,12 +619,14 @@ paths:
           description: Authentication is required or the supplied credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '404':
           description: Mount, namespace, or resource does not exist.
           content:
             application/json:
+              example: { error: "mount_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorMountNotFound'
@@ -594,6 +636,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -628,36 +671,42 @@ paths:
           description: Namespace found.
           content:
             application/json:
+              example: { id: "ns_123", tag: "project-a", pid_format: { pattern: "***-***", characters: "readable" }, date_created: "2026-07-30T10:00:00Z" }
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
           description: Invalid namespace id.
           content:
             application/json:
+              example: { error: "invalid_namespace_id" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidNamespaceID'
         '401':
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The namespace exists but the authenticated user is not allowed to access it.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace does not exist.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -707,12 +756,14 @@ paths:
             A paginated list of base URIs, sorted in increasing order.
           content:
             application/json:
+              example: { total: 1, offset: 0, items: [ "https://example.org/base/" ] }
               schema:
                 $ref: '#/components/schemas/PaginatedBaseURIResponse'
         '400':
           description: Invalid namespace id or query parameter.
           content:
             application/json:
+              example: { error: "invalid_namespace_id" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
@@ -721,24 +772,28 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The authenticated user is not allowed to list mounts for this namespace.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace does not exist.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -787,12 +842,14 @@ paths:
           description: Roles listed successfully.
           content:
             application/json:
+              example: { total: 1, offset: 0, items: [ { username: "alice", role: "manager" } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedNamespaceRolesResponse'
         '400':
           description: Invalid namespace id or query parameter.
           content:
             application/json:
+              example: { error: "invalid_namespace_id" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
@@ -801,18 +858,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The authenticated user is not allowed to list roles.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace does not exist, or the server is in anonymous mode.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -821,6 +881,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -851,30 +912,35 @@ paths:
           description: Role retrieved successfully.
           content:
             application/json:
+              example: { username: "alice", role: "manager" }
               schema:
                 $ref: '#/components/schemas/NamespaceRole'
         '400':
           description: Invalid namespace id.
           content:
             application/json:
+              example: { error: "invalid_namespace_id" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidNamespaceID'
         '401':
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The authenticated user is not allowed to view this role.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace or user do not exist, or the server is in anonymous mode.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -884,6 +950,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -913,6 +980,7 @@ paths:
         required: true
         content:
           application/json:
+            example: { role: "manager" }
             schema:
               $ref: '#/components/schemas/SetNamespaceRoleRequest'
       responses:
@@ -920,12 +988,14 @@ paths:
           description: Role updated successfully.
           content:
             application/json:
+              example: { username: "alice", role: "manager" }
               schema:
                 $ref: '#/components/schemas/NamespaceRole'
         '400':
           description: Invalid request.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -937,18 +1007,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The authenticated user is not allowed to set the specified role.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace does not exist, or the server is in anonymous mode.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -958,12 +1031,14 @@ paths:
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -995,6 +1070,7 @@ paths:
           description: Invalid namespace id or username.
           content:
             application/json:
+              example: { error: "invalid_namespace_id" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
@@ -1003,18 +1079,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The authenticated user is not allowed to delete roles.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace or explicit role not found, or the server is in anonymous mode.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -1025,6 +1104,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -1101,12 +1181,14 @@ paths:
           description: A paginated list of resources within the namespace, ordered by their pid in increasing order.
           content:
             application/json:
+              example: { total: 1, offset: 0, items: [ { pid: "abc-def", url: "https://example.org/resource", metadata: "sample metadata", date_created: "2026-07-30T10:00:00Z", date_updated: "2026-07-30T10:00:00Z", tags: [ "sample" ], deleted: false } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedResourcesResponse'
         '400':
           description: Invalid namespace id or query parameter.
           content:
             application/json:
+              example: { error: "invalid_namespace_id" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
@@ -1115,18 +1197,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The namespace exists but the authenticated user is not allowed to list resources.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace does not exist.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -1134,6 +1219,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1164,6 +1250,7 @@ paths:
         required: true
         content:
           application/json:
+            example: { url: "https://example.org/resource", metadata: "sample metadata", tags: [ "sample" ] }
             schema:
               $ref: '#/components/schemas/ResourceCreateRequest'
 
@@ -1172,12 +1259,14 @@ paths:
           description: Resource created successfully.
           content:
             application/json:
+              example: { pid: "abc-def", url: "https://example.org/resource", metadata: "sample metadata", date_created: "2026-07-30T10:00:00Z", date_updated: "2026-07-30T10:00:00Z", tags: [ "sample" ], deleted: false }
               schema:
                 $ref: '#/components/schemas/ResourceResponse'
         '400':
           description: Invalid request body, JSON, or namespace id in the path.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1187,18 +1276,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The namespace exists but the authenticated user is not allowed to create resources.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodySizeExceeded'
@@ -1206,6 +1298,7 @@ paths:
           description: Namespace does not exist.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -1213,6 +1306,7 @@ paths:
           description: Internal server error or PID generation failure.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1221,6 +1315,7 @@ paths:
           description: Could not allocate a PID after repeated attempts.
           content:
             application/json:
+              example: { error: "insufficient_entropy" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInsufficientEntropy'
@@ -1260,6 +1355,7 @@ paths:
           If the maximum body size is exceeded, a 413 response is returned.
         content:
           application/json:
+            example: { url: "https://example.org/resource", metadata: "sample metadata", tags: [ "sample" ] }
             schema:
               type: array
 
@@ -1271,6 +1367,7 @@ paths:
           description: Resources created successfully.
           content:
             application/json:
+              example: { pid: "abc-def", url: "https://example.org/resource", metadata: "sample metadata", date_created: "2026-07-30T10:00:00Z", date_updated: "2026-07-30T10:00:00Z", tags: [ "sample" ], deleted: false }
               schema:
                 type: array
                 items:
@@ -1279,6 +1376,7 @@ paths:
           description: Invalid request body, JSON, or namespace id in the path.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1288,18 +1386,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The namespace exists but the authenticated user is not allowed to create resources.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '413':
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodySizeExceeded'
@@ -1307,6 +1408,7 @@ paths:
           description: Namespace does not exist.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -1314,6 +1416,7 @@ paths:
           description: Number of items in the batch exceeds the configured maximum.
           content:
             application/json:
+              example: {}
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorItemLimitExceeded'
@@ -1321,6 +1424,7 @@ paths:
           description: Internal server error or PID generation failure.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1329,6 +1433,7 @@ paths:
           description: Could not allocate PIDs after repeated attempts.
           content:
             application/json:
+              example: { error: "insufficient_entropy" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInsufficientEntropy'
@@ -1373,12 +1478,14 @@ paths:
             For deleted resources, the full object is returned only to authenticated callers with at least the `editor` role or superuser privileges.
           content:
             application/json:
+              example: { pid: "abc-def", url: "https://example.org/resource", metadata: "sample metadata", date_created: "2026-07-30T10:00:00Z", date_updated: "2026-07-30T10:00:00Z", tags: [ "sample" ], deleted: false }
               schema:
                 $ref: '#/components/schemas/ResourceResponse'
         '400':
           description: Invalid namespace id or PID in the path.
           content:
             application/json:
+              example: { error: "invalid_namespace_id" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
@@ -1387,12 +1494,14 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '404':
           description: Namespace or resource does not exist.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -1403,12 +1512,14 @@ paths:
             Returned to callers who are not allowed to see the full deleted resource, with a redacted object only.
           content:
             application/json:
+              example: { pid: "abc-def", date_created: "2026-07-30T10:00:00Z", date_updated: "2026-07-30T10:00:00Z", deleted: true }
               schema:
                 $ref: '#/components/schemas/RedactedResourceResponse'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1454,6 +1565,7 @@ paths:
         required: true
         content:
           application/json:
+            example: { url: "https://example.org/resource", metadata: "sample metadata", deleted: false, tags: [ "sample" ] }
             schema:
               $ref: '#/components/schemas/ResourceUpdateRequest'
       responses:
@@ -1461,12 +1573,14 @@ paths:
           description: Resource updated
           content:
             application/json:
+              example: { pid: "abc-def", url: "https://example.org/resource", metadata: "sample metadata", date_created: "2026-07-30T10:00:00Z", date_updated: "2026-07-30T10:00:00Z", tags: [ "sample" ], deleted: false }
               schema:
                 $ref: '#/components/schemas/ResourceResponse'
         '400':
           description: Invalid request body, JSON, namespace id, or PID.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1477,18 +1591,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The namespace or resource exists but the authenticated user is not allowed to update it.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace or resource does not exist.
           content:
             application/json:
+              example: { error: "namespace_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -1497,6 +1614,7 @@ paths:
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodySizeExceeded'
@@ -1504,6 +1622,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1534,12 +1653,14 @@ paths:
           description: User information successfully retrieved.
           content:
             application/json:
+              example: { username: "alice", superuser: false, password: true }
               schema:
                 $ref: '#/components/schemas/UserInfo'
         '400':
           description: Invalid query parameter.
           content:
             application/json:
+              example: { error: "invalid_query_parameter" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
@@ -1548,18 +1669,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: Only superusers may set the `username` parameter.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode, or the requested user does not exist.
           content:
             application/json:
+              example: {}
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
@@ -1568,6 +1692,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1600,6 +1725,7 @@ paths:
           If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
+            example: { superuser: false }
             schema:
               $ref: '#/components/schemas/UpdateUserRequest'
       responses:
@@ -1607,12 +1733,14 @@ paths:
           description: User account updated successfully.
           content:
             application/json:
+              example: { username: "alice", superuser: false, password: true }
               schema:
                 $ref: '#/components/schemas/UserInfo'
         '400':
           description: Invalid request body or username.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1623,6 +1751,7 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
@@ -1631,12 +1760,14 @@ paths:
             This includes attempts to update one's own account and use of the `username` parameter without superuser privileges.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode, or the user does not exist.
           content:
             application/json:
+              example: {}
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
@@ -1645,6 +1776,7 @@ paths:
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodySizeExceeded'
@@ -1652,6 +1784,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1672,6 +1805,7 @@ paths:
           If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
+            example: { username: "alice", superuser: false }
             schema:
               $ref: '#/components/schemas/UserCreateRequest'
       responses:
@@ -1679,12 +1813,14 @@ paths:
           description: User created successfully.
           content:
             application/json:
+              example: { username: "alice", superuser: false, password: false }
               schema:
                 $ref: '#/components/schemas/UserCreateResponse'
         '400':
           description: Invalid request body.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1694,24 +1830,28 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The authenticated user is not allowed to create user accounts or set superuser privileges.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode.
           content:
             application/json:
+              example: {}
               schema:
                 $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '409':
           description: The username is already in use.
           content:
             application/json:
+              example: { error: "duplicate_username" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDuplicateUsername'
@@ -1719,6 +1859,7 @@ paths:
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodySizeExceeded'
@@ -1726,6 +1867,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1758,6 +1900,7 @@ paths:
           description: Invalid username.
           content:
             application/json:
+              example: {}
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidUsername'
@@ -1766,6 +1909,7 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
@@ -1774,12 +1918,14 @@ paths:
             This includes attempts to delete one's own account and use of the `username` parameter without superuser privileges.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode, or the user does not exist.
           content:
             application/json:
+              example: {}
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
@@ -1788,6 +1934,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1821,12 +1968,14 @@ paths:
             A list of matching usernames, sorted by username in increasing order.
           content:
             application/json:
+              example: [ "alice", "bob" ]
               schema:
                 $ref: '#/components/schemas/UsernameListResponse'
         '400':
           description: Invalid query parameter or username prefix.
           content:
             application/json:
+              example: { error: "invalid_query_parameter" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
@@ -1835,18 +1984,21 @@ paths:
           description: Authentication is required, the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '404':
           description: The server is in anonymous mode.
           content:
             application/json:
+              example: {}
               schema:
                 $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1918,12 +2070,14 @@ paths:
             A paginated list of users, sorted by username in increasing order.
           content:
             application/json:
+              example: { total: 1, offset: 0, items: [ { username: "alice", superuser: false, password: true } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedUsersResponse'
         '400':
           description: Invalid query parameter (e.g. limit, offset, superuser, or password).
           content:
             application/json:
+              example: { error: "invalid_query_parameter" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
@@ -1931,24 +2085,28 @@ paths:
           description: Authentication is required, the credentials are incorrect, or the authenticated user does not exist.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: The authenticated user is not allowed to list user accounts.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode.
           content:
             application/json:
+              example: {}
               schema:
                 $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -2003,12 +2161,14 @@ paths:
             A paginated list of roles, sorted by namespace id in increasing order.
           content:
             application/json:
+              example: { total: 1, offset: 0, items: [ { namespace: "ns_123", role: "editor" } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedUserRolesResponse'
         '400':
           description: Invalid query parameter (e.g. limit, offset, or username).
           content:
             application/json:
+              example: { error: "invalid_query_parameter" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
@@ -2017,18 +2177,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: Only superusers may set the `username` parameter.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode, or the requested user does not exist.
           content:
             application/json:
+              example: {}
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
@@ -2037,6 +2200,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -2091,12 +2255,14 @@ paths:
             A paginated list of API keys, sorted by id in increasing order.
           content:
             application/json:
+              example: { total: 1, offset: 0, items: [ { id: "key_123", comment: "CI deploy key", created_at: "2026-07-30T10:00:00Z", expires_at: "2026-12-31T23:59:59Z" } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedAPIKeysResponse'
         '400':
           description: Invalid query parameter (e.g. limit, offset, or username).
           content:
             application/json:
+              example: { error: "invalid_query_parameter" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
@@ -2105,18 +2271,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: Only superusers may set the `username` parameter.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode, or the requested user does not exist.
           content:
             application/json:
+              example: {}
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
@@ -2125,6 +2294,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -2156,6 +2326,7 @@ paths:
           If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
+            example: { comment: "CI deploy key", expires_at: "2026-12-31T23:59:59Z" }
             schema:
               $ref: '#/components/schemas/IssueKeyRequest'
       responses:
@@ -2165,12 +2336,14 @@ paths:
             The raw key value is returned only once in this response.
           content:
             application/json:
+              example: { id: "key_123", comment: "CI deploy key", created_at: "2026-07-30T10:00:00Z", expires_at: "2026-12-31T23:59:59Z", key: "qp_live_123" }
               schema:
                 $ref: '#/components/schemas/IssueKeyResponse'
         '400':
           description: Invalid request body, query parameter, or expires_at value in the past.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -2181,18 +2354,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: Only superusers may set the `username` parameter.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode, or the requested user does not exist.
           content:
             application/json:
+              example: {}
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
@@ -2201,6 +2377,7 @@ paths:
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodySizeExceeded'
@@ -2208,6 +2385,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -2244,6 +2422,7 @@ paths:
           If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
+            example: { password: "secret-password" }
             schema:
               $ref: '#/components/schemas/SetPasswordRequest'
       responses:
@@ -2251,12 +2430,14 @@ paths:
           description: Password updated successfully.
           content:
             application/json:
+              example: { password: true }
               schema:
                 $ref: '#/components/schemas/SetPasswordResponse'
         '400':
           description: Invalid request body, username, or password.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -2267,18 +2448,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: Only superusers may set the `username` parameter for another user or it is forbidden to clear your own password.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode, or the requested user does not exist.
           content:
             application/json:
+              example: {}
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
@@ -2287,6 +2471,7 @@ paths:
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodySizeExceeded'
@@ -2294,6 +2479,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -2327,6 +2513,7 @@ paths:
           If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
+            example: { id: "key_123" }
             schema:
               $ref: '#/components/schemas/RevokeKeyRequest'
       responses:
@@ -2336,6 +2523,7 @@ paths:
           description: Invalid request body or query parameter.
           content:
             application/json:
+              example: { error: "body_missing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -2346,18 +2534,21 @@ paths:
           description: Authentication is required or the credentials are incorrect.
           content:
             application/json:
+              example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
           description: Only superusers may set the `username` parameter.
           content:
             application/json:
+              example: { error: "forbidden" }
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The API key does not exist, does not belong to the requested user, the requested user does not exist, or the server is in anonymous mode.
           content:
             application/json:
+              example: { error: "key_not_found" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorKeyNotFound'
@@ -2367,6 +2558,7 @@ paths:
           description: Request body exceeds the configured maximum size.
           content:
             application/json:
+              example: { error: "body_size_exceeded" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodySizeExceeded'
@@ -2374,6 +2566,7 @@ paths:
           description: Internal server error.
           content:
             application/json:
+              example: { error: "database_error" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -2396,6 +2589,7 @@ components:
 
   schemas:
     ErrorResponse:
+      example: { error: "unauthorized" }
       description: |
         An error response.
         Specific routes return specific error responses.
@@ -2404,6 +2598,7 @@ components:
         - error
       properties:
         error:
+          example: "unauthorized"
           type: string
           description: |
             Machine-readable error code identifying the failure.
@@ -2629,36 +2824,42 @@ components:
         - max_batch_items
       properties:
         max_body_bytes:
+          example: 1048576
           description: |
             Maximum permitted size of the request body in bytes.
           type: integer
           format: int64
           minimum: 0
         default_page_limit:
+          example: 10
           description: |
             Default number of items per page.
           type: integer
           format: int64
           minimum: 0
         max_page_limit:
+          example: 100
           description: |
             Maximum number of items per page in a response.
           type: integer
           format: int64
           minimum: 0
         max_batch_items:
+          example: 100
           description: |
             Maximum number of items in a batch.
           type: integer
           format: int64
           minimum: 0
         authentication:
+          example: true
           description: |
             If present, parts of the API require authentication via an API key.
             Support for other authentication methods may be added in the future.
           type: boolean
           enum: [true]
         max_autocomplete_users:
+          example: 10
           description: |
             Maximum number of usernames returned by GET /users/autocomplete.
             Present only when the server is in authenticated mode.
@@ -2673,6 +2874,7 @@ components:
       additionalProperties: false
       properties:
         about:
+          example: "https://quickpid.example/about"
           description: |
             Description of where to find more information about this service.
             Typically a URL, but not necessarily so.
@@ -2680,16 +2882,19 @@ components:
           format: uri
           minLength: 1
         comment:
+          example: "A PID resolver service"
           description: |
             Human-readable message about this server.
           type: string
           minLength: 1
         software:
+          example: "QuickPID"
           description: |
             Name of the software running this server.
           type: string
           minLength: 1
         version:
+          example: "1.0.0"
           description: |
             Version of the software running this server.
           type: string
@@ -2710,6 +2915,7 @@ components:
         - pid_format
       properties:
         tag:
+          example: "project-a"
           description: |
             A tag for this namespace. Tags can be used for filtering when listing namespaces.
           type: string
@@ -2725,17 +2931,21 @@ components:
         - date_created
       properties:
         id:
+          example: "bafac567-6170-4df2-8c45-17797eb43c88"
           description: |
             Server-assigned opaque namespace id. Use this value in resource URLs.
           allOf:
             - $ref: '#/components/schemas/NamespaceId'
         tag:
+          example: "project-a"
           description: |
             A tag for this namespace. Tags can be used for filtering when listing namespaces.
           type: string
         pid_format:
+
           $ref: '#/components/schemas/PIDFormat'
         date_created:
+          example: "2026-07-30T10:00:00Z"
           description: The date and time the namespace was created.
           type: string
           format: date-time
@@ -2774,6 +2984,7 @@ components:
         hex: Lowercase hex (`0-9a-f`).
         decimal: Decimal digits (`0-9`).
     NamespaceId:
+      example: "bafac567-6170-4df2-8c45-17797eb43c88"
       description: |
         Server-assigned namespace id.
         The server assigns an opaque id, the only guarantee being that it is unique within the resolver.
@@ -2781,6 +2992,7 @@ components:
       type: string
       pattern: '^[a-z0-9_-]+$'
     BaseURI:
+      example: "https://example.org/base/"
       description: |
         Absolute base URI used as the key of a namespace mount.
         Must be a valid absolute URI (non-empty scheme).
@@ -2821,14 +3033,17 @@ components:
         - items
       properties:
         total:
+          example: 10
           type: integer
           minimum: 0
           description: Total number of items available.
         offset:
+          example: 0
           type: integer
           minimum: 0
           description: Offset of the current response.
         items:
+          example: []
           type: array
           items:
             $ref: '#/components/schemas/Mount'
@@ -2844,14 +3059,17 @@ components:
         - items
       properties:
         total:
+          example: 1
           type: integer
           minimum: 0
           description: Total number of items available.
         offset:
+          example: 0
           type: integer
           minimum: 0
           description: Offset of the current response.
         items:
+          example: []
           type: array
           items:
             $ref: '#/components/schemas/BaseURI'
@@ -2884,6 +3102,7 @@ components:
           example: 0
           description: Offset of the current response.
         items:
+          example: []
           type: array
           items:
             $ref: '#/components/schemas/Namespace'
@@ -2896,6 +3115,7 @@ components:
         - total
       properties:
         total:
+          example: 42
           type: integer
           minimum: 0
           description: Total number of resource rows in the resolver.
@@ -2921,6 +3141,7 @@ components:
           example: 0
           description: Offset of the current response.
         items:
+          example: []
           type: array
           items:
             $ref: '#/components/schemas/ResourceResponse'
@@ -2936,17 +3157,20 @@ components:
         - tags
       properties:
         url:
+          example: "https://example.org/resource"
           description: |
             The URL of this resource.
           type: string
           format: uri
         metadata:
+          example: "sample metadata"
           description: |
             Optional opaque metadata associated with the resource.
             This may be null.
           type: string
           nullable: true
         tags:
+          example: ["sample"]
           description: |
             Tags for this resource.
             Tags can be used inside the API for filtering.
@@ -2980,26 +3204,31 @@ components:
         pid:
           $ref: '#/components/schemas/PID'
         url:
+          example: "https://example.org/resource"
           description: |
             The URL of this resource.
           type: string
           format: uri
         metadata:
+          example: "sample metadata"
           description: |
             Optional opaque metadata associated with the resource.
           type: string
           nullable: true
         date_created:
+          example: "2026-07-30T10:00:00Z"
           description: |
             The date and time the resource was created.
           type: string
           format: date-time
         date_updated:
+          example: "2026-07-30T10:00:00Z"
           description: |
             The date and time the resource was last updated.
           type: string
           format: date-time
         tags:
+          example: ["sample"]
           description: |
             Tags for this resource.
             Tags can be used inside the API for filtering.
@@ -3008,6 +3237,7 @@ components:
           items:
             type: string
         deleted:
+          example: false
           description: |
             Whether this resource has been deleted.
           type: boolean
@@ -3026,16 +3256,19 @@ components:
         pid:
           $ref: '#/components/schemas/PID'
         date_created:
+          example: "2026-07-30T10:00:00Z"
           description: |
             The date and time the resource was created.
           type: string
           format: date-time
         date_updated:
+          example: "2026-07-30T10:00:00Z"
           description: |
             The date and time the resource was last updated.
           type: string
           format: date-time
         deleted:
+          example: true
           description: |
             Always true for redacted deleted resources.
           type: boolean
@@ -3051,19 +3284,23 @@ components:
       additionalProperties: false
       properties:
         url:
+          example: "https://example.org/resource"
           description: |
             The URL of this resource.
           type: string
           format: uri
         metadata:
+          example: "sample metadata"
           description: |
             Optional opaque metadata associated with the resource.
             Note that there is a difference between not updating the metadata field, setting it to null, and setting it to the empty string.
           type: string
           nullable: true
         deleted:
+          example: false
           type: boolean
         tags:
+          example: ["sample"]
           description: |
             Tags for this resource.
             Tags can be used inside the API for filtering.
@@ -3109,10 +3346,12 @@ components:
         - username
       properties:
         username:
+          example: "alice"
           description: The username for the new account.
           allOf:
             - $ref: '#/components/schemas/Username'
         superuser:
+          example: false
           description: |
             Whether the new account should have superuser privileges.
             Only superusers may set this field to true.
@@ -3131,13 +3370,16 @@ components:
         - password
       properties:
         username:
+          example: "alice"
           description: The username of the account.
           allOf:
             - $ref: '#/components/schemas/Username'
         superuser:
+          example: false
           description: Whether the account has superuser privileges.
           type: boolean
         password:
+          example: true
           description: Whether the account has an HTTP basic password configured.
           type: boolean
     Password:
@@ -3152,6 +3394,7 @@ components:
         - password
       properties:
         password:
+          example: "secret-password"
           description: Set to a non-empty string to configure a password, or null to clear it.
           allOf:
             - $ref: '#/components/schemas/Password'
@@ -3163,6 +3406,7 @@ components:
         - password
       properties:
         password:
+          example: true
           description: Whether the account now has a password configured.
           type: boolean
     UpdateUserRequest:
@@ -3171,6 +3415,7 @@ components:
       additionalProperties: false
       properties:
         superuser:
+          example: false
           description: Whether the account should have superuser privileges.
           type: boolean
     PaginatedUsersResponse:
@@ -3195,6 +3440,7 @@ components:
           example: 0
           description: Offset of the current response.
         items:
+          example: []
           type: array
           items:
             $ref: '#/components/schemas/UserInfo'
@@ -3220,6 +3466,7 @@ components:
           example: 0
           description: Offset of the current response.
         items:
+          example: []
           type: array
           items:
             $ref: '#/components/schemas/APIKeyInfo'
@@ -3232,9 +3479,11 @@ components:
         - expires_at
       properties:
         comment:
+          example: "CI deploy key"
           description: A human-readable comment describing the purpose of this key.
           type: string
         expires_at:
+          example: "2026-07-30T10:00:00Z"
           description: |
             Optional expiration time for the key.
             If null, the key does not expire.
@@ -3265,6 +3514,7 @@ components:
         - id
       properties:
         id:
+          example: "key_123"
           description: Server-assigned id of the API key to revoke.
           allOf:
             - $ref: '#/components/schemas/APIKeyId'
@@ -3281,10 +3531,12 @@ components:
         - expires_at
       properties:
         id:
+          example: "key_123"
           description: Server-assigned id of this API key.
           allOf:
             - $ref: '#/components/schemas/APIKeyId'
         comment:
+          example: "CI deploy key"
           description: A human-readable comment describing the purpose of this key.
           type: string
         created_at:
@@ -3298,21 +3550,11 @@ components:
           type: string
           format: date-time
           nullable: true
-    AssignableRole:
-      description: |
-        Role that can be assigned via PUT.
-        The `none` role cannot be assigned; use DELETE to remove an explicit role.
-      type: string
-      enum:
-        - none
-        - contributor
-        - editor
-        - manager
-
     Role:
       description: |
         Role for a user within a namespace.
         The default role is `none`.
+        The `none` role cannot be assigned explicitly.
       type: string
       enum:
         - none
@@ -3324,6 +3566,7 @@ components:
         - Can create resources; cannot read resources.
         - Can create, edit, and list all resources in the namespace.
         - Editor privileges plus the ability to manage roles for other users in the namespace.
+      example: "editor"
     NamespaceRole:
       description: A user's role within a namespace.
       type: object
@@ -3332,11 +3575,15 @@ components:
         - role
       properties:
         username:
+          example: "alice"
           description: Username of the user account.
           allOf:
             - $ref: '#/components/schemas/Username'
         role:
-          $ref: '#/components/schemas/Role'
+          example: "editor"
+          description: Role of the user in the namespace.
+          allOf:
+            - $ref: '#/components/schemas/Role'
     SetNamespaceRoleRequest:
       description: Request to set a user's role in a namespace.
       type: object
@@ -3345,7 +3592,9 @@ components:
         - role
       properties:
         role:
-          $ref: '#/components/schemas/AssignableRole'
+          example: "manager"
+          allOf:
+            - $ref: '#/components/schemas/Role'
     PaginatedNamespaceRolesResponse:
       description: Paginated list of namespace roles.
       type: object
@@ -3355,12 +3604,15 @@ components:
         - items
       properties:
         total:
+          example: 10
           type: integer
           minimum: 0
         offset:
+          example: 0
           type: integer
           minimum: 0
         items:
+          example: []
           type: array
           items:
             $ref: '#/components/schemas/NamespaceRole'
@@ -3376,6 +3628,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/NamespaceId'
         role:
+          example: "editor"
           $ref: '#/components/schemas/Role'
     PaginatedUserRolesResponse:
       description: Paginated list of roles for a user across namespaces.
@@ -3387,15 +3640,19 @@ components:
       properties:
         total:
           type: integer
+          example: 1
           minimum: 0
         offset:
           type: integer
+          example: 0  
           minimum: 0
         items:
+          example: []
           type: array
           items:
             $ref: '#/components/schemas/UserRole'
     ErrorRoleNotFound:
+      description: The provided role was not found.
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
         - type: object
@@ -3406,6 +3663,7 @@ components:
                 - role_not_found
           description: No explicit role exists for the user in this namespace.
     ErrorInvalidRole:
+      description: The provided role exists, but cannot be used in this context.
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
         - type: object
