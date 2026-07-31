@@ -1,6 +1,6 @@
 module github.com/tkw1536/quickpid
 
-go 1.26.5
+go 1.27rc2
 
 require (
 	github.com/glebarez/sqlite v1.11.0
