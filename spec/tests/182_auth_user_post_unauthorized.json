@@ -1,13 +1,13 @@
 {
   "name": "auth_user_post_unauthorized",
-  "comment": "POST /user/ without authentication returns 401 unauthorized.",
+  "comment": "POST /user without authentication returns 401 unauthorized.",
   "steps": [
     {
       "name": "create_unauthenticated",
       "config": {},
       "request": {
         "method": "POST",
-        "path": "/user/",
+        "path": "/user",
         "body": "{\"username\":\"bob\"}"
       },
       "response": {

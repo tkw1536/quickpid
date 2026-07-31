@@ -1,6 +1,6 @@
 {
   "name": "auth_user_delete_success",
-  "comment": "A superuser can delete another user via DELETE /user/?username=..., after which the user is no longer retrievable.",
+  "comment": "A superuser can delete another user via DELETE /user?username=..., after which the user is no longer retrievable.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -16,7 +16,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -38,7 +38,7 @@
       "config": {},
       "request": {
         "method": "POST",
-        "path": "/user/",
+        "path": "/user",
         "body": "{\"username\": \"alice\"}",
         "headers": [
           [
@@ -61,7 +61,7 @@
       "config": {},
       "request": {
         "method": "DELETE",
-        "path": "/user/?username=alice",
+        "path": "/user?username=alice",
         "headers": [
           [
             "Authorization",
@@ -78,7 +78,7 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user/?username=alice",
+        "path": "/user?username=alice",
         "headers": [
           [
             "Authorization",

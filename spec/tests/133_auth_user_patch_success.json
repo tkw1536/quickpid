@@ -1,6 +1,6 @@
 {
   "name": "auth_user_patch_success",
-  "comment": "A superuser can update another user's fields (e.g. superuser flag) via PATCH /user/?username=....",
+  "comment": "A superuser can update another user's fields (e.g. superuser flag) via PATCH /user?username=....",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -16,7 +16,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -38,7 +38,7 @@
       "config": {},
       "request": {
         "method": "POST",
-        "path": "/user/",
+        "path": "/user",
         "body": "{\"username\": \"alice\"}",
         "headers": [
           [
@@ -94,7 +94,7 @@
       "config": {},
       "request": {
         "method": "PATCH",
-        "path": "/user/?username=alice",
+        "path": "/user?username=alice",
         "body": "{\"superuser\":true}",
         "headers": [
           [

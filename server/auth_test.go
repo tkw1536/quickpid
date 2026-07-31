@@ -71,7 +71,7 @@ func TestGetCurrentUser_UnauthorizedJSON(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/user/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/user", nil)
 		h.ServeHTTP(rec, req)
 		assertUnauthorizedJSON(t, rec)
 	})
@@ -80,7 +80,7 @@ func TestGetCurrentUser_UnauthorizedJSON(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/user/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/user", nil)
 		req.Header.Set("Authorization", "Bearer invalid-token-00000000000000")
 		h.ServeHTTP(rec, req)
 		assertUnauthorizedJSON(t, rec)
@@ -182,7 +182,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user/?username=alice", strings.NewReader(`{"superuser":true}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user?username=alice", strings.NewReader(`{"superuser":true}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -193,7 +193,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user/?username=root", strings.NewReader(`{}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user?username=root", strings.NewReader(`{}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -204,7 +204,7 @@ func TestUpdateCurrentUser_Forbidden(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user/?username=bob", strings.NewReader(`{"superuser":true}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user?username=bob", strings.NewReader(`{"superuser":true}`))
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -231,7 +231,7 @@ func TestUpdateCurrentUser_ForbiddenSelfUpdate(t *testing.T) {
 	h := testHandler(t, auth)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user/?username=root", strings.NewReader(`{}`))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPatch, "/user?username=root", strings.NewReader(`{}`))
 	req.Header.Set("Authorization", "Bearer "+rootKey)
 	req.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, req)
@@ -251,7 +251,7 @@ func TestDeleteUser_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user/?username=bob", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user?username=bob", nil)
 		h.ServeHTTP(rec, req)
 		assertUnauthorizedJSON(t, rec)
 	})
@@ -260,7 +260,7 @@ func TestDeleteUser_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user/?username=bob", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user?username=bob", nil)
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		h.ServeHTTP(rec, req)
 		assertForbiddenJSON(t, rec)
@@ -270,7 +270,7 @@ func TestDeleteUser_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user/?username=bob", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user?username=bob", nil)
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		h.ServeHTTP(rec, req)
 
@@ -292,7 +292,7 @@ func TestDeleteUser_ForbiddenSelfDelete(t *testing.T) {
 	h := testHandler(t, auth)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user/?username=root", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user?username=root", nil)
 	req.Header.Set("Authorization", "Bearer "+rootKey)
 	h.ServeHTTP(rec, req)
 	assertForbiddenJSON(t, rec)
@@ -306,7 +306,7 @@ func TestDeleteUser_UserNotFound(t *testing.T) {
 	h := testHandler(t, auth)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user/?username=missing", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "/user?username=missing", nil)
 	req.Header.Set("Authorization", "Bearer "+rootKey)
 	h.ServeHTTP(rec, req)
 	assertErrorJSON(t, rec, http.StatusNotFound, api.UserNotFound)
@@ -323,7 +323,7 @@ func TestCreateUser_RequiresSuperuser(t *testing.T) {
 	t.Run("unauthenticated", func(t *testing.T) {
 		t.Parallel()
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user", strings.NewReader(`{"username":"bob"}`))
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
 		assertUnauthorizedJSON(t, rec)
@@ -333,7 +333,7 @@ func TestCreateUser_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user", strings.NewReader(`{"username":"bob"}`))
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -344,7 +344,7 @@ func TestCreateUser_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/", strings.NewReader(`{"username":"bob"}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user", strings.NewReader(`{"username":"bob"}`))
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rec, req)
@@ -367,7 +367,7 @@ func TestListUsers_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users", nil)
 		req.Header.Set("Authorization", "Bearer "+aliceKey)
 		h.ServeHTTP(rec, req)
 		assertForbiddenJSON(t, rec)
@@ -377,7 +377,7 @@ func TestListUsers_RequiresSuperuser(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users", nil)
 		req.Header.Set("Authorization", "Bearer "+rootKey)
 		h.ServeHTTP(rec, req)
 

@@ -1,6 +1,6 @@
 {
   "name": "auth_user_patch_user_not_found",
-  "comment": "PATCH /user/?username=... for a non-existent user returns 404 user_not_found.",
+  "comment": "PATCH /user?username=... for a non-existent user returns 404 user_not_found.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -16,7 +16,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -38,7 +38,7 @@
       "config": {},
       "request": {
         "method": "PATCH",
-        "path": "/user/?username=nobody",
+        "path": "/user?username=nobody",
         "body": "{}",
         "headers": [
           [

@@ -1648,7 +1648,7 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
-  /user/:
+  /user:
     get:
       summary: Return information about a user account.
       operationId: getUserInfo
@@ -2029,7 +2029,7 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
 
-  /users/:
+  /users:
     get:
       summary: List all user accounts.
       operationId: listUsers

@@ -1,6 +1,6 @@
 {
   "name": "auth_user_get_invalid_username_query",
-  "comment": "GET /user/?username=... with an invalid username returns 400 invalid_username.",
+  "comment": "GET /user?username=... with an invalid username returns 400 invalid_username.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -16,7 +16,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -38,7 +38,7 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user/?username=BADUPPER",
+        "path": "/user?username=BADUPPER",
         "headers": [
           [
             "Authorization",

@@ -1,6 +1,6 @@
 {
   "name": "auth_users_get_invalid_superuser_query",
-  "comment": "Invalid superuser query values on GET /users/ return 400 invalid_query_parameter.",
+  "comment": "Invalid superuser query values on GET /users return 400 invalid_query_parameter.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -16,7 +16,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -38,7 +38,7 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/users/?superuser=maybe",
+        "path": "/users?superuser=maybe",
         "headers": [
           [
             "Authorization",

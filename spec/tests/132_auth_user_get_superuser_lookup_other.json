@@ -1,6 +1,6 @@
 {
   "name": "auth_user_get_superuser_lookup_other",
-  "comment": "A superuser can retrieve another user's account information via GET /user/?username=....",
+  "comment": "A superuser can retrieve another user's account information via GET /user?username=....",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -16,7 +16,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -38,7 +38,7 @@
       "config": {},
       "request": {
         "method": "POST",
-        "path": "/user/",
+        "path": "/user",
         "body": "{\"username\": \"alice\"}",
         "headers": [
           [
@@ -61,7 +61,7 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user/?username=alice",
+        "path": "/user?username=alice",
         "headers": [
           [
             "Authorization",

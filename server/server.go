@@ -338,7 +338,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /user/", lowlevel.HandleRestricted(
+	h.mux.Handle("GET /user", lowlevel.HandleRestricted(
 		h.authHandler,
 		h.getCurrentUserHTTP,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
@@ -365,7 +365,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PATCH /user/", lowlevel.HandleRestricted(
+	h.mux.Handle("PATCH /user", lowlevel.HandleRestricted(
 		h.authHandler,
 		h.updateCurrentUser,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
@@ -382,7 +382,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("POST /user/", lowlevel.HandleRestricted(
+	h.mux.Handle("POST /user", lowlevel.HandleRestricted(
 		h.authHandler,
 		h.createUser,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusCreated),
@@ -398,7 +398,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("DELETE /user/", lowlevel.HandleRestricted(
+	h.mux.Handle("DELETE /user", lowlevel.HandleRestricted(
 		h.authHandler,
 		h.deleteUser,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
@@ -442,7 +442,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /users/", lowlevel.HandleRestricted(
+	h.mux.Handle("GET /users", lowlevel.HandleRestricted(
 		h.authHandler,
 		h.listUsers,
 		lowlevel.FixedStatusCode[*api.PaginatedUsersResponse](http.StatusOK),

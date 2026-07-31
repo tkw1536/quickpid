@@ -1,13 +1,13 @@
 {
   "name": "112_auth_user_get_current_user_requires_valid_auth",
-  "comment": "GET /user/ without valid authentication returns 401 unauthorized.",
+  "comment": "GET /user without valid authentication returns 401 unauthorized.",
   "steps": [
     {
       "name": "get_current_user_unauthorized",
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user/"
+        "path": "/user"
       },
       "response": {
         "code": 401,
@@ -21,7 +21,7 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -41,7 +41,7 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user/"
+        "path": "/user"
       },
       "response": {
         "code": 401,

@@ -1,6 +1,6 @@
 {
   "name": "auth_users_get_pagination_limit_zero",
-  "comment": "limit=0 on GET /users/ returns empty items with a valid total.",
+  "comment": "limit=0 on GET /users returns empty items with a valid total.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -16,7 +16,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -38,7 +38,7 @@
       "config": {},
       "request": {
         "method": "POST",
-        "path": "/user/",
+        "path": "/user",
         "body": "{\"username\": \"alice\"}",
         "headers": [
           [
@@ -61,7 +61,7 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/users/?limit=0",
+        "path": "/users?limit=0",
         "headers": [
           [
             "Authorization",

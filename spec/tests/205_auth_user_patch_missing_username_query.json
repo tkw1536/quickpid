@@ -1,6 +1,6 @@
 {
   "name": "auth_user_patch_missing_username_query",
-  "comment": "PATCH /user/ without the required username query parameter returns 400 invalid_query_parameter.",
+  "comment": "PATCH /user without the required username query parameter returns 400 invalid_query_parameter.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -16,7 +16,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -38,7 +38,7 @@
       "config": {},
       "request": {
         "method": "PATCH",
-        "path": "/user/",
+        "path": "/user",
         "body": "{}",
         "headers": [
           [

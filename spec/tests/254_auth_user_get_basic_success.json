@@ -1,6 +1,6 @@
 {
   "name": "auth_user_get_basic_success",
-  "comment": "GET /user/ succeeds when authenticating with HTTP Basic credentials after a password has been set.",
+  "comment": "GET /user succeeds when authenticating with HTTP Basic credentials after a password has been set.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -16,7 +16,7 @@
       },
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -38,7 +38,7 @@
       "config": {},
       "request": {
         "method": "POST",
-        "path": "/user/",
+        "path": "/user",
         "body": "{\"username\":\"alice\"}",
         "headers": [
           [
@@ -115,7 +115,7 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user/",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
