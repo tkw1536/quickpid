@@ -92,7 +92,7 @@ Examples:
 
 - [vacuum](https://github.com/daveshanley/vacuum) on CI for validation
 - update to go1.27 once it is released and:
-  - use generic methods for lowlevel handler
+  - use generic methods for low-level handler
   - use the `uuid` package for namespace id generation
   - update to `json/v2`
 - various other code cleanup
