@@ -1320,7 +1320,7 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
-  /resolver/namespaces/{namespace}/resources:batch:
+  /resolver/namespaces/{namespace}/resources/batch:
     post:
       summary: Create several resources within a namespace.
       description: |

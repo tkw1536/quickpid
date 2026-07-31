@@ -1,6 +1,6 @@
 {
   "name": "69_resource_batch_create_post_success",
-  "comment": "POST .../resources:batch with multiple items creates all resources and returns 201 with an array of responses.",
+  "comment": "POST .../resources/batch with multiple items creates all resources and returns 201 with an array of responses.",
   "steps": [
     {
       "name": "create_namespace",
@@ -41,7 +41,7 @@
       },
       "request": {
         "method": "POST",
-        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/batch",
         "body": "[{\"url\":\"https://b1\",\"metadata\":\"b1@batch\",\"tags\":[\"batch\"]},{\"url\":\"https://b2\",\"metadata\":null,\"tags\":[\"\"]}]"
       },
       "response": {

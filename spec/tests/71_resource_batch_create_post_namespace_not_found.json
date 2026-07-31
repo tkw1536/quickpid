@@ -9,7 +9,7 @@
       },
       "request": {
         "method": "POST",
-        "path": "/resolver/namespaces/missing/resources:batch",
+        "path": "/resolver/namespaces/missing/resources/batch",
         "body": "[{\"url\":\"https://x\",\"metadata\":null,\"tags\":[\"\"]}]"
       },
       "response": {

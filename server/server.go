@@ -221,7 +221,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.InsufficientEntropy,
 		},
 	))
-	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources:batch", lowlevel.HandleOpen(
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources/batch", lowlevel.HandleOpen(
 		h.authHandler,
 		h.batchCreateResources,
 		lowlevel.FixedStatusCode[[]api.ResourceResponse](http.StatusCreated),

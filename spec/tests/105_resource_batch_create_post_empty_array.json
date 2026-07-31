@@ -1,6 +1,6 @@
 {
   "name": "resource_batch_create_post_empty_array",
-  "comment": "POST .../resources:batch with an empty array [] returns 201 with an empty array.",
+  "comment": "POST .../resources/batch with an empty array [] returns 201 with an empty array.",
   "steps": [
     {
       "name": "create_namespace",
@@ -36,7 +36,7 @@
       },
       "request": {
         "method": "POST",
-        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources:batch",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/batch",
         "body": "[]"
       },
       "response": {
