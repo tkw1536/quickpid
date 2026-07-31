@@ -439,6 +439,7 @@ paths:
             $ref: '#/components/schemas/BaseURI'
       requestBody:
         required: true
+        description: The id of the namespace to mount.
         content:
           application/json:
             example: { namespace: "ns_123" }
@@ -992,6 +993,7 @@ paths:
           schema:
             $ref: '#/components/schemas/Username'
       requestBody:
+        description: The role to set for the user.
         required: true
         content:
           application/json:
@@ -1265,6 +1267,7 @@ paths:
           schema:
             $ref: '#/components/schemas/NamespaceId'
       requestBody:
+        description: The contents of the resource to create.
         required: true
         content:
           application/json:
