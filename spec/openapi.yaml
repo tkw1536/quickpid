@@ -360,7 +360,7 @@ paths:
   /resolver/mounts/{baseUri}:
     get:
       summary: Resolve a namespace mount by base URI.
-      operationId: resolveMountBybaseUri
+      operationId: resolveMountByBaseUri
       description: |
         Returns the namespace id mapped from the given base URI.
 
@@ -393,7 +393,7 @@ paths:
             application/json:
               example: { error: "invalid_base_uri" }
               schema:
-                $ref: '#/components/schemas/ErrorInvalidbaseUri'
+                $ref: '#/components/schemas/ErrorInvalidBaseUri'
         '404':
           description: Mount does not exist when resolving by base URI.
           content:
@@ -455,7 +455,7 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
-                  - $ref: '#/components/schemas/ErrorInvalidbaseUri'
+                  - $ref: '#/components/schemas/ErrorInvalidBaseUri'
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
         '401':
           description: Authentication is required or the credentials are incorrect when creating or replacing a mount.
@@ -522,7 +522,7 @@ paths:
             application/json:
               example: { error: "invalid_base_uri" }
               schema:
-                $ref: '#/components/schemas/ErrorInvalidbaseUri'
+                $ref: '#/components/schemas/ErrorInvalidBaseUri'
         '401':
           description: Authentication is required or the credentials are incorrect when deleting a mount.
           content:
@@ -616,7 +616,7 @@ paths:
               example: { error: "invalid_base_uri" }
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/ErrorInvalidbaseUri'
+                  - $ref: '#/components/schemas/ErrorInvalidBaseUri'
                   - $ref: '#/components/schemas/ErrorInvalidPID'
         '401':
           description: Authentication is required or the supplied credentials are incorrect.
@@ -763,7 +763,7 @@ paths:
             application/json:
               example: { total: 1, offset: 0, items: [ "https://example.org/base/" ] }
               schema:
-                $ref: '#/components/schemas/PaginatedbaseUriResponse'
+                $ref: '#/components/schemas/PaginatedBaseUriResponse'
         '400':
           description: Invalid namespace id or query parameter when listing mounts for a namespace.
           content:
@@ -2774,7 +2774,7 @@ components:
               enum:
                 - invalid_password
           description: The password was invalid.
-    ErrorInvalidbaseUri:
+    ErrorInvalidBaseUri:
       description: Error response when a base URI fails validation.
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
@@ -3099,7 +3099,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Mount'
-    PaginatedbaseUriResponse:
+    PaginatedBaseUriResponse:
       description: |
         A single page of base URI strings.
         The 'total' field is the total number of URIs, ignoring 'limit' and 'offset'.
