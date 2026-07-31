@@ -3628,7 +3628,6 @@ components:
           allOf:
             - $ref: '#/components/schemas/NamespaceId'
         role:
-          example: "editor"
           $ref: '#/components/schemas/Role'
     PaginatedUserRolesResponse:
       description: Paginated list of roles for a user across namespaces.
