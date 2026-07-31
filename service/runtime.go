@@ -6,8 +6,8 @@ import (
 	"crypto/rand"
 	"fmt"
 	"time"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/tkw1536/quickpid/internal/apikey"
 	"github.com/tkw1536/quickpid/pid"
 )
@@ -40,21 +40,11 @@ type runtime struct {
 }
 
 func (r runtime) NewNamespaceID() (string, error) {
-	// TODO: In go1.27, use uuid.NewV4.
-	id, err := uuid.NewRandomFromReader(rand.Reader)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate UUID: %w", err)
-	}
-	return id.String(), nil
+	return uuid.NewV4().String(), nil
 }
 
 func (r runtime) NewAPIKeyID() (string, error) {
-	// TODO: In go1.27, use uuid.NewV4.
-	id, err := uuid.NewRandomFromReader(rand.Reader)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate UUID: %w", err)
-	}
-	return id.String(), nil
+	return uuid.NewV4().String(), nil
 }
 
 func (r runtime) NewAPIKey(format apikey.Format) (string, error) {

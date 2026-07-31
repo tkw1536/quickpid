@@ -4,7 +4,6 @@ go 1.27rc2
 
 require (
 	github.com/glebarez/sqlite v1.11.0
-	github.com/google/uuid v1.6.0
 	github.com/swaggest/swgui v1.8.7
 	go.tkw01536.de/pkglib v0.0.0-20260703071639-6b0b0b91646c
 	golang.org/x/crypto v0.54.0
@@ -113,6 +112,7 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-licenses/v2 v2.0.0-alpha.1 // indirect
 	github.com/google/licenseclassifier/v2 v2.0.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gordonklaus/ineffassign v0.2.0 // indirect
 	github.com/gostaticanalysis/analysisutil v0.7.1 // indirect
 	github.com/gostaticanalysis/comment v1.5.0 // indirect
