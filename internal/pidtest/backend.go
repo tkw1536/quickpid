@@ -55,11 +55,11 @@ func loadTestData() ([]flow, error) {
 	for _, name := range names {
 		b, err := fs.ReadFile(testDataFS, name)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read test data file: %w", err)
+			return nil, fmt.Errorf("failed to read test data file %q: %w", name, err)
 		}
 		var f flow
 		if err := json.Unmarshal(b, &f); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal test data file: %w", err)
+			return nil, fmt.Errorf("failed to unmarshal test data file %q: %w", name, err)
 		}
 		out = append(out, f)
 	}
