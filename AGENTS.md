@@ -166,3 +166,18 @@ The Docker publish workflow builds and pushes images for all three entrypoints.
 - Before changing validation or identifiers, inspect the relevant `api.Valid*` type and keep parser, handler, service, and backend behavior consistent with it.
 - Backend changes should preserve the `backend.Store` contract and shared behavior expected by `internal/pidtest`.
 - If you change user-visible API behavior, update code, tests, and spec artifacts together.
+
+## OpenAPI Description Conventions
+
+When editing [`spec/openapi.yaml`](spec/openapi.yaml):
+
+- Every `description` on a path parameter, `requestBody`, response, response header, schema component, or schema property must be unique across the whole document (vacuum `description-duplication`).
+- Phrase path-level descriptions in terms of the current operation, not a shared generic string.
+  Prefer: "Authentication is required … when listing mounts."
+  Avoid: "Authentication is required or the credentials are incorrect."
+- Keep status-code meaning consistent (401 = auth missing/wrong, 403 = authenticated but forbidden, 404 = missing or unavailable in anonymous mode, 413 = body too large, 500 = internal failure), but always include the operation context.
+- Pagination `limit` / `offset` and path params like `namespace`, `baseUri`, `pid`, and `username` should say what they paginate or identify for that route.
+- Schema and property descriptions must likewise be unique and name their schema context (for example, "Total number of mounts available." vs "Total number of users available.").
+- Do not copy path/response wording into schema (or property) descriptions, and do not reuse schema wording on paths; vacuum treats them as one global pool of description strings.
+- Each `components.schemas` entry should have a top-level `description` (vacuum `component-description`).
+- After description edits, re-run vacuum and clear remaining description findings before considering the change done.

@@ -63,6 +63,9 @@ The following tools & CI are used in the project:
 - [gogenlicense](https://github.com/tkw1536/gogenlicense)
   To update license notices.
   Invoked automatically with `go generate ./...`
+- [vacuum](https://github.com/daveshanley/vacuum)
+  To check the openapi spec.
+  Not yet invoked on CI.
 
 <!--
 ## Docker images
