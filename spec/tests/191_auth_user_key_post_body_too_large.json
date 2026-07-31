@@ -1,6 +1,6 @@
 {
   "name": "auth_user_key_post_body_too_large",
-  "comment": "A POST /user/key body exceeding max_body_bytes returns 413 body_size_exceeded.",
+  "comment": "A POST /user/key body exceeding maxBodyBytes returns 413 body_size_exceeded.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -47,7 +47,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\":\"xxxxxxxxxxxx\",\"expires_at\":null}",
+        "body": "{\"comment\":\"xxxxxxxxxxxx\",\"expiresAt\":null}",
         "headers": [
           [
             "Authorization",

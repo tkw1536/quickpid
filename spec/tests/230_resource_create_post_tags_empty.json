@@ -14,7 +14,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"create-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"create-res\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201
@@ -37,8 +37,8 @@
       "response": {
         "code": 201,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
-          "date_updated": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "deleted": false,
           "metadata": null,
           "pid": "xjc-cjy",

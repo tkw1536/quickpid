@@ -175,13 +175,13 @@ type PaginatedAPIKeysResponse struct {
 // The target account is selected with the username query parameter, not the request body.
 type KeyIssueRequest struct {
 	Comment   string     `json:"comment"`
-	ExpiresAt *time.Time `json:"expires_at"`
+	ExpiresAt *time.Time `json:"expiresAt"`
 }
 
 func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Comment   strict.Optional[strict.String] `json:"comment"`
-		ExpiresAt strict.Optional[*strict.Time]  `json:"expires_at"`
+		ExpiresAt strict.Optional[*strict.Time]  `json:"expiresAt"`
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
@@ -192,7 +192,7 @@ func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 	}
 	r.Comment = string(decoded.Comment.Value)
 	if !decoded.ExpiresAt.Present {
-		return missingRequiredFieldError("expires_at")
+		return missingRequiredFieldError("expiresAt")
 	}
 	if decoded.ExpiresAt.Value == nil {
 		r.ExpiresAt = nil
@@ -233,12 +233,12 @@ func (r *KeyRevokeRequest) UnmarshalJSON(data []byte) error {
 type APIKeyInfo struct {
 	ID        string    `json:"id"`
 	Comment   string    `json:"comment"`
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt time.Time `json:"createdAt"`
 
 	// ExpiresAt optionally holds the time at which this key will expire.
 	// If it is nil, the key never expires.
 	// If it is a pointer to the zero time, the key is revoked.
-	ExpiresAt *time.Time `json:"expires_at"`
+	ExpiresAt *time.Time `json:"expiresAt"`
 }
 
 // Valid checks if this key is valid for the given time.

@@ -9,7 +9,7 @@ import (
 
 // MountResponse is returned for mount operations.
 type MountResponse struct {
-	BaseURI   string `json:"base_uri"`
+	BaseURI   string `json:"baseUri"`
 	Namespace string `json:"namespace"`
 }
 

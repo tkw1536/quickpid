@@ -1,6 +1,6 @@
 {
   "name": "275_mount_resource_get_not_found",
-  "comment": "GET /resolver/mounts/{base_uri}/{pid} returns 404 when the mount exists but the resource does not.",
+  "comment": "GET /resolver/mounts/{baseUri}/{pid} returns 404 when the mount exists but the resource does not.",
   "steps": [
     {
       "name": "create_namespace",
@@ -14,7 +14,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"missing-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"missing-res\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201

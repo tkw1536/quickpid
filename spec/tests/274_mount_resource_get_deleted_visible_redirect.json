@@ -1,6 +1,6 @@
 {
   "name": "274_mount_resource_get_deleted_visible_redirect",
-  "comment": "GET /resolver/mounts/{base_uri}/{pid} returns 302 for a soft-deleted mounted resource when the caller is allowed to see the full deleted resource.",
+  "comment": "GET /resolver/mounts/{baseUri}/{pid} returns 302 for a soft-deleted mounted resource when the caller is allowed to see the full deleted resource.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -78,7 +78,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=owner",
-        "body": "{\"comment\":\"owner\",\"expires_at\":null}",
+        "body": "{\"comment\":\"owner\",\"expiresAt\":null}",
         "headers": [
           [
             "Authorization",
@@ -104,7 +104,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=editor",
-        "body": "{\"comment\":\"editor\",\"expires_at\":null}",
+        "body": "{\"comment\":\"editor\",\"expiresAt\":null}",
         "headers": [
           [
             "Authorization",
@@ -127,7 +127,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"perm-ns\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "body": "{\"tag\":\"perm-ns\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
         "headers": [
           [
             "Authorization",
@@ -240,8 +240,8 @@
           ]
         ],
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
-          "date_updated": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "deleted": true,
           "metadata": "m",
           "pid": "aaa-bbb",

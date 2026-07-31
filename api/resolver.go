@@ -17,13 +17,13 @@ import (
 // NamespaceCreateRequest is the JSON body for createNamespace.
 type NamespaceCreateRequest struct {
 	Tag       string     `json:"tag"`
-	PIDFormat pid.Format `json:"pid_format"`
+	PIDFormat pid.Format `json:"pidFormat"`
 }
 
 func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Tag       strict.Optional[strict.String] `json:"tag"`
-		PIDFormat strict.Optional[pid.Format]    `json:"pid_format"`
+		PIDFormat strict.Optional[pid.Format]    `json:"pidFormat"`
 	}
 	decoded, err := strict.UnmarshalStruct[internal](data)
 	if err != nil {
@@ -34,7 +34,7 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 	}
 	r.Tag = string(decoded.Tag.Value)
 	if !decoded.PIDFormat.Present {
-		return missingRequiredFieldError("pid_format")
+		return missingRequiredFieldError("pidFormat")
 	}
 	r.PIDFormat = decoded.PIDFormat.Value
 	if err := r.PIDFormat.Validate(); err != nil {
@@ -48,8 +48,8 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 type NamespaceResponse struct {
 	ID          string     `json:"id"`
 	Tag         string     `json:"tag"`
-	PIDFormat   pid.Format `json:"pid_format"`
-	DateCreated time.Time  `json:"date_created"`
+	PIDFormat   pid.Format `json:"pidFormat"`
+	DateCreated time.Time  `json:"dateCreated"`
 }
 
 type PaginatedNamespacesResponse struct {
@@ -119,8 +119,8 @@ func (r ResourceResponse) MarshalJSON() ([]byte, error) {
 		PID         string   `json:"pid"`
 		URL         string   `json:"url"`
 		Metadata    *string  `json:"metadata"`
-		DateCreated string   `json:"date_created"`
-		DateUpdated string   `json:"date_updated"`
+		DateCreated string   `json:"dateCreated"`
+		DateUpdated string   `json:"dateUpdated"`
 		Tags        []string `json:"tags"`
 		Deleted     bool     `json:"deleted"`
 	}
@@ -171,8 +171,8 @@ func (RedactedResourceResponse) StatusCode() int {
 func (r RedactedResourceResponse) MarshalJSON() ([]byte, error) {
 	type out struct {
 		PID         string `json:"pid"`
-		DateCreated string `json:"date_created"`
-		DateUpdated string `json:"date_updated"`
+		DateCreated string `json:"dateCreated"`
+		DateUpdated string `json:"dateUpdated"`
 		Deleted     bool   `json:"deleted"`
 	}
 	bytes, err := json.Marshal(out{
@@ -252,11 +252,11 @@ type ListNamespacesParams struct {
 
 // InfoResponse provides information about the resolver.
 type InfoResponse struct {
-	MaxBodyBytes         int64 `json:"max_body_bytes"`
-	DefaultPageLimit     int64 `json:"default_page_limit"`
-	MaxPageLimit         int64 `json:"max_page_limit"`
-	MaxBatchItems        int64 `json:"max_batch_items"`
-	MaxAutocompleteUsers int64 `json:"max_autocomplete_users,omitzero"`
+	MaxBodyBytes         int64 `json:"maxBodyBytes"`
+	DefaultPageLimit     int64 `json:"defaultPageLimit"`
+	MaxPageLimit         int64 `json:"maxPageLimit"`
+	MaxBatchItems        int64 `json:"maxBatchItems"`
+	MaxAutocompleteUsers int64 `json:"maxAutocompleteUsers,omitzero"`
 	Authentication       bool  `json:"authentication,omitzero"`
 }
 

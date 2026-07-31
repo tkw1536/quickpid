@@ -14,7 +14,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"update-res\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"update-res\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201

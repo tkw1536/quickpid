@@ -14,14 +14,14 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"p\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"p\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
           "id": "c1000000-0000-4000-8000-000000000001",
-          "pid_format": {
+          "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },

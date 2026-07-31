@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_key_post_expires_at_past",
-  "comment": "Issuing a key with expires_at in the past returns 400.",
+  "name": "auth_user_key_post_expiresAt_past",
+  "comment": "Issuing a key with expiresAt in the past returns 400.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -41,7 +41,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\":\"k\",\"expires_at\":\"2020-01-01T00:00:00Z\"}",
+        "body": "{\"comment\":\"k\",\"expiresAt\":\"2020-01-01T00:00:00Z\"}",
         "headers": [
           [
             "Authorization",

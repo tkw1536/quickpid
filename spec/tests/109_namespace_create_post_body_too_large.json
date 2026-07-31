@@ -1,6 +1,6 @@
 {
   "name": "namespace_create_post_body_too_large",
-  "comment": "A namespace create body exceeding max_body_bytes returns 413 body_size_exceeded.",
+  "comment": "A namespace create body exceeding maxBodyBytes returns 413 body_size_exceeded.",
   "steps": [
     {
       "name": "too_large",
@@ -18,7 +18,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 413,

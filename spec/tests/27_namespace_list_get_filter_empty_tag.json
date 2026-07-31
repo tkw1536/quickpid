@@ -14,14 +14,14 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
           "id": "e1000000-0000-4000-8000-000000000001",
-          "pid_format": {
+          "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },
@@ -41,14 +41,14 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"other\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"other\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
           "id": "e1000000-0000-4000-8000-000000000002",
-          "pid_format": {
+          "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },
@@ -74,8 +74,8 @@
             {
               "id": "e1000000-0000-4000-8000-000000000001",
               "tag": "",
-              "date_created": "2020-01-02T03:04:05Z",
-              "pid_format": {
+              "dateCreated": "2020-01-02T03:04:05Z",
+              "pidFormat": {
                 "characters": "full",
                 "pattern": "***-***"
               }

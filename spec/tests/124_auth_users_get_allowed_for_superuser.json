@@ -93,7 +93,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=servertest",
-        "body": "{\"comment\": \"servertest\",\"expires_at\": null}",
+        "body": "{\"comment\": \"servertest\",\"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
@@ -105,8 +105,8 @@
         "code": 201,
         "body": {
           "comment": "servertest",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": null,
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
           "id": "servertest-key",
           "key": "aaaaaaaaaaaaaaaaaaaaaaservertest"
         }

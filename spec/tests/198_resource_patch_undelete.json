@@ -14,14 +14,14 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"r\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"r\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
           "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
-          "pid_format": {
+          "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },
@@ -46,8 +46,8 @@
       "response": {
         "code": 201,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
-          "date_updated": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "deleted": false,
           "metadata": "m",
           "pid": "xjc-cjy",
@@ -72,8 +72,8 @@
       "response": {
         "code": 200,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
-          "date_updated": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "deleted": true,
           "metadata": "m",
           "pid": "xjc-cjy",
@@ -98,8 +98,8 @@
       "response": {
         "code": 200,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
-          "date_updated": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "deleted": false,
           "metadata": "m",
           "pid": "xjc-cjy",

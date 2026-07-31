@@ -457,7 +457,7 @@ func TestIssueAndRevokeKey(t *testing.T) {
 	h := testHandler(t, auth)
 
 	rec := httptest.NewRecorder()
-	issueReq := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/key", strings.NewReader(`{"comment":"new key","expires_at":null}`))
+	issueReq := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/user/key", strings.NewReader(`{"comment":"new key","expiresAt":null}`))
 	issueReq.Header.Set("Authorization", "Bearer "+aliceKey)
 	issueReq.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, issueReq)
@@ -492,7 +492,7 @@ func TestResolverAnonymousMode_AllowsRequestsWithoutAuth(t *testing.T) {
 	h := testAnonymousHandler(t, store)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/resolver/namespaces", strings.NewReader(`{"tag":"anon","pid_format":{"pattern":"***-***","characters":"full"}}`))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/resolver/namespaces", strings.NewReader(`{"tag":"anon","pidFormat":{"pattern":"***-***","characters":"full"}}`))
 	req.Header.Set("Content-Type", "application/json")
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusCreated {

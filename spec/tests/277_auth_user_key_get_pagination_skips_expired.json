@@ -70,7 +70,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=alice",
-        "body": "{\"comment\": \"auth\", \"expires_at\": null}",
+        "body": "{\"comment\": \"auth\", \"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
@@ -82,8 +82,8 @@
         "code": 201,
         "body": {
           "comment": "auth",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": null,
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
           "id": "a-auth",
           "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
         }
@@ -103,7 +103,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"keep-b\", \"expires_at\": null}",
+        "body": "{\"comment\": \"keep-b\", \"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
@@ -115,8 +115,8 @@
         "code": 201,
         "body": {
           "comment": "keep-b",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": null,
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
           "id": "b-keep",
           "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaabkeep"
         }
@@ -136,7 +136,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"gone-c\", \"expires_at\": \"2026-07-06T12:00:00Z\"}",
+        "body": "{\"comment\": \"gone-c\", \"expiresAt\": \"2026-07-06T12:00:00Z\"}",
         "headers": [
           [
             "Authorization",
@@ -148,8 +148,8 @@
         "code": 201,
         "body": {
           "comment": "gone-c",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": "2026-07-06T12:00:00Z",
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": "2026-07-06T12:00:00Z",
           "id": "c-gone",
           "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaacgone"
         }
@@ -169,7 +169,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"keep-d\", \"expires_at\": null}",
+        "body": "{\"comment\": \"keep-d\", \"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
@@ -181,8 +181,8 @@
         "code": 201,
         "body": {
           "comment": "keep-d",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": null,
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
           "id": "d-keep",
           "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaadkeep"
         }
@@ -202,7 +202,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"gone-e\", \"expires_at\": \"2026-07-06T12:00:00Z\"}",
+        "body": "{\"comment\": \"gone-e\", \"expiresAt\": \"2026-07-06T12:00:00Z\"}",
         "headers": [
           [
             "Authorization",
@@ -214,8 +214,8 @@
         "code": 201,
         "body": {
           "comment": "gone-e",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": "2026-07-06T12:00:00Z",
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": "2026-07-06T12:00:00Z",
           "id": "e-gone",
           "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaegone"
         }
@@ -235,7 +235,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"keep-f\", \"expires_at\": null}",
+        "body": "{\"comment\": \"keep-f\", \"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
@@ -247,8 +247,8 @@
         "code": 201,
         "body": {
           "comment": "keep-f",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": null,
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
           "id": "f-keep",
           "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaafkeep"
         }
@@ -277,14 +277,14 @@
           "items": [
             {
               "comment": "auth",
-              "created_at": "2026-07-05T12:00:00Z",
-              "expires_at": null,
+              "createdAt": "2026-07-05T12:00:00Z",
+              "expiresAt": null,
               "id": "a-auth"
             },
             {
               "comment": "keep-b",
-              "created_at": "2026-07-05T12:00:00Z",
-              "expires_at": null,
+              "createdAt": "2026-07-05T12:00:00Z",
+              "expiresAt": null,
               "id": "b-keep"
             }
           ]
@@ -314,14 +314,14 @@
           "items": [
             {
               "comment": "keep-d",
-              "created_at": "2026-07-05T12:00:00Z",
-              "expires_at": null,
+              "createdAt": "2026-07-05T12:00:00Z",
+              "expiresAt": null,
               "id": "d-keep"
             },
             {
               "comment": "keep-f",
-              "created_at": "2026-07-05T12:00:00Z",
-              "expires_at": null,
+              "createdAt": "2026-07-05T12:00:00Z",
+              "expiresAt": null,
               "id": "f-keep"
             }
           ]

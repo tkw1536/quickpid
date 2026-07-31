@@ -11,7 +11,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"t\",\"pid_format\":{\"pattern\":\"***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"t\",\"pidFormat\":{\"pattern\":\"***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 500,

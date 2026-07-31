@@ -1,6 +1,6 @@
 {
   "name": "272_mount_resource_get_exists_redirect",
-  "comment": "GET /resolver/mounts/{base_uri}/{pid} returns 302 with a Location header when the mounted resource exists.",
+  "comment": "GET /resolver/mounts/{baseUri}/{pid} returns 302 with a Location header when the mounted resource exists.",
   "steps": [
     {
       "name": "create_namespace",
@@ -14,7 +14,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"mount-resolve\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"mount-resolve\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201
@@ -70,8 +70,8 @@
           ]
         ],
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
-          "date_updated": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "deleted": false,
           "metadata": "m",
           "pid": "abc-def",

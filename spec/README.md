@@ -115,7 +115,7 @@ Objects are always returned in ascending order by ID.
 Namespaces can be filtered by their tag (exact match).
 Resources can be filtered by tag membership (the resource includes the given tag) and by deletion status.
 
-TODO: document namespace mounts (`/resolver/mounts/{base_uri}`).
+TODO: document namespace mounts (`/resolver/mounts/{baseUri}`).
 
 ### Management API
 
@@ -152,7 +152,7 @@ Fields may be omitted in case they are not relevant for the test case.
     - **`DefaultPageLimit`**
     - **`MaxPageLimit`**
     - **`MaxBatchItems`**, 
-    - **`MaxAutocompleteUsers`**
+    - **`maxAutocompleteUsers`**
     - **`MaxNamespaceIDAttempts`**
     - **`MaxPIDAttempts`**
   - **`request`** (object):

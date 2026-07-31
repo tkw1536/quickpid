@@ -106,7 +106,7 @@
       "name": "autocomplete_prefix",
       "config": {},
       "limits": {
-        "MaxAutocompleteUsers": 10
+        "maxAutocompleteUsers": 10
       },
       "request": {
         "method": "GET",

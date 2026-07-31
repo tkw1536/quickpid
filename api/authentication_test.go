@@ -300,11 +300,11 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_missingExpiresAt",
 			body:      `{"comment":"dev key"}`,
 			wantErr:   true,
-			wantErrIn: []string{"missing required field", "expires_at"},
+			wantErrIn: []string{"missing required field", "expiresAt"},
 		},
 		{
 			name:    "ok_expiresAtSet",
-			body:    `{"comment":"dev key","expires_at":"2026-12-31T00:00:00Z"}`,
+			body:    `{"comment":"dev key","expiresAt":"2026-12-31T00:00:00Z"}`,
 			wantErr: false,
 			want: api.KeyIssueRequest{
 				Comment:   "dev key",
@@ -313,7 +313,7 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			name:      "fail_usernameInBody",
-			body:      `{"comment":"dev key","expires_at":"2026-12-31T00:00:00Z","username":"alice"}`,
+			body:      `{"comment":"dev key","expiresAt":"2026-12-31T00:00:00Z","username":"alice"}`,
 			wantErr:   true,
 			wantErrIn: []string{"unknown field", "username"},
 		},
@@ -331,19 +331,19 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			name:      "fail_unknownField",
-			body:      `{"comment":"dev key","expires_at":null,"unknown":123}`,
+			body:      `{"comment":"dev key","expiresAt":null,"unknown":123}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
 		},
 		{
 			name:      "fail_commentNull",
-			body:      `{"comment":null,"expires_at":null}`,
+			body:      `{"comment":null,"expiresAt":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields"},
 		},
 		{
 			name:    "ok_expiresAtNull",
-			body:    `{"comment":"dev key","expires_at":null}`,
+			body:    `{"comment":"dev key","expiresAt":null}`,
 			wantErr: false,
 			want: api.KeyIssueRequest{
 				Comment:   "dev key",
@@ -352,13 +352,13 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			name:      "fail_expiresAtMalformed",
-			body:      `{"comment":"dev key","expires_at":"not-a-time"}`,
+			body:      `{"comment":"dev key","expiresAt":"not-a-time"}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields"},
 		},
 		{
 			name:      "fail_usernameNull",
-			body:      `{"comment":"dev key","expires_at":null,"username":null}`,
+			body:      `{"comment":"dev key","expiresAt":null,"username":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"unknown field", "username"},
 		},

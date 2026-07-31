@@ -70,7 +70,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key?username=alice",
-        "body": "{\"comment\": \"alice\", \"expires_at\": null}",
+        "body": "{\"comment\": \"alice\", \"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
@@ -82,8 +82,8 @@
         "code": 201,
         "body": {
           "comment": "alice",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": null,
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
           "id": "alice-key",
           "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
         }
@@ -103,7 +103,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"temp\", \"expires_at\": \"2026-07-06T12:00:00Z\"}",
+        "body": "{\"comment\": \"temp\", \"expiresAt\": \"2026-07-06T12:00:00Z\"}",
         "headers": [
           [
             "Authorization",
@@ -115,8 +115,8 @@
         "code": 201,
         "body": {
           "comment": "temp",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": "2026-07-06T12:00:00Z",
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": "2026-07-06T12:00:00Z",
           "id": "temp-key",
           "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaatemp"
         }
@@ -145,8 +145,8 @@
           "items": [
             {
               "comment": "alice",
-              "created_at": "2026-07-05T12:00:00Z",
-              "expires_at": null,
+              "createdAt": "2026-07-05T12:00:00Z",
+              "expiresAt": null,
               "id": "alice-key"
             }
           ]
@@ -176,8 +176,8 @@
           "items": [
             {
               "comment": "temp",
-              "created_at": "2026-07-05T12:00:00Z",
-              "expires_at": "2026-07-06T12:00:00Z",
+              "createdAt": "2026-07-05T12:00:00Z",
+              "expiresAt": "2026-07-06T12:00:00Z",
               "id": "temp-key"
             }
           ]

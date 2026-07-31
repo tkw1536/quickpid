@@ -1,6 +1,6 @@
 {
   "name": "auth_user_post_body_too_large",
-  "comment": "A POST /user body exceeding max_body_bytes returns 413 body_size_exceeded.",
+  "comment": "A POST /user body exceeding maxBodyBytes returns 413 body_size_exceeded.",
   "steps": [
     {
       "name": "bootstrap_root",

@@ -47,7 +47,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\":\"root\",\"expires_at\":null}",
+        "body": "{\"comment\":\"root\",\"expiresAt\":null}",
         "headers": [
           [
             "Authorization",
@@ -59,8 +59,8 @@
         "code": 201,
         "body": {
           "comment": "root",
-          "created_at": "2026-07-05T12:00:00Z",
-          "expires_at": null,
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
           "id": "root-key-2",
           "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaroot2"
         }

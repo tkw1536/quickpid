@@ -14,14 +14,14 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"a\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"a\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
           "id": "ns-aaa",
-          "pid_format": {
+          "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },
@@ -41,14 +41,14 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"b\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"b\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
           "id": "ns-bbb",
-          "pid_format": {
+          "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },
@@ -69,7 +69,7 @@
       "response": {
         "code": 200,
         "body": {
-          "base_uri": "https://z.example.com/",
+          "baseUri": "https://z.example.com/",
           "namespace": "ns-bbb"
         }
       }
@@ -87,7 +87,7 @@
       "response": {
         "code": 200,
         "body": {
-          "base_uri": "https://m.example.com/",
+          "baseUri": "https://m.example.com/",
           "namespace": "ns-aaa"
         }
       }
@@ -105,7 +105,7 @@
       "response": {
         "code": 200,
         "body": {
-          "base_uri": "https://a.example.com/",
+          "baseUri": "https://a.example.com/",
           "namespace": "ns-aaa"
         }
       }
@@ -126,15 +126,15 @@
           "offset": 0,
           "items": [
             {
-              "base_uri": "https://a.example.com/",
+              "baseUri": "https://a.example.com/",
               "namespace": "ns-aaa"
             },
             {
-              "base_uri": "https://m.example.com/",
+              "baseUri": "https://m.example.com/",
               "namespace": "ns-aaa"
             },
             {
-              "base_uri": "https://z.example.com/",
+              "baseUri": "https://z.example.com/",
               "namespace": "ns-bbb"
             }
           ]
@@ -157,7 +157,7 @@
           "offset": 1,
           "items": [
             {
-              "base_uri": "https://m.example.com/",
+              "baseUri": "https://m.example.com/",
               "namespace": "ns-aaa"
             }
           ]
@@ -197,14 +197,14 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"empty\",\"pid_format\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tag\":\"empty\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201,
         "body": {
-          "date_created": "2020-01-02T03:04:05Z",
+          "dateCreated": "2020-01-02T03:04:05Z",
           "id": "ns-empty",
-          "pid_format": {
+          "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },

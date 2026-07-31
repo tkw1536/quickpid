@@ -23,7 +23,7 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 	}{
 		{
 			name:    "ok",
-			body:    `{"tag":"ns","pid_format":{"pattern":"***","characters":"full"}}`,
+			body:    `{"tag":"ns","pidFormat":{"pattern":"***","characters":"full"}}`,
 			wantErr: false,
 			want: api.NamespaceCreateRequest{
 				Tag:       "ns",
@@ -40,13 +40,13 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 
 		{
 			name:      "fail_missingTag",
-			body:      `{"pid_format":{"pattern":"***","characters":"full"}}`,
+			body:      `{"pidFormat":{"pattern":"***","characters":"full"}}`,
 			wantErr:   true,
 			wantErrIn: []string{"missing required field", "tag"},
 		},
 		{
 			name:      "fail_unknownField",
-			body:      `{"tag":"ns","pid_format":{"pattern":"***","characters":"full"},"unknown":123}`,
+			body:      `{"tag":"ns","pidFormat":{"pattern":"***","characters":"full"},"unknown":123}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
 		},
@@ -54,43 +54,43 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_missingFormat",
 			body:      `{"tag":"ns"}`,
 			wantErr:   true,
-			wantErrIn: []string{"missing required field", "pid_format"},
+			wantErrIn: []string{"missing required field", "pidFormat"},
 		},
 
 		{
 			name:      "fail_tagNull",
-			body:      `{"tag":null,"pid_format":{"pattern":"***","characters":"full"}}`,
+			body:      `{"tag":null,"pidFormat":{"pattern":"***","characters":"full"}}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields"},
 		},
 		{
 			name:      "fail_formatNull",
-			body:      `{"tag":"ns","pid_format":null}`,
+			body:      `{"tag":"ns","pidFormat":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "expected JSON object"},
 		},
 
 		{
 			name:      "fail_formatNull",
-			body:      `{"tag":"ns","pid_format":null}`,
+			body:      `{"tag":"ns","pidFormat":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "expected JSON object"},
 		},
 		{
 			name:      "fail_formatString",
-			body:      `{"tag":"ns","pid_format":"***"}`,
+			body:      `{"tag":"ns","pidFormat":"***"}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "expected JSON object"},
 		},
 		{
 			name:      "fail_formatPattern",
-			body:      `{"tag":"ns","pid_format":{"characters":"full"}}`,
+			body:      `{"tag":"ns","pidFormat":{"characters":"full"}}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "missing required field", "pattern"},
 		},
 		{
 			name:      "fail_formatCharactersMissing",
-			body:      `{"tag":"ns","pid_format":{"pattern":"***"}}`,
+			body:      `{"tag":"ns","pidFormat":{"pattern":"***"}}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "missing required field", "characters"},
 		},

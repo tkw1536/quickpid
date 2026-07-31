@@ -14,7 +14,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"hex-res\",\"pid_format\":{\"pattern\":\"********-****-****-****-************\",\"characters\":\"hex\"}}"
+        "body": "{\"tag\":\"hex-res\",\"pidFormat\":{\"pattern\":\"********-****-****-****-************\",\"characters\":\"hex\"}}"
       },
       "response": {
         "code": 201
