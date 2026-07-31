@@ -55,8 +55,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 				t.Helper()
 
 				var gotCalled bool
-				handler := lowlevel.HandlePublic(
-					h,
+				handler := h.Public(
 					func(w http.ResponseWriter, r *http.Request) (authProbeResponse, error) {
 						gotCalled = true
 						return authProbeResponse{}, nil
@@ -78,8 +77,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 					gotCalled bool
 					gotUser   *api.ValidUserInfo
 				)
-				handler := lowlevel.HandleOpen(
-					h,
+				handler := h.Open(
 					func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = user
@@ -198,8 +196,7 @@ func TestHandleNoAuthHonorsSuccessCode(t *testing.T) {
 	t.Parallel()
 
 	h := lowlevel.NewHandler(&mockAuthService{}, nil)
-	handler := lowlevel.HandlePublic(
-		h,
+	handler := h.Public(
 		func(w http.ResponseWriter, r *http.Request) (*api.RedactedResourceResponse, error) {
 			return &api.RedactedResourceResponse{
 				PID:         "abc-def",
@@ -232,8 +229,7 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 			return api.ValidUsername{}, errUnauthorized
 		},
 	}, nil)
-	handler := lowlevel.HandleRestricted(
-		h,
+	handler := h.Restricted(
 		func(w http.ResponseWriter, r *http.Request, _ api.ValidUserInfo) (struct{}, error) {
 			t.Fatal("handler must not be called in anonymous mode")
 			return struct{}{}, nil

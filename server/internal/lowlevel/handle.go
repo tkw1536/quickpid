@@ -12,8 +12,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func handle[T any](
-	h *Handler,
+func (h *Handler) handle[T any](
 	s scenario,
 	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
 	successCode func(T) int,

@@ -26,8 +26,8 @@ type Server struct {
 	ops Options
 	mux *http.ServeMux
 
-	logger      *slog.Logger
-	authHandler *lowlevel.Handler
+	logger   *slog.Logger
+	lowlevel *lowlevel.Handler
 
 	createdViaNew bool
 }
@@ -40,31 +40,30 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	options = options.withValidValues()
 
 	h := &Server{
-		svc:         svc,
-		ops:         options,
-		mux:         http.NewServeMux(),
-		logger:      logger,
-		authHandler: lowlevel.NewHandler(svc, logger),
+		svc:      svc,
+		ops:      options,
+		mux:      http.NewServeMux(),
+		logger:   logger,
+		lowlevel: lowlevel.NewHandler(svc, logger),
 
 		createdViaNew: true,
 	}
 
-	h.mux.Handle("GET /resolver", lowlevel.HandlePublic(
-		h.authHandler,
+	h.mux.Handle("GET /resolver", h.lowlevel.Public(
 		h.getResolverInfo,
 		lowlevel.FixedStatusCode[*api.InfoResponse](http.StatusOK),
 		[]api.ErrorString{
 			api.InfoUnavailable,
 		},
 	))
-	h.mux.Handle("GET /resolver/info", lowlevel.HandlePublic(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/info", h.lowlevel.Public(
+
 		h.getResolverMeta,
 		lowlevel.FixedStatusCode[*api.MetaResponse](http.StatusOK),
 		nil,
 	))
-	h.mux.Handle("GET /resolver/namespaces", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/namespaces", h.lowlevel.Open(
+
 		h.listNamespaces,
 		func(result *api.PaginatedNamespacesResponse) int {
 			return http.StatusOK
@@ -76,8 +75,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /resolver/resources/count", lowlevel.HandlePublic(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/resources/count", h.lowlevel.Public(
+
 		h.countAllResources,
 		lowlevel.FixedStatusCode[*api.ResourceCountResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -86,8 +85,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /resolver/mounts", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/mounts", h.lowlevel.Open(
+
 		h.listMounts,
 		lowlevel.FixedStatusCode[*api.PaginatedMountsResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -97,8 +96,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /resolver/mounts/{base_uri}", lowlevel.HandlePublic(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/mounts/{base_uri}", h.lowlevel.Public(
+
 		h.getMount,
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -107,8 +106,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /resolver/mounts/{base_uri}/{pid}", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/mounts/{base_uri}/{pid}", h.lowlevel.Open(
+
 		h.resolveMountedResource,
 		lowlevel.FixedStatusCode[api.ResourceGetResult](http.StatusFound),
 		[]api.ErrorString{
@@ -121,8 +120,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PUT /resolver/mounts/{base_uri}", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("PUT /resolver/mounts/{base_uri}", h.lowlevel.Open(
+
 		h.setMount,
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -137,8 +136,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("DELETE /resolver/mounts/{base_uri}", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("DELETE /resolver/mounts/{base_uri}", h.lowlevel.Open(
+
 		h.deleteMount,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorString{
@@ -149,8 +148,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("POST /resolver/namespaces", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("POST /resolver/namespaces", h.lowlevel.Open(
+
 		h.createNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusCreated),
 		[]api.ErrorString{
@@ -164,8 +163,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.InsufficientEntropy,
 		},
 	))
-	h.mux.Handle("GET /resolver/namespaces/{namespace}", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/namespaces/{namespace}", h.lowlevel.Open(
+
 		h.getNamespaceDetail,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -176,8 +175,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/mounts", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/mounts", h.lowlevel.Open(
+
 		h.listNamespaceMounts,
 		lowlevel.FixedStatusCode[*api.PaginatedBaseURIResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -190,8 +189,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", h.lowlevel.Open(
+
 		h.listResources,
 		lowlevel.FixedStatusCode[*api.PaginatedResourcesResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -204,8 +203,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", h.lowlevel.Open(
+
 		h.createResource,
 		lowlevel.FixedStatusCode[*api.ResourceResponse](http.StatusCreated),
 		[]api.ErrorString{
@@ -221,8 +220,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.InsufficientEntropy,
 		},
 	))
-	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources/batch", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources/batch", h.lowlevel.Open(
+
 		h.batchCreateResources,
 		lowlevel.FixedStatusCode[[]api.ResourceResponse](http.StatusCreated),
 		[]api.ErrorString{
@@ -240,8 +239,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", h.lowlevel.Open(
+
 		h.getResource,
 		func(result api.ResourceGetResult) int {
 			if redacted, ok := result.(api.RedactedResourceResponse); ok {
@@ -258,8 +257,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", lowlevel.HandleOpen(
-		h.authHandler,
+	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", h.lowlevel.Open(
+
 		h.updateResource,
 		lowlevel.FixedStatusCode[*api.ResourceResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -276,8 +275,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles", h.lowlevel.Restricted(
+
 		h.listNamespaceRoles,
 		lowlevel.FixedStatusCode[*api.PaginatedNamespaceRolesResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -290,8 +289,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Restricted(
+
 		h.getNamespaceRole,
 		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
 		[]api.ErrorString{
@@ -304,8 +303,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PUT /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("PUT /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Restricted(
+
 		h.setNamespaceRole,
 		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
 		[]api.ErrorString{
@@ -322,8 +321,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/roles/{username}", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Restricted(
+
 		h.deleteNamespaceRole,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorString{
@@ -338,8 +337,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /user", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("GET /user", h.lowlevel.Restricted(
+
 		h.getCurrentUserHTTP,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
 		[]api.ErrorString{
@@ -351,8 +350,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.UnavailableInAnonymousMode,
 		},
 	))
-	h.mux.Handle("GET /user/roles", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("GET /user/roles", h.lowlevel.Restricted(
+
 		h.listUserRoles,
 		lowlevel.FixedStatusCode[*api.PaginatedUserRolesResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -365,8 +364,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PATCH /user", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("PATCH /user", h.lowlevel.Restricted(
+
 		h.updateCurrentUser,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
 		[]api.ErrorString{
@@ -382,8 +381,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("POST /user", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("POST /user", h.lowlevel.Restricted(
+
 		h.createUser,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusCreated),
 		[]api.ErrorString{
@@ -398,8 +397,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("DELETE /user", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("DELETE /user", h.lowlevel.Restricted(
+
 		h.deleteUser,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorString{
@@ -412,8 +411,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("POST /user/password", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("POST /user/password", h.lowlevel.Restricted(
+
 		h.setUserPassword,
 		lowlevel.FixedStatusCode[*api.SetPasswordResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -429,8 +428,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /users/autocomplete", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("GET /users/autocomplete", h.lowlevel.Restricted(
+
 		h.autocompleteUsers,
 		lowlevel.FixedStatusCode[[]string](http.StatusOK),
 		[]api.ErrorString{
@@ -442,8 +441,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /users", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("GET /users", h.lowlevel.Restricted(
+
 		h.listUsers,
 		lowlevel.FixedStatusCode[*api.PaginatedUsersResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -454,8 +453,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("GET /user/key", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("GET /user/key", h.lowlevel.Restricted(
+
 		h.listKeys,
 		lowlevel.FixedStatusCode[*api.PaginatedAPIKeysResponse](http.StatusOK),
 		[]api.ErrorString{
@@ -468,8 +467,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("POST /user/key", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("POST /user/key", h.lowlevel.Restricted(
+
 		h.issueKey,
 		lowlevel.FixedStatusCode[*api.IssueKeyResponse](http.StatusCreated),
 		[]api.ErrorString{
@@ -486,8 +485,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("POST /user/key/revoke", lowlevel.HandleRestricted(
-		h.authHandler,
+	h.mux.Handle("POST /user/key/revoke", h.lowlevel.Restricted(
+
 		h.revokeKey,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorString{

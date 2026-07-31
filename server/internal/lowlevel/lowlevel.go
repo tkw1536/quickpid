@@ -16,9 +16,9 @@ import (
 //
 // The handler runs basic authentication, request logging as well as response serialization.
 // A new handler can be created with [NewHandler], it requires database access using [AuthService].
-// Afterwards, new [http.HandlerFunc]s can be created using the various Handle* functions in this package.
+// Afterwards, new [http.HandlerFunc]s can be created using the three methods on this struct.
 //
-// Each Handle* function takes an implementation function which accepts the user object (if any) as an argument.
+// Each method takes an implementation function which accepts the user object (if any) as an argument.
 // These represent the authenticated user (if any) for the request.
 // The implementation functions must only access the user object using these variable, and should never access them directly.
 // The implementation function should return two values:
@@ -33,18 +33,13 @@ import (
 // If the error is not nil, it should wrap an [api.ErrorString] value, which will be returned to the client.
 // If there is no ErrorString, or it is not explicitly listed in the allowedErrors slice, this is considered an implementation error.
 //
-// Each of the Handler* functions is intended to support a different authentication scenario.
-// - [HandlePublic] creates handlers that do not perform any authentication.
-// - [HandleRequiredUsername] requires an authenticated user, but does not load the whole user object from the database.
-// - [HandleOptionalUsername] is like [HandleRequiredUsername], but also allows anonymous users.
-// - [HandleRestricted] requires an authenticated user, and loads the whole user object from the database.
-// - [HandleOpen] is like [HandleRestricted], but also allows anonymous users.
-// - [HandleRestricted] requires the server to be in authenticated mode, and an authenticated user exists.
+// Each of the methods is intended to support a different authentication scenario.
+// - [Handler.Public] creates handlers that do not perform any authentication.
+// - [Handler.Restricted] requires an authenticated user, and loads the whole user object from the database.
+// - [Handler.Open] is like [Handler.Restricted], but also allows anonymous users.
 //
 // Note that depending on the authentication scenario, they introduce additional possible [api.ErrorString] values, which act
 // as if they had been returned by the implementation function and thus need to be listed in the allowedErrors slice.
-//
-// Once in go1.27, the Handle* function will become generic methods on the [Handler] struct.
 type Handler struct {
 	auth   AuthService
 	logger *slog.Logger
