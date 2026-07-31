@@ -4,6 +4,7 @@ package api
 //spellchecker:words encoding json http time github quickpid internal strict embed
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -19,6 +20,10 @@ type NamespaceCreateRequest struct {
 	Tag       string     `json:"tag"`
 	PIDFormat pid.Format `json:"pidFormat"`
 }
+
+var (
+	errInvalidPIDFormat = errors.New("invalid PID format")
+)
 
 func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {

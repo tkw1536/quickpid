@@ -2,6 +2,7 @@ package api
 
 //spellchecker:words github quickpid internal strict
 import (
+	"errors"
 	"fmt"
 
 	"github.com/tkw1536/quickpid/internal/strict"
@@ -15,6 +16,10 @@ const (
 	RoleContributor Role = "contributor"
 	RoleEditor      Role = "editor"
 	RoleManager     Role = "manager"
+)
+
+var (
+	errInvalidRole = errors.New("invalid role")
 )
 
 // Valid reports whether the value is a known role.
