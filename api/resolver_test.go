@@ -2,7 +2,7 @@ package api_test
 
 //spellchecker:words encoding json reflect strings testing github quickpid
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"reflect"
 	"strings"
 	"testing"
@@ -48,7 +48,7 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_unknownField",
 			body:      `{"tag":"ns","pidFormat":{"pattern":"***","characters":"full"},"unknown":123}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"},
 		},
 		{
 			name:      "fail_missingFormat",
@@ -147,7 +147,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_unknownField",
 			body:      `{"url":"https://example.com","metadata":null,"tags":["t"],"unknown":123}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"},
 		},
 		{
 			name:      "fail_urlNull",
@@ -167,13 +167,13 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_singularTag",
 			body:      `{"url":"https://example.com","metadata":null,"tag":"t"}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "tag"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "tag"},
 		},
 		{
 			name:      "fail_singularTagWithTags",
 			body:      `{"url":"https://example.com","metadata":null,"tag":"a","tags":["b","c"]}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "tag"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "tag"},
 		},
 		{
 			name:      "fail_tagsNull",
@@ -274,7 +274,7 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			{name: "number_isError", body: `{"url":123}`, wantErr: true, wantErrIn: []string{"failed to decode json"}},
 			{name: "bool_isError", body: `{"url":true}`, wantErr: true, wantErrIn: []string{"failed to decode json"}},
 			{name: "object_isError", body: `{"url":{}}`, wantErr: true, wantErrIn: []string{"failed to decode json"}},
-			{name: "unknownField_isError", body: `{"url":"https://example.com","unknown":123}`, wantErr: true, wantErrIn: []string{"failed to decode json", "unknown field", "unknown"}},
+			{name: "unknownField_isError", body: `{"url":"https://example.com","unknown":123}`, wantErr: true, wantErrIn: []string{"failed to decode json", "unknown object member name", "unknown"}},
 		}
 
 		for _, tt := range tests {
@@ -319,8 +319,8 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			{name: "oneItem", body: `{"tags":["t"]}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{"t"}, Deleted: nil, Metadata: nil}},
 			{name: "emptyStringItem", body: `{"tags":[""]}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{""}, Deleted: nil, Metadata: nil}},
 			{name: "multiTags", body: `{"tags":["a","b"]}`, want: api.ResourceUpdateRequest{URL: nil, Tags: []string{"a", "b"}, Deleted: nil, Metadata: nil}},
-			{name: "singularTag_isError", body: `{"tag":"t"}`, wantErr: true, wantErrIn: []string{"failed to decode json", "unknown field", "tag"}},
-			{name: "singularTagWithTags_isError", body: `{"tag":"a","tags":["b","c"]}`, wantErr: true, wantErrIn: []string{"failed to decode json", "unknown field", "tag"}},
+			{name: "singularTag_isError", body: `{"tag":"t"}`, wantErr: true, wantErrIn: []string{"failed to decode json", "unknown object member name", "tag"}},
+			{name: "singularTagWithTags_isError", body: `{"tag":"a","tags":["b","c"]}`, wantErr: true, wantErrIn: []string{"failed to decode json", "unknown object member name", "tag"}},
 			{name: "null_isError", body: `{"tags":null}`, wantErr: true, wantErrIn: []string{"failed to decode json"}},
 			{name: "number_isError", body: `{"tags":123}`, wantErr: true, wantErrIn: []string{"failed to decode json"}},
 			{name: "bool_isError", body: `{"tags":true}`, wantErr: true, wantErrIn: []string{"failed to decode json"}},

@@ -3,7 +3,7 @@ package strict_test
 
 //spellchecker:words encoding json errors github quickpid internal strict
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 
@@ -83,7 +83,7 @@ func ExampleOptional_customStruct() {
 	optionalFieldIsPresent.PrintInfo()
 
 	// Output:
-	// Required field is missing returned error: field 'required' is missing
+	// Required field is missing returned error: json: cannot unmarshal JSON object into Go strict_test.MyStruct: field 'required' is missing
 	// Optional field is absent: Required == nil Optional == nil
 	// Optional field is null: Required == nil Optional == &(nil)
 	// Optional field is present: Required == &("hello") Optional == &(&("world"))

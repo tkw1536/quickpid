@@ -106,7 +106,7 @@
       "name": "autocomplete_limit",
       "config": {},
       "limits": {
-        "maxAutocompleteUsers": 2
+        "MaxAutocompleteUsers": 2
       },
       "request": {
         "method": "GET",

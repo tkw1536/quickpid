@@ -3,7 +3,7 @@ package api
 
 //spellchecker:words encoding json http time github quickpid internal strict embed
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"net/http"

@@ -3,7 +3,7 @@ package strict
 
 //spellchecker:words encoding json
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 )
 
@@ -45,6 +45,5 @@ func (r Optional[T]) ToPointer() *T {
 	if !r.Present {
 		return nil
 	}
-	value := r.Value
-	return &value
+	return new(r.Value)
 }

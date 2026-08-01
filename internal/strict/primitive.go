@@ -1,10 +1,13 @@
+// Package strict provides types that enable strict JSON unmarshaling.
+//
 //spellchecker:words strict
 package strict
 
 //spellchecker:words bytes encoding json errors time
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"time"
@@ -21,17 +24,17 @@ var (
 type String string
 
 func (s *String) UnmarshalJSON(data []byte) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	tok, err := dec.Token()
+	dec := jsontext.NewDecoder(bytes.NewReader(data))
+	tok, err := dec.ReadToken()
 	if err != nil {
 		return fmt.Errorf("failed to read first token: %w", err)
 	}
 
-	str, ok := tok.(string)
-	if !ok {
+	if tok.Kind() != jsontext.KindString {
 		return errNotAString
 	}
-	*s = String(str)
+
+	*s = String(tok.String())
 	return nil
 }
 
@@ -39,17 +42,25 @@ func (s *String) UnmarshalJSON(data []byte) error {
 type Bool bool
 
 func (b *Bool) UnmarshalJSON(data []byte) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	tok, err := dec.Token()
+	dec := jsontext.NewDecoder(bytes.NewReader(data))
+	tok, err := dec.ReadToken()
 	if err != nil {
 		return fmt.Errorf("failed to read first token: %w", err)
 	}
 
-	boolean, ok := tok.(bool)
-	if !ok {
+	var value bool
+	switch tok.Kind() {
+	case jsontext.KindTrue:
+		value = true
+	case jsontext.KindFalse:
+		value = false
+	case jsontext.KindInvalid, jsontext.KindNull, jsontext.KindString, jsontext.KindNumber, jsontext.KindBeginObject, jsontext.KindEndObject, jsontext.KindBeginArray, jsontext.KindEndArray:
 		return errNotABoolean
+	default:
+		panic("never reached")
 	}
-	*b = Bool(boolean)
+
+	*b = Bool(value)
 	return nil
 }
 
@@ -57,17 +68,16 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 type Time time.Time
 
 func (t *Time) UnmarshalJSON(data []byte) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	tok, err := dec.Token()
+	dec := jsontext.NewDecoder(bytes.NewReader(data))
+	tok, err := dec.ReadToken()
 	if err != nil {
 		return fmt.Errorf("failed to read first token: %w", err)
 	}
 
-	str, ok := tok.(string)
-	if !ok {
+	if tok.Kind() != jsontext.KindString {
 		return errNotAString
 	}
-	parsed, err := time.Parse(time.RFC3339, str)
+	parsed, err := time.Parse(time.RFC3339, tok.String())
 	if err != nil {
 		return fmt.Errorf("%w: %w", errNotRFC3339, err)
 	}
@@ -84,28 +94,32 @@ func (t *Time) Time() time.Time {
 type StringSlice []String
 
 func (s *StringSlice) UnmarshalJSON(data []byte) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	tok, err := dec.Token()
+	dec := jsontext.NewDecoder(bytes.NewReader(data))
+	tok, err := dec.ReadToken()
 	if err != nil {
 		return fmt.Errorf("failed to read first token: %w", err)
 	}
-	if tok != json.Delim('[') {
+	if tok.Kind() != jsontext.KindBeginArray {
 		return errNotAnArray
 	}
 
 	var out []String
-	for dec.More() {
+	for {
+		kind := dec.PeekKind()
+		if kind == jsontext.KindEndArray || kind == jsontext.KindInvalid {
+			break
+		}
 		var elem String
-		if err := dec.Decode(&elem); err != nil {
+		if err := json.UnmarshalDecode(dec, &elem); err != nil {
 			return fmt.Errorf("failed to decode json: %w", err)
 		}
 		out = append(out, elem)
 	}
-	tok, err = dec.Token()
+	tok, err = dec.ReadToken()
 	if err != nil {
 		return fmt.Errorf("failed to read last token: %w", err)
 	}
-	if tok != json.Delim(']') {
+	if tok.Kind() != jsontext.KindEndArray {
 		return errNotAnArray
 	}
 	if out == nil {

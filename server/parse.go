@@ -3,7 +3,8 @@ package server
 
 //spellchecker:words encoding json errors http strconv github quickpid pkglib errorsx
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -53,10 +54,9 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) error
 		}
 	}()
 
-	dec := json.NewDecoder(body)
-	dec.DisallowUnknownFields()
+	dec := jsontext.NewDecoder(body, json.RejectUnknownMembers(true))
 
-	if err := dec.Decode(v); err != nil {
+	if err := json.UnmarshalDecode(dec, v); err != nil {
 		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
 			return api.WithErrorString(fmt.Errorf("maximum body size exceeded: %w", err), api.BodySizeExceeded)
 		}
@@ -65,7 +65,7 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) error
 		}
 		return api.WithErrorString(fmt.Errorf("invalid json provided: %w", err), api.BodyInvalidJSON)
 	}
-	_, err := dec.Token()
+	_, err := dec.ReadToken()
 	if !errors.Is(err, io.EOF) || err == nil {
 		if err == nil {
 			err = errTrailingJSON

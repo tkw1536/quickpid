@@ -4,7 +4,7 @@ package lowlevel
 //spellchecker:words context encoding json slog http strings time
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -20,7 +20,7 @@ func (h *Handler) writeJSONResponse(w http.ResponseWriter, r *http.Request, stat
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	if err := json.NewEncoder(w).Encode(v); err != nil {
+	if err := json.MarshalWrite(w, v); err != nil {
 		h.logInternal(r.Context(), r, slog.LevelError, "error writing json response", slog.Any("error", err))
 	}
 }

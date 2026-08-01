@@ -212,7 +212,7 @@ func TestHandleNoAuthHonorsSuccessCode(t *testing.T) {
 	if rec.Code != http.StatusGone {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusGone)
 	}
-	wantBody := `{"pid":"abc-def","dateCreated":"2020-01-02T03:04:05Z","dateUpdated":"2020-01-02T03:04:05Z","deleted":true}` + "\n"
+	wantBody := `{"pid":"abc-def","dateCreated":"2020-01-02T03:04:05Z","dateUpdated":"2020-01-02T03:04:05Z","deleted":true}`
 	if got := rec.Body.String(); got != wantBody {
 		t.Fatalf("body = %q, want %q", got, wantBody)
 	}

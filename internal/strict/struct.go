@@ -4,7 +4,8 @@ package strict
 //spellchecker:words bytes encoding json errors
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -14,23 +15,22 @@ var errMustBeStruct = errors.New("expected JSON object")
 
 // MustBeStruct checks that the given data represents a JSON struct.
 //
-// If the data is not a valid JSON object, the behavior is undefined.
+// If the data is not a valid JSON object, it returns an error.
 //
 // It is intended to prevent un-marshalling of "null" into JSON structs.
 func MustBeStruct(data []byte) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	return mustBeStruct(dec)
+	return mustBeStruct(bytes.NewReader(data))
 }
 
-func mustBeStruct(dec *json.Decoder) error {
-	tok, err := dec.Token()
+func mustBeStruct(r io.Reader) error {
+	tok, err := jsontext.NewDecoder(r).ReadToken()
 	if err != nil {
 		return fmt.Errorf("failed to read first token: %w", err)
 	}
-	if tok == json.Delim('{') {
-		return nil
+	if tok.Kind() != jsontext.KindBeginObject {
+		return fmt.Errorf("%w, got %v", errMustBeStruct, tok)
 	}
-	return fmt.Errorf("%w, got %v", errMustBeStruct, tok)
+	return nil
 }
 
 // UnmarshalStruct decodes a JSON object into a value of type T.
@@ -43,7 +43,7 @@ func mustBeStruct(dec *json.Decoder) error {
 func UnmarshalStruct[T any](data []byte) (out T, err error) {
 	// check that it's a struct
 	bytesReader := bytes.NewReader(data)
-	if err := mustBeStruct(json.NewDecoder(bytesReader)); err != nil {
+	if err := mustBeStruct(bytesReader); err != nil {
 		return out, fmt.Errorf("failed to check that data is a struct: %w", err)
 	}
 
@@ -51,15 +51,14 @@ func UnmarshalStruct[T any](data []byte) (out T, err error) {
 	if _, err := bytesReader.Seek(0, io.SeekStart); err != nil {
 		return out, fmt.Errorf("failed to reset reader: %w", err)
 	}
-	dec := json.NewDecoder(bytesReader)
-	dec.DisallowUnknownFields()
+	dec := jsontext.NewDecoder(bytesReader, json.RejectUnknownMembers(true))
 
-	if err := dec.Decode(&out); err != nil {
+	if err := json.UnmarshalDecode(dec, &out); err != nil {
 		return out, fmt.Errorf("failed to decode json: %w", err)
 	}
 
 	// check that there isn't any trailing data
-	if _, err := dec.Token(); err != io.EOF {
+	if _, err := dec.ReadToken(); !errors.Is(err, io.EOF) {
 		return out, fmt.Errorf("json has trailing data: %w", err)
 	}
 	return out, nil

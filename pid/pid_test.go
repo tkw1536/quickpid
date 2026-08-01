@@ -2,7 +2,7 @@ package pid_test
 
 //spellchecker:words encoding json strings testing github quickpid internal bitstring
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"strings"
 	"testing"
 
@@ -289,7 +289,7 @@ func TestFormat_UnmarshalJSON(t *testing.T) {
 			name:      "unknownField_isError",
 			body:      `{"pattern":"***","characters":"full","unknown":123}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"},
 		},
 		{
 			name:      "missingPattern",

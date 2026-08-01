@@ -1,18 +1,11 @@
-// Package strict provides types that enable strict JSON unmarshaling.
 //
 //spellchecker:words strict
 package strict
 
 func OptionalStringToPointer(value Optional[String]) *string {
-	if !value.Present {
-		return nil
-	}
-	return new(string(value.Value))
+	return (*string)(value.ToPointer())
 }
 
 func OptionalBoolToPointer(value Optional[Bool]) *bool {
-	if !value.Present {
-		return nil
-	}
-	return new(bool(value.Value))
+	return (*bool)(value.ToPointer())
 }

@@ -3,7 +3,7 @@ package pidtest
 
 //spellchecker:words encoding json sort testing github quickpid
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"io/fs"
 	"sort"

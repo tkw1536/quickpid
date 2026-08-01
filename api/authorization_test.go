@@ -2,7 +2,7 @@ package api_test
 
 //spellchecker:words encoding json reflect strings testing github quickpid
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"reflect"
 	"strings"
 	"testing"
@@ -69,7 +69,7 @@ func TestSetNamespaceRoleRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_unknownField",
 			body:      `{"role":"editor","unknown":123}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"},
 		},
 
 		{

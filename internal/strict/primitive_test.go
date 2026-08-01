@@ -3,7 +3,7 @@ package strict_test
 
 //spellchecker:words encoding json strings testing time github quickpid internal strict
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"strings"
 	"testing"
@@ -23,7 +23,7 @@ func ExampleString() {
 
 	// Output:
 	// hello
-	// can only unmarshal string literal
+	// json: cannot unmarshal JSON null into Go strict.String: can only unmarshal string literal
 }
 
 func ExampleBool() {
@@ -42,7 +42,7 @@ func ExampleBool() {
 	// Output:
 	// true
 	// false
-	// can only unmarshal boolean literal
+	// json: cannot unmarshal JSON null into Go strict.Bool: can only unmarshal boolean literal
 }
 
 func ExampleTime() {
@@ -56,7 +56,7 @@ func ExampleTime() {
 
 	// Output:
 	// 2026-12-31T00:00:00Z
-	// can only unmarshal string literal
+	// json: cannot unmarshal JSON null into Go strict.Time: can only unmarshal string literal
 }
 
 func TestTime_UnmarshalJSON(t *testing.T) {
@@ -158,7 +158,7 @@ func ExampleStringSlice() {
 	// Output:
 	// [a b]
 	// []
-	// can only unmarshal JSON array
+	// json: cannot unmarshal JSON null into Go strict.StringSlice: can only unmarshal JSON array
 }
 
 func TestStringSlice_UnmarshalJSON(t *testing.T) {

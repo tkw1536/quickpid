@@ -7,7 +7,8 @@ package httpfixture
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -62,7 +63,7 @@ type Request struct {
 	Headers [][2]string `json:"headers,omitzero"`
 
 	// The request body content.
-	// Note: We cannot use json.RawMessage here, because we want to be able to represent invalid and valid JSON alike.
+	// Note: We cannot use [jsontext.Value] here, because we want to be able to represent invalid and valid JSON alike.
 	Body string `json:"body,omitzero"`
 }
 
@@ -95,7 +96,7 @@ type Response struct {
 
 	// Body is the expected json serialization of the response body.
 	// It is compared with json semantics, meaning that map key order does not matter.
-	Body json.RawMessage `json:"body,omitzero"`
+	Body jsontext.Value `json:"body,omitzero"`
 }
 
 var (
@@ -173,11 +174,11 @@ join_and_return:
 // canonicalJSON reads a JSON value from r, and returns its canonical JSON serialization.
 func canonicalJSON(r io.Reader) (string, error) {
 	var v any
-	if err := json.NewDecoder(r).Decode(&v); err != nil {
+	if err := json.UnmarshalRead(r, &v); err != nil {
 		return "", fmt.Errorf("failed to decode JSON: %w", err)
 	}
 
-	out, err := json.Marshal(v)
+	out, err := json.Marshal(v, json.Deterministic(true))
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal JSON: %w", err)
 	}

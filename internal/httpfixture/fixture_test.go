@@ -4,7 +4,7 @@ package httpfixture_test
 //spellchecker:words context encoding json errors http httptest strings testing github quickpid internal httpfixture
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"io"
@@ -57,7 +57,7 @@ func TestResponseCompare_CodeHeadersAndBodyMatchOK(t *testing.T) {
 	want := httpfixture.Response{
 		Code:    201,
 		Headers: [][2]string{{"x-resp", "ok"}},
-		Body:    json.RawMessage(`{"a":1,"b":2}`),
+		Body:    jsontext.Value(`{"a":1,"b":2}`),
 	}
 
 	if err := want.Compare(rec); err != nil {
@@ -76,7 +76,7 @@ func TestResponseCompare_JoinsMultipleErrors(t *testing.T) {
 	want := httpfixture.Response{
 		Code:    201,
 		Headers: [][2]string{{"X-Resp", "ok"}},
-		Body:    json.RawMessage(`{"a":1}`),
+		Body:    jsontext.Value(`{"a":1}`),
 	}
 
 	err := want.Compare(rec)
@@ -100,7 +100,7 @@ func TestFixtureRun_ReportsMismatchViaTErrors(t *testing.T) {
 	tb := &mockT{}
 	httpfixture.Fixture{
 		Request:  httpfixture.Request{Method: "GET", Path: "/"},
-		Response: httpfixture.Response{Code: 200, Body: json.RawMessage(`{"ok":true}`)},
+		Response: httpfixture.Response{Code: 200, Body: jsontext.Value(`{"ok":true}`)},
 	}.Run(tb, h)
 
 	if len(tb.errs) == 0 {
@@ -147,7 +147,7 @@ func ExampleResponse_Compare() {
 	want := httpfixture.Response{
 		Code:    201,
 		Headers: [][2]string{{"X-Resp", "ok"}},
-		Body:    json.RawMessage(`{"a":1,"b":2}`),
+		Body:    jsontext.Value(`{"a":1,"b":2}`),
 	}
 
 	fmt.Println(want.Compare(rec))

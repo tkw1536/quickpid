@@ -3,7 +3,7 @@ package strict_test
 
 //spellchecker:words encoding json strings testing github quickpid internal strict
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"strings"
 	"testing"
@@ -110,8 +110,8 @@ func TestOptional_JSON_UnmarshalDirect(t *testing.T) {
 		if err == nil {
 			t.Fatalf("unmarshal: got nil error, want error")
 		}
-		if got := err.Error(); !strings.HasPrefix(got, "failed to unmarshal field:") {
-			t.Fatalf("error = %q, want prefix %q", got, "failed to unmarshal field:")
+		if got := err.Error(); !strings.HasPrefix(got, "json: cannot unmarshal JSON string into Go strict.Optional[int]: failed to unmarshal field: ") {
+			t.Fatalf("error = %q, want prefix %q", got, "json: cannot unmarshal JSON string into Go strict.Optional[int]: failed to unmarshal field: ")
 		}
 	})
 }

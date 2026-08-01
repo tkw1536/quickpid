@@ -2,7 +2,7 @@ package api_test
 
 //spellchecker:words encoding json reflect strings testing time github quickpid
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"reflect"
 	"strings"
 	"testing"
@@ -55,7 +55,7 @@ func TestUserCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_unknownField",
 			body:      `{"username":"alice","superuser":true,"unknown":123}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"},
 		},
 		{
 			name:      "fail_usernameNull",
@@ -111,13 +111,13 @@ func TestUserUpdateRequest_UnmarshalJSON(t *testing.T) {
 			body      string
 			wantErrIn []string
 		}{
-			{name: "string", body: `{"username":"alice"}`, wantErrIn: []string{"unknown field", "username"}},
-			{name: "emptyString", body: `{"username":""}`, wantErrIn: []string{"unknown field", "username"}},
-			{name: "null", body: `{"username":null}`, wantErrIn: []string{"unknown field", "username"}},
-			{name: "number", body: `{"username":123}`, wantErrIn: []string{"unknown field", "username"}},
-			{name: "bool", body: `{"username":true}`, wantErrIn: []string{"unknown field", "username"}},
-			{name: "object", body: `{"username":{}}`, wantErrIn: []string{"unknown field", "username"}},
-			{name: "unknownField", body: `{"username":"alice","unknown":123}`, wantErrIn: []string{"unknown field"}},
+			{name: "string", body: `{"username":"alice"}`, wantErrIn: []string{"unknown object member name", "username"}},
+			{name: "emptyString", body: `{"username":""}`, wantErrIn: []string{"unknown object member name", "username"}},
+			{name: "null", body: `{"username":null}`, wantErrIn: []string{"unknown object member name", "username"}},
+			{name: "number", body: `{"username":123}`, wantErrIn: []string{"unknown object member name", "username"}},
+			{name: "bool", body: `{"username":true}`, wantErrIn: []string{"unknown object member name", "username"}},
+			{name: "object", body: `{"username":{}}`, wantErrIn: []string{"unknown object member name", "username"}},
+			{name: "unknownField", body: `{"username":"alice","unknown":123}`, wantErrIn: []string{"unknown object member name"}},
 		}
 
 		for _, tt := range tests {
@@ -200,7 +200,7 @@ func TestSetPasswordRequest_UnmarshalJSON(t *testing.T) {
 		{name: "string", body: `{"password":"secret"}`, wantValue: "secret"},
 		{name: "null", body: `{"password":null}`, wantNil: true},
 		{name: "missing", body: `{}`, wantErr: true, wantErrIn: []string{"missing required field", "password"}},
-		{name: "unknown", body: `{"password":"secret","unknown":1}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"}},
+		{name: "unknown", body: `{"password":"secret","unknown":1}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"}},
 		{name: "number", body: `{"password":123}`, wantErr: true, wantErrIn: []string{"failed to unmarshal fields"}},
 	}
 
@@ -315,7 +315,7 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_usernameInBody",
 			body:      `{"comment":"dev key","expiresAt":"2026-12-31T00:00:00Z","username":"alice"}`,
 			wantErr:   true,
-			wantErrIn: []string{"unknown field", "username"},
+			wantErrIn: []string{"unknown object member name", "username"},
 		},
 		{
 			name:      "fail_nullBody",
@@ -333,7 +333,7 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_unknownField",
 			body:      `{"comment":"dev key","expiresAt":null,"unknown":123}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"},
 		},
 		{
 			name:      "fail_commentNull",
@@ -360,7 +360,7 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_usernameNull",
 			body:      `{"comment":"dev key","expiresAt":null,"username":null}`,
 			wantErr:   true,
-			wantErrIn: []string{"unknown field", "username"},
+			wantErrIn: []string{"unknown object member name", "username"},
 		},
 	}
 
@@ -421,7 +421,7 @@ func TestKeyRevokeRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_unknownField",
 			body:      `{"id":"key-123","unknown":123}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "unknown field", "unknown"},
+			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"},
 		},
 		{
 			name:      "fail_idNull",
