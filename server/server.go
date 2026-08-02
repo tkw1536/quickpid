@@ -434,7 +434,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		lowlevel.FixedStatusCode[[]string](http.StatusOK),
 		[]api.ErrorString{
 			api.InvalidQueryParameter,
-			api.InvalidUsername,
+			api.InvalidAutocompleteQuery,
 			api.Unauthorized,
 			api.Forbidden,
 			api.UnavailableInAnonymousMode,

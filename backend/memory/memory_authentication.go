@@ -73,13 +73,14 @@ func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.P
 	return &api.PaginatedUsersResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) AutocompleteUsers(_ context.Context, query string, limit int) ([]string, error) {
+func (s *Store) AutocompleteUsers(_ context.Context, query api.ValidAutocompleteQuery, limit int) ([]string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	queryString := query.String()
 	matches := make([]string, 0)
 	for username := range s.users {
-		if strings.HasPrefix(username, query) {
+		if strings.HasPrefix(username, queryString) {
 			matches = append(matches, username)
 		}
 	}

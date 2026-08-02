@@ -33,7 +33,7 @@ type AuthenticationBackend interface {
 	// AutocompleteUsers returns usernames with the given prefix, ordered ascending by username.
 	//
 	// Has no specific error conditions.
-	AutocompleteUsers(ctx context.Context, query string, limit int) ([]string, error)
+	AutocompleteUsers(ctx context.Context, query api.ValidAutocompleteQuery, limit int) ([]string, error)
 
 	// DeleteUser removes a user and all associated API keys.
 	//

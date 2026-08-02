@@ -49,7 +49,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalidUsername"
+          "error": "invalidAutocompleteQuery"
         }
       }
     },
@@ -69,7 +69,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalidUsername"
+          "error": "invalidAutocompleteQuery"
         }
       }
     }

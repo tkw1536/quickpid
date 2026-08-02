@@ -83,10 +83,10 @@ func (s *Store) ListUsers(ctx context.Context, params api.ListUsersParams) (*api
 	})
 }
 
-func (s *Store) AutocompleteUsers(ctx context.Context, query string, limit int) ([]string, error) {
+func (s *Store) AutocompleteUsers(ctx context.Context, query api.ValidAutocompleteQuery, limit int) ([]string, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) ([]string, error) {
 		var rows []userRow
-		if err := tx.Where("username LIKE ?", query+"%").Order("username ASC").Limit(limit).Find(&rows).Error; err != nil {
+		if err := tx.Where("username LIKE ?", query.String()+"%").Order("username ASC").Limit(limit).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		usernames := make([]string, len(rows))

@@ -248,7 +248,7 @@ func (s *Service) ListUsers(ctx context.Context, caller api.ValidUserInfo, param
 // It can return the following errors:
 //
 // - [api.DatabaseError].
-func (s *Service) AutocompleteUsers(ctx context.Context, caller api.ValidUserInfo, query string) ([]string, error) {
+func (s *Service) AutocompleteUsers(ctx context.Context, caller api.ValidUserInfo, query api.ValidAutocompleteQuery) ([]string, error) {
 	s.mu.RLock()
 	limit := s.opts.Limits.MaxAutocompleteUsers
 	s.mu.RUnlock()

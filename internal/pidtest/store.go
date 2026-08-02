@@ -379,7 +379,12 @@ func testAuthAutocompleteUsers(t *testing.T, newStore StoreFactory) {
 		}
 	}
 
-	usernames, err := b.AutocompleteUsers(ctx, "al", 10)
+	al, err := api.NewAutocompleteQuery("al")
+	if err != nil {
+		t.Fatalf("NewAutocompleteQuery() error = %v", err)
+	}
+
+	usernames, err := b.AutocompleteUsers(ctx, al, 10)
 	if err != nil {
 		t.Fatalf("AutocompleteUsers() error = %v", err)
 	}
@@ -393,7 +398,7 @@ func testAuthAutocompleteUsers(t *testing.T, newStore StoreFactory) {
 		}
 	}
 
-	usernames, err = b.AutocompleteUsers(ctx, "al", 1)
+	usernames, err = b.AutocompleteUsers(ctx, al, 1)
 	if err != nil {
 		t.Fatalf("AutocompleteUsers() error = %v", err)
 	}
@@ -401,7 +406,12 @@ func testAuthAutocompleteUsers(t *testing.T, newStore StoreFactory) {
 		t.Fatalf("AutocompleteUsers() with limit 1 = %v, want [alex]", usernames)
 	}
 
-	usernames, err = b.AutocompleteUsers(ctx, "zzz", 10)
+	zzz, err := api.NewAutocompleteQuery("zzz")
+	if err != nil {
+		t.Fatalf("NewAutocompleteQuery() error = %v", err)
+	}
+
+	usernames, err = b.AutocompleteUsers(ctx, zzz, 10)
 	if err != nil {
 		t.Fatalf("AutocompleteUsers() error = %v", err)
 	}

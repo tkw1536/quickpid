@@ -2004,7 +2004,7 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
-                  - $ref: '#/components/schemas/ErrorInvalidUsername'
+                  - $ref: '#/components/schemas/ErrorInvalidAutocompleteQuery'
         '401':
           description: Authentication is required, the credentials are incorrect.
           content:
@@ -2763,6 +2763,17 @@ components:
               enum:
                 - invalidUsername
           description: The username was invalid.
+    ErrorInvalidAutocompleteQuery:
+      description: Error response when an autocomplete query fails validation.
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - invalidAutocompleteQuery
+          description: The autocomplete query was invalid.
     ErrorInvalidPassword:
       description: Error response when a password fails validation.
       allOf:

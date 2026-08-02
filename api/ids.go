@@ -99,6 +99,34 @@ func NewUsername(value string) (ValidUsername, error) {
 	return ValidUsername{valid: true, value: value}, nil
 }
 
+var (
+	autocompleteQueryRE = regexp.MustCompile(`^[a-z0-9_-]+$`)
+)
+
+var errInvalidAutocompleteQuery = errors.New("invalid autocomplete query")
+
+func NewAutocompleteQuery(value string) (ValidAutocompleteQuery, error) {
+	if !autocompleteQueryRE.MatchString(value) {
+		return ValidAutocompleteQuery{}, errInvalidAutocompleteQuery
+	}
+	return ValidAutocompleteQuery{valid: true, value: value}, nil
+}
+
+// ValidAutocompleteQuery represents a valid query for autocomplete.
+//
+// Use [NewAutocompleteQuery] to create a new autocomplete query.
+type ValidAutocompleteQuery struct {
+	valid bool
+	value string
+}
+
+func (query ValidAutocompleteQuery) String() string {
+	if !query.valid {
+		panic("invalid autocomplete query")
+	}
+	return query.value
+}
+
 // ValidPassword represents a valid password.
 type ValidPassword struct {
 	valid bool

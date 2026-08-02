@@ -204,18 +204,18 @@ func (s *Server) parseRequiredUsernameQuery(r *http.Request) (api.ValidUsername,
 // It can return the following errors:
 //
 // - [api.InvalidQueryParameter]
-// - [api.InvalidUsername].
-func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (api.ValidUsername, error) {
+// - [api.InvalidAutocompleteQuery].
+func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (api.ValidAutocompleteQuery, error) {
 	// HACK: The query itself isn't really a username
 	// but we use it because it's guaranteed to be the same format.
 
 	q := r.URL.Query()
 	if !q.Has("query") {
-		return api.ValidUsername{}, api.WithErrorString(errMissingQueryParameter, api.InvalidQueryParameter)
+		return api.ValidAutocompleteQuery{}, api.WithErrorString(errMissingQueryParameter, api.InvalidQueryParameter)
 	}
-	query, err := api.NewUsername(q.Get("query"))
+	query, err := api.NewAutocompleteQuery(q.Get("query"))
 	if err != nil {
-		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
+		return api.ValidAutocompleteQuery{}, api.WithErrorString(fmt.Errorf("failed to parse autocomplete query: %w", err), api.InvalidAutocompleteQuery)
 	}
 	return query, nil
 }

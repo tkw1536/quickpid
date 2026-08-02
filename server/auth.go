@@ -104,7 +104,7 @@ func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, calle
 	if err != nil {
 		return nil, err
 	}
-	usernames, err := h.svc.AutocompleteUsers(r.Context(), caller, query.String())
+	usernames, err := h.svc.AutocompleteUsers(r.Context(), caller, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to autocomplete users: %w", err)
 	}

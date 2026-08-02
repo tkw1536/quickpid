@@ -27,11 +27,12 @@ const (
 
 	ItemLimitExceeded ErrorString = "itemLimitExceeded" // The number of items in the request exceeded the limit
 
-	InvalidNamespaceID ErrorString = "invalidNamespaceId" // An invalid namespace id was sent
-	InvalidPID         ErrorString = "invalidPid"         // An invalid pid was sent
-	InvalidUsername    ErrorString = "invalidUsername"    // An invalid username was sent
-	InvalidPassword    ErrorString = "invalidPassword"    // An invalid password was sent
-	InvalidBaseURI     ErrorString = "invalidBaseUri"     // An invalid base URI was sent
+	InvalidNamespaceID       ErrorString = "invalidNamespaceId"       // An invalid namespace id was sent
+	InvalidPID               ErrorString = "invalidPid"               // An invalid pid was sent
+	InvalidUsername          ErrorString = "invalidUsername"          // An invalid username was sent
+	InvalidAutocompleteQuery ErrorString = "invalidAutocompleteQuery" // An invalid query was sent
+	InvalidPassword          ErrorString = "invalidPassword"          // An invalid password was sent
+	InvalidBaseURI           ErrorString = "invalidBaseUri"           // An invalid base URI was sent
 
 	NamespaceNotFound ErrorString = "namespaceNotFound" // Namespace not found
 	ResourceNotFound  ErrorString = "resourceNotFound"  // Resource not found
@@ -96,11 +97,12 @@ var codes = map[ErrorString]int{
 
 	ItemLimitExceeded: http.StatusUnprocessableEntity,
 
-	InvalidNamespaceID: http.StatusBadRequest,
-	InvalidPID:         http.StatusBadRequest,
-	InvalidUsername:    http.StatusBadRequest,
-	InvalidPassword:    http.StatusBadRequest,
-	InvalidBaseURI:     http.StatusBadRequest,
+	InvalidNamespaceID:       http.StatusBadRequest,
+	InvalidPID:               http.StatusBadRequest,
+	InvalidUsername:          http.StatusBadRequest,
+	InvalidAutocompleteQuery: http.StatusBadRequest,
+	InvalidPassword:          http.StatusBadRequest,
+	InvalidBaseURI:           http.StatusBadRequest,
 
 	NamespaceNotFound: http.StatusNotFound,
 	ResourceNotFound:  http.StatusNotFound,
