@@ -77,7 +77,7 @@ type AuthenticationBackend interface {
 	// Should return [ErrKeyNotFound] if the key does not exist.
 	RevokeKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string) error
 
-	// Looks up an api and returns it along with it's username.
+	// Looks up an API key and returns it along with it's username.
 	// The returned key may or may not be valid.
 	//
 	// Should return [ErrInvalidKey] if no matching key exists.
