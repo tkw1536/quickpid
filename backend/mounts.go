@@ -40,8 +40,6 @@ type MountBackend interface {
 	//
 	// Should return [ErrNamespaceNotFound] if the namespace does not exist.
 	ListNamespaceMounts(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error)
-
-	WithShutdownMethod
 }
 
 // Sentinel errors to be returned by [MountBackend] implementations.

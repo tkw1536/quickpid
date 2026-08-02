@@ -13,12 +13,12 @@ import (
 //
 // See [memory.NewStore] and [gorm.NewStore] for implementations.
 type AuthorizationBackend interface {
-	// Gets the role for a username in a namespace.
+	// Gets the role for a user with the specified username in a namespace.
 	//
-	// Should return [api.RoleNone] if no explicit role is stored.
+	// Should return [api.RoleNone] and no error if no explicit role is stored.
 	GetNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error)
 
-	// Sets or updates the role for a username in a namespace.
+	// Sets or updates the role for a user with the specified username in a namespace.
 	// Setting [api.RoleNone] should remove any explicit role record.
 	//
 	// Should return [ErrInvalidRole] if the role is invalid.
@@ -39,8 +39,6 @@ type AuthorizationBackend interface {
 	//
 	// Should return [ErrUserNotFound] if the user does not exist.
 	ListUserRoles(ctx context.Context, username api.ValidUsername, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error)
-
-	WithShutdownMethod
 }
 
 // Sentinel errors to be returned by [AuthorizationBackend] implementations.

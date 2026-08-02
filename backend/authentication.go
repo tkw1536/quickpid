@@ -82,8 +82,6 @@ type AuthenticationBackend interface {
 	//
 	// Should return [ErrInvalidKey] if no matching key exists.
 	LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error)
-
-	WithShutdownMethod
 }
 
 // Sentinel errors to be returned by [AuthenticationBackend] implementations.

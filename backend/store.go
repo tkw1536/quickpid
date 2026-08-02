@@ -14,9 +14,7 @@ type Store interface {
 	AuthenticationBackend
 	AuthorizationBackend
 	MountBackend
-}
 
-type WithShutdownMethod interface {
 	// Shutdown instructs to stop any in-fight operations, and permanently closes any internal resources.
 	// No other methods may be called after Shutdown.
 	//

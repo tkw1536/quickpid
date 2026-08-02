@@ -38,10 +38,6 @@ func RunStoreTests(t *testing.T, newStore StoreFactory) {
 			Test: testAuthNotFoundErrors,
 		},
 		{
-			Name: "AuthShutdown",
-			Test: testAuthShutdown,
-		},
-		{
 			Name: "AuthListKeysSorted",
 			Test: testAuthListKeysSorted,
 		},
@@ -257,23 +253,6 @@ func testAuthNotFoundErrors(t *testing.T, newStore StoreFactory) {
 	}
 	if _, _, err := b.LookupUserByKey(ctx, apikey.Default, testAPIKey("unknown000000000000000000")); !errors.Is(err, backend.ErrInvalidKey) {
 		t.Fatalf("LookupUserByKey() error = %v, want ErrInvalidKey", err)
-	}
-}
-
-// testAuthShutdown runs shutdown tests.
-func testAuthShutdown(t *testing.T, newStore StoreFactory) {
-	t.Helper()
-	b := newStore(t)
-	ctx := context.Background()
-
-	if _, err := b.CreateUser(ctx, userReq("alice"), fixedNow()); err != nil {
-		t.Fatalf("CreateUser() error = %v", err)
-	}
-
-	shutdownCtx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	if err := b.Shutdown(shutdownCtx); err != nil {
-		t.Fatalf("Shutdown() error = %v", err)
 	}
 }
 

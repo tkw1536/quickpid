@@ -63,8 +63,6 @@ type ResolverBackend interface {
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	// Should return [ErrResourceNotFound] if the resource did not previously exist.
 	UpdateResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error)
-
-	WithShutdownMethod
 }
 
 // Sentinel errors to be returned by [ResolverBackend] implementations.
