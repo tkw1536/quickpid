@@ -25,10 +25,12 @@ func (s *Store) SetMount(_ context.Context, baseURI api.ValidBaseURI, namespace 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.namespaces[namespace.String()]; !ok {
+	namespaceString := namespace.String()
+
+	if _, ok := s.namespaces[namespaceString]; !ok {
 		return backend.ErrNamespaceNotFound
 	}
-	s.mounts[baseURI.String()] = namespace.String()
+	s.mounts[baseURI.String()] = namespaceString
 	return nil
 }
 
@@ -36,10 +38,12 @@ func (s *Store) DeleteMount(_ context.Context, baseURI api.ValidBaseURI) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.mounts[baseURI.String()]; !ok {
+	baseURIString := baseURI.String()
+
+	if _, ok := s.mounts[baseURIString]; !ok {
 		return backend.ErrMountNotFound
 	}
-	delete(s.mounts, baseURI.String())
+	delete(s.mounts, baseURIString)
 	return nil
 }
 
@@ -79,13 +83,15 @@ func (s *Store) ListNamespaceMounts(_ context.Context, namespace api.ValidNamesp
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if _, ok := s.namespaces[namespace.String()]; !ok {
+	namespaceString := namespace.String()
+
+	if _, ok := s.namespaces[namespaceString]; !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
 
 	all := make([]string, 0)
 	for baseURI, namespaceID := range s.mounts {
-		if namespaceID == namespace.String() {
+		if namespaceID == namespaceString {
 			all = append(all, baseURI)
 		}
 	}

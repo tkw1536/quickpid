@@ -13,10 +13,21 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
+// Store is an in-memory implementation of [backend.Store].
+type Store struct {
+	mu sync.RWMutex
+
+	users      map[string]userRecord
+	namespaces map[string]api.NamespaceResponse
+	resources  map[string]map[string]api.ResourceResponse
+	roles      map[string]map[string]api.Role
+	mounts     map[string]string // baseURI -> namespaceID
+}
+
 // NewStore returns a new in-memory backend store.
 func NewStore() *Store {
 	return &Store{
-		users:      make(map[string]*userRecord),
+		users:      make(map[string]userRecord),
 		namespaces: make(map[string]api.NamespaceResponse),
 		resources:  make(map[string]map[string]api.ResourceResponse),
 		roles:      make(map[string]map[string]api.Role),
@@ -24,25 +35,13 @@ func NewStore() *Store {
 	}
 }
 
-// Store is an in-memory implementation of [backend.Store].
-type Store struct {
-	mu sync.RWMutex
-
-	users      map[string]*userRecord
-	namespaces map[string]api.NamespaceResponse
-	resources  map[string]map[string]api.ResourceResponse
-	roles      map[string]map[string]api.Role
-	mounts     map[string]string // baseURI -> namespaceID
-}
-
 type userRecord struct {
 	superuser    bool
 	passwordHash []byte
-	keys         map[string]*keyRecord
-	revoked      map[string]struct{}
+	keys         map[string]keyRecord
 }
 
-func (u *userRecord) toSpec(username string) *api.UserInfo {
+func (u userRecord) toSpec(username string) *api.UserInfo {
 	return &api.UserInfo{
 		Username:  username,
 		Superuser: u.superuser,

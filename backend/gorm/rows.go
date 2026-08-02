@@ -138,7 +138,6 @@ type apiKeyRow struct {
 	Comment   string     `gorm:"column:comment;type:text;not null"`
 	CreatedAt time.Time  `gorm:"column:created_at;not null"`
 	ExpiresAt *time.Time `gorm:"column:expires_at"`
-	Revoked   bool       `gorm:"column:revoked;not null;default:false"`
 
 	Prefix string `gorm:"column:prefix;type:text;not null;index"`
 	Digest []byte `gorm:"column:digest;type:blob;not null"`
@@ -191,7 +190,7 @@ func (mountRow) TableName() string { return "mounts" }
 
 func ensureNamespaceExists(tx *gorm.DB, id api.ValidNamespaceID) error {
 	var n int64
-	if err := tx.Model(&namespaceRow{}).Where("id = ?", id.String()).Count(&n).Error; err != nil {
+	if err := tx.Model(&namespaceRow{}).Where("id = ?", id.String()).Count(&n).Limit(1).Error; err != nil {
 		return err
 	}
 	if n == 0 {
@@ -202,7 +201,7 @@ func ensureNamespaceExists(tx *gorm.DB, id api.ValidNamespaceID) error {
 
 func ensureUserExists(tx *gorm.DB, user api.ValidUsername) error {
 	var n int64
-	if err := tx.Model(&userRow{}).Where("username = ?", user.String()).Count(&n).Error; err != nil {
+	if err := tx.Model(&userRow{}).Where("username = ?", user.String()).Count(&n).Limit(1).Error; err != nil {
 		return err
 	}
 	if n == 0 {
@@ -222,7 +221,7 @@ func findUser(tx *gorm.DB, username api.ValidUsername) (userRow, error) {
 	return row, nil
 }
 
-func findKeyIncludingRevoked(tx *gorm.DB, username api.ValidUsername, keyID string) (apiKeyRow, error) {
+func findKey(tx *gorm.DB, username api.ValidUsername, keyID string) (apiKeyRow, error) {
 	var row apiKeyRow
 	if err := tx.First(&row, "username = ? AND id = ?", username.String(), keyID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

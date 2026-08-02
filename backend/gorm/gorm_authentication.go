@@ -211,7 +211,7 @@ func (s *Store) ListKeys(ctx context.Context, _ apikey.Format, username api.Vali
 			return nil, err
 		}
 
-		q := tx.Model(&apiKeyRow{}).Where("username = ? AND revoked = ?", username.String(), false)
+		q := tx.Model(&apiKeyRow{}).Where("username = ?", username.String())
 		var total int64
 		if err := q.Count(&total).Error; err != nil {
 			return nil, err
@@ -249,16 +249,12 @@ func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username api.Val
 		if err := ensureUserExists(tx, username); err != nil {
 			return zero, err
 		}
-		row, err := findKeyIncludingRevoked(tx, username, keyID)
-		if err != nil {
+		deleteQuery := tx.Where("username = ? AND id = ?", username.String(), keyID).Delete(&apiKeyRow{})
+		if err := deleteQuery.Error; err != nil {
 			return zero, err
 		}
-		if row.Revoked {
-			return zero, nil
-		}
-		row.Revoked = true
-		if err := tx.Save(&row).Error; err != nil {
-			return zero, err
+		if deleteQuery.RowsAffected == 0 {
+			return zero, backend.ErrKeyNotFound
 		}
 		return zero, nil
 	})
@@ -277,9 +273,6 @@ func (s *Store) LookupUserByKey(ctx context.Context, format apikey.Format, key s
 			return "", nil, err
 		}
 		for _, row := range rows {
-			if row.Revoked {
-				continue
-			}
 			if format.Verify(key, apikey.Stored{Prefix: row.Prefix, Digest: row.Digest}) {
 				return row.Username, new(row.toSpec()), nil
 			}

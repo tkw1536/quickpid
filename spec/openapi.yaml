@@ -2523,7 +2523,7 @@ paths:
       operationId: revokeUserKey
       description: |
         Revokes an API key.
-        This operation is idempotent: revoking an already-revoked key returns 204.
+        Reovking an already-revoked key return a key not found response. 
 
         When not set, the currently authenticated user's keys are targeted.
         The `username` parameter may be used by superusers to revoke a key for another user account, including their own.
@@ -2552,7 +2552,7 @@ paths:
               $ref: '#/components/schemas/RevokeKeyRequest'
       responses:
         '204':
-          description: API key revoked successfully, including when the key was already revoked.
+          description: API key revoked successfully.
         '400':
           description: Invalid request body or query parameter.
           content:
@@ -2579,7 +2579,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The API key does not exist, does not belong to the requested user, the requested user does not exist, or the server is in anonymous mode.
+          description: The API key does not exist, has already been revoked, or does not belong to the requested user, the requested user does not exist, or the server is in anonymous mode.
           content:
             application/json:
               example: { error: "keyNotFound" }

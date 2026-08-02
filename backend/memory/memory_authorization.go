@@ -14,10 +14,12 @@ func (s *Store) GetNamespaceRole(_ context.Context, namespace api.ValidNamespace
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if _, ok := s.namespaces[namespace.String()]; !ok {
+	namespaceString := namespace.String()
+
+	if _, ok := s.namespaces[namespaceString]; !ok {
 		return api.RoleNone, backend.ErrNamespaceNotFound
 	}
-	if byUser, ok := s.roles[namespace.String()]; ok {
+	if byUser, ok := s.roles[namespaceString]; ok {
 		if role, ok := byUser[username.String()]; ok {
 			return role, nil
 		}
@@ -33,24 +35,27 @@ func (s *Store) SetNamespaceRole(_ context.Context, namespace api.ValidNamespace
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.namespaces[namespace.String()]; !ok {
+	namespaceString := namespace.String()
+	usernameString := username.String()
+
+	if _, ok := s.namespaces[namespaceString]; !ok {
 		return backend.ErrNamespaceNotFound
 	}
 
 	if role == api.RoleNone {
-		if byUser, ok := s.roles[namespace.String()]; ok {
-			delete(byUser, username.String())
+		if byUser, ok := s.roles[namespaceString]; ok {
+			delete(byUser, usernameString)
 			if len(byUser) == 0 {
-				delete(s.roles, namespace.String())
+				delete(s.roles, namespaceString)
 			}
 		}
 		return nil
 	}
 
-	if s.roles[namespace.String()] == nil {
-		s.roles[namespace.String()] = make(map[string]api.Role)
+	if s.roles[namespaceString] == nil {
+		s.roles[namespaceString] = make(map[string]api.Role)
 	}
-	s.roles[namespace.String()][username.String()] = role
+	s.roles[namespaceString][usernameString] = role
 	return nil
 }
 
@@ -58,16 +63,19 @@ func (s *Store) DeleteNamespaceRole(_ context.Context, namespace api.ValidNamesp
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	byUser, ok := s.roles[namespace.String()]
+	namespaceString := namespace.String()
+	usernameString := username.String()
+
+	byUser, ok := s.roles[namespaceString]
 	if !ok {
 		return backend.ErrRoleNotFound
 	}
-	if _, ok := byUser[username.String()]; !ok {
+	if _, ok := byUser[usernameString]; !ok {
 		return backend.ErrRoleNotFound
 	}
-	delete(byUser, username.String())
+	delete(byUser, usernameString)
 	if len(byUser) == 0 {
-		delete(s.roles, namespace.String())
+		delete(s.roles, namespaceString)
 	}
 	return nil
 }
@@ -76,11 +84,13 @@ func (s *Store) ListNamespaceRoles(_ context.Context, namespace api.ValidNamespa
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if _, ok := s.namespaces[namespace.String()]; !ok {
+	namespaceString := namespace.String()
+
+	if _, ok := s.namespaces[namespaceString]; !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
 
-	byUser := s.roles[namespace.String()]
+	byUser := s.roles[namespaceString]
 	all := make([]api.NamespaceRole, 0, len(byUser))
 	for username, role := range byUser {
 		all = append(all, api.NamespaceRole{
@@ -109,8 +119,9 @@ func (s *Store) ListUserRoles(_ context.Context, username api.ValidUsername, par
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if _, err := s.userLocked(username.String()); err != nil {
-		return nil, err
+	usernameString := username.String()
+	if _, exists := s.users[usernameString]; !exists {
+		return nil, backend.ErrUserNotFound
 	}
 
 	all := make([]api.UserRole, 0)

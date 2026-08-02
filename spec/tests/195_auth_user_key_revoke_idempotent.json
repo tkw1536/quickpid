@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_key_revoke_idempotent",
-  "comment": "Revoking an already-revoked key returns 204 (idempotent success).",
+  "name": "auth_user_key_revoke_repeated",
+  "comment": "Revoking an already-revoked key returns a key not found response.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -155,7 +155,10 @@
         ]
       },
       "response": {
-        "code": 204
+        "code": 404,
+        "body": {
+          "error": "keyNotFound"
+        }
       }
     }
   ]

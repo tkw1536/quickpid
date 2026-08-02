@@ -20,26 +20,28 @@ func (s *Store) CreateUser(_ context.Context, req api.ValidUserCreateRequest, _ 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.users[req.Username.String()]; exists {
+	username := req.Username.String()
+	if _, exists := s.users[username]; exists {
 		return nil, backend.ErrDuplicateUsername
 	}
-	s.users[req.Username.String()] = &userRecord{
+
+	s.users[username] = userRecord{
 		superuser: req.Superuser,
-		keys:      make(map[string]*keyRecord),
-		revoked:   make(map[string]struct{}),
+		keys:      make(map[string]keyRecord),
 	}
-	return s.users[req.Username.String()].toSpec(req.Username.String()), nil
+	return s.users[username].toSpec(username), nil
 }
 
 func (s *Store) GetUser(_ context.Context, username api.ValidUsername) (*api.UserInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	user, err := s.userLocked(username.String())
-	if err != nil {
-		return nil, err
+	usernameString := username.String()
+
+	if _, exists := s.users[usernameString]; !exists {
+		return nil, backend.ErrUserNotFound
 	}
-	return user.toSpec(username.String()), nil
+	return s.users[usernameString].toSpec(usernameString), nil
 }
 
 func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
@@ -116,27 +118,36 @@ func (s *Store) UpdateUser(_ context.Context, username api.ValidUsername, req ap
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	user, err := s.userLocked(username.String())
-	if err != nil {
-		return nil, err
+	usernameString := username.String()
+	if _, exists := s.users[usernameString]; !exists {
+		return nil, backend.ErrUserNotFound
 	}
+
+	// update the supseruser flag
 	if req.Superuser != nil {
-		user.superuser = *req.Superuser
+		oldUser := s.users[usernameString]
+		oldUser.superuser = *req.Superuser
+		s.users[usernameString] = oldUser
 	}
-	return user.toSpec(username.String()), nil
+
+	// and return the updated users
+	return s.users[usernameString].toSpec(usernameString), nil
 }
 
 func (s *Store) SetPassword(_ context.Context, username api.ValidUsername, newPassword *api.ValidPassword) (bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	user, err := s.userLocked(username.String())
-	if err != nil {
-		return false, err
+	usernameString := username.String()
+	if _, exists := s.users[usernameString]; !exists {
+		return false, backend.ErrUserNotFound
 	}
+
+	user := s.users[usernameString]
 
 	if newPassword == nil {
 		user.passwordHash = nil
+		s.users[usernameString] = user
 		return false, nil
 	}
 
@@ -145,6 +156,8 @@ func (s *Store) SetPassword(_ context.Context, username api.ValidUsername, newPa
 		return false, fmt.Errorf("failed to hash password: %w", err)
 	}
 	user.passwordHash = hash
+
+	s.users[usernameString] = user
 	return true, nil
 }
 
@@ -152,10 +165,12 @@ func (s *Store) CheckPassword(_ context.Context, username api.ValidUsername, can
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	user, err := s.userLocked(username.String())
-	if err != nil {
-		return false, err
+	usernameString := username.String()
+	if _, exists := s.users[usernameString]; !exists {
+		return false, backend.ErrUserNotFound
 	}
+
+	user := s.users[usernameString]
 	if len(user.passwordHash) == 0 {
 		return false, nil
 	}
@@ -166,22 +181,25 @@ func (s *Store) CreateKey(_ context.Context, format apikey.Format, username api.
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	user, err := s.userLocked(username.String())
-	if err != nil {
-		return nil, err
+	usernameString := username.String()
+	if _, exists := s.users[usernameString]; !exists {
+		return nil, backend.ErrUserNotFound
 	}
+
+	user := s.users[usernameString]
 
 	info := api.APIKeyInfo{
 		ID:        keyID,
 		Comment:   req.Comment,
 		CreatedAt: now().UTC(),
-		ExpiresAt: cloneTimePtr(req.ExpiresAt),
+		ExpiresAt: req.ExpiresAt,
 	}
+
 	hashed, err := format.Hash(key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash key: %w", err)
 	}
-	if user.keys[keyID] != nil {
+	if _, exists := user.keys[keyID]; exists {
 		return nil, backend.ErrKeyCollision
 	}
 	for _, otherUser := range s.users {
@@ -191,26 +209,32 @@ func (s *Store) CreateKey(_ context.Context, format apikey.Format, username api.
 			}
 		}
 	}
-	user.keys[keyID] = &keyRecord{
+
+	user.keys[keyID] = keyRecord{
 		info:   info,
 		prefix: hashed.Prefix,
 		digest: hashed.Digest,
 	}
-	return cloneAPIKeyInfo(&info), nil
+
+	s.users[usernameString] = user
+
+	return &info, nil
 }
 
 func (s *Store) ListKeys(_ context.Context, _ apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	user, err := s.userLocked(username.String())
-	if err != nil {
-		return nil, err
+	usernameString := username.String()
+	if _, exists := s.users[usernameString]; !exists {
+		return nil, backend.ErrUserNotFound
 	}
+
+	user := s.users[usernameString]
 
 	all := make([]api.APIKeyInfo, 0, len(user.keys))
 	for _, key := range user.keys {
-		all = append(all, *cloneAPIKeyInfo(&key.info))
+		all = append(all, key.info)
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i].ID < all[j].ID })
 
@@ -233,18 +257,16 @@ func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username api.Valid
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	user, err := s.userLocked(username.String())
-	if err != nil {
-		return err
+	usernameString := username.String()
+	if _, exists := s.users[usernameString]; !exists {
+		return backend.ErrUserNotFound
 	}
-	if _, ok := user.revoked[keyID]; ok {
-		return nil
-	}
+
+	user := s.users[usernameString]
 	if _, ok := user.keys[keyID]; !ok {
 		return backend.ErrKeyNotFound
 	}
-	user.revoked[keyID] = struct{}{}
-	delete(user.keys, keyID)
+	delete(s.users[usernameString].keys, keyID)
 	return nil
 }
 
@@ -268,29 +290,4 @@ func (s *Store) LookupUserByKey(_ context.Context, format apikey.Format, key str
 		}
 	}
 	return "", nil, fmt.Errorf("%w: no matching key found", backend.ErrInvalidKey)
-}
-
-func (s *Store) userLocked(username string) (*userRecord, error) {
-	user, ok := s.users[username]
-	if !ok {
-		return nil, backend.ErrUserNotFound
-	}
-	return user, nil
-}
-
-func cloneTimePtr(v *time.Time) *time.Time {
-	if v == nil {
-		return nil
-	}
-	out := *v
-	return &out
-}
-
-func cloneAPIKeyInfo(info *api.APIKeyInfo) *api.APIKeyInfo {
-	if info == nil {
-		return nil
-	}
-	out := *info
-	out.ExpiresAt = cloneTimePtr(info.ExpiresAt)
-	return &out
 }
