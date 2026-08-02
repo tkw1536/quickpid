@@ -1,6 +1,6 @@
 {
-  "name": "65_resource_create_post_body_missing",
-  "comment": "POST /resolver/namespaces/{namespace}/resources without a body returns 400 body_missing.",
+  "name": "65_resource_create_post_bodyMissing",
+  "comment": "POST /resolver/namespaces/{namespace}/resources without a body returns 400 bodyMissing.",
   "steps": [
     {
       "name": "create_namespace",
@@ -42,7 +42,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_missing"
+          "error": "bodyMissing"
         }
       }
     }

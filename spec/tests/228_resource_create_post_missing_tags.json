@@ -1,6 +1,6 @@
 {
   "name": "228_resource_create_post_missing_tags",
-  "comment": "Resource create without tags returns 400 body_invalid_json.",
+  "comment": "Resource create without tags returns 400 bodyInvalidJson.",
   "steps": [
     {
       "name": "create_namespace",
@@ -34,7 +34,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_invalid_json"
+          "error": "bodyInvalidJson"
         }
       }
     }

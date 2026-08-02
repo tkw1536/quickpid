@@ -1,6 +1,6 @@
 {
   "name": "roles_put_body_too_large",
-  "comment": "A PUT role body exceeding maxBodyBytes returns 413 body_size_exceeded.",
+  "comment": "A PUT role body exceeding maxBodyBytes returns 413 bodySizeExceeded.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -123,7 +123,7 @@
       "response": {
         "code": 413,
         "body": {
-          "error": "body_size_exceeded"
+          "error": "bodySizeExceeded"
         }
       }
     }

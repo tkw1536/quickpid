@@ -1,6 +1,6 @@
 {
   "name": "roles_list_get_invalid_pagination",
-  "comment": "Invalid pagination parameters on role listing return 400 invalid_query_parameter.",
+  "comment": "Invalid pagination parameters on role listing return 400 invalidQueryParameter.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -137,7 +137,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_query_parameter"
+          "error": "invalidQueryParameter"
         }
       }
     }

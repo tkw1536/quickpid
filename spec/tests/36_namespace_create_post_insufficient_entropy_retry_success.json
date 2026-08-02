@@ -1,5 +1,5 @@
 {
-  "name": "36_namespace_create_post_insufficient_entropy_retry_success",
+  "name": "36_namespace_create_post_insufficientEntropy_retry_success",
   "comment": "A transient id collision during namespace creation is retried and can still succeed with 201.",
   "steps": [
     {

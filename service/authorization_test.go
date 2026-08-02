@@ -215,7 +215,7 @@ func TestService_ListUserRoles(t *testing.T) {
 	}
 	_, err = svc.ListUserRoles(ctx, api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &missing, api.ListUserRolesParams{Limit: 100})
 	if code, ok := api.GetErrorString(err); !ok || code != api.UserNotFound {
-		t.Fatalf("ListUserRoles(missing) = %v, want user_not_found", err)
+		t.Fatalf("ListUserRoles(missing) = %v, want userNotFound", err)
 	}
 }
 

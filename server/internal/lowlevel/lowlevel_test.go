@@ -247,7 +247,7 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 	}
 	if err := (httpfixture.Response{
 		Code: http.StatusNotFound,
-		Body: []byte(`{"error":"unavailable_in_anonymous_mode"}`),
+		Body: []byte(`{"error":"unavailableInAnonymousMode"}`),
 	}).Compare(rec); err != nil {
 		t.Fatalf("response = %v", err)
 	}

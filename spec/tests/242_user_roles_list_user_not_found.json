@@ -1,6 +1,6 @@
 {
-  "name": "242_user_roles_list_user_not_found",
-  "comment": "GET /user/roles?username=... for a non-existent user returns 404 user_not_found.",
+  "name": "242_user_roles_list_userNotFound",
+  "comment": "GET /user/roles?username=... for a non-existent user returns 404 userNotFound.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -49,7 +49,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "user_not_found"
+          "error": "userNotFound"
         }
       }
     }

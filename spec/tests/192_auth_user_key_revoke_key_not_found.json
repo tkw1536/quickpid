@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_key_revoke_key_not_found",
-  "comment": "Revoking a non-existent key id returns 404 key_not_found.",
+  "name": "auth_user_key_revoke_keyNotFound",
+  "comment": "Revoking a non-existent key id returns 404 keyNotFound.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -106,7 +106,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "key_not_found"
+          "error": "keyNotFound"
         }
       }
     }

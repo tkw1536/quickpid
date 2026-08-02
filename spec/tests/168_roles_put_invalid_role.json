@@ -1,6 +1,6 @@
 {
-  "name": "roles_put_invalid_role",
-  "comment": "Setting role to none via PUT returns 400 invalid_role (use DELETE instead).",
+  "name": "roles_put_invalidRole",
+  "comment": "Setting role to none via PUT returns 400 invalidRole (use DELETE instead).",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -122,7 +122,7 @@
       }
     },
     {
-      "name": "invalid_role_none",
+      "name": "invalidRole_none",
       "config": {},
       "request": {
         "method": "PUT",
@@ -138,7 +138,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_role"
+          "error": "invalidRole"
         }
       }
     }

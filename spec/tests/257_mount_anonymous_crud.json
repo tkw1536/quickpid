@@ -68,7 +68,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "mount_not_found"
+          "error": "mountNotFound"
         }
       }
     },
@@ -167,7 +167,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "mount_not_found"
+          "error": "mountNotFound"
         }
       }
     }

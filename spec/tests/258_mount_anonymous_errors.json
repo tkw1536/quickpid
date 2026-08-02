@@ -3,7 +3,7 @@
   "comment": "Anonymous mount management returns 400 for invalid base URIs and 404 for missing namespaces.",
   "steps": [
     {
-      "name": "put_invalid_base_uri",
+      "name": "put_invalidBaseUri",
       "config": {
         "anonymous": true
       },
@@ -15,12 +15,12 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_base_uri"
+          "error": "invalidBaseUri"
         }
       }
     },
     {
-      "name": "get_invalid_base_uri",
+      "name": "get_invalidBaseUri",
       "config": {
         "anonymous": true
       },
@@ -31,7 +31,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_base_uri"
+          "error": "invalidBaseUri"
         }
       }
     },
@@ -48,12 +48,12 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "namespace_not_found"
+          "error": "namespaceNotFound"
         }
       }
     },
     {
-      "name": "put_invalid_namespace_id",
+      "name": "put_invalidNamespaceId",
       "config": {
         "anonymous": true
       },
@@ -65,7 +65,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_namespace_id"
+          "error": "invalidNamespaceId"
         }
       }
     }

@@ -1,6 +1,6 @@
 {
-  "name": "resource_create_post_namespace_not_found_auth_mode",
-  "comment": "Resource create in authenticated mode against an unknown namespace returns 404 namespace_not_found.",
+  "name": "resource_create_post_namespaceNotFound_auth_mode",
+  "comment": "Resource create in authenticated mode against an unknown namespace returns 404 namespaceNotFound.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -83,7 +83,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "namespace_not_found"
+          "error": "namespaceNotFound"
         }
       }
     }

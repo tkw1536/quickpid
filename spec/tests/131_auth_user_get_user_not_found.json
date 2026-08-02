@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_get_user_not_found",
-  "comment": "A superuser requesting GET /user?username=... for a non-existent user receives 404 user_not_found.",
+  "name": "auth_user_get_userNotFound",
+  "comment": "A superuser requesting GET /user?username=... for a non-existent user receives 404 userNotFound.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,7 +67,7 @@
       }
     },
     {
-      "name": "user_not_found",
+      "name": "userNotFound",
       "config": {},
       "request": {
         "method": "GET",
@@ -82,7 +82,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "user_not_found"
+          "error": "userNotFound"
         }
       }
     }

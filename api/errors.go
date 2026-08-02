@@ -15,38 +15,38 @@ type ErrorResponse struct {
 type ErrorString string
 
 const (
-	DatabaseError       ErrorString = "database_error"       // An internal problem with the database
-	BadIDGeneration     ErrorString = "bad_id_generation"    // Server failed to generate a valid api key, namespace id or pid
-	InsufficientEntropy ErrorString = "insufficient_entropy" // Insufficient entropy for api, namespace or pid generation
+	DatabaseError       ErrorString = "databaseError"       // An internal problem with the database
+	BadIDGeneration     ErrorString = "badIdGeneration"     // Server failed to generate a valid api key, namespace id or pid
+	InsufficientEntropy ErrorString = "insufficientEntropy" // Insufficient entropy for api, namespace or pid generation
 
-	BodyMissing      ErrorString = "body_missing"       // request body was missing (but it was required)
-	BodySizeExceeded ErrorString = "body_size_exceeded" // request body size limit exceeded
-	BodyInvalidJSON  ErrorString = "body_invalid_json"  // request body did not contain JSON, or it was not in the expected format
+	BodyMissing      ErrorString = "bodyMissing"      // request body was missing (but it was required)
+	BodySizeExceeded ErrorString = "bodySizeExceeded" // request body size limit exceeded
+	BodyInvalidJSON  ErrorString = "bodyInvalidJson"  // request body did not contain JSON, or it was not in the expected format
 
-	InvalidQueryParameter ErrorString = "invalid_query_parameter" // A query parameter that was sent was invalid
+	InvalidQueryParameter ErrorString = "invalidQueryParameter" // A query parameter that was sent was invalid
 
-	ItemLimitExceeded ErrorString = "item_limit_exceeded" // The number of items in the request exceeded the limit
+	ItemLimitExceeded ErrorString = "itemLimitExceeded" // The number of items in the request exceeded the limit
 
-	InvalidNamespaceID ErrorString = "invalid_namespace_id" // An invalid namespace id was sent
-	InvalidPID         ErrorString = "invalid_pid"          // An invalid pid was sent
-	InvalidUsername    ErrorString = "invalid_username"     // An invalid username was sent
-	InvalidPassword    ErrorString = "invalid_password"     // An invalid password was sent
-	InvalidBaseURI     ErrorString = "invalid_base_uri"     // An invalid base URI was sent
+	InvalidNamespaceID ErrorString = "invalidNamespaceId" // An invalid namespace id was sent
+	InvalidPID         ErrorString = "invalidPid"         // An invalid pid was sent
+	InvalidUsername    ErrorString = "invalidUsername"    // An invalid username was sent
+	InvalidPassword    ErrorString = "invalidPassword"    // An invalid password was sent
+	InvalidBaseURI     ErrorString = "invalidBaseUri"     // An invalid base URI was sent
 
-	NamespaceNotFound ErrorString = "namespace_not_found" // Namespace not found
-	ResourceNotFound  ErrorString = "resource_not_found"  // Resource not found
-	MountNotFound     ErrorString = "mount_not_found"     // Mount not found
+	NamespaceNotFound ErrorString = "namespaceNotFound" // Namespace not found
+	ResourceNotFound  ErrorString = "resourceNotFound"  // Resource not found
+	MountNotFound     ErrorString = "mountNotFound"     // Mount not found
 
-	RoleNotFound ErrorString = "role_not_found" // Role record not found
-	InvalidRole  ErrorString = "invalid_role"   // Role is not allowed for this operation
+	RoleNotFound ErrorString = "roleNotFound" // Role record not found
+	InvalidRole  ErrorString = "invalidRole"  // Role is not allowed for this operation
 
-	InfoUnavailable ErrorString = "info_unavailable" // Info is unavailable (possibly for security reasons)
+	InfoUnavailable ErrorString = "infoUnavailable" // Info is unavailable (possibly for security reasons)
 
-	UnavailableInAnonymousMode ErrorString = "unavailable_in_anonymous_mode" // Route is not available in anonymous mode
+	UnavailableInAnonymousMode ErrorString = "unavailableInAnonymousMode" // Route is not available in anonymous mode
 
-	DuplicateUsername ErrorString = "duplicate_username" // Username is already in use
-	UserNotFound      ErrorString = "user_not_found"     // User not found
-	KeyNotFound       ErrorString = "key_not_found"      // API key not found
+	DuplicateUsername ErrorString = "duplicateUsername" // Username is already in use
+	UserNotFound      ErrorString = "userNotFound"      // User not found
+	KeyNotFound       ErrorString = "keyNotFound"       // API key not found
 
 	Unauthorized ErrorString = "unauthorized" // Authentication is required but no valid credentials were provided
 	Forbidden    ErrorString = "forbidden"    // The authenticated user is not allowed to perform this action

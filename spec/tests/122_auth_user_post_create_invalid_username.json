@@ -1,6 +1,6 @@
 {
-  "name": "122_auth_user_post_create_invalid_username",
-  "comment": "POST /user with an invalid username returns 400 invalid_username.",
+  "name": "122_auth_user_post_create_invalidUsername",
+  "comment": "POST /user with an invalid username returns 400 invalidUsername.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -90,7 +90,7 @@
       }
     },
     {
-      "name": "create_user_invalid_username",
+      "name": "create_user_invalidUsername",
       "config": {},
       "request": {
         "method": "POST",
@@ -106,7 +106,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_username"
+          "error": "invalidUsername"
         }
       }
     }

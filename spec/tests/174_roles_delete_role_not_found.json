@@ -1,6 +1,6 @@
 {
-  "name": "roles_delete_role_not_found",
-  "comment": "DELETE role when no explicit record exists returns 404 role_not_found.",
+  "name": "roles_delete_roleNotFound",
+  "comment": "DELETE role when no explicit record exists returns 404 roleNotFound.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -114,7 +114,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "role_not_found"
+          "error": "roleNotFound"
         }
       }
     }

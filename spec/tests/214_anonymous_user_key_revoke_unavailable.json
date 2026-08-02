@@ -1,6 +1,6 @@
 {
   "name": "anonymous_user_key_revoke_unavailable",
-  "comment": "In anonymous mode, POST /user/key/revoke returns 404 unavailable_in_anonymous_mode.",
+  "comment": "In anonymous mode, POST /user/key/revoke returns 404 unavailableInAnonymousMode.",
   "steps": [
     {
       "name": "revoke_disabled",
@@ -15,7 +15,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "unavailable_in_anonymous_mode"
+          "error": "unavailableInAnonymousMode"
         }
       }
     }

@@ -1,6 +1,6 @@
 {
-  "name": "32_namespace_create_post_body_invalid_json",
-  "comment": "POST /resolver/namespaces with malformed JSON returns 400 body_invalid_json.",
+  "name": "32_namespace_create_post_bodyInvalidJson",
+  "comment": "POST /resolver/namespaces with malformed JSON returns 400 bodyInvalidJson.",
   "steps": [
     {
       "name": "trailingJSON",
@@ -15,7 +15,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_invalid_json"
+          "error": "bodyInvalidJson"
         }
       }
     },
@@ -32,7 +32,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_invalid_json"
+          "error": "bodyInvalidJson"
         }
       }
     }

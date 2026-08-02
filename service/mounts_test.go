@@ -65,7 +65,7 @@ func TestService_Mounts_Anonymous(t *testing.T) {
 	if _, err := svc.GetMount(ctx, baseURI); err == nil {
 		t.Fatal("GetMount() after delete error = nil, want error")
 	} else if code, ok := api.GetErrorString(err); !ok || code != api.MountNotFound {
-		t.Fatalf("GetMount() after delete error = %v, want mount_not_found", err)
+		t.Fatalf("GetMount() after delete error = %v, want mountNotFound", err)
 	}
 }
 

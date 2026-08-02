@@ -1,6 +1,6 @@
 {
   "name": "143_roles_namespace_routes_validate_username",
-  "comment": "Invalid usernames in role route paths return 400 invalid_username for GET, PUT, and DELETE.",
+  "comment": "Invalid usernames in role route paths return 400 invalidUsername for GET, PUT, and DELETE.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -122,7 +122,7 @@
       }
     },
     {
-      "name": "get_role_invalid_username",
+      "name": "get_role_invalidUsername",
       "config": {},
       "request": {
         "method": "GET",
@@ -137,12 +137,12 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_username"
+          "error": "invalidUsername"
         }
       }
     },
     {
-      "name": "set_role_invalid_username",
+      "name": "set_role_invalidUsername",
       "config": {},
       "request": {
         "method": "PUT",
@@ -158,12 +158,12 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_username"
+          "error": "invalidUsername"
         }
       }
     },
     {
-      "name": "delete_role_invalid_username",
+      "name": "delete_role_invalidUsername",
       "config": {},
       "request": {
         "method": "DELETE",
@@ -178,7 +178,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_username"
+          "error": "invalidUsername"
         }
       }
     }

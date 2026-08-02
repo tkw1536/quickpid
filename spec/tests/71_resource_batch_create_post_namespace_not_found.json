@@ -1,6 +1,6 @@
 {
-  "name": "71_resource_batch_create_post_namespace_not_found",
-  "comment": "Batch create against a missing namespace returns 404 namespace_not_found.",
+  "name": "71_resource_batch_create_post_namespaceNotFound",
+  "comment": "Batch create against a missing namespace returns 404 namespaceNotFound.",
   "steps": [
     {
       "name": "namespaceMissing",
@@ -15,7 +15,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "namespace_not_found"
+          "error": "namespaceNotFound"
         }
       }
     }

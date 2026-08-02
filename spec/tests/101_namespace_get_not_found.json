@@ -1,6 +1,6 @@
 {
   "name": "101_namespace_get_not_found",
-  "comment": "GET for a namespace id that does not exist returns 404 namespace_not_found.",
+  "comment": "GET for a namespace id that does not exist returns 404 namespaceNotFound.",
   "steps": [
     {
       "name": "not_found",
@@ -14,7 +14,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "namespace_not_found"
+          "error": "namespaceNotFound"
         }
       }
     }

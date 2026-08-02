@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_key_revoke_body_missing",
-  "comment": "POST /user/key/revoke without a body returns 400 body_missing.",
+  "name": "auth_user_key_revoke_bodyMissing",
+  "comment": "POST /user/key/revoke without a body returns 400 bodyMissing.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -90,7 +90,7 @@
       }
     },
     {
-      "name": "body_missing",
+      "name": "bodyMissing",
       "config": {},
       "request": {
         "method": "POST",
@@ -105,7 +105,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_missing"
+          "error": "bodyMissing"
         }
       }
     }

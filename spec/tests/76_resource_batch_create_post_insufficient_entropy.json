@@ -1,6 +1,6 @@
 {
-  "name": "76_resource_batch_create_post_insufficient_entropy",
-  "comment": "Batch create returns 503 insufficient_entropy when PID generation cannot find a unique id.",
+  "name": "76_resource_batch_create_post_insufficientEntropy",
+  "comment": "Batch create returns 503 insufficientEntropy when PID generation cannot find a unique id.",
   "steps": [
     {
       "name": "create_namespace",
@@ -74,7 +74,7 @@
       "response": {
         "code": 503,
         "body": {
-          "error": "insufficient_entropy"
+          "error": "insufficientEntropy"
         }
       }
     }

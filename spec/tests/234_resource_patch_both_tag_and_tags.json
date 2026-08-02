@@ -1,6 +1,6 @@
 {
   "name": "234_resource_patch_both_tag_and_tags",
-  "comment": "PATCH with a singular tag field (with or without tags) returns 400 body_invalid_json.",
+  "comment": "PATCH with a singular tag field (with or without tags) returns 400 bodyInvalidJson.",
   "steps": [
     {
       "name": "create_namespace",
@@ -52,7 +52,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_invalid_json"
+          "error": "bodyInvalidJson"
         }
       }
     }

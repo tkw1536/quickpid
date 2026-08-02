@@ -1,6 +1,6 @@
 {
   "name": "64_resource_create_post_body_too_large",
-  "comment": "A request body exceeding maxBodyBytes on resource create returns 413 body_size_exceeded.",
+  "comment": "A request body exceeding maxBodyBytes on resource create returns 413 bodySizeExceeded.",
   "steps": [
     {
       "name": "create_namespace",
@@ -51,7 +51,7 @@
       "response": {
         "code": 413,
         "body": {
-          "error": "body_size_exceeded"
+          "error": "bodySizeExceeded"
         }
       }
     }

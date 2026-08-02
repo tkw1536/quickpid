@@ -1,6 +1,6 @@
 {
-  "name": "resource_batch_create_post_namespace_not_found_valid_id",
-  "comment": "Batch create with a well-formed but unknown namespace id returns 404 namespace_not_found.",
+  "name": "resource_batch_create_post_namespaceNotFound_valid_id",
+  "comment": "Batch create with a well-formed but unknown namespace id returns 404 namespaceNotFound.",
   "steps": [
     {
       "name": "missing_ns",
@@ -15,7 +15,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "namespace_not_found"
+          "error": "namespaceNotFound"
         }
       }
     }

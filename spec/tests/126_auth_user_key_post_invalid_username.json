@@ -1,6 +1,6 @@
 {
-  "name": "126_auth_user_key_post_invalid_username",
-  "comment": "POST /user/key with an invalid username query parameter returns 400 invalid_username.",
+  "name": "126_auth_user_key_post_invalidUsername",
+  "comment": "POST /user/key with an invalid username query parameter returns 400 invalidUsername.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -90,7 +90,7 @@
       }
     },
     {
-      "name": "issue_key_invalid_username",
+      "name": "issue_key_invalidUsername",
       "config": {},
       "request": {
         "method": "POST",
@@ -106,7 +106,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_username"
+          "error": "invalidUsername"
         }
       }
     }

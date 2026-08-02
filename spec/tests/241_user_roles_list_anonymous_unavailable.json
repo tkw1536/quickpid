@@ -1,6 +1,6 @@
 {
   "name": "241_user_roles_list_anonymous_unavailable",
-  "comment": "In anonymous mode, GET /user/roles returns 404 unavailable_in_anonymous_mode.",
+  "comment": "In anonymous mode, GET /user/roles returns 404 unavailableInAnonymousMode.",
   "steps": [
     {
       "name": "list_disabled",
@@ -14,7 +14,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "unavailable_in_anonymous_mode"
+          "error": "unavailableInAnonymousMode"
         }
       }
     }

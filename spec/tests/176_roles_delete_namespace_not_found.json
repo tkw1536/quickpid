@@ -1,6 +1,6 @@
 {
-  "name": "roles_delete_namespace_not_found",
-  "comment": "DELETE role on a missing namespace returns 404 namespace_not_found.",
+  "name": "roles_delete_namespaceNotFound",
+  "comment": "DELETE role on a missing namespace returns 404 namespaceNotFound.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -82,7 +82,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "namespace_not_found"
+          "error": "namespaceNotFound"
         }
       }
     }

@@ -1,6 +1,6 @@
 {
-  "name": "85_resource_patch_body_invalid_json",
-  "comment": "Malformed JSON on resource PATCH returns 400 body_invalid_json.",
+  "name": "85_resource_patch_bodyInvalidJson",
+  "comment": "Malformed JSON on resource PATCH returns 400 bodyInvalidJson.",
   "steps": [
     {
       "name": "create_namespace",
@@ -61,7 +61,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_invalid_json"
+          "error": "bodyInvalidJson"
         }
       }
     }

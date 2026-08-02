@@ -1,6 +1,6 @@
 {
-  "name": "roles_put_namespace_not_found",
-  "comment": "PUT role on a missing namespace returns 404 namespace_not_found.",
+  "name": "roles_put_namespaceNotFound",
+  "comment": "PUT role on a missing namespace returns 404 namespaceNotFound.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -83,7 +83,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "namespace_not_found"
+          "error": "namespaceNotFound"
         }
       }
     }

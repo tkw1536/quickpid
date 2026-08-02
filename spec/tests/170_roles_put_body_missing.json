@@ -1,6 +1,6 @@
 {
-  "name": "roles_put_body_missing",
-  "comment": "PUT namespace role without a body returns 400 body_missing.",
+  "name": "roles_put_bodyMissing",
+  "comment": "PUT namespace role without a body returns 400 bodyMissing.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -122,7 +122,7 @@
       }
     },
     {
-      "name": "put_body_missing",
+      "name": "put_bodyMissing",
       "config": {},
       "request": {
         "method": "PUT",
@@ -137,7 +137,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_missing"
+          "error": "bodyMissing"
         }
       }
     }

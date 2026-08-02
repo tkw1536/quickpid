@@ -46,7 +46,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "resource_not_found"
+          "error": "resourceNotFound"
         }
       }
     }

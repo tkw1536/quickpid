@@ -1,6 +1,6 @@
 {
   "name": "51_resource_list_get_invalid_deleted_query",
-  "comment": "Non-boolean deleted query values on resource listing return 400 invalid_query_parameter.",
+  "comment": "Non-boolean deleted query values on resource listing return 400 invalidQueryParameter.",
   "steps": [
     {
       "name": "invalidQuery_deleted",
@@ -14,7 +14,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_query_parameter"
+          "error": "invalidQueryParameter"
         }
       }
     }

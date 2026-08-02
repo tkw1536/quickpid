@@ -1,6 +1,6 @@
 {
-  "name": "34_namespace_create_post_bad_id_generation",
-  "comment": "If namespace id generation produces an invalid id, POST /resolver/namespaces returns 500 bad_id_generation.",
+  "name": "34_namespace_create_post_badIdGeneration",
+  "comment": "If namespace id generation produces an invalid id, POST /resolver/namespaces returns 500 badIdGeneration.",
   "steps": [
     {
       "name": "badIDGeneration_error",
@@ -16,7 +16,7 @@
       "response": {
         "code": 500,
         "body": {
-          "error": "bad_id_generation"
+          "error": "badIdGeneration"
         }
       }
     }

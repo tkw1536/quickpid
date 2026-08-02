@@ -1,6 +1,6 @@
 {
-  "name": "87_resource_patch_namespace_not_found",
-  "comment": "PATCH against a missing namespace returns 404 namespace_not_found.",
+  "name": "87_resource_patch_namespaceNotFound",
+  "comment": "PATCH against a missing namespace returns 404 namespaceNotFound.",
   "steps": [
     {
       "name": "create_namespace",
@@ -61,7 +61,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "namespace_not_found"
+          "error": "namespaceNotFound"
         }
       }
     }

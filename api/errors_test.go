@@ -29,7 +29,7 @@ func ExampleWithErrorString() {
 	// Output: errors are identical: true
 	// errors.Is for the underlying error: true
 	// got an error string back: true
-	// error string: database_error
+	// error string: databaseError
 }
 
 func TestWithErrorString_GetErrorString(t *testing.T) {

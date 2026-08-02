@@ -52,7 +52,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_query_parameter"
+          "error": "invalidQueryParameter"
         }
       }
     }

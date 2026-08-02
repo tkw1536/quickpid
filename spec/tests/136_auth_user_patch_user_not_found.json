@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_patch_user_not_found",
-  "comment": "PATCH /user?username=... for a non-existent user returns 404 user_not_found.",
+  "name": "auth_user_patch_userNotFound",
+  "comment": "PATCH /user?username=... for a non-existent user returns 404 userNotFound.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -50,7 +50,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "user_not_found"
+          "error": "userNotFound"
         }
       }
     }

@@ -1,6 +1,6 @@
 {
-  "name": "50_resource_list_get_invalid_namespace_id",
-  "comment": "An invalid namespace id in the path returns 400 invalid_namespace_id.",
+  "name": "50_resource_list_get_invalidNamespaceId",
+  "comment": "An invalid namespace id in the path returns 400 invalidNamespaceId.",
   "steps": [
     {
       "name": "invalidNamespaceID_uppercase",
@@ -14,7 +14,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_namespace_id"
+          "error": "invalidNamespaceId"
         }
       }
     }

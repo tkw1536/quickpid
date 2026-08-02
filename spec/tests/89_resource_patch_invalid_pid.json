@@ -1,6 +1,6 @@
 {
-  "name": "89_resource_patch_invalid_pid",
-  "comment": "An invalid PID on PATCH returns 400 invalid_pid.",
+  "name": "89_resource_patch_invalidPid",
+  "comment": "An invalid PID on PATCH returns 400 invalidPid.",
   "steps": [
     {
       "name": "create_namespace",
@@ -61,7 +61,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_pid"
+          "error": "invalidPid"
         }
       }
     }

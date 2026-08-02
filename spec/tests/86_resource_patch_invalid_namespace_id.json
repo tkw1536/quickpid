@@ -1,6 +1,6 @@
 {
-  "name": "86_resource_patch_invalid_namespace_id",
-  "comment": "An invalid namespace id on resource PATCH returns 400 invalid_namespace_id.",
+  "name": "86_resource_patch_invalidNamespaceId",
+  "comment": "An invalid namespace id on resource PATCH returns 400 invalidNamespaceId.",
   "steps": [
     {
       "name": "create_namespace",
@@ -61,7 +61,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_namespace_id"
+          "error": "invalidNamespaceId"
         }
       }
     }

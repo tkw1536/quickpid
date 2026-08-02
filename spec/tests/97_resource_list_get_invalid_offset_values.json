@@ -1,6 +1,6 @@
 {
   "name": "resource_list_get_invalid_offset_values",
-  "comment": "Invalid offset values on resource listing return 400 invalid_query_parameter.",
+  "comment": "Invalid offset values on resource listing return 400 invalidQueryParameter.",
   "steps": [
     {
       "name": "create_namespace",
@@ -41,7 +41,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_query_parameter"
+          "error": "invalidQueryParameter"
         }
       }
     },
@@ -57,7 +57,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_query_parameter"
+          "error": "invalidQueryParameter"
         }
       }
     }

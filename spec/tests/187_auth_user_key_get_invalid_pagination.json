@@ -1,6 +1,6 @@
 {
   "name": "auth_user_key_get_invalid_pagination",
-  "comment": "Invalid pagination on GET /user/key returns 400 invalid_query_parameter.",
+  "comment": "Invalid pagination on GET /user/key returns 400 invalidQueryParameter.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -49,7 +49,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_query_parameter"
+          "error": "invalidQueryParameter"
         }
       }
     }

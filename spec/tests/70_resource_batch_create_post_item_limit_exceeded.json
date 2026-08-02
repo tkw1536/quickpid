@@ -1,6 +1,6 @@
 {
-  "name": "70_resource_batch_create_post_item_limit_exceeded",
-  "comment": "A batch larger than maxBatchItems returns 422 item_limit_exceeded.",
+  "name": "70_resource_batch_create_post_itemLimitExceeded",
+  "comment": "A batch larger than maxBatchItems returns 422 itemLimitExceeded.",
   "steps": [
     {
       "name": "create_namespace",
@@ -51,7 +51,7 @@
       "response": {
         "code": 422,
         "body": {
-          "error": "item_limit_exceeded"
+          "error": "itemLimitExceeded"
         }
       }
     }

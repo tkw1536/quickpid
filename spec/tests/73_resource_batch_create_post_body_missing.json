@@ -1,6 +1,6 @@
 {
-  "name": "73_resource_batch_create_post_body_missing",
-  "comment": "Batch create without a request body returns 400 body_missing.",
+  "name": "73_resource_batch_create_post_bodyMissing",
+  "comment": "Batch create without a request body returns 400 bodyMissing.",
   "steps": [
     {
       "name": "create_namespace",
@@ -42,7 +42,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_missing"
+          "error": "bodyMissing"
         }
       }
     }

@@ -1,6 +1,6 @@
 {
   "name": "namespace_create_post_body_too_large",
-  "comment": "A namespace create body exceeding maxBodyBytes returns 413 body_size_exceeded.",
+  "comment": "A namespace create body exceeding maxBodyBytes returns 413 bodySizeExceeded.",
   "steps": [
     {
       "name": "too_large",
@@ -23,7 +23,7 @@
       "response": {
         "code": 413,
         "body": {
-          "error": "body_size_exceeded"
+          "error": "bodySizeExceeded"
         }
       }
     }

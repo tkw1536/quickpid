@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_post_duplicate_username",
-  "comment": "Creating a user with a username that already exists returns 409 duplicate_username.",
+  "name": "auth_user_post_duplicateUsername",
+  "comment": "Creating a user with a username that already exists returns 409 duplicateUsername.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -73,7 +73,7 @@
       "response": {
         "code": 409,
         "body": {
-          "error": "duplicate_username"
+          "error": "duplicateUsername"
         }
       }
     }

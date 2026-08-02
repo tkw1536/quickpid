@@ -1,6 +1,6 @@
 {
-  "name": "68_resource_create_post_insufficient_entropy",
-  "comment": "If PID generation exhausts retries due to collisions, resource create returns 503 insufficient_entropy.",
+  "name": "68_resource_create_post_insufficientEntropy",
+  "comment": "If PID generation exhausts retries due to collisions, resource create returns 503 insufficientEntropy.",
   "steps": [
     {
       "name": "create_namespace",
@@ -74,7 +74,7 @@
       "response": {
         "code": 503,
         "body": {
-          "error": "insufficient_entropy"
+          "error": "insufficientEntropy"
         }
       }
     }

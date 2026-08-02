@@ -1,6 +1,6 @@
 {
-  "name": "66_resource_create_post_body_invalid_json",
-  "comment": "Malformed JSON on resource create returns 400 body_invalid_json.",
+  "name": "66_resource_create_post_bodyInvalidJson",
+  "comment": "Malformed JSON on resource create returns 400 bodyInvalidJson.",
   "steps": [
     {
       "name": "create_namespace",
@@ -43,7 +43,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_invalid_json"
+          "error": "bodyInvalidJson"
         }
       }
     }

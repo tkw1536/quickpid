@@ -77,7 +77,7 @@ paths:
           description: Configuration is unavailable.
           content:
             application/json:
-              example: { error: "info_unavailable" }
+              example: { error: "infoUnavailable" }
               schema:
                 $ref: '#/components/schemas/ErrorInfoUnavailable'
   /resolver/info:
@@ -165,7 +165,7 @@ paths:
           description: Invalid query parameter when listing namespaces (e.g. limit or offset).
           content:
             application/json:
-              example: { error: "invalid_query_parameter" }
+              example: { error: "invalidQueryParameter" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
@@ -179,7 +179,7 @@ paths:
           description: Internal server error while listing namespaces.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -219,7 +219,7 @@ paths:
           description: Invalid request body when creating a namespace.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -235,14 +235,14 @@ paths:
           description: Request body for creating a namespace exceeds the configured maximum size.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error or ID generation failure while creating a namespace.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -251,7 +251,7 @@ paths:
           description: Could not allocate a namespace id after repeated attempts.
           content:
             application/json:
-              example: { error: "insufficient_entropy" }
+              example: { error: "insufficientEntropy" }
               schema:
                 $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
@@ -280,7 +280,7 @@ paths:
           description: Internal server error while counting resources.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -332,7 +332,7 @@ paths:
           description: Invalid query parameter when listing mounts (e.g. limit or offset).
           content:
             application/json:
-              example: { error: "invalid_query_parameter" }
+              example: { error: "invalidQueryParameter" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
@@ -353,7 +353,7 @@ paths:
           description: Internal server error while listing mounts.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -391,21 +391,21 @@ paths:
           description: Invalid base URI when resolving a mount.
           content:
             application/json:
-              example: { error: "invalid_base_uri" }
+              example: { error: "invalidBaseUri" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidBaseUri'
         '404':
           description: Mount does not exist when resolving by base URI.
           content:
             application/json:
-              example: { error: "mount_not_found" }
+              example: { error: "mountNotFound" }
               schema:
                 $ref: '#/components/schemas/ErrorMountNotFound'
         '500':
           description: Internal server error while resolving a mount by base URI.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
     put:
@@ -450,7 +450,7 @@ paths:
           description: Invalid request body or base URI when creating or replacing a mount.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -475,21 +475,21 @@ paths:
           description: Namespace does not exist when creating or replacing a mount.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '413':
           description: Request body for creating or replacing a mount exceeds the configured size limit.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error while creating or replacing a mount.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
     delete:
@@ -520,7 +520,7 @@ paths:
           description: Invalid base URI when deleting a mount.
           content:
             application/json:
-              example: { error: "invalid_base_uri" }
+              example: { error: "invalidBaseUri" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidBaseUri'
         '401':
@@ -541,14 +541,14 @@ paths:
           description: Mount does not exist when deleting by base URI.
           content:
             application/json:
-              example: { error: "mount_not_found" }
+              example: { error: "mountNotFound" }
               schema:
                 $ref: '#/components/schemas/ErrorMountNotFound'
         '500':
           description: Internal server error while deleting a mount.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -613,7 +613,7 @@ paths:
           description: Invalid base URI or PID when resolving a mounted resource.
           content:
             application/json:
-              example: { error: "invalid_base_uri" }
+              example: { error: "invalidBaseUri" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidBaseUri'
@@ -629,7 +629,7 @@ paths:
           description: Mount, namespace, or resource does not exist.
           content:
             application/json:
-              example: { error: "mount_not_found" }
+              example: { error: "mountNotFound" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorMountNotFound'
@@ -639,7 +639,7 @@ paths:
           description: Internal server error while resolving a resource via mount and PID.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -681,7 +681,7 @@ paths:
           description: Invalid namespace id when retrieving a namespace.
           content:
             application/json:
-              example: { error: "invalid_namespace_id" }
+              example: { error: "invalidNamespaceId" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidNamespaceID'
         '401':
@@ -702,14 +702,14 @@ paths:
           description: Namespace does not exist when retrieving by id.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
           description: Internal server error while retrieving a namespace.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -768,7 +768,7 @@ paths:
           description: Invalid namespace id or query parameter when listing mounts for a namespace.
           content:
             application/json:
-              example: { error: "invalid_namespace_id" }
+              example: { error: "invalidNamespaceId" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
@@ -791,14 +791,14 @@ paths:
           description: Namespace does not exist when listing its mounts.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
           description: Internal server error while listing mounts for a namespace.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -856,7 +856,7 @@ paths:
           description: Invalid namespace id or query parameter when listing namespace roles.
           content:
             application/json:
-              example: { error: "invalid_namespace_id" }
+              example: { error: "invalidNamespaceId" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
@@ -879,7 +879,7 @@ paths:
           description: Namespace does not exist when listing roles, or the server is in anonymous mode.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -888,7 +888,7 @@ paths:
           description: Internal server error while listing namespace roles.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -931,7 +931,7 @@ paths:
           description: Invalid namespace id when retrieving a namespace role.
           content:
             application/json:
-              example: { error: "invalid_namespace_id" }
+              example: { error: "invalidNamespaceId" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidNamespaceID'
         '401':
@@ -952,7 +952,7 @@ paths:
           description: Namespace or user do not exist, or the server is in anonymous mode.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -962,7 +962,7 @@ paths:
           description: Internal server error while retrieving a namespace role.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -1011,7 +1011,7 @@ paths:
           description: Invalid request.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1037,7 +1037,7 @@ paths:
           description: Namespace does not exist when setting a role, or the server is in anonymous mode.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -1047,14 +1047,14 @@ paths:
           description: Request body for setting a namespace role exceeds the configured maximum size.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error while setting a namespace role.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -1089,7 +1089,7 @@ paths:
           description: Invalid namespace id or username.
           content:
             application/json:
-              example: { error: "invalid_namespace_id" }
+              example: { error: "invalidNamespaceId" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
@@ -1112,7 +1112,7 @@ paths:
           description: Namespace or explicit role not found, or the server is in anonymous mode.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -1123,7 +1123,7 @@ paths:
           description: Internal server error while removing a namespace role.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -1208,7 +1208,7 @@ paths:
           description: Invalid namespace id or query parameter when listing resources.
           content:
             application/json:
-              example: { error: "invalid_namespace_id" }
+              example: { error: "invalidNamespaceId" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
@@ -1231,14 +1231,14 @@ paths:
           description: Namespace does not exist when listing resources.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
           description: Internal server error while listing resources.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -1286,7 +1286,7 @@ paths:
           description: Invalid request body, JSON, or namespace id when creating a resource.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1310,21 +1310,21 @@ paths:
           description: Request body for creating a resource exceeds the configured maximum size.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '404':
           description: Namespace does not exist when creating a resource.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
           description: Internal server error or PID generation failure while creating a resource.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1333,7 +1333,7 @@ paths:
           description: Could not allocate a PID after repeated attempts.
           content:
             application/json:
-              example: { error: "insufficient_entropy" }
+              example: { error: "insufficientEntropy" }
               schema:
                 $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
@@ -1394,7 +1394,7 @@ paths:
           description: Invalid request body, JSON, or namespace id when creating a resource batch.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1418,14 +1418,14 @@ paths:
           description: Request body for creating a resource batch exceeds the configured maximum size.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '404':
           description: Namespace does not exist when creating a resource batch.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '422':
@@ -1433,7 +1433,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "item_limit_exceeded"
+                error: "itemLimitExceeded"
               }
               schema:
                 $ref: '#/components/schemas/ErrorItemLimitExceeded'
@@ -1441,7 +1441,7 @@ paths:
           description: Internal server error or PID generation failure while creating a resource batch.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorDatabaseError'
@@ -1450,7 +1450,7 @@ paths:
           description: Could not allocate PIDs after repeated attempts.
           content:
             application/json:
-              example: { error: "insufficient_entropy" }
+              example: { error: "insufficientEntropy" }
               schema:
                 $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
@@ -1503,7 +1503,7 @@ paths:
           description: Invalid namespace id or PID in the path.
           content:
             application/json:
-              example: { error: "invalid_namespace_id" }
+              example: { error: "invalidNamespaceId" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
@@ -1519,7 +1519,7 @@ paths:
           description: Namespace or resource does not exist when retrieving by PID.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -1537,7 +1537,7 @@ paths:
           description: Internal server error while retrieving a resource.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -1599,7 +1599,7 @@ paths:
           description: Invalid request body, JSON, namespace id, or PID.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1624,7 +1624,7 @@ paths:
           description: Namespace or resource does not exist when updating by PID.
           content:
             application/json:
-              example: { error: "namespace_not_found" }
+              example: { error: "namespaceNotFound" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
@@ -1633,14 +1633,14 @@ paths:
           description: Request body for updating a resource exceeds the configured maximum size.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error while updating a resource.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -1678,7 +1678,7 @@ paths:
           description: Invalid query parameter.
           content:
             application/json:
-              example: { error: "invalid_query_parameter" }
+              example: { error: "invalidQueryParameter" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
@@ -1702,7 +1702,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "user_not_found"
+                error: "userNotFound"
               }
               schema:
                 oneOf:
@@ -1712,7 +1712,7 @@ paths:
           description: Internal server error while retrieving user information.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -1760,7 +1760,7 @@ paths:
           description: Invalid request body or username.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1788,7 +1788,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "user_not_found"
+                error: "userNotFound"
               }
               schema:
                 oneOf:
@@ -1798,14 +1798,14 @@ paths:
           description: Request body for updating a user account exceeds the configured maximum size.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error while updating a user account.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -1841,7 +1841,7 @@ paths:
           description: Invalid request body when creating a user account.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -1866,7 +1866,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "unavailable_in_anonymous_mode"
+                error: "unavailableInAnonymousMode"
               }
               schema:
                 $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
@@ -1874,21 +1874,21 @@ paths:
           description: The username is already in use when creating a user account.
           content:
             application/json:
-              example: { error: "duplicate_username" }
+              example: { error: "duplicateUsername" }
               schema:
                 $ref: '#/components/schemas/ErrorDuplicateUsername'
         '413':
           description: Request body for creating a user account exceeds the configured maximum size.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error while creating a user account.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -1922,7 +1922,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "invalid_query_parameter"
+                error: "invalidQueryParameter"
               }
               schema:
                 oneOf:
@@ -1949,7 +1949,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "user_not_found"
+                error: "userNotFound"
               }
               schema:
                 oneOf:
@@ -1959,7 +1959,7 @@ paths:
           description: Internal server error while deleting a user account.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -2000,7 +2000,7 @@ paths:
           description: Invalid query parameter or username prefix.
           content:
             application/json:
-              example: { error: "invalid_query_parameter" }
+              example: { error: "invalidQueryParameter" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
@@ -2017,7 +2017,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "unavailable_in_anonymous_mode"
+                error: "unavailableInAnonymousMode"
               }
               schema:
                 $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
@@ -2025,7 +2025,7 @@ paths:
           description: Internal server error while autocompleting usernames.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -2104,7 +2104,7 @@ paths:
           description: Invalid query parameter (e.g. limit, offset, superuser, or password).
           content:
             application/json:
-              example: { error: "invalid_query_parameter" }
+              example: { error: "invalidQueryParameter" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
@@ -2126,7 +2126,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "unavailable_in_anonymous_mode"
+                error: "unavailableInAnonymousMode"
               }
               schema:
                 $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
@@ -2134,7 +2134,7 @@ paths:
           description: Internal server error while listing users.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -2196,7 +2196,7 @@ paths:
           description: Invalid query parameter when listing user roles (e.g. limit, offset, or username).
           content:
             application/json:
-              example: { error: "invalid_query_parameter" }
+              example: { error: "invalidQueryParameter" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
@@ -2220,7 +2220,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "user_not_found"
+                error: "userNotFound"
               }
               schema:
                 oneOf:
@@ -2230,7 +2230,7 @@ paths:
           description: Internal server error while listing user roles.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -2292,7 +2292,7 @@ paths:
           description: Invalid query parameter when listing API keys (e.g. limit, offset, or username).
           content:
             application/json:
-              example: { error: "invalid_query_parameter" }
+              example: { error: "invalidQueryParameter" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
@@ -2316,7 +2316,7 @@ paths:
           content:
             application/json:
               example: {
-                error: user_not_found
+                error: userNotFound
               }
               schema:
                 oneOf:
@@ -2326,7 +2326,7 @@ paths:
           description: Internal server error while listing API keys.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -2375,7 +2375,7 @@ paths:
           description: Invalid request body, query parameter, or expiresAt value in the past.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -2401,7 +2401,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "user_not_found"
+                error: "userNotFound"
               }
               schema:
                 oneOf:
@@ -2411,14 +2411,14 @@ paths:
           description: Request body for issuing an API key exceeds the configured maximum size.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error while issuing an API key.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -2470,7 +2470,7 @@ paths:
           description: Invalid request body, username, or password.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -2496,7 +2496,7 @@ paths:
           content:
             application/json:
               example: {
-                error: "user_not_found"
+                error: "userNotFound"
               }
               schema:
                 oneOf:
@@ -2506,14 +2506,14 @@ paths:
           description: Request body for setting or clearing a password exceeds the configured maximum size.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error while setting or clearing a password.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -2557,7 +2557,7 @@ paths:
           description: Invalid request body or query parameter.
           content:
             application/json:
-              example: { error: "body_missing" }
+              example: { error: "bodyMissing" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
@@ -2582,7 +2582,7 @@ paths:
           description: The API key does not exist, does not belong to the requested user, the requested user does not exist, or the server is in anonymous mode.
           content:
             application/json:
-              example: { error: "key_not_found" }
+              example: { error: "keyNotFound" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorKeyNotFound'
@@ -2592,14 +2592,14 @@ paths:
           description: Request body for revoking an API key exceeds the configured maximum size.
           content:
             application/json:
-              example: { error: "body_size_exceeded" }
+              example: { error: "bodySizeExceeded" }
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
           description: Internal server error while revoking an API key.
           content:
             application/json:
-              example: { error: "database_error" }
+              example: { error: "databaseError" }
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
@@ -2645,7 +2645,7 @@ components:
             error:
               type: string
               enum:
-                - database_error
+                - databaseError
           description: |
             An unspecified internal problem occurred while interacting with the database.
             This may be due to the database being offline, or due to data corruption.
@@ -2658,7 +2658,7 @@ components:
             error:
               type: string
               enum:
-                - bad_id_generation
+                - badIdGeneration
           description: |
             The resolver attempted to generate a namespace id or PID, but this resulted in an invalid value.
             This is different from being unable to generate a value due to insufficient entropy.
@@ -2671,7 +2671,7 @@ components:
             error:
               type: string
               enum:
-                - insufficient_entropy
+                - insufficientEntropy
           description: |
             The resolver attempted to generate a namespace id or PID, but this resulted only in duplicate ids after repeated attempts.
             This is caused either by insufficient entropy available to the ID generator, or the set of available Namespace IDs or PIDs being exhausted.
@@ -2684,7 +2684,7 @@ components:
             error:
               type: string
               enum:
-                - body_missing
+                - bodyMissing
           description: The request body was required but missing.
     ErrorBodySizeExceeded:
       description: Error response when the request body exceeds the configured size limit.
@@ -2695,7 +2695,7 @@ components:
             error:
               type: string
               enum:
-                - body_size_exceeded
+                - bodySizeExceeded
           description: The request body exceeded the configured maximum size.
     ErrorBodyInvalidJSON:
       description: Error response when the request body is not valid JSON or does not match the expected shape.
@@ -2706,7 +2706,7 @@ components:
             error:
               type: string
               enum:
-                - body_invalid_json
+                - bodyInvalidJson
           description: The request body was not valid JSON, did not match the expected shape, or contained unknown fields.
     ErrorInvalidQueryParameter:
       description: Error response when a query parameter fails validation.
@@ -2717,7 +2717,7 @@ components:
             error:
               type: string
               enum:
-                - invalid_query_parameter
+                - invalidQueryParameter
           description: A query parameter was invalid.
     ErrorItemLimitExceeded:
       description: Error response when a request contains more items than allowed.
@@ -2728,7 +2728,7 @@ components:
             error:
               type: string
               enum:
-                - item_limit_exceeded
+                - itemLimitExceeded
           description: The number of items in a single request exceeded the limit.
     ErrorInvalidNamespaceID:
       description: Error response when a namespace id fails validation.
@@ -2739,7 +2739,7 @@ components:
             error:
               type: string
               enum:
-                - invalid_namespace_id
+                - invalidNamespaceId
           description: The namespace id was invalid.
     ErrorInvalidPID:
       description: Error response when a PID fails validation.
@@ -2750,7 +2750,7 @@ components:
             error:
               type: string
               enum:
-                - invalid_pid
+                - invalidPid
           description: The PID was invalid.
     ErrorInvalidUsername:
       description: Error response when a username fails validation.
@@ -2761,7 +2761,7 @@ components:
             error:
               type: string
               enum:
-                - invalid_username
+                - invalidUsername
           description: The username was invalid.
     ErrorInvalidPassword:
       description: Error response when a password fails validation.
@@ -2772,7 +2772,7 @@ components:
             error:
               type: string
               enum:
-                - invalid_password
+                - invalidPassword
           description: The password was invalid.
     ErrorInvalidBaseUri:
       description: Error response when a base URI fails validation.
@@ -2783,7 +2783,7 @@ components:
             error:
               type: string
               enum:
-                - invalid_base_uri
+                - invalidBaseUri
           description: The base URI was invalid.
     ErrorNamespaceNotFound:
       description: Error response when the requested namespace does not exist.
@@ -2794,7 +2794,7 @@ components:
             error:
               type: string
               enum:
-                - namespace_not_found
+                - namespaceNotFound
           description: The namespace does not exist.
     ErrorResourceNotFound:
       description: Error response when the requested resource does not exist.
@@ -2805,7 +2805,7 @@ components:
             error:
               type: string
               enum:
-                - resource_not_found
+                - resourceNotFound
           description: The resource does not exist.
     ErrorMountNotFound:
       description: Error response when the requested mount does not exist.
@@ -2816,7 +2816,7 @@ components:
             error:
               type: string
               enum:
-                - mount_not_found
+                - mountNotFound
           description: The mount does not exist.
     ErrorInfoUnavailable:
       description: Error response when resolver configuration info is intentionally unavailable.
@@ -2827,7 +2827,7 @@ components:
             error:
               type: string
               enum:
-                - info_unavailable
+                - infoUnavailable
           description: |
             Resolver configuration info is unavailable.
             The resolver may choose to hide this information for security reasons.
@@ -2840,7 +2840,7 @@ components:
             error:
               type: string
               enum:
-                - unavailable_in_anonymous_mode
+                - unavailableInAnonymousMode
           description: This route is not available while the server is in anonymous mode.
     ErrorUnauthorized:
       description: Error response for missing or incorrect authentication credentials.
@@ -3369,7 +3369,7 @@ components:
             error:
               type: string
               enum:
-                - duplicate_username
+                - duplicateUsername
           description: The username is already in use.
     ErrorUserNotFound:
       description: Error response when the requested user account does not exist.
@@ -3380,7 +3380,7 @@ components:
             error:
               type: string
               enum:
-                - user_not_found
+                - userNotFound
           description: The user does not exist.
     ErrorKeyNotFound:
       description: Error response when the requested API key does not exist or does not belong to the user.
@@ -3391,7 +3391,7 @@ components:
             error:
               type: string
               enum:
-                - key_not_found
+                - keyNotFound
           description: The API key does not exist or does not belong to the current user.
     UserCreateRequest:
       description: A user account to create.
@@ -3714,7 +3714,7 @@ components:
             error:
               type: string
               enum:
-                - role_not_found
+                - roleNotFound
           description: No explicit role exists for the user in this namespace.
     ErrorInvalidRole:
       description: The provided role exists, but cannot be used in this context.
@@ -3725,5 +3725,5 @@ components:
             error:
               type: string
               enum:
-                - invalid_role
+                - invalidRole
           description: The role is not valid or is not assignable via PUT.

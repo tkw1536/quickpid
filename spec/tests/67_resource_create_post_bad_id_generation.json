@@ -1,6 +1,6 @@
 {
-  "name": "67_resource_create_post_bad_id_generation",
-  "comment": "If PID generation yields an invalid value, resource create returns 500 bad_id_generation.",
+  "name": "67_resource_create_post_badIdGeneration",
+  "comment": "If PID generation yields an invalid value, resource create returns 500 badIdGeneration.",
   "steps": [
     {
       "name": "create_namespace",
@@ -44,7 +44,7 @@
       "response": {
         "code": 500,
         "body": {
-          "error": "bad_id_generation"
+          "error": "badIdGeneration"
         }
       }
     }

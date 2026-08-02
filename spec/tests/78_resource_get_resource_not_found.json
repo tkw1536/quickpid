@@ -1,6 +1,6 @@
 {
-  "name": "78_resource_get_resource_not_found",
-  "comment": "GET for a non-existent PID returns 404 resource_not_found.",
+  "name": "78_resource_get_resourceNotFound",
+  "comment": "GET for a non-existent PID returns 404 resourceNotFound.",
   "steps": [
     {
       "name": "create_namespace",
@@ -60,7 +60,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "resource_not_found"
+          "error": "resourceNotFound"
         }
       }
     }

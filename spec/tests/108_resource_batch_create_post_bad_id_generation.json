@@ -1,6 +1,6 @@
 {
-  "name": "resource_batch_create_post_bad_id_generation",
-  "comment": "Batch create returns 500 bad_id_generation when generated PIDs are invalid.",
+  "name": "resource_batch_create_post_badIdGeneration",
+  "comment": "Batch create returns 500 badIdGeneration when generated PIDs are invalid.",
   "steps": [
     {
       "name": "create_namespace",
@@ -46,7 +46,7 @@
       "response": {
         "code": 500,
         "body": {
-          "error": "bad_id_generation"
+          "error": "badIdGeneration"
         }
       }
     }

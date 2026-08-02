@@ -1,6 +1,6 @@
 {
-  "name": "roles_put_body_invalid_json",
-  "comment": "Malformed JSON on PUT namespace role returns 400 body_invalid_json.",
+  "name": "roles_put_bodyInvalidJson",
+  "comment": "Malformed JSON on PUT namespace role returns 400 bodyInvalidJson.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -122,7 +122,7 @@
       }
     },
     {
-      "name": "put_body_invalid_json",
+      "name": "put_bodyInvalidJson",
       "config": {},
       "request": {
         "method": "PUT",
@@ -138,7 +138,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_invalid_json"
+          "error": "bodyInvalidJson"
         }
       }
     }

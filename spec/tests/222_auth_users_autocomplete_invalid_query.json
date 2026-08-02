@@ -1,6 +1,6 @@
 {
   "name": "222_auth_users_autocomplete_invalid_query",
-  "comment": "GET /users/autocomplete with an invalid username prefix returns 400 invalid_username.",
+  "comment": "GET /users/autocomplete with an invalid username prefix returns 400 invalidUsername.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -49,7 +49,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_username"
+          "error": "invalidUsername"
         }
       }
     },
@@ -69,7 +69,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_username"
+          "error": "invalidUsername"
         }
       }
     }

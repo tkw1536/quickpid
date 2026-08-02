@@ -1,6 +1,6 @@
 {
-  "name": "33_namespace_create_post_invalid_pid_pattern",
-  "comment": "POST /resolver/namespaces with an invalid pidFormat pattern returns 400 body_invalid_json.",
+  "name": "33_namespace_create_post_invalidPid_pattern",
+  "comment": "POST /resolver/namespaces with an invalid pidFormat pattern returns 400 bodyInvalidJson.",
   "steps": [
     {
       "name": "invalidPatternInBody",
@@ -15,7 +15,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "body_invalid_json"
+          "error": "bodyInvalidJson"
         }
       }
     }

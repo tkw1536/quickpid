@@ -1,6 +1,6 @@
 {
   "name": "90_resource_patch_body_too_large",
-  "comment": "A PATCH body exceeding maxBodyBytes returns 413 body_size_exceeded.",
+  "comment": "A PATCH body exceeding maxBodyBytes returns 413 bodySizeExceeded.",
   "steps": [
     {
       "name": "create_namespace",
@@ -69,7 +69,7 @@
       "response": {
         "code": 413,
         "body": {
-          "error": "body_size_exceeded"
+          "error": "bodySizeExceeded"
         }
       }
     }

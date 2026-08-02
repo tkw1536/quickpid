@@ -1,9 +1,9 @@
 {
   "name": "02_resolver_info_get_unavailable",
-  "comment": "When the resolver info endpoint is disabled, GET /resolver returns 404 with error info_unavailable.",
+  "comment": "When the resolver info endpoint is disabled, GET /resolver returns 404 with error infoUnavailable.",
   "steps": [
     {
-      "name": "info_unavailable",
+      "name": "infoUnavailable",
       "config": {
         "infoEnabled": false
       },
@@ -14,7 +14,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "info_unavailable"
+          "error": "infoUnavailable"
         }
       }
     }

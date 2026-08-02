@@ -1,5 +1,5 @@
 {
-  "name": "62_resource_create_post_namespace_not_found",
+  "name": "62_resource_create_post_namespaceNotFound",
   "comment": "POST /resolver/namespaces/{namespace}/resources returns 404 when the namespace does not exist.",
   "steps": [
     {
@@ -15,7 +15,7 @@
       "response": {
         "code": 404,
         "body": {
-          "error": "namespace_not_found"
+          "error": "namespaceNotFound"
         }
       }
     }

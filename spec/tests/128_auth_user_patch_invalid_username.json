@@ -1,6 +1,6 @@
 {
-  "name": "128_auth_user_patch_invalid_username",
-  "comment": "PATCH /user with an invalid username query parameter returns 400 invalid_username.",
+  "name": "128_auth_user_patch_invalidUsername",
+  "comment": "PATCH /user with an invalid username query parameter returns 400 invalidUsername.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -90,7 +90,7 @@
       }
     },
     {
-      "name": "update_current_user_invalid_username",
+      "name": "update_current_user_invalidUsername",
       "config": {},
       "request": {
         "method": "PATCH",
@@ -106,7 +106,7 @@
       "response": {
         "code": 400,
         "body": {
-          "error": "invalid_username"
+          "error": "invalidUsername"
         }
       }
     }
