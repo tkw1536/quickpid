@@ -84,7 +84,6 @@ func Migrate(db *gorm.DB) error {
 var (
 	errNamespaceNotFound = backend.ErrNamespaceNotFound
 	errUserNotFound      = backend.ErrUserNotFound
-	errKeyNotFound       = backend.ErrKeyNotFound
 )
 
 func withTx[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
