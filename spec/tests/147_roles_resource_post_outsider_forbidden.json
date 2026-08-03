@@ -92,12 +92,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=owner",
+        "path": "/user/key",
         "body": "{\"comment\":\"owner\",\"expiresAt\":null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "owner"
           ]
         ]
       },
@@ -125,12 +129,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=outsider",
+        "path": "/user/key",
         "body": "{\"comment\":\"outsider\",\"expiresAt\":null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "outsider"
           ]
         ]
       },

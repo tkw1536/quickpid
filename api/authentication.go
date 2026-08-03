@@ -98,8 +98,7 @@ func (r *UserUpdateRequest) UnmarshalJSON(data []byte) error {
 }
 
 // SetPasswordRequest is the JSON body for setUserPassword.
-//
-// The target account is selected with the username query parameter, not the request body.
+
 type SetPasswordRequest struct {
 	Password **string `json:"password"`
 }
@@ -171,8 +170,6 @@ type PaginatedAPIKeysResponse struct {
 }
 
 // KeyIssueRequest is the JSON body for issueKey.
-//
-// The target account is selected with the username query parameter, not the request body.
 type KeyIssueRequest struct {
 	Comment   string     `json:"comment"`
 	ExpiresAt *time.Time `json:"expiresAt"`
@@ -247,3 +244,6 @@ type APIKeyInfo struct {
 func (k *APIKeyInfo) Valid(now func() time.Time) bool {
 	return k.ExpiresAt == nil || (!k.ExpiresAt.IsZero() && k.ExpiresAt.After(now()))
 }
+
+// ImpersonateHeader is the name of the header field used to impersonate a user.
+const ImpersonateHeader = "X-Impersonate-User"

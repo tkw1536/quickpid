@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_key_revoke_body_too_large",
-  "comment": "A revoke request body exceeding maxBodyBytes returns 413 bodySizeExceeded.",
+  "name": "auth_impersonate_superuser_success",
+  "comment": "A superuser can act as another user via the X-Impersonate-User header on GET /user.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -57,20 +57,11 @@
       }
     },
     {
-      "name": "issue_alice_key",
-      "config": {
-        "now": "2026-07-05T12:00:00Z",
-        "apiKeyIDs": [
-          "alice-key"
-        ],
-        "apiKeys": [
-          "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
-        ]
-      },
+      "name": "impersonate_alice",
+      "config": {},
       "request": {
-        "method": "POST",
-        "path": "/user/key",
-        "body": "{\"comment\": \"alice\", \"expiresAt\": null}",
+        "method": "GET",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
@@ -83,42 +74,11 @@
         ]
       },
       "response": {
-        "code": 201,
+        "code": 200,
         "body": {
-          "comment": "alice",
-          "createdAt": "2026-07-05T12:00:00Z",
-          "expiresAt": null,
-          "id": "alice-key",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
-        }
-      }
-    },
-    {
-      "name": "too_large",
-      "config": {},
-      "limits": {
-        "MaxBodyBytes": 8,
-        "DefaultPageLimit": 0,
-        "MaxPageLimit": 0,
-        "MaxBatchItems": 0,
-        "MaxNamespaceIDAttempts": 0,
-        "MaxPIDAttempts": 0
-      },
-      "request": {
-        "method": "POST",
-        "path": "/user/key/revoke",
-        "body": "{\"id\":\"alice-key\"}",
-        "headers": [
-          [
-            "Authorization",
-            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
-          ]
-        ]
-      },
-      "response": {
-        "code": 413,
-        "body": {
-          "error": "bodySizeExceeded"
+          "superuser": false,
+          "username": "alice",
+          "password": false
         }
       }
     }

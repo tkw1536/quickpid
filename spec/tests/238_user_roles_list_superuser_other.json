@@ -1,6 +1,6 @@
 {
   "name": "238_user_roles_list_superuser_other",
-  "comment": "A superuser can list another user's roles via GET /user/roles?username=....",
+  "comment": "A superuser can list another user's roles via X-Impersonate-User.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -92,12 +92,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=owner",
+        "path": "/user/key",
         "body": "{\"comment\": \"owner\",\"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "owner"
           ]
         ]
       },
@@ -179,11 +183,15 @@
       },
       "request": {
         "method": "GET",
-        "path": "/user/roles?username=editor",
+        "path": "/user/roles",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "editor"
           ]
         ]
       },

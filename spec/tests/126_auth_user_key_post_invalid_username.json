@@ -1,6 +1,6 @@
 {
   "name": "126_auth_user_key_post_invalidUsername",
-  "comment": "POST /user/key with an invalid username query parameter returns 400 invalidUsername.",
+  "comment": "POST /user/key with an invalid X-Impersonate-User header returns 401 unauthorized.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -69,12 +69,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=servertest",
+        "path": "/user/key",
         "body": "{\"comment\": \"servertest\",\"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "servertest"
           ]
         ]
       },
@@ -94,19 +98,23 @@
       "config": {},
       "request": {
         "method": "POST",
-        "path": "/user/key?username=BADUPPER",
+        "path": "/user/key",
         "body": "{\"comment\": \"new key\",\"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaservertest"
+          ],
+          [
+            "X-Impersonate-User",
+            "BADUPPER"
           ]
         ]
       },
       "response": {
-        "code": 400,
+        "code": 401,
         "body": {
-          "error": "invalidUsername"
+          "error": "unauthorized"
         }
       }
     }

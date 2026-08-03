@@ -1,6 +1,6 @@
 {
   "name": "auth_user_delete_success",
-  "comment": "A superuser can delete another user via DELETE /user?username=..., after which the user is no longer retrievable.",
+  "comment": "A superuser can delete another user via DELETE /user?username=..., after which impersonating that user is unauthorized.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -78,18 +78,22 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user?username=alice",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "alice"
           ]
         ]
       },
       "response": {
-        "code": 404,
+        "code": 401,
         "body": {
-          "error": "userNotFound"
+          "error": "unauthorized"
         }
       }
     }

@@ -1,6 +1,6 @@
 {
   "name": "auth_user_key_get_userNotFound",
-  "comment": "GET /user/key?username=... for a non-existent user returns 404 userNotFound.",
+  "comment": "GET /user/key?username=... for a non-existent user returns 401 unauthorized.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -38,18 +38,22 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user/key?username=nobody",
+        "path": "/user/key",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "nobody"
           ]
         ]
       },
       "response": {
-        "code": 404,
+        "code": 401,
         "body": {
-          "error": "userNotFound"
+          "error": "unauthorized"
         }
       }
     }

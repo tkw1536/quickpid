@@ -69,12 +69,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=owner",
+        "path": "/user/key",
         "body": "{\"comment\": \"owner\", \"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "owner"
           ]
         ]
       },

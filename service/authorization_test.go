@@ -181,7 +181,7 @@ func TestService_ListUserRoles(t *testing.T) {
 		t.Fatalf("SetNamespaceRole(editor, ns2) error = %v", err)
 	}
 
-	page, err := svc.ListUserRoles(ctx, userInfo("editor"), nil, api.ListUserRolesParams{Limit: 100})
+	page, err := svc.ListUserRoles(ctx, userInfo("editor"), api.ListUserRolesParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListUserRoles(self) = %v, %v", page, err)
 	}
@@ -193,29 +193,6 @@ func TestService_ListUserRoles(t *testing.T) {
 	}
 	if page.Items[1].Namespace != ns2.String() || page.Items[1].Role != api.RoleContributor {
 		t.Fatalf("ListUserRoles(self)[1] = %+v", page.Items[1])
-	}
-
-	other := editorUsername
-	_, err = svc.ListUserRoles(ctx, userInfo("owner"), &other, api.ListUserRolesParams{Limit: 100})
-	if !isAPIError(err, api.Forbidden) {
-		t.Fatalf("ListUserRoles(other as non-superuser) = %v, want forbidden", err)
-	}
-
-	page, err = svc.ListUserRoles(ctx, api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &other, api.ListUserRolesParams{Limit: 100})
-	if err != nil {
-		t.Fatalf("ListUserRoles(superuser) = %v, %v", page, err)
-	}
-	if page.Total != 2 {
-		t.Fatalf("ListUserRoles(superuser) total = %d, want 2", page.Total)
-	}
-
-	missing, err := api.NewUsername("missing")
-	if err != nil {
-		t.Fatalf("NewUsername(missing) error = %v", err)
-	}
-	_, err = svc.ListUserRoles(ctx, api.ValidUserInfo{Username: ownerUsername, Superuser: true}, &missing, api.ListUserRolesParams{Limit: 100})
-	if code, ok := api.GetErrorString(err); !ok || code != api.UserNotFound {
-		t.Fatalf("ListUserRoles(missing) = %v, want userNotFound", err)
 	}
 }
 

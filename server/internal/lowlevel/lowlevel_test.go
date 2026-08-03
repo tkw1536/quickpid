@@ -25,6 +25,7 @@ type authProbeResponse struct {
 var (
 	errLookupFailure = errors.New("lookup failure")
 	errUserFailure   = errors.New("user failure")
+	errUserNotFound  = errors.New("user not found")
 )
 
 func TestAuthHandlerAuthVariants(t *testing.T) {
@@ -253,6 +254,123 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 	}
 }
 
+func TestImpersonation(t *testing.T) {
+	t.Parallel()
+
+	const (
+		rootToken  = "root-token"
+		aliceToken = "alice-token"
+	)
+
+	rootUser := mustValidUser(t, "root", true)
+	aliceUser := mustValidUser(t, "alice", false)
+	users := map[string]api.ValidUserInfo{
+		rootUser.Username.String():  *rootUser,
+		aliceUser.Username.String(): *aliceUser,
+	}
+
+	newHandler := func() *lowlevel.Handler {
+		return lowlevel.NewHandler(&mockAuthService{
+			authenticateAPIKey: func(_ context.Context, apiKey string) (api.ValidUsername, error) {
+				switch apiKey {
+				case rootToken:
+					return rootUser.Username, nil
+				case aliceToken:
+					return aliceUser.Username, nil
+				default:
+					return api.ValidUsername{}, errUnauthorized
+				}
+			},
+			loadUser: func(_ context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
+				user, ok := users[username.String()]
+				if !ok {
+					return api.ValidUserInfo{}, api.WithErrorString(errUserNotFound, api.UserNotFound)
+				}
+				return user, nil
+			},
+		}, nil)
+	}
+
+	restrictedProbe := func(h *lowlevel.Handler) (http.HandlerFunc, *bool, **api.ValidUserInfo) {
+		var (
+			gotCalled bool
+			gotUser   *api.ValidUserInfo
+		)
+		handler := h.Restricted(
+			func(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (authProbeResponse, error) {
+				gotCalled = true
+				gotUser = &user
+				return authProbeResponse{
+					Username: new(user.Username.String()),
+					User:     userInfoFromValid(&user),
+				}, nil
+			},
+			lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
+			[]api.ErrorString{api.Unauthorized, api.DatabaseError},
+		)
+		return handler, &gotCalled, &gotUser
+	}
+
+	t.Run("superuser impersonates other user", func(t *testing.T) {
+		t.Parallel()
+		handler, gotCalled, gotUser := restrictedProbe(newHandler())
+		rec := runHandlerWithHeaders(t, handler, map[string][]string{
+			"Authorization":       {"Bearer " + rootToken},
+			api.ImpersonateHeader: {"alice"},
+		})
+		assertStatusAndCalled(t, rec, *gotCalled, http.StatusOK, true)
+		assertOptionalUserEqual(t, *gotUser, aliceUser)
+	})
+
+	t.Run("no impersonate header keeps caller", func(t *testing.T) {
+		t.Parallel()
+		handler, gotCalled, gotUser := restrictedProbe(newHandler())
+		rec := runHandler(t, handler, "Bearer "+rootToken)
+		assertStatusAndCalled(t, rec, *gotCalled, http.StatusOK, true)
+		assertOptionalUserEqual(t, *gotUser, rootUser)
+	})
+
+	t.Run("non-superuser cannot impersonate", func(t *testing.T) {
+		t.Parallel()
+		handler, gotCalled, _ := restrictedProbe(newHandler())
+		rec := runHandlerWithHeaders(t, handler, map[string][]string{
+			"Authorization":       {"Bearer " + aliceToken},
+			api.ImpersonateHeader: {"root"},
+		})
+		assertStatusAndCalled(t, rec, *gotCalled, http.StatusUnauthorized, false)
+	})
+
+	t.Run("multiple impersonate headers unauthorized", func(t *testing.T) {
+		t.Parallel()
+		handler, gotCalled, _ := restrictedProbe(newHandler())
+		rec := runHandlerWithHeaders(t, handler, map[string][]string{
+			"Authorization":       {"Bearer " + rootToken},
+			api.ImpersonateHeader: {"alice", "root"},
+		})
+		assertStatusAndCalled(t, rec, *gotCalled, http.StatusUnauthorized, false)
+	})
+
+	t.Run("invalid impersonate username unauthorized", func(t *testing.T) {
+		t.Parallel()
+		handler, gotCalled, _ := restrictedProbe(newHandler())
+		rec := runHandlerWithHeaders(t, handler, map[string][]string{
+			"Authorization":       {"Bearer " + rootToken},
+			api.ImpersonateHeader: {"BADUPPER"},
+		})
+		assertStatusAndCalled(t, rec, *gotCalled, http.StatusUnauthorized, false)
+	})
+
+	t.Run("missing impersonate user unauthorized", func(t *testing.T) {
+		t.Parallel()
+		handler, gotCalled, _ := restrictedProbe(newHandler())
+		rec := runHandlerWithHeaders(t, handler, map[string][]string{
+			"Authorization":       {"Bearer " + rootToken},
+			api.ImpersonateHeader: {"nobody"},
+		})
+		assertStatusAndCalled(t, rec, *gotCalled, http.StatusUnauthorized, false)
+	})
+}
+
 func TestAuthHandlerLog(t *testing.T) {
 	t.Parallel()
 
@@ -367,10 +485,22 @@ func (*captureHandler) WithGroup(string) slog.Handler {
 func runHandler(t *testing.T, handler http.Handler, authHeaders ...string) *httptest.ResponseRecorder {
 	t.Helper()
 
+	headers := make(map[string][]string)
+	if len(authHeaders) > 0 {
+		headers["Authorization"] = append([]string{}, authHeaders...)
+	}
+	return runHandlerWithHeaders(t, handler, headers)
+}
+
+func runHandlerWithHeaders(t *testing.T, handler http.Handler, headers map[string][]string) *httptest.ResponseRecorder {
+	t.Helper()
+
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/probe", nil)
-	for _, authHeader := range authHeaders {
-		req.Header.Add("Authorization", authHeader)
+	for name, values := range headers {
+		for _, value := range values {
+			req.Header.Add(name, value)
+		}
 	}
 	handler.ServeHTTP(rec, req)
 	return rec

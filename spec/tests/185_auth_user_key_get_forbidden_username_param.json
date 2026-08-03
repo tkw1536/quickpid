@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_key_get_forbidden_username_param",
-  "comment": "Only superusers may use the username parameter on GET /user/key (403 forbidden).",
+  "name": "auth_user_key_get_impersonate_unauthorized",
+  "comment": "Only superusers may use the X-Impersonate-User header on GET /user/key (401 unauthorized).",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -69,12 +69,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=alice",
+        "path": "/user/key",
         "body": "{\"comment\": \"alice\", \"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "alice"
           ]
         ]
       },
@@ -94,18 +98,22 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user/key?username=root",
+        "path": "/user/key",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ],
+          [
+            "X-Impersonate-User",
+            "root"
           ]
         ]
       },
       "response": {
-        "code": 403,
+        "code": 401,
         "body": {
-          "error": "forbidden"
+          "error": "unauthorized"
         }
       }
     }

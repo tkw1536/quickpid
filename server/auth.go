@@ -9,16 +9,12 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) getCurrentUserHTTP(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.UserInfo, error) {
-	target, err := h.parseOptionalUsernameQuery(r)
-	if err != nil {
-		return nil, err
-	}
-	currentUser, err := h.svc.GetUserAccount(r.Context(), user, target)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user account: %w", err)
-	}
-	return currentUser, nil
+func (h *Server) getCurrentUserHTTP(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.UserInfo, error) {
+	return &api.UserInfo{
+		Username:  caller.Username.String(),
+		Superuser: caller.Superuser,
+		Password:  caller.Password,
+	}, nil
 }
 
 func (h *Server) createUser(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.UserInfo, error) {
@@ -52,10 +48,6 @@ func (h *Server) deleteUser(w http.ResponseWriter, r *http.Request, caller api.V
 }
 
 func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.SetPasswordResponse, error) {
-	target, err := h.parseOptionalUsernameQuery(r)
-	if err != nil {
-		return nil, err
-	}
 	var req api.SetPasswordRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -66,7 +58,7 @@ func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, caller 
 		return nil, api.WithErrorString(fmt.Errorf("failed to validate set password request: %w", err), api.InvalidPassword)
 	}
 
-	response, err := h.svc.SetUserPassword(r.Context(), caller, target, validReq)
+	response, err := h.svc.SetUserPassword(r.Context(), caller, validReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set user password: %w", err)
 	}
@@ -112,16 +104,12 @@ func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, calle
 }
 
 func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.PaginatedAPIKeysResponse, error) {
-	target, err := h.parseOptionalUsernameQuery(r)
-	if err != nil {
-		return nil, err
-	}
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err
 	}
 
-	keys, err := h.svc.ListKeys(r.Context(), caller, target, api.ListKeysParams{
+	keys, err := h.svc.ListKeys(r.Context(), caller, api.ListKeysParams{
 		Limit:  limit,
 		Offset: offset,
 	})
@@ -132,16 +120,12 @@ func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, caller api.Val
 }
 
 func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.IssueKeyResponse, error) {
-	target, err := h.parseOptionalUsernameQuery(r)
-	if err != nil {
-		return nil, err
-	}
 	var req api.KeyIssueRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
 	}
 
-	response, err := h.svc.IssueKey(r.Context(), caller, target, req)
+	response, err := h.svc.IssueKey(r.Context(), caller, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to issue key: %w", err)
 	}
@@ -149,16 +133,12 @@ func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, caller api.Val
 }
 
 func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
-	target, err := h.parseOptionalUsernameQuery(r)
-	if err != nil {
-		return struct{}{}, err
-	}
 	var req api.KeyRevokeRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return struct{}{}, err
 	}
 
-	if err := h.svc.RevokeKey(r.Context(), caller, target, req); err != nil {
+	if err := h.svc.RevokeKey(r.Context(), caller, req); err != nil {
 		return struct{}{}, fmt.Errorf("failed to revoke key: %w", err)
 	}
 	return struct{}{}, nil

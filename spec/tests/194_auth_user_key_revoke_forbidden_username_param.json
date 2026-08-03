@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_key_revoke_forbidden_username_param",
-  "comment": "Only superusers may use the username parameter on POST /user/key/revoke (403 forbidden).",
+  "name": "auth_user_key_revoke_impersonate_unauthorized",
+  "comment": "Only superusers may use the X-Impersonate-User header on POST /user/key/revoke (401 unauthorized).",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -69,12 +69,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=alice",
+        "path": "/user/key",
         "body": "{\"comment\": \"alice\", \"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "alice"
           ]
         ]
       },
@@ -94,19 +98,23 @@
       "config": {},
       "request": {
         "method": "POST",
-        "path": "/user/key/revoke?username=root",
+        "path": "/user/key/revoke",
         "body": "{\"id\":\"alice-key\"}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ],
+          [
+            "X-Impersonate-User",
+            "root"
           ]
         ]
       },
       "response": {
-        "code": 403,
+        "code": 401,
         "body": {
-          "error": "forbidden"
+          "error": "unauthorized"
         }
       }
     }

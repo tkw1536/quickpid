@@ -187,21 +187,9 @@ func (s *Service) ListNamespaceRoles(ctx context.Context, caller api.ValidUserIn
 //
 // It can return the following errors:
 //
-// - [api.UnavailableInAnonymousMode]
-// - [api.Unauthorized]
-// - [api.Forbidden]
-// - [api.UserNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListUserRoles(ctx context.Context, caller api.ValidUserInfo, target *api.ValidUsername, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
-	username, err := resolveTarget(caller, target)
-	if err != nil {
-		return nil, err
-	}
-
-	page, err := s.store.ListUserRoles(ctx, username, params)
-	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, mapped
-	}
+func (s *Service) ListUserRoles(ctx context.Context, caller api.ValidUserInfo, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
+	page, err := s.store.ListUserRoles(ctx, caller.Username, params)
 	if err != nil {
 		return nil, api.WithErrorString(fmt.Errorf("backend failed to list user roles: %w", err), api.DatabaseError)
 	}

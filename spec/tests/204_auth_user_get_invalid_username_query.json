@@ -1,6 +1,6 @@
 {
   "name": "auth_user_get_invalidUsername_query",
-  "comment": "GET /user?username=... with an invalid username returns 400 invalidUsername.",
+  "comment": "GET /user?username=... with an invalid username returns 401 unauthorized.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -38,18 +38,22 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user?username=BADUPPER",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "BADUPPER"
           ]
         ]
       },
       "response": {
-        "code": 400,
+        "code": 401,
         "body": {
-          "error": "invalidUsername"
+          "error": "unauthorized"
         }
       }
     }

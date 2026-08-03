@@ -1,6 +1,6 @@
 {
   "name": "143_roles_namespace_routes_validate_username",
-  "comment": "Invalid usernames in role route paths return 400 invalidUsername for GET, PUT, and DELETE.",
+  "comment": "Invalid usernames in role route paths return 401 unauthorized for GET, PUT, and DELETE.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -69,12 +69,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=owner",
+        "path": "/user/key",
         "body": "{\"comment\": \"owner\",\"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "owner"
           ]
         ]
       },

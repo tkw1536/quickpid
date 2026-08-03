@@ -85,16 +85,12 @@ func (h *Server) deleteNamespaceRole(w http.ResponseWriter, r *http.Request, cal
 }
 
 func (h *Server) listUserRoles(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.PaginatedUserRolesResponse, error) {
-	target, err := h.parseOptionalUsernameQuery(r)
-	if err != nil {
-		return nil, err
-	}
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err
 	}
 
-	roles, err := h.svc.ListUserRoles(r.Context(), user, target, api.ListUserRolesParams{
+	roles, err := h.svc.ListUserRoles(r.Context(), user, api.ListUserRolesParams{
 		Limit:  limit,
 		Offset: offset,
 	})

@@ -69,12 +69,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=alice",
+        "path": "/user/key",
         "body": "{\"comment\": \"expiring\", \"expiresAt\": \"2026-07-06T12:00:00Z\"}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "alice"
           ]
         ]
       },

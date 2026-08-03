@@ -1,6 +1,6 @@
 {
   "name": "auth_user_get_userNotFound",
-  "comment": "A superuser requesting GET /user?username=... for a non-existent user receives 404 userNotFound.",
+  "comment": "A superuser requesting GET /user?username=... for a non-existent user receives 401 unauthorized.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -71,18 +71,22 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user?username=nobody",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "nobody"
           ]
         ]
       },
       "response": {
-        "code": 404,
+        "code": 401,
         "body": {
-          "error": "userNotFound"
+          "error": "unauthorized"
         }
       }
     }

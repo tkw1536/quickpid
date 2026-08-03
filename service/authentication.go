@@ -72,20 +72,15 @@ func (s *Service) AuthenticatePassword(ctx context.Context, username string, pas
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
 func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
-	if s.AnonymousMode() {
-		return api.ValidUserInfo{}, errUnauthorized
-	}
-
 	user, err := s.store.GetUser(ctx, username)
 	if errors.Is(err, backend.ErrUserNotFound) {
 		return api.ValidUserInfo{}, api.WithErrorString(fmt.Errorf("user not found: %w", err), api.UserNotFound)
 	}
 	if err != nil {
-		return api.ValidUserInfo{}, fmt.Errorf("backend failed to get user: %w", err)
+		return api.ValidUserInfo{}, api.WithErrorString(fmt.Errorf("backend failed to get user: %w", err), api.DatabaseError)
 	}
 	info, err := user.Validate()
 	if err != nil {
@@ -94,65 +89,13 @@ func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api
 	return info, nil
 }
 
-// GetUserAccount returns the caller's account or another user's when caller is a superuser.
+// SetUserPassword sets or clears a password for the caller.
 //
 // It can return the following errors:
 //
-// - [api.Forbidden]
-// - [api.UserNotFound]
 // - [api.DatabaseError].
-func (s *Service) GetUserAccount(ctx context.Context, caller api.ValidUserInfo, target *api.ValidUsername) (*api.UserInfo, error) {
-	username, err := resolveTarget(caller, target)
-	if err != nil {
-		return nil, err
-	}
-	user, err := s.store.GetUser(ctx, username)
-	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, mapped
-	}
-	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to get user: %w", err), api.DatabaseError)
-	}
-	return user, nil
-}
-
-// GetUser returns the user account for caller.
-//
-// It can return the following errors:
-//
-// - [api.UserNotFound]
-// - [api.DatabaseError].
-func (s *Service) GetUser(ctx context.Context, caller api.ValidUserInfo) (*api.UserInfo, error) {
-	user, err := s.store.GetUser(ctx, caller.Username)
-	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, mapped
-	}
-	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to get user: %w", err), api.DatabaseError)
-	}
-	return user, nil
-}
-
-// SetUserPassword sets or clears a password for the caller or another user when caller is a superuser.
-//
-// It can return the following errors:
-//
-// - [api.Forbidden]
-// - [api.UserNotFound]
-// - [api.DatabaseError].
-func (s *Service) SetUserPassword(ctx context.Context, caller api.ValidUserInfo, target *api.ValidUsername, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
-	username, err := resolveTarget(caller, target)
-	if err != nil {
-		return nil, err
-	}
-	// it is not permitted to clear your own password (even as a superuser)
-	if username.String() == caller.Username.String() && req.Password == nil {
-		return nil, api.WithErrorString(errForbiddenSelf, api.Forbidden)
-	}
-	hasPassword, err := s.store.SetPassword(ctx, username, req.Password)
-	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, mapped
-	}
+func (s *Service) SetUserPassword(ctx context.Context, caller api.ValidUserInfo, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
+	hasPassword, err := s.store.SetPassword(ctx, caller.Username, req.Password)
 	if err != nil {
 		return nil, api.WithErrorString(fmt.Errorf("backend failed to set password: %w", err), api.DatabaseError)
 	}
@@ -260,7 +203,7 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller api.ValidUserInf
 	return usernames, nil
 }
 
-// ListKeys lists API keys for the caller or another user when caller is a superuser.
+// ListKeys lists API keys for the caller.
 //
 // It can return the following errors:
 //
@@ -268,12 +211,8 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller api.ValidUserInf
 // - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListKeys(ctx context.Context, caller api.ValidUserInfo, target *api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
-	username, err := resolveTarget(caller, target)
-	if err != nil {
-		return nil, err
-	}
-	page, err := s.listValidKeys(ctx, s.apiKeyFormat(), username, params)
+func (s *Service) ListKeys(ctx context.Context, caller api.ValidUserInfo, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+	page, err := s.listValidKeys(ctx, s.apiKeyFormat(), caller.Username, params)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, mapped
 	}
@@ -370,31 +309,18 @@ func (s *Service) listAllKeys(ctx context.Context, format apikey.Format, usernam
 // It can return the following errors:
 //
 // - [api.UnavailableInAnonymousMode]
-// - [api.Forbidden]
 // - [api.InvalidQueryParameter]
-// - [api.UserNotFound]
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
-func (s *Service) IssueKey(ctx context.Context, caller api.ValidUserInfo, target *api.ValidUsername, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
-	username, err := resolveTarget(caller, target)
-	if err != nil {
-		return nil, err
-	}
+func (s *Service) IssueKey(ctx context.Context, caller api.ValidUserInfo, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
 	if req.ExpiresAt != nil {
 		if !req.ExpiresAt.After(s.runtime.Now()) {
 			return nil, api.WithErrorString(errExpiresAtInPast, api.InvalidQueryParameter)
 		}
 	}
 
-	if _, err := s.store.GetUser(ctx, username); err != nil {
-		if mapped, ok := mapAuthBackendError(err); ok {
-			return nil, mapped
-		}
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to get user: %w", err), api.DatabaseError)
-	}
-
-	issued, err := s.issueAPIKey(ctx, username, req)
+	issued, err := s.issueAPIKey(ctx, caller.Username, req)
 	if err != nil {
 		return nil, err
 	}
@@ -444,18 +370,12 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 //
 // It can return the following errors:
 //
-// - [api.Forbidden]
-// - [api.UserNotFound]
 // - [api.KeyNotFound]
 // - [api.DatabaseError].
-func (s *Service) RevokeKey(ctx context.Context, caller api.ValidUserInfo, target *api.ValidUsername, req api.KeyRevokeRequest) error {
-	username, err := resolveTarget(caller, target)
-	if err != nil {
-		return err
-	}
-	err = s.store.RevokeKey(ctx, s.apiKeyFormat(), username, req.ID)
-	if mapped, ok := mapAuthBackendError(err); ok {
-		return mapped
+func (s *Service) RevokeKey(ctx context.Context, caller api.ValidUserInfo, req api.KeyRevokeRequest) error {
+	err := s.store.RevokeKey(ctx, s.apiKeyFormat(), caller.Username, req.ID)
+	if errors.Is(err, backend.ErrKeyNotFound) {
+		return api.WithErrorString(fmt.Errorf("key not found: %w", err), api.KeyNotFound)
 	}
 	if err != nil {
 		return api.WithErrorString(fmt.Errorf("backend failed to revoke key: %w", err), api.DatabaseError)
@@ -488,26 +408,6 @@ func (s *Service) UpdateUser(ctx context.Context, caller api.ValidUserInfo, targ
 		return nil, api.WithErrorString(fmt.Errorf("backend failed to update user: %w", err), api.DatabaseError)
 	}
 	return user, nil
-}
-
-// resolveTarget resolves a "target" username.
-//
-// When the caller is not a superuser, it only permits the caller's own username (or nil, which automatically defaults to the caller's username).
-// Otherwise, it allows the target username.
-//
-// It can return the following errors:
-//
-// - [api.Forbidden].
-func resolveTarget(caller api.ValidUserInfo, target *api.ValidUsername) (api.ValidUsername, error) {
-	// no target, or target === caller
-	if target == nil || target.String() == caller.Username.String() {
-		return caller.Username, nil
-	}
-
-	if !caller.Superuser {
-		return api.ValidUsername{}, api.WithErrorString(errForbidden, api.Forbidden)
-	}
-	return *target, nil
 }
 
 // requireSuperuser reports whether user is a superuser.

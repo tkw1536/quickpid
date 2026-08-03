@@ -92,12 +92,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=servertest",
+        "path": "/user/key",
         "body": "{\"comment\": \"servertest\",\"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "servertest"
           ]
         ]
       },

@@ -1,6 +1,6 @@
 {
   "name": "auth_user_get_superuser_lookup_other",
-  "comment": "A superuser can retrieve another user's account information via GET /user?username=....",
+  "comment": "A superuser can retrieve another user's account information via X-Impersonate-User.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -61,11 +61,15 @@
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user?username=alice",
+        "path": "/user",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "alice"
           ]
         ]
       },

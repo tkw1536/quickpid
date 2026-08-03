@@ -1,6 +1,6 @@
 {
   "name": "115_auth_user_key_post_issue_for_existing_user",
-  "comment": "A superuser can issue an API key for another user via POST /user/key?username=....",
+  "comment": "A superuser can issue an API key for another user via X-Impersonate-User.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -69,12 +69,16 @@
       },
       "request": {
         "method": "POST",
-        "path": "/user/key?username=alice",
+        "path": "/user/key",
         "body": "{\"comment\": \"alice\",\"expiresAt\": null}",
         "headers": [
           [
             "Authorization",
             "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "alice"
           ]
         ]
       },

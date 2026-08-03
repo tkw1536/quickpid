@@ -22,6 +22,16 @@ info:
     - "Authenticated Mode": 
       Both Management and Resolver API are active.
       Users need to authenticate to access specific resolver routes.
+
+    In authenticated mode, clients authenticate with either an API key (Bearer token) or HTTP Basic credentials.
+    Either can be created via appropriate API calls.
+    Sending both at once is not permitted and results in an unauthorized response.
+
+    Superusers may optionally impersonate another user by also sending the `X-Impersonate-User` header with the target username.
+    Impersonation requires successful authentication using the above methods first.
+    Non-superusers, invalid or missing target usernames, and multiple impersonate headers yield an unauthorized response.
+    When impersonating, the request acts as if the appropriate user had authenticated using appropriate credentials.
+    Any request requiring superuser privileges or other permission check requires the impersonated user to pass that check.
   version: 3.0.0
   license:
     name: Creative Commons Attribution-ShareAlike 4.0 International
@@ -47,8 +57,12 @@ servers:
   - url: /api/v2
 
 security:
-  - apiKey: []
-  - basicAuth: []
+  - "API Key": []
+  - "Basic Auth": []
+  - "API Key": []
+    "Impersonate User": []
+  - "Basic Auth": []
+    "Impersonate User": []
 
 paths:
   /resolver:
@@ -928,12 +942,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/NamespaceRole'
         '400':
-          description: Invalid namespace id when retrieving a namespace role.
+          description: Invalid namespace id or username when retrieving a namespace role.
           content:
             application/json:
               example: { error: "invalidNamespaceId" }
               schema:
-                $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorInvalidUsername'
         '401':
           description: Authentication is required or the credentials are incorrect when retrieving a namespace role.
           content:
@@ -949,14 +965,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: Namespace or user do not exist, or the server is in anonymous mode.
+          description: Namespace does not exist when retrieving a role, or the server is in anonymous mode.
           content:
             application/json:
               example: { error: "namespaceNotFound" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
-                  - $ref: '#/components/schemas/ErrorUserNotFound'
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error while retrieving a namespace role.
@@ -1041,7 +1056,6 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
-                  - $ref: '#/components/schemas/ErrorUserNotFound'
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '413':
           description: Request body for setting a namespace role exceeds the configured maximum size.
@@ -1116,7 +1130,6 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorNamespaceNotFound'
-                  - $ref: '#/components/schemas/ErrorUserNotFound'
                   - $ref: '#/components/schemas/ErrorRoleNotFound'
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
@@ -1649,23 +1662,11 @@ paths:
       summary: Return information about a user account.
       operationId: getUserInfo
       description: |
-        Returns information about a user account.
-
-        When not set, the currently authenticated user is returned.
-        The `username` parameter may be used by superusers to retrieve information about another user account, including their own.
+        Returns information about the currently authenticated user account.
 
         In anonymous mode, the route returns HTTP 404.
       tags:
         - user
-      parameters:
-        - name: username
-          in: query
-          required: false
-          description: |
-            When not set, the currently authenticated user is returned.
-            Superusers may set this parameter to retrieve information about another user account, including their own.
-          schema:
-            $ref: '#/components/schemas/Username'
       responses:
         '200':
           description: User information successfully retrieved.
@@ -1674,15 +1675,6 @@ paths:
               example: { username: "alice", superuser: false, password: true }
               schema:
                 $ref: '#/components/schemas/UserInfo'
-        '400':
-          description: Invalid query parameter.
-          content:
-            application/json:
-              example: { error: "invalidQueryParameter" }
-              schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
-                  - $ref: '#/components/schemas/ErrorInvalidUsername'
         '401':
           description: Authentication is required or the credentials are incorrect when retrieving user information.
           content:
@@ -1690,24 +1682,15 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
-        '403':
-          description: Only superusers may set the `username` parameter when retrieving user information.
-          content:
-            application/json:
-              example: { error: "forbidden" }
-              schema:
-                $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The server is in anonymous mode, or the requested user does not exist when retrieving user information.
+          description: The server is in anonymous mode when retrieving user information.
           content:
             application/json:
               example: {
-                error: "userNotFound"
+                error: "unavailableInAnonymousMode"
               }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
-                  - $ref: '#/components/schemas/ErrorUserNotFound'
+                $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error while retrieving user information.
           content:
@@ -1975,7 +1958,7 @@ paths:
 
         In anonymous mode, the route returns HTTP 404.
         In authenticated mode, the caller must be authenticated as a valid user.
-        Unauthenticated callers or callers with invalid credentials receive 401 or 403, respectively.
+        Unauthenticated callers or callers with invalid credentials receive 401.
       tags:
         - user
       parameters:
@@ -2143,24 +2126,13 @@ paths:
       summary: List explicit namespace roles for a user.
       operationId: getUserRoles
       description: |
-        Lists namespaces where the user has an explicit non-none role.
+        Lists namespaces where the currently authenticated user has an explicit non-none role.
         Namespaces without an explicit role record have the default `none` role and are not listed.
-
-        When not set, the currently authenticated user's roles are returned.
-        The `username` parameter may be used by superusers to list roles for another user account, including their own.
 
         In anonymous mode, the route returns HTTP 404.
       tags:
         - roles
       parameters:
-        - name: username
-          in: query
-          required: false
-          description: |
-            When not set, the currently authenticated user's roles are returned.
-            Superusers may set this parameter to list roles for another user account, including their own.
-          schema:
-            $ref: '#/components/schemas/Username'
         - name: limit
           in: query
           required: false
@@ -2193,14 +2165,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedUserRolesResponse'
         '400':
-          description: Invalid query parameter when listing user roles (e.g. limit, offset, or username).
+          description: Invalid query parameter when listing user roles (e.g. limit or offset).
           content:
             application/json:
               example: { error: "invalidQueryParameter" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
-                  - $ref: '#/components/schemas/ErrorInvalidUsername'
+                $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required or the credentials are incorrect when listing user roles.
           content:
@@ -2208,24 +2178,15 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
-        '403':
-          description: Only superusers may set the `username` parameter when listing user roles.
-          content:
-            application/json:
-              example: { error: "forbidden" }
-              schema:
-                $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The server is in anonymous mode, or the requested user does not exist when listing user roles.
+          description: The server is in anonymous mode when listing user roles.
           content:
             application/json:
               example: {
-                error: "userNotFound"
+                error: "unavailableInAnonymousMode"
               }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
-                  - $ref: '#/components/schemas/ErrorUserNotFound'
+                $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error while listing user roles.
           content:
@@ -2239,24 +2200,13 @@ paths:
       summary: List API keys for a user account.
       operationId: listUserKeys
       description: |
-        Returns a paginated list of API keys.
+        Returns a paginated list of API keys for the currently authenticated user.
         The list does not include keys that are no longer valid.
-
-        When not set, the currently authenticated user's keys are returned.
-        The `username` parameter may be used by superusers to list keys for another user account, including their own.
 
         In anonymous mode, the route returns HTTP 404.
       tags:
         - credentials
       parameters:
-        - name: username
-          in: query
-          required: false
-          description: |
-            When not set, the currently authenticated user's keys are returned.
-            Superusers may set this parameter to list keys for another user account, including their own.
-          schema:
-            $ref: '#/components/schemas/Username'
         - name: limit
           in: query
           required: false
@@ -2289,14 +2239,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAPIKeysResponse'
         '400':
-          description: Invalid query parameter when listing API keys (e.g. limit, offset, or username).
+          description: Invalid query parameter when listing API keys (e.g. limit or offset).
           content:
             application/json:
               example: { error: "invalidQueryParameter" }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
-                  - $ref: '#/components/schemas/ErrorInvalidUsername'
+                $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required or the credentials are incorrect when listing API keys.
           content:
@@ -2304,24 +2252,15 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
-        '403':
-          description: Only superusers may set the `username` parameter when listing API keys.
-          content:
-            application/json:
-              example: { error: "forbidden" }
-              schema:
-                $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The server is in anonymous mode, or the requested user does not exist when listing API keys.
+          description: The server is in anonymous mode when listing API keys.
           content:
             application/json:
               example: {
-                error: userNotFound
+                error: "unavailableInAnonymousMode"
               }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
-                  - $ref: '#/components/schemas/ErrorUserNotFound'
+                $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '500':
           description: Internal server error while listing API keys.
           content:
@@ -2334,23 +2273,11 @@ paths:
       summary: Issue a new API key.
       operationId: issueUserKey
       description: |
-        Issues a new API key.
-
-        When not set, a key is issued for the currently authenticated user.
-        The `username` parameter may be used by superusers to issue a key for another user account, including their own.
+        Issues a new API key for the currently authenticated user.
 
         In anonymous mode, the route returns HTTP 404.
       tags:
         - credentials
-      parameters:
-        - name: username
-          in: query
-          required: false
-          description: |
-            When not set, a key is issued for the currently authenticated user.
-            Superusers may set this parameter to issue a key for another user account, including their own.
-          schema:
-            $ref: '#/components/schemas/Username'
       requestBody:
         required: true
         description: |
@@ -2372,7 +2299,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/IssueKeyResponse'
         '400':
-          description: Invalid request body, query parameter, or expiresAt value in the past.
+          description: Invalid request body or expiresAt value in the past when issuing an API key.
           content:
             application/json:
               example: { error: "bodyMissing" }
@@ -2380,7 +2307,6 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
-                  - $ref: '#/components/schemas/ErrorInvalidUsername'
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required or the credentials are incorrect when issuing an API key.
@@ -2389,24 +2315,15 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
-        '403':
-          description: Only superusers may set the `username` parameter when issuing an API key.
-          content:
-            application/json:
-              example: { error: "forbidden" }
-              schema:
-                $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The server is in anonymous mode, or the requested user does not exist when issuing an API key.
+          description: The server is in anonymous mode when issuing an API key.
           content:
             application/json:
               example: {
-                error: "userNotFound"
+                error: "unavailableInAnonymousMode"
               }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
-                  - $ref: '#/components/schemas/ErrorUserNotFound'
+                $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '413':
           description: Request body for issuing an API key exceeds the configured maximum size.
           content:
@@ -2415,39 +2332,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorBodySizeExceeded'
         '500':
-          description: Internal server error while issuing an API key.
+          description: Internal server error or ID generation failure while issuing an API key.
           content:
             application/json:
               example: { error: "databaseError" }
               schema:
-                $ref: '#/components/schemas/ErrorDatabaseError'
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDatabaseError'
+                  - $ref: '#/components/schemas/ErrorBadIDGeneration'
+        '503':
+          description: Could not allocate an API key after repeated attempts.
+          content:
+            application/json:
+              example: { error: "insufficientEntropy" }
+              schema:
+                $ref: '#/components/schemas/ErrorInsufficientEntropy'
 
   /user/password:
     post:
       summary: Set or clear a user password.
       operationId: setUserPassword
       description: |
-        Sets or clears an HTTP basic password for a user account.
-
-        When not set, the currently authenticated user's password is updated.
-        The `username` parameter may be used by superusers to update another user account, including their own.
+        Sets or clears an HTTP basic password for the currently authenticated user account.
 
         Set `password` to a non-empty string to configure a password.
         Set `password` to `null` to clear it.
-        It is forbidden to clear your own password.
 
         In anonymous mode, the route returns HTTP 404.
       tags:
         - credentials
-      parameters:
-        - name: username
-          in: query
-          required: false
-          description: |
-            When not set, the currently authenticated user's password is updated.
-            Superusers may set this parameter to update another user account, including their own.
-          schema:
-            $ref: '#/components/schemas/Username'
       requestBody:
         required: true
         description: |
@@ -2467,7 +2380,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SetPasswordResponse'
         '400':
-          description: Invalid request body, username, or password.
+          description: Invalid request body or password when setting or clearing a password.
           content:
             application/json:
               example: { error: "bodyMissing" }
@@ -2475,7 +2388,6 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
-                  - $ref: '#/components/schemas/ErrorInvalidUsername'
                   - $ref: '#/components/schemas/ErrorInvalidPassword'
         '401':
           description: Authentication is required or the credentials are incorrect when setting or clearing a password.
@@ -2484,24 +2396,15 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
-        '403':
-          description: Only superusers may set the `username` parameter for another user or it is forbidden to clear your own password.
-          content:
-            application/json:
-              example: { error: "forbidden" }
-              schema:
-                $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The server is in anonymous mode, or the requested user does not exist when setting or clearing a password.
+          description: The server is in anonymous mode when setting or clearing a password.
           content:
             application/json:
               example: {
-                error: "userNotFound"
+                error: "unavailableInAnonymousMode"
               }
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
-                  - $ref: '#/components/schemas/ErrorUserNotFound'
+                $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '413':
           description: Request body for setting or clearing a password exceeds the configured maximum size.
           content:
@@ -2522,24 +2425,12 @@ paths:
       summary: Revoke an API key for a user account.
       operationId: revokeUserKey
       description: |
-        Revokes an API key.
-        Revoking an already-revoked key returns a key not found response. 
-
-        When not set, the currently authenticated user's keys are targeted.
-        The `username` parameter may be used by superusers to revoke a key for another user account, including their own.
+        Revokes an API key belonging to the currently authenticated user.
+        Revoking an already-revoked key returns a key not found response.
 
         In anonymous mode, the route returns HTTP 404.
       tags:
         - credentials
-      parameters:
-        - name: username
-          in: query
-          required: false
-          description: |
-            When not set, the currently authenticated user's keys are targeted.
-            Superusers may set this parameter to revoke a key for another user account, including their own.
-          schema:
-            $ref: '#/components/schemas/Username'
       requestBody:
         required: true
         description: |
@@ -2554,7 +2445,7 @@ paths:
         '204':
           description: API key revoked successfully.
         '400':
-          description: Invalid request body or query parameter.
+          description: Invalid request body when revoking an API key.
           content:
             application/json:
               example: { error: "bodyMissing" }
@@ -2562,8 +2453,6 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
-                  - $ref: '#/components/schemas/ErrorInvalidUsername'
-                  - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
         '401':
           description: Authentication is required or the credentials are incorrect when revoking an API key.
           content:
@@ -2571,22 +2460,14 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
-        '403':
-          description: Only superusers may set the `username` parameter when revoking an API key.
-          content:
-            application/json:
-              example: { error: "forbidden" }
-              schema:
-                $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The API key does not exist, has already been revoked, or does not belong to the requested user, the requested user does not exist, or the server is in anonymous mode.
+          description: The API key does not exist, has already been revoked, or does not belong to the authenticated user, or the server is in anonymous mode.
           content:
             application/json:
               example: { error: "keyNotFound" }
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/ErrorKeyNotFound'
-                  - $ref: '#/components/schemas/ErrorUserNotFound'
                   - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
         '413':
           description: Request body for revoking an API key exceeds the configured maximum size.
@@ -2605,19 +2486,28 @@ paths:
 
 components:
   securitySchemes:
-    apiKey:
+    "API Key":
       type: http
       scheme: bearer
       description: |
         API key passed as a bearer token in the Authorization header.
         Required in authenticated mode unless the operation description states otherwise.
-    basicAuth:
+    "Basic Auth":
       type: http
       scheme: basic
       description: |
         Username and password passed via HTTP Basic authentication.
         Required in authenticated mode unless the operation description states otherwise.
         If both bearer and basic credentials are sent, the request is unauthorized.
+    "Impersonate User":
+      type: apiKey
+      in: header
+      name: X-Impersonate-User
+      description: |
+        Username of the account to act as for this request.
+        Requires successful authentication via "API Key" or "Basic Auth" first.
+        Only superusers may set this header; non-superusers, invalid usernames,
+        missing users, and multiple header values yield 401 unauthorized.
 
   schemas:
     ErrorResponse:
@@ -2650,7 +2540,7 @@ components:
             An unspecified internal problem occurred while interacting with the database.
             This may be due to the database being offline, or due to data corruption.
     ErrorBadIDGeneration:
-      description: Error response when generated namespace id or PID values are invalid.
+      description: Error response when a generated namespace id, PID, or API key value is invalid.
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
         - type: object
@@ -2660,10 +2550,10 @@ components:
               enum:
                 - badIdGeneration
           description: |
-            The resolver attempted to generate a namespace id or PID, but this resulted in an invalid value.
+            The resolver attempted to generate a namespace id, PID, or API key, but this resulted in an invalid value.
             This is different from being unable to generate a value due to insufficient entropy.
     ErrorInsufficientEntropy:
-      description: Error response when unique id allocation fails after repeated attempts.
+      description: Error response when unique id or API key allocation fails after repeated attempts.
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'
         - type: object
@@ -2673,8 +2563,8 @@ components:
               enum:
                 - insufficientEntropy
           description: |
-            The resolver attempted to generate a namespace id or PID, but this resulted only in duplicate ids after repeated attempts.
-            This is caused either by insufficient entropy available to the ID generator, or the set of available Namespace IDs or PIDs being exhausted.
+            The resolver attempted to generate a namespace id, PID, or API key, but this resulted only in collisions after repeated attempts.
+            This is caused either by insufficient entropy available to the generator, or the set of available identifiers being exhausted.
     ErrorBodyMissing:
       description: Error response when a required request body is absent.
       allOf:

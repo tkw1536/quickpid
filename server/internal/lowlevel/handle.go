@@ -1,12 +1,13 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words errors slog http time github quickpid server internal credentials
+//spellchecker:words errors slog http strings time github quickpid server internal credentials
 import (
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
@@ -63,8 +64,9 @@ var (
 // It can return errors annotated with:
 //
 // - [api.UnavailableInAnonymousMode] if the endpoint is unavailable in anonymous mode.
-// - [api.Unauthorized] if the authentication credentials are invalid, or authentication is required but not supplied.
-// - [api.DatabaseError] if the user found in the credentials cannot be loaded.
+// - [api.Unauthorized] if the authentication credentials are invalid, authentication is required but not supplied,
+//   or impersonation fails (non-superuser, invalid or missing target, or multiple impersonate headers).
+// - [api.DatabaseError] if the authenticated or impersonated user cannot be loaded for a database reason.
 func (h *Handler) resolverCaller(r *http.Request, scenario scenario) (*api.ValidUserInfo, error) {
 	// if we require auth mode, and we are in anonymous mode
 	// this endpoint is unavailable.
@@ -110,6 +112,53 @@ func (h *Handler) resolverCaller(r *http.Request, scenario scenario) (*api.Valid
 	if err != nil {
 		return nil, api.WithErrorString(fmt.Errorf("failed to load user object: %w", err), api.DatabaseError)
 	}
+
+	return h.resolveImpersonatedUser(r, user)
+}
+
+var (
+	errMultipleImpersonateHeaders = errors.New("multiple impersonate headers")
+	errNotAllowedToImpersonate    = errors.New("only superusers can impersonate other users")
+)
+
+// resolveImpersonatedUser returns the effective caller for a request.
+//
+// When X-Impersonate-User is absent, it returns caller unchanged.
+// When present, only a superuser may impersonate; the impersonated user is loaded and returned.
+//
+// It can return errors annotated with:
+//
+//   - [api.Unauthorized] if multiple impersonate headers are sent, the caller is not a superuser,
+//     the impersonated username is invalid, or the impersonated user does not exist.
+//   - [api.DatabaseError] if loading the impersonated user fails for a reason other than not found.
+func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.ValidUserInfo) (*api.ValidUserInfo, error) {
+	// get the impersonate header, and handle cases of no header and multiple headers.
+	headers := r.Header.Values(api.ImpersonateHeader)
+	switch len(headers) {
+	case 0:
+		return &caller, nil
+	case 1: /* see below */
+	default:
+		return nil, api.WithErrorString(errMultipleImpersonateHeaders, api.Unauthorized)
+	}
+
+	if !caller.Superuser {
+		return nil, api.WithErrorString(errNotAllowedToImpersonate, api.Unauthorized)
+	}
+
+	username, err := api.NewUsername(strings.TrimSpace(headers[0]))
+	if err != nil {
+		return nil, api.WithErrorString(fmt.Errorf("invalid impersonated username: %w", err), api.Unauthorized)
+	}
+
+	user, err := h.auth.LoadUser(r.Context(), username)
+	if err != nil {
+		if code, ok := api.GetErrorString(err); ok && code == api.UserNotFound {
+			return nil, api.WithErrorString(fmt.Errorf("impersonated user not found: %w", err), api.Unauthorized)
+		}
+		return nil, api.WithErrorString(fmt.Errorf("failed to load impersonated user object: %w", err), api.DatabaseError)
+	}
+
 	return &user, nil
 }
 
