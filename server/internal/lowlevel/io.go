@@ -1,13 +1,12 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words context encoding json slog http strings time
+//spellchecker:words context encoding json slog http time
 import (
 	"context"
 	"encoding/json/v2"
 	"log/slog"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -23,55 +22,6 @@ func (h *Handler) writeJSONResponse(w http.ResponseWriter, r *http.Request, stat
 	if err := json.MarshalWrite(w, v); err != nil {
 		h.logInternal(r.Context(), r, slog.LevelError, "error writing json response", slog.Any("error", err))
 	}
-}
-
-// readCredentials reads [credentials] from a request.
-// The request object must not be nil.
-func readCredentials(r *http.Request) credentials {
-	var creds credentials
-
-	for _, auth := range r.Header.Values("Authorization") {
-		switch {
-		case strings.HasPrefix(auth, "Bearer "):
-			token := strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
-			if token == "" || creds.hasBearer() {
-				creds.invalid = true
-				continue
-			}
-			creds.bearerToken = token
-		case strings.HasPrefix(auth, "Basic "):
-			username, password, ok := r.BasicAuth()
-			if !ok || creds.hasBasic() {
-				creds.invalid = true
-				continue
-			}
-			creds.basicUsername = username
-			creds.basicPassword = password
-		default:
-			creds.invalid = true
-		}
-	}
-
-	if creds.hasBearer() && creds.hasBasic() {
-		creds.invalid = true
-	}
-
-	return creds
-}
-
-type credentials struct {
-	bearerToken   string
-	basicUsername string
-	basicPassword string
-	invalid       bool
-}
-
-func (c credentials) hasBearer() bool {
-	return c.bearerToken != ""
-}
-
-func (c credentials) hasBasic() bool {
-	return c.basicUsername != "" || c.basicPassword != ""
 }
 
 // Log writes a structured request log entry.

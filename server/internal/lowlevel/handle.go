@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words errors slog http time github quickpid
+//spellchecker:words errors slog http time github quickpid server internal credentials
 import (
 	"errors"
 	"fmt"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/server/internal/credentials"
 )
 
 func (h *Handler) handle[T any](
@@ -26,7 +27,7 @@ func (h *Handler) handle[T any](
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		user, err := h.resolveAuth(r, s)
+		user, err := h.resolverCaller(r, s)
 		if err != nil {
 			duration := time.Since(start)
 			h.writeHandledError(w, r, duration, err, errors)
@@ -49,12 +50,22 @@ func (h *Handler) handle[T any](
 
 var errUnavailableInAnonymousMode = errors.New("unavailable in anonymous mode")
 
-var errInvalidAuthenticationCredentials = errors.New("invalid authentication credentials")
+var (
+	errInvalidAuthenticationCredentials = errors.New("invalid authentication credentials")
+	errAuthenticationRequired           = errors.New("authentication required")
+)
 
-// resolveAuth resolves the caller according to the given auth configuration.
+// resolverCaller resolves the caller of an API call according to the given scenario.
 //
-// It returns nil values when auth is disabled or optional auth is not supplied.
-func (h *Handler) resolveAuth(r *http.Request, scenario scenario) (*api.ValidUserInfo, error) {
+// It may return nil values when authentication is disabled, optional authentication is not supplied.
+// Otherwise err === nil implies the user information is not nil.
+//
+// It can return errors annotated with:
+//
+// - [api.UnavailableInAnonymousMode] if the endpoint is unavailable in anonymous mode.
+// - [api.Unauthorized] if the authentication credentials are invalid, or authentication is required but not supplied.
+// - [api.DatabaseError] if the user found in the credentials cannot be loaded.
+func (h *Handler) resolverCaller(r *http.Request, scenario scenario) (*api.ValidUserInfo, error) {
 	// if we require auth mode, and we are in anonymous mode
 	// this endpoint is unavailable.
 	if scenario == requiredUser && h.auth.AnonymousMode() {
@@ -66,32 +77,33 @@ func (h *Handler) resolveAuth(r *http.Request, scenario scenario) (*api.ValidUse
 		return nil, nil
 	}
 
-	// read the credentials from the request.
-	creds := readCredentials(r)
-	if creds.invalid {
-		return nil, api.WithErrorString(errInvalidAuthenticationCredentials, api.Unauthorized)
-	}
-	if scenario == optionalUser && !creds.hasBearer() && !creds.hasBasic() {
-		return nil, nil
-	}
-
 	var (
 		username api.ValidUsername
 		err      error
 	)
-	switch {
-	case creds.hasBearer():
-		username, err = h.auth.AuthenticateAPIKey(r.Context(), creds.bearerToken)
+
+	creds := credentials.Parse(r.Header)
+	switch creds.Kind() {
+	case credentials.KindInvalid:
+		return nil, api.WithErrorString(errInvalidAuthenticationCredentials, api.Unauthorized)
+	case credentials.KindEmpty:
+		if scenario != optionalUser {
+			return nil, api.WithErrorString(errAuthenticationRequired, api.Unauthorized)
+		}
+		return nil, nil
+	case credentials.KindBearer:
+		username, err = h.auth.AuthenticateAPIKey(r.Context(), creds.BearerToken())
 		if err != nil {
 			return nil, api.WithErrorString(fmt.Errorf("invalid api key: %w", err), api.Unauthorized)
 		}
-	case creds.hasBasic():
-		username, err = h.auth.AuthenticatePassword(r.Context(), creds.basicUsername, creds.basicPassword)
+	case credentials.KindBasic:
+		basicUsername, basicPassword := creds.BasicAuth()
+		username, err = h.auth.AuthenticatePassword(r.Context(), basicUsername, basicPassword)
 		if err != nil {
 			return nil, api.WithErrorString(fmt.Errorf("invalid username and password: %w", err), api.Unauthorized)
 		}
 	default:
-		return nil, api.WithErrorString(errInvalidAuthenticationCredentials, api.Unauthorized)
+		panic("never reached")
 	}
 
 	user, err := h.auth.LoadUser(r.Context(), username)
