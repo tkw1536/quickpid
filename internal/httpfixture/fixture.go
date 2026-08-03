@@ -3,7 +3,7 @@
 //spellchecker:words httpfixture
 package httpfixture
 
-//spellchecker:words bytes context encoding json errors http httptest slices strconv strings
+//spellchecker:words bytes context encoding json jsontext errors http httptest slices strconv strings
 import (
 	"bytes"
 	"context"

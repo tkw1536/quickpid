@@ -1,7 +1,7 @@
 // Package api holds type definitions for the PID Resolver API.
 package api
 
-//spellchecker:words encoding json http time github quickpid internal strict embed
+//spellchecker:words encoding json errors http time github quickpid internal strict embed
 import (
 	"encoding/json/v2"
 	"errors"

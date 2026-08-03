@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words encoding json errors http strconv github quickpid pkglib errorsx
+//spellchecker:words encoding json jsontext errors http strconv github quickpid pkglib errorsx
 import (
 	"encoding/json/jsontext"
 	"encoding/json/v2"

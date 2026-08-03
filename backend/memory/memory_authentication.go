@@ -123,7 +123,7 @@ func (s *Store) UpdateUser(_ context.Context, username api.ValidUsername, req ap
 		return nil, backend.ErrUserNotFound
 	}
 
-	// update the supseruser flag
+	// update the superuser flag
 	if req.Superuser != nil {
 		oldUser := s.users[usernameString]
 		oldUser.superuser = *req.Superuser

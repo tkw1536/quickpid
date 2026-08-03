@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words crypto rand time github google uuid quickpid internal apikey
+//spellchecker:words crypto rand time uuid github quickpid internal apikey
 import (
 	"crypto/rand"
 	"fmt"
