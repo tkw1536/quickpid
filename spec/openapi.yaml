@@ -1473,9 +1473,9 @@ paths:
         Retrieves a single resource by PID within a namespace.
 
         In anonymous mode, this route is accessible without authentication and without authorization checks.
+        It will always return the full resource object, regardless of the resource's deletion status.
 
         In authenticated mode, non-deleted resources may be read by any user, authenticated or not.
-        Users without the `contributor` role (or being unauthenticated entirely) cannot read non-deleted resources.
 
         Deleted resources require authentication and at least the `editor` role for the namespace, or superuser privileges.
         Such callers receive the full resource object with `deleted: true`.
