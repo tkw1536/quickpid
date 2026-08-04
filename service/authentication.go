@@ -452,15 +452,6 @@ func init() {
 
 // EnsureRootUser ensures that there is a user named "root" in the system.
 // If there is no such user, it creates a new root user with superuser privileges, and generates and logs out an API key.
-//
-// It can return the following errors:
-//
-// - [api.UserNotFound]
-// - [api.BadIDGeneration]
-// - [api.DatabaseError]
-// - [api.InsufficientEntropy]
-//
-// Other failures are returned as plain (unannotated) errors.
 func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error {
 	if s.AnonymousMode() {
 		return nil
@@ -494,6 +485,46 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 	logger.Warn(
 		"created root superuser with bootstrap API key",
 		slog.String("username", rootUsername.String()),
+		slog.String("key", issued.Key),
+	)
+	return nil
+}
+
+var (
+	errCreateSuperUserAnonymousMode = errors.New("cannot create superuser in anonymous mode")
+)
+
+// CreateSuperuser creates a new superuser account with the given username, generates a new api key without expiry, and logs out the key.
+//
+// Other failures are returned as plain (unannotated) errors.
+func (s *Service) CreateSuperuser(ctx context.Context, logger *slog.Logger, username string) error {
+	if s.AnonymousMode() {
+		return errCreateSuperUserAnonymousMode
+	}
+
+	validUsername, err := api.NewUsername(username)
+	if err != nil {
+		return fmt.Errorf("failed to parse username: %w", err)
+	}
+
+	_, err = s.store.CreateUser(ctx, api.ValidUserCreateRequest{
+		Username:  validUsername,
+		Superuser: true,
+	}, s.runtime.Now)
+	if err != nil {
+		return fmt.Errorf("failed to create superuser: %w", err)
+	}
+
+	issued, err := s.issueAPIKey(ctx, validUsername, api.KeyIssueRequest{
+		Comment: "bootstrap",
+	})
+	if err != nil {
+		return fmt.Errorf("failed to issue api key: %w", err)
+	}
+
+	logger.Warn(
+		"created superuser with API key",
+		slog.String("username", validUsername.String()),
 		slog.String("key", issued.Key),
 	)
 	return nil

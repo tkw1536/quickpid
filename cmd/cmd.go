@@ -46,7 +46,8 @@ type mainCmd struct {
 
 	legal bool
 
-	noCreateRoot bool
+	noCreateRoot    bool
+	createSuperUser string
 
 	readHeaderTimeout time.Duration
 	shutdownTimeout   time.Duration
@@ -143,6 +144,14 @@ func (main *mainCmd) run() int {
 		},
 	)
 
+	if main.createSuperUser != "" {
+		if err := svc.CreateSuperUser(context.Background(), main.logger, main.createSuperUser); err != nil {
+			main.logger.Error("failed to create superuser", slog.Any("error", err))
+			return 1
+		}
+		return 0
+	}
+
 	if !main.noCreateRoot {
 		if err := svc.EnsureRootUser(context.Background(), main.logger); err != nil {
 			main.logger.Error("root user bootstrap failed", slog.Any("error", err))
@@ -204,6 +213,7 @@ func (main *mainCmd) parseFlags() {
 	flag.BoolVar(&main.legal, "legal", main.legal, "print license notices and exit")
 
 	flag.BoolVar(&main.noCreateRoot, "no-create-root", main.noCreateRoot, "do not automatically create a root superuser when no accounts exist")
+	flag.StringVar(&main.createSuperUser, "create-superuser", main.createSuperUser, "create a superuser account with the given username, generate a new api key without expiry, and exit")
 
 	flag.DurationVar(&main.readHeaderTimeout, "read-header-timeout", main.readHeaderTimeout, "timeout applied to reading request headers")
 	flag.DurationVar(&main.shutdownTimeout, "shutdown-timeout", main.shutdownTimeout, "timeout applied to backend and HTTP server shutdowns")
