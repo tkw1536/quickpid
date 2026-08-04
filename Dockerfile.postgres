@@ -12,8 +12,8 @@ FROM golang:1.27-rc AS build
 ADD . /app/
 WORKDIR /app/
 
-RUN go mod download && go generate ./...
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /quickpid-postgres ./cmd/quickpid-postgres 
+RUN go mod download && go generate -mod=readonly ./...
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -a -installsuffix cgo -o /quickpid-postgres ./cmd/quickpid-postgres 
 
 # add it into a scratch image
 FROM scratch

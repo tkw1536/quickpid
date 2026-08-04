@@ -14,7 +14,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Download dependencies
-        run: 'go mod -mod=readonly download'
+        run: 'go mod download'
       - name: Run tests
         run: go test -mod=readonly -v ./...
   golangci:
@@ -26,6 +26,6 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Download dependencies
-        run: 'go mod -mod=readonly download'
+        run: 'go mod download'
       - name: Run lint
-        run: go tool -mod=readonly golangci-lint run --concurrency=1 ./...
+        run: go tool golangci-lint run --concurrency=1 ./...
