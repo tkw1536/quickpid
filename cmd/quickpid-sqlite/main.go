@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words flag slog github glebarez sqlite quickpid backend gorm gormstore
+//spellchecker:words errors flag slog github glebarez sqlite quickpid backend gorm gormstore
 import (
 	"cmp"
 	"errors"
