@@ -97,6 +97,9 @@ Examples:
 - update to `go1.27` final & re-enable `staticcheck` linter on CI
 - various other code cleanup
 - add a command line flag to add a root account and exit
+- add specific error codes for limit and offset and remove invalid query parameter
+- consistently name operation ids
+- consider uri too long errors
 
 ## LICENSE
 

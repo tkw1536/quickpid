@@ -10,11 +10,11 @@ import (
 )
 
 func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.NamespaceRole, error) {
-	namespace, err := h.getNamespace(r)
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
-	username, err := h.getUsername(r)
+	username, err := h.readUsernameParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +26,7 @@ func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, user a
 }
 
 func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.PaginatedNamespaceRolesResponse, error) {
-	namespace, err := h.getNamespace(r)
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -47,11 +47,11 @@ func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, user
 }
 
 func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.NamespaceRole, error) {
-	namespace, err := h.getNamespace(r)
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
-	username, err := h.getUsername(r)
+	username, err := h.readUsernameParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -68,12 +68,12 @@ func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, user a
 	return role, nil
 }
 
-func (h *Server) deleteNamespaceRole(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
-	namespace, err := h.getNamespace(r)
+func (h *Server) removeNamespaceRole(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return struct{}{}, err
 	}
-	username, err := h.getUsername(r)
+	username, err := h.readUsernameParam(r)
 	if err != nil {
 		return struct{}{}, err
 	}
@@ -84,7 +84,7 @@ func (h *Server) deleteNamespaceRole(w http.ResponseWriter, r *http.Request, cal
 	return struct{}{}, nil
 }
 
-func (h *Server) listUserRoles(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.PaginatedUserRolesResponse, error) {
+func (h *Server) getUserRoles(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.PaginatedUserRolesResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err

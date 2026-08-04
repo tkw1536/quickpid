@@ -163,6 +163,7 @@ The Docker publish workflow builds and pushes images for all three entrypoints.
   - relevant handlers in `server/`
   - relevant logic in `service/`
   - relevant request/response types in `api/`
+- When editing the documented resolver routes in [`server/server.go`](server/server.go), follow the route-sync guidance in that file's comment block near the route declarations. 
 - Before changing validation or identifiers, inspect the relevant `api.Valid*` type and keep parser, handler, service, and backend behavior consistent with it.
 - Backend changes should preserve the `backend.Store` contract and shared behavior expected by `internal/pidtest`.
 - If you change user-visible API behavior, update code, tests, and spec artifacts together.

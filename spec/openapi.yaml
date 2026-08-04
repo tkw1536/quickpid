@@ -97,7 +97,7 @@ paths:
   /resolver/info:
     get:
       summary: Get meta information about the server.
-      operationId: getServerInfo
+      operationId: getResolverMeta
       description: |
         Returns optional public meta information about this server, such as a human-readable
         comment, an about URL, and the software name and version.
@@ -131,7 +131,6 @@ paths:
         If the authenticated user is a superuser, all namespaces are returned.
       tags:
         - namespaces
-
       parameters:
         - name: tag
           description: |
@@ -209,7 +208,6 @@ paths:
         The authenticated user automatically receives the namespace 'manager' role for the new namespace.
       tags:
         - namespaces
-
       requestBody:
         required: true
         description: |

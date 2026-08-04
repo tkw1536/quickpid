@@ -113,12 +113,12 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, err er
 	return limit, offset, nil
 }
 
-// getNamespace gets the namespace from the request path.
+// readNamespaceParam gets the namespace from the request path.
 //
 // It can return the following errors:
 //
 // - [api.InvalidNamespaceID].
-func (*Server) getNamespace(r *http.Request) (api.ValidNamespaceID, error) {
+func (*Server) readNamespaceParam(r *http.Request) (api.ValidNamespaceID, error) {
 	namespace, err := api.NewNamespaceID(r.PathValue("namespace"))
 	if err != nil {
 		return api.ValidNamespaceID{}, api.WithErrorString(fmt.Errorf("failed to parse namespace id: %w", err), api.InvalidNamespaceID)
@@ -126,12 +126,12 @@ func (*Server) getNamespace(r *http.Request) (api.ValidNamespaceID, error) {
 	return namespace, nil
 }
 
-// getPID gets the pid from the request path.
+// readPidParam gets the pid from the request path.
 //
 // It can return the following errors:
 //
 // - [api.InvalidPID].
-func (*Server) getPID(r *http.Request) (api.ValidPID, error) {
+func (*Server) readPidParam(r *http.Request) (api.ValidPID, error) {
 	pid, err := api.NewPID(r.PathValue("pid"))
 	if err != nil {
 		return api.ValidPID{}, api.WithErrorString(fmt.Errorf("failed to parse pid: %w", err), api.InvalidPID)
@@ -139,12 +139,12 @@ func (*Server) getPID(r *http.Request) (api.ValidPID, error) {
 	return pid, nil
 }
 
-// getUsername gets the username from the request path.
+// readUsernameParam gets the username from the request path.
 //
 // It can return the following errors:
 //
 // - [api.InvalidUsername].
-func (*Server) getUsername(r *http.Request) (api.ValidUsername, error) {
+func (*Server) readUsernameParam(r *http.Request) (api.ValidUsername, error) {
 	username, err := api.NewUsername(r.PathValue("username"))
 	if err != nil {
 		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
@@ -152,60 +152,44 @@ func (*Server) getUsername(r *http.Request) (api.ValidUsername, error) {
 	return username, nil
 }
 
-// getBaseURI gets the base URI from the request path.
+// readBaseURIParam gets the base URI from the request path.
 //
 // It can return the following errors:
 //
 // - [api.InvalidBaseURI].
-func (*Server) getBaseURI(r *http.Request) (api.ValidBaseURI, error) {
-	baseURI, err := api.NewBaseURI(r.PathValue("base_uri"))
+func (*Server) readBaseURIParam(r *http.Request) (api.ValidBaseURI, error) {
+	baseURI, err := api.NewBaseURI(r.PathValue("baseUri"))
 	if err != nil {
 		return api.ValidBaseURI{}, api.WithErrorString(fmt.Errorf("failed to parse base uri: %w", err), api.InvalidBaseURI)
 	}
 	return baseURI, nil
 }
 
-// parseOptionalUsernameQuery parses an optional username query parameter.
-//
-// It can return the following errors:
-//
-// - [api.InvalidUsername].
-func (*Server) parseOptionalUsernameQuery(r *http.Request) (*api.ValidUsername, error) {
-	query := r.URL.Query()
-	if !query.Has("username") {
-		return nil, nil
-	}
-	username, err := api.NewUsername(query.Get("username"))
-	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
-	}
-	return &username, nil
-}
-
-// parseRequiredUsernameQuery parses a required username query parameter.
+// readRequiredUsernameFromQuery parses a required username query parameter.
 //
 // It can return the following errors:
 //
 // - [api.InvalidQueryParameter]
 // - [api.InvalidUsername].
-func (s *Server) parseRequiredUsernameQuery(r *http.Request) (api.ValidUsername, error) {
-	username, err := s.parseOptionalUsernameQuery(r)
-	if err != nil {
-		return api.ValidUsername{}, err
-	}
-	if username == nil {
+func (s *Server) readRequiredUsernameFromQuery(r *http.Request) (api.ValidUsername, error) {
+	query := r.URL.Query()
+	if !query.Has("username") {
 		return api.ValidUsername{}, api.WithErrorString(errMissingUsernameQuery, api.InvalidQueryParameter)
 	}
-	return *username, nil
+	username, err := api.NewUsername(r.URL.Query().Get("username"))
+	if err != nil {
+		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
+	}
+	return username, nil
 }
 
-// parseRequiredAutocompleteQuery parses a required query query parameter.
+// readRequiredAutocompleteFromQuery parses a required query query parameter.
 //
 // It can return the following errors:
 //
 // - [api.InvalidQueryParameter]
 // - [api.InvalidAutocompleteQuery].
-func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (api.ValidAutocompleteQuery, error) {
+func (*Server) readRequiredAutocompleteFromQuery(r *http.Request) (api.ValidAutocompleteQuery, error) {
 	// HACK: The query itself isn't really a username
 	// but we use it because it's guaranteed to be the same format.
 
@@ -220,12 +204,12 @@ func (*Server) parseRequiredAutocompleteQuery(r *http.Request) (api.ValidAutocom
 	return query, nil
 }
 
-// parseOptionalBooleanQuery parses an optional boolean query parameter.
+// readOptionalBooleanFromQuery parses an optional boolean query parameter.
 //
 // It can return the following errors:
 //
 // - [api.InvalidQueryParameter].
-func (*Server) parseOptionalBooleanQuery(r *http.Request, name string) (*bool, error) {
+func (*Server) readOptionalBooleanFromQuery(r *http.Request, name string) (*bool, error) {
 	query := r.URL.Query()
 	if !query.Has(name) {
 		return nil, nil

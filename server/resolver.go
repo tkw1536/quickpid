@@ -48,8 +48,8 @@ func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, user *ap
 	return namespaces, nil
 }
 
-func (h *Server) getNamespaceDetail(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.NamespaceResponse, error) {
-	namespace, err := h.getNamespace(r)
+func (h *Server) getNamespace(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.NamespaceResponse, error) {
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, user *a
 }
 
 func (h *Server) listResources(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedResourcesResponse, error) {
-	namespace, err := h.getNamespace(r)
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (h *Server) createResource(w http.ResponseWriter, r *http.Request, user *ap
 		return nil, err
 	}
 
-	namespace, err := h.getNamespace(r)
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -137,13 +137,13 @@ func (h *Server) createResource(w http.ResponseWriter, r *http.Request, user *ap
 	return resource, nil
 }
 
-func (h *Server) batchCreateResources(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) ([]api.ResourceResponse, error) {
+func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) ([]api.ResourceResponse, error) {
 	var reqs []api.ResourceCreateRequest
 	if err := h.decodeJSON(w, r, &reqs); err != nil {
 		return nil, err
 	}
 
-	namespace, err := h.getNamespace(r)
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -156,11 +156,11 @@ func (h *Server) batchCreateResources(w http.ResponseWriter, r *http.Request, us
 }
 
 func (h *Server) getResource(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (api.ResourceGetResult, error) {
-	namespace, err := h.getNamespace(r)
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
-	resourcePID, err := h.getPID(r)
+	resourcePID, err := h.readPidParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -177,12 +177,12 @@ func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, user *ap
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
 	}
-	namespace, err := h.getNamespace(r)
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
 
-	resourcePID, err := h.getPID(r)
+	resourcePID, err := h.readPidParam(r)
 	if err != nil {
 		return nil, err
 	}

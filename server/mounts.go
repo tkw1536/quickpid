@@ -9,8 +9,8 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) getMount(w http.ResponseWriter, r *http.Request) (*api.MountResponse, error) {
-	baseURI, err := h.getBaseURI(r)
+func (h *Server) resolveMountByBaseUri(w http.ResponseWriter, r *http.Request) (*api.MountResponse, error) {
+	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -21,12 +21,12 @@ func (h *Server) getMount(w http.ResponseWriter, r *http.Request) (*api.MountRes
 	return mount, nil
 }
 
-func (h *Server) resolveMountedResource(w http.ResponseWriter, r *http.Request, caller *api.ValidUserInfo) (api.ResourceGetResult, error) {
-	baseURI, err := h.getBaseURI(r)
+func (h *Server) resolveResourceByMountAndPID(w http.ResponseWriter, r *http.Request, caller *api.ValidUserInfo) (api.ResourceGetResult, error) {
+	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return nil, err
 	}
-	resourcePID, err := h.getPID(r)
+	resourcePID, err := h.readPidParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (h *Server) listMounts(w http.ResponseWriter, r *http.Request, user *api.Va
 }
 
 func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedBaseURIResponse, error) {
-	namespace, err := h.getNamespace(r)
+	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +86,8 @@ func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, use
 	return mounts, nil
 }
 
-func (h *Server) setMount(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.MountResponse, error) {
-	baseURI, err := h.getBaseURI(r)
+func (h *Server) upsertNamespaceMount(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.MountResponse, error) {
+	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +109,8 @@ func (h *Server) setMount(w http.ResponseWriter, r *http.Request, user *api.Vali
 	return mount, nil
 }
 
-func (h *Server) deleteMount(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
-	baseURI, err := h.getBaseURI(r)
+func (h *Server) deleteNamespaceMount(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
+	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return struct{}{}, err
 	}

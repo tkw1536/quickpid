@@ -9,7 +9,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) getCurrentUserHTTP(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.UserInfo, error) {
+func (h *Server) getUserInfo(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.UserInfo, error) {
 	return &api.UserInfo{
 		Username:  caller.Username.String(),
 		Superuser: caller.Superuser,
@@ -36,7 +36,7 @@ func (h *Server) createUser(w http.ResponseWriter, r *http.Request, caller api.V
 }
 
 func (h *Server) deleteUser(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
-	target, err := h.parseRequiredUsernameQuery(r)
+	target, err := h.readRequiredUsernameFromQuery(r)
 	if err != nil {
 		return struct{}{}, err
 	}
@@ -66,11 +66,11 @@ func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, caller 
 }
 
 func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.PaginatedUsersResponse, error) {
-	superuser, err := h.parseOptionalBooleanQuery(r, "superuser")
+	superuser, err := h.readOptionalBooleanFromQuery(r, "superuser")
 	if err != nil {
 		return nil, err
 	}
-	password, err := h.parseOptionalBooleanQuery(r, "password")
+	password, err := h.readOptionalBooleanFromQuery(r, "password")
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, caller api.Va
 }
 
 func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) ([]string, error) {
-	query, err := h.parseRequiredAutocompleteQuery(r)
+	query, err := h.readRequiredAutocompleteFromQuery(r)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, calle
 	return usernames, nil
 }
 
-func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.PaginatedAPIKeysResponse, error) {
+func (h *Server) listUserKeys(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.PaginatedAPIKeysResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (h *Server) listKeys(w http.ResponseWriter, r *http.Request, caller api.Val
 	return keys, nil
 }
 
-func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.IssueKeyResponse, error) {
+func (h *Server) issueUserKey(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.IssueKeyResponse, error) {
 	var req api.KeyIssueRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func (h *Server) issueKey(w http.ResponseWriter, r *http.Request, caller api.Val
 	return response, nil
 }
 
-func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
+func (h *Server) revokeUserKey(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
 	var req api.KeyRevokeRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return struct{}{}, err
@@ -144,8 +144,8 @@ func (h *Server) revokeKey(w http.ResponseWriter, r *http.Request, caller api.Va
 	return struct{}{}, nil
 }
 
-func (h *Server) updateCurrentUser(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.UserInfo, error) {
-	target, err := h.parseRequiredUsernameQuery(r)
+func (h *Server) updateUser(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.UserInfo, error) {
+	target, err := h.readRequiredUsernameFromQuery(r)
 	if err != nil {
 		return nil, err
 	}
