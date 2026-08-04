@@ -145,7 +145,7 @@ func (main *mainCmd) run() int {
 	)
 
 	if main.createSuperUser != "" {
-		if err := svc.CreateSuperUser(context.Background(), main.logger, main.createSuperUser); err != nil {
+		if err := svc.CreateSuperuser(context.Background(), main.logger, main.createSuperUser); err != nil {
 			main.logger.Error("failed to create superuser", slog.Any("error", err))
 			return 1
 		}

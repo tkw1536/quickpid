@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words errors flag slog github glebarez sqlite quickpid backend gorm gormstore
+//spellchecker:words errors flag slog github glebarez sqlite quickpid backend gorm gormstore internal gormflag logger Logger
 import (
 	"cmp"
 	"errors"
@@ -14,7 +14,9 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 	gormstore "github.com/tkw1536/quickpid/backend/gorm"
 	"github.com/tkw1536/quickpid/cmd"
+	"github.com/tkw1536/quickpid/cmd/internal/gormflag"
 	"gorm.io/gorm"
+	gormLogger "gorm.io/gorm/logger"
 )
 
 var errForeignKeysNotEnabled = errors.New("SQlite foreign keys are not enabled. You have to enable them via '?_pragma=foreign_keys(1)' in the connection DSN")
@@ -25,7 +27,11 @@ func main() {
 		func(logger *slog.Logger) error {
 			logger.Info("opening database", "dsn", sqliteDSN)
 			var err error
-			db, err = gorm.Open(sqlite.Open(sqliteDSN), &gorm.Config{})
+			db, err = gorm.Open(sqlite.Open(sqliteDSN), &gorm.Config{
+				Logger: gormLogger.NewSlogLogger(logger, gormLogger.Config{
+					LogLevel: gormLogLevel.Level(),
+				}),
+			})
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
@@ -50,11 +56,13 @@ func main() {
 }
 
 var (
-	sqliteDSN          string = cmp.Or(os.Getenv("DSN"), "quickpid.db?_pragma=foreign_keys(1)")
-	disableAutoMigrate bool   = false
+	sqliteDSN          string            = cmp.Or(os.Getenv("DSN"), "quickpid.db?_pragma=foreign_keys(1)")
+	disableAutoMigrate bool              = false
+	gormLogLevel       gormflag.LogLevel = gormflag.DefaultLogLevel
 )
 
 func init() {
 	flag.StringVar(&sqliteDSN, "dsn", sqliteDSN, "SQLite database connection string (can also be set via DSN environment variable). You have to enable foreign keys via ?_pragma=foreign_keys(1) in the DSN for this to work properly.")
 	flag.BoolVar(&disableAutoMigrate, "disable-auto-migrate", disableAutoMigrate, "disable automatic database migration")
+	flag.Var(&gormLogLevel, "gorm-log-level", gormflag.FlagUsage)
 }
