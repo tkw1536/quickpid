@@ -13,8 +13,10 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+      - name: Download dependencies
+        run: 'go mod -mod=readonly download'
       - name: Run tests
-        run: go test -v ./...
+        run: go test -mod=readonly -v ./...
   golangci:
     name: lint
     runs-on: ubuntu-latest
@@ -23,5 +25,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+      - name: Download dependencies
+        run: 'go mod -mod=readonly download'
       - name: Run lint
-        run: go tool golangci-lint run ./...
+        run: go tool -mod=readonly golangci-lint run --concurrency=1 ./...
