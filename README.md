@@ -92,8 +92,9 @@ Examples:
 -->
 
 ## Future Technical Work
-
+<!-- spellchecker:word staticcheck -->
 - [vacuum](https://github.com/daveshanley/vacuum) on CI for validation
+- update to `go1.27` final & re-enable `staticcheck` linter on CI
 - various other code cleanup
 
 ## LICENSE
