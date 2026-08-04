@@ -96,6 +96,7 @@ Examples:
 - [vacuum](https://github.com/daveshanley/vacuum) on CI for validation
 - update to `go1.27` final & re-enable `staticcheck` linter on CI
 - various other code cleanup
+- add a command line flag to add a root account and exit
 
 ## LICENSE
 
