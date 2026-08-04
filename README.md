@@ -94,6 +94,8 @@ Examples:
 ## Future Technical Work
 <!-- spellchecker:word staticcheck -->
 - update to `go1.27` final & re-enable `staticcheck` linter on CI
+- various other code cleanup
+- consistently name operation ids
 
 ## LICENSE
 
