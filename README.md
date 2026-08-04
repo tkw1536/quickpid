@@ -65,8 +65,8 @@ The following tools & CI are used in the project:
   Invoked automatically with `go generate ./...`
 - [vacuum](https://github.com/daveshanley/vacuum)
   To check the openapi spec.
-  Not yet invoked on CI.
-
+  Run with `vacuum lint ./spec/openapi.yaml --details --no-clip`.
+  
 <!--
 ## Docker images
 

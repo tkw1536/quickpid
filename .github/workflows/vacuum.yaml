@@ -1,0 +1,11 @@
+name: Vacuum
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install vacuum
+        run: npm install -g @quobix/vacuum@0.30.0
+      - name: Run vacuum linter
+        run: vacuum lint ./spec/openapi.yaml --details --no-clip
