@@ -81,6 +81,16 @@ func Migrate(db *gorm.DB) error {
 	return nil
 }
 
+// SQLiteForeignKeysEnabled reports whether foreign key enforcement is enabled
+// on the given SQLite database connection.
+func SQLiteForeignKeysEnabled(db *gorm.DB) (bool, error) {
+	var foreignKeys int
+	if err := db.Raw("PRAGMA foreign_keys").Scan(&foreignKeys).Error; err != nil {
+		return false, fmt.Errorf("failed to run sqlite foreign keys pragma query: %w", err)
+	}
+	return foreignKeys != 0, nil
+}
+
 var (
 	errNamespaceNotFound = backend.ErrNamespaceNotFound
 	errUserNotFound      = backend.ErrUserNotFound
