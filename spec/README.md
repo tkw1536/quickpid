@@ -3,10 +3,6 @@
 > [!WARNING]
 > See [the main README](../README.md) for a generic introduction to what a PID is and why it is needed.
 
-> [!WARNING]
-> This document is a work in progress and not yet completed.
-
-
 
 ![Architectural Sketch Of The PID system](pid_arch.svg "The PID System Architecture")
 
@@ -66,9 +62,10 @@ Continuing, this document first discusses the pure Resolver API, and then moves 
 
 ### Resolver API
 
-The Resolver API talks about two kinds of objects:
-- **Namespaces**, which hold a set of Resources, and
-- **Resources**, which represent a PID along with the associated metadata.
+The Resolver API talks about three kinds of objects:
+- **Namespaces**, which hold a set of Resources;
+- **Resources**, which represent a PID along with the associated metadata; and
+- **Mounts**, which map an absolute base URI to a namespace.
 
 #### Creation, Updates & Deletion
 
@@ -102,24 +99,93 @@ Resources hold a `tags` array used for filtering.
 The array may be empty.
 Resource tags can be updated.
 
+The API implements soft deletion - resource can be hidden from public view with a `deleted` flag. 
+Soft-deleted resources remain addressable by namespace and PID.
+In anonymous mode, retrieval always returns the full resource object, including when `deleted` is true.
+In authenticated mode, callers with at least the `editor` role (or superusers) receive the full deleted resource;
+other callers receive HTTP 410 with a redacted object that retains only the PID, timestamps, and `deleted: true`.
+
 #### Listing and Retrieval
 
-Given the ID of a namespace the API can return information about the namespace (`GET /resolver/namespaces/{namespace}`; same JSON shape as each entry when listing namespaces).
+Given the ID of a namespace the API can return information about the namespace.
 Given the PID of a resource along with a namespace, the API can return the current metadata for the associated resource.
 
 The API also has functionalities for listing all namespaces, and all resources inside a namespace.
-A dedicated endpoint returns the total number of resources (issued PIDs) across all namespaces, including soft-deleted resources (`GET /resolver/resources/count`).
+A dedicated endpoint returns the total number of resources (issued PIDs) across all namespaces, including soft-deleted resources.
 List responses are always paginated and take appropriate query parameters.
 Objects are always returned in ascending order by ID.
 
 Namespaces can be filtered by their tag (exact match).
 Resources can be filtered by tag membership (the resource includes the given tag) and by deletion status.
 
-TODO: document namespace mounts (`/resolver/mounts/{baseUri}`).
+#### Namespace Mounts
+
+By default namespaces receive machine-generated IDs.
+These are nice for the system to deal with, but ugly for humans.
+A mount is a unidirectional mapping from an absolute base URI to a namespace id.
+At most one namespace may be mapped from a given base URI; multiple base URIs may map to the same namespace.
+Base URIs must be absolute (non-empty scheme) and must not include a query or fragment.
+When used as a path parameter, the URI is percent-encoded as a single path segment.
+
+Given a base URI, the API can resolve the mounted namespace.
+Given a base URI and a PID, the API can redirect to the actual resource.
+
+Resolving a mount by base URI never requires authentication.
+Resolving a resource via mount follows the same visibility rules as retrieving a resource by namespace and PID
+(who receives a full resource versus a redacted deleted-resource view).
+The mount route always responds with HTTP 302 and a `Location` header (body may be full or redacted);
+the namespace resource route uses HTTP 200 for a full resource and HTTP 410 for a redacted deleted resource.
+In authenticated mode, creating, replacing, deleting, and listing all mounts requires a superuser; listing mounts for a namespace requires at least the contributor role.
 
 ### Management API
 
-(to be documented)
+The Management API is only available in authenticated mode.
+It covers user accounts, credentials, and per-namespace roles.
+
+#### Authentication
+
+Clients authenticate with either an API key (`Authorization: Bearer <api-key>`) or HTTP Basic credentials.
+Sending multiple authentication methods in a single request is an error.
+
+The API provides a concept of user accounts.
+Users may set their own password (for HTTP basic auth).
+They may also issue and revoke their own API keys.
+Each API key has the same permission level as the user itself.
+
+A user account may be marked as a **superuser**.
+Superusers bypass role checks and may manage global mounts as well as other user accounts.
+Only superusers may create new user accounts.
+
+Superusers may optionally impersonate other user by sending the `X-Impersonate-User` header with the target username.
+Impersonation requires successful authentication first; the request then acts as the impersonated user for all permission checks.
+
+#### Namespace Roles
+
+In authenticated mode, access to most resolver operations is controlled by a per-namespace role.
+
+There are four namespace roles:
+- `none` (only public actions; the default role)
+- `contributor` (can add new resources)
+- `editor` (`contributor` + can edit existing resources)
+- `manager` (`editor` + can manage permissions for other users)
+
+The default role is `none` (no explicit assignment).
+Creating a namespace automatically grants the creator the `manager` role for it.
+The `none` role cannot be assigned explicitly; removing a role returns a user to `none`.
+
+| Capability                            | `none` | `contributor` | `editor` | `manager` |
+|---------------------------------------|--------|---------------|----------|-----------|
+| Read non-deleted resource by PID      | yes    | yes           | yes      | yes       |
+| Create resources                      | no     | yes           | yes      | yes       |
+| Read namespace / list its mounts      | no     | yes           | yes      | yes       |
+| Read complete deleted resource by PID | no     | no            | yes      | yes       |
+| List / update resources               | no     | no            | yes      | yes       |
+| Manage namespace roles                | no     | no            | no       | yes       |
+
+In authenticated mode, reading a non-deleted resource by PID requires authentication (`401` if credentials are missing or invalid).
+The `yes` values under `none` in the table above mean an authenticated user with the default `none` role may perform that action; they do not mean the action is available to unauthenticated callers.
+
+Superusers implicitly receive the `manager` role for every namespace.
 
 ## Test cases
 

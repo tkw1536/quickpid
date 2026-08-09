@@ -9,17 +9,16 @@ info:
     Implementations should also validate objects passed, and return appropriate error codes when they do not match.
 
     The API roughly splits into a `Resolver API` and a `Management API`.
-    The Resolver API is responsible for creating PIDs, whereas the management API is responsible for authentication and authorization. 
+    The Resolver API is responsible for creating PIDs, whereas the management API is responsible for authentication and authorization.
     Routes in the Resolver API are found in the `quickpid`, `namespaces`, `resources` and `mounts` tags below.
     Routes in the Management API are found in the `user`, `roles` and `credentials` tags below.
 
     In principle, the API can be run in one of two modes:
 
-    - "Anonymous Mode": 
-      The Management API is disabled, and no authentication for any API routes is required.
-      This corresponds to just running the Resolver API in the architecture sketch above.
-      
-    - "Authenticated Mode": 
+    - "Anonymous Mode":
+      The Management API is disabled (those routes return unavailable), and resolver routes do not require authentication or authorization checks.
+
+    - "Authenticated Mode":
       Both Management and Resolver API are active.
       Users need to authenticate to access specific resolver routes.
 
@@ -32,14 +31,14 @@ info:
     Non-superusers, invalid or missing target usernames, and multiple impersonate headers yield an unauthorized response.
     When impersonating, the request acts as if the appropriate user had authenticated using appropriate credentials.
     Any request requiring superuser privileges or other permission check requires the impersonated user to pass that check.
-  version: 3.0.0
+  version: 2.0.0
   license:
     name: Creative Commons Attribution-ShareAlike 4.0 International
     url: https://creativecommons.org/licenses/by-sa/4.0/
 
 tags:
   - name: quickpid
-    description: Generic API server information. 
+    description: Generic API server information.
   - name: namespaces
     description: Operations related to namespaces.
   - name: resources
@@ -49,7 +48,7 @@ tags:
   - name: user
     description: Operations related to user accounts.
   - name: credentials
-    description: Operations related to credentials 
+    description: Operations related to credentials.
   - name: roles
     description: Operations related to per-namespace roles.
 
@@ -57,6 +56,7 @@ servers:
   - url: /api/v2
 
 security:
+  - {}
   - "API Key": []
   - "Basic Auth": []
   - "API Key": []
@@ -74,8 +74,8 @@ paths:
         An implementation MAY refuse to expose any information, in which case a 404 response is expected.
 
         The endpoint (if enabled) crucially also returns if the server requires authentication or if it is in anonymous mode.
-        In anonymous mode, no authentication is required for any of the other endpoints, and no authorization checks are performed.
-        This is intended for use cases where the API runs behind a separate system which handles authentication and authorization on it's own.
+        In anonymous mode, resolver routes do not require authentication or authorization checks, while management routes are unavailable.
+        This is intended for use cases where the API runs behind a separate system which handles authentication and authorization on its own.
       security: []
       tags:
         - quickpid
@@ -84,7 +84,7 @@ paths:
           description: Limits successfully retrieved.
           content:
             application/json:
-              example: { maxBodyBytes: 1048576, defaultPageLimit: 50, maxPageLimit: 200, maxBatchItems: 100, authentication: true, maxAutocompleteUsers: 10 }
+              example: { maxBodyBytes: 1048576, defaultPageLimit: 100, maxPageLimit: 1000, maxBatchItems: 100, authentication: true, maxAutocompleteUsers: 10 }
               schema:
                 $ref: '#/components/schemas/InfoResponse'
         '404':
@@ -112,7 +112,7 @@ paths:
           description: Meta information successfully retrieved.
           content:
             application/json:
-              example: { about: "https://quickpid.example/about", comment: "Public resolver for example data", software: "quickpid", version: "3.0.0" }
+              example: { about: "https://quickpid.example/about", comment: "Public resolver for example data", software: "quickpid", version: "2.0.0" }
               schema:
                 $ref: '#/components/schemas/MetaResponse'
 
@@ -171,7 +171,7 @@ paths:
             A paginated list of namespaces, sorted by their id in increasing order.
           content:
             application/json:
-              example: { total: 1, offset: 0, items: [ { id: "ns_123", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z" } ] }
+              example: { total: 1, offset: 0, items: [ { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z" } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedNamespacesResponse'
         '400':
@@ -224,7 +224,7 @@ paths:
           description: Namespace created successfully.
           content:
             application/json:
-              example: { id: "ns_123", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z" }
+              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z" }
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
@@ -337,7 +337,7 @@ paths:
             A paginated list of mounts, sorted by namespace id then base URI in increasing order.
           content:
             application/json:
-              example: { total: 1, offset: 0, items: [ { baseUri: "https://example.org/base/", namespace: "ns_123" } ] }
+              example: { total: 1, offset: 0, items: [ { baseUri: "https://example.org/base/", namespace: "bafac567-6170-4df2-8c45-17797eb43c88" } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedMountsResponse'
         '400':
@@ -396,7 +396,7 @@ paths:
           description: Mount found.
           content:
             application/json:
-              example: { baseUri: "https://example.org/base/", namespace: "ns_123" }
+              example: { baseUri: "https://example.org/base/", namespace: "bafac567-6170-4df2-8c45-17797eb43c88" }
               schema:
                 $ref: '#/components/schemas/Mount'
         '400':
@@ -447,7 +447,7 @@ paths:
         description: The id of the namespace to mount.
         content:
           application/json:
-            example: { namespace: "ns_123" }
+            example: { namespace: "bafac567-6170-4df2-8c45-17797eb43c88" }
             schema:
               $ref: '#/components/schemas/MountUpsertRequest'
       responses:
@@ -455,7 +455,7 @@ paths:
           description: Mount created or replaced.
           content:
             application/json:
-              example: { baseUri: "https://example.org/base/", namespace: "ns_123" }
+              example: { baseUri: "https://example.org/base/", namespace: "bafac567-6170-4df2-8c45-17797eb43c88" }
               schema:
                 $ref: '#/components/schemas/Mount'
         '400':
@@ -574,18 +574,20 @@ paths:
         The `baseUri` path parameter must be a single path segment containing a percent-encoded absolute URI
         (for example, encode `https://example.com/prefix/` as `https%3A%2F%2Fexample.com%2Fprefix%2F`).
 
-        On success, this endpoint returns HTTP 302 with a `Location` header pointing to
-        `/resolver/namespaces/{namespace}/resources/{pid}`.
+        On success, this endpoint always returns HTTP 302 with a `Location` header pointing to
+        `/resolver/namespaces/{namespace}/resources/{pid}`, and a JSON body that is either the full
+        resource or a redacted deleted-resource view. Unlike `GET /resolver/namespaces/{namespace}/resources/{pid}`,
+        this route never returns 410; redacted deleted resources are still delivered as 302.
 
         In anonymous mode, this route is accessible without authentication and without authorization checks.
 
-        In authenticated mode, it applies the same resource visibility rules as
-        `GET /resolver/namespaces/{namespace}/resources/{pid}`:
+        In authenticated mode, resource visibility (who receives the full object versus a redacted body)
+        matches `GET /resolver/namespaces/{namespace}/resources/{pid}`:
 
-        - Non-deleted resources resolve for any caller, authenticated or not.
-        - Deleted resources also resolve for callers who can only see the redacted/censored form.
-        - Deleted resources require valid credentials if credentials are supplied, and may return `401`
-          when the supplied credentials are invalid.
+        - Non-deleted resources require authentication; any authenticated caller may resolve them.
+        - Missing or invalid credentials yield `401`.
+        - Deleted resources: callers with at least the `editor` role or superuser privileges receive the full object;
+          other callers (including unauthenticated) receive a redacted body, still with status 302.
 
         If the mount, namespace, or resource does not exist, a 404 response is returned.
       tags:
@@ -608,7 +610,9 @@ paths:
             $ref: '#/components/schemas/PID'
       responses:
         '302':
-          description: Resource resolved successfully.
+          description: |
+            Resource resolved successfully via mount.
+            Status is always 302; the body is the full resource or a redacted deleted-resource view.
           headers:
             Location:
               description: Relative resolver path for the resolved namespace resource.
@@ -631,7 +635,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorInvalidBaseUri'
                   - $ref: '#/components/schemas/ErrorInvalidPID'
         '401':
-          description: Authentication is required or the supplied credentials are incorrect.
+          description: Authentication is required or the supplied credentials are incorrect when resolving via mount and PID.
           content:
             application/json:
               example: { error: "unauthorized" }
@@ -664,7 +668,7 @@ paths:
 
         In anonymous mode, this route is accessible without authentication.
 
-        In authenticated mode, API-key authentication is required.
+        In authenticated mode, authentication is required.
         Only namespaces the current user has access to can be accessed.
         This is defined by having a role that is not "none" for a namespace.
         If the authenticated user is a superuser, all namespaces can be accessed.
@@ -686,7 +690,7 @@ paths:
           description: Namespace found.
           content:
             application/json:
-              example: { id: "ns_123", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z" }
+              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z" }
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
@@ -818,11 +822,18 @@ paths:
     get:
       summary: List explicit namespace roles.
       operationId: listNamespaceRoles
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Lists users who have an explicit non-none role in the namespace.
         Users without an explicit role record have the default `none` role and are not listed.
 
-        In anonymous mode, the route returns a http 404. 
+        In anonymous mode, the route returns HTTP 404.
         In authenticated mode, this requires the calling user to have the manager role for the namespace, or be a superuser.
       tags:
         - roles
@@ -908,6 +919,13 @@ paths:
     get:
       summary: Get a user's role in a namespace.
       operationId: getNamespaceRole
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Retrieves the role of a specific user in a namespace.
         If no explicit role record exists, the response returns `role: none`.
@@ -982,6 +1000,13 @@ paths:
     put:
       summary: Set a user's role in a namespace.
       operationId: setNamespaceRole
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Sets the role of a specific user in a namespace.
         The `none` role cannot be set via this endpoint; use DELETE to remove an explicit role.
@@ -1073,6 +1098,13 @@ paths:
     delete:
       summary: Remove a user's explicit role in a namespace.
       operationId: removeNamespaceRole
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Removes an explicit role record, reverting the user to the default `none` role.
 
@@ -1475,11 +1507,14 @@ paths:
         In anonymous mode, this route is accessible without authentication and without authorization checks.
         It will always return the full resource object, regardless of the resource's deletion status.
 
-        In authenticated mode, non-deleted resources may be read by any user, authenticated or not.
+        In authenticated mode, authentication is required to retrieve a non-deleted resource.
+        Any authenticated caller may read a non-deleted resource (including users with the default `none` role).
+        Missing or invalid credentials yield `401`.
 
-        Deleted resources require authentication and at least the `editor` role for the namespace, or superuser privileges.
-        Such callers receive the full resource object with `deleted: true`.
-        Unauthorized callers receive 410 Gone with a redacted resource object (`pid`, dates, and `deleted: true` only).
+        Deleted resources: callers with at least the `editor` role for the namespace, or superuser privileges,
+        receive the full resource object with `deleted: true` (HTTP 200).
+        Callers who are not allowed to see the full deleted resource (including unauthenticated callers)
+        receive HTTP 410 Gone with a redacted resource object (`pid`, dates, and `deleted: true` only).
 
         If the namespace or resource does not exist, a 404 response is returned.
       tags:
@@ -1659,6 +1694,13 @@ paths:
     get:
       summary: Return information about a user account.
       operationId: getUserInfo
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Returns information about the currently authenticated user account.
 
@@ -1700,6 +1742,13 @@ paths:
     patch:
       summary: Update a user account.
       operationId: updateUser
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Updates fields on a user account.
 
@@ -1793,6 +1842,13 @@ paths:
     post:
       summary: Create a new user account.
       operationId: createUser
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Creates a new user account.
 
@@ -1876,6 +1932,13 @@ paths:
     delete:
       summary: Delete a user account.
       operationId: deleteUser
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Deletes a user account.
 
@@ -1948,6 +2011,13 @@ paths:
     get:
       summary: Autocomplete usernames by prefix.
       operationId: autocompleteUsers
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Returns a list of usernames that begin with the given query prefix, sorted in increasing order.
 
@@ -2014,6 +2084,13 @@ paths:
     get:
       summary: List all user accounts.
       operationId: listUsers
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Returns a paginated list of user accounts.
 
@@ -2123,6 +2200,13 @@ paths:
     get:
       summary: List explicit namespace roles for a user.
       operationId: getUserRoles
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Lists namespaces where the currently authenticated user has an explicit non-none role.
         Namespaces without an explicit role record have the default `none` role and are not listed.
@@ -2159,7 +2243,7 @@ paths:
             A paginated list of roles, sorted by namespace id in increasing order.
           content:
             application/json:
-              example: { total: 1, offset: 0, items: [ { namespace: "ns_123", role: "editor" } ] }
+              example: { total: 1, offset: 0, items: [ { namespace: "bafac567-6170-4df2-8c45-17797eb43c88", role: "editor" } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedUserRolesResponse'
         '400':
@@ -2197,6 +2281,13 @@ paths:
     get:
       summary: List API keys for a user account.
       operationId: listUserKeys
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Returns a paginated list of API keys for the currently authenticated user.
         The list does not include keys that are no longer valid.
@@ -2270,6 +2361,13 @@ paths:
     post:
       summary: Issue a new API key.
       operationId: issueUserKey
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Issues a new API key for the currently authenticated user.
 
@@ -2350,6 +2448,13 @@ paths:
     post:
       summary: Set or clear a user password.
       operationId: setUserPassword
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Sets or clears an HTTP basic password for the currently authenticated user account.
 
@@ -2422,6 +2527,13 @@ paths:
     post:
       summary: Revoke an API key for a user account.
       operationId: revokeUserKey
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
       description: |
         Revokes an API key belonging to the currently authenticated user.
         Revoking an already-revoked key returns a key not found response.
@@ -2782,14 +2894,14 @@ components:
           format: int64
           minimum: 0
         defaultPageLimit:
-          example: 10
+          example: 100
           description: |
             Default number of items per page.
           type: integer
           format: int64
           minimum: 0
         maxPageLimit:
-          example: 100
+          example: 1000
           description: |
             Maximum number of items per page in a response.
           type: integer
@@ -2805,8 +2917,7 @@ components:
         authentication:
           example: true
           description: |
-            If present, parts of the API require authentication via an API key.
-            Support for other authentication methods may be added in the future.
+            If present, parts of the API require authentication via an API key or HTTP Basic credentials.
           type: boolean
           enum: [true]
         maxAutocompleteUsers:
@@ -2839,13 +2950,13 @@ components:
           type: string
           minLength: 1
         software:
-          example: "QuickPID"
+          example: "quickpid"
           description: |
             Name of the software running this server.
           type: string
           minLength: 1
         version:
-          example: "1.0.0"
+          example: "2.0.0"
           description: |
             Version of the software running this server.
           type: string
@@ -3515,11 +3626,20 @@ components:
         - contributor
         - editor
         - manager
-      x-enum-descriptions:
-        - Can read any resource by exact namespace and PID; cannot list, create, edit, or manage roles.
-        - Can create resources; cannot read resources.
-        - Can create, edit, and list all resources in the namespace.
-        - Editor privileges plus the ability to manage roles for other users in the namespace.
+      x-enumDescriptions:
+        none: >
+          Default role with only public actions. When authenticated, may read non-deleted
+          resources by PID; cannot list or update resources, create resources, read full
+          deleted resources, read namespace metadata, list namespace mounts, or manage roles.
+        contributor: >
+          May create resources, read namespace metadata, and list namespace mounts.
+          When authenticated, may read non-deleted resources by PID; cannot list or update
+          resources, read full deleted resources, or manage roles.
+        editor: >
+          Contributor privileges plus listing and updating resources, and reading full
+          deleted resources by PID.
+        manager: >
+          Editor privileges plus managing roles for other users in the namespace.
       example: "editor"
     NamespaceRole:
       description: A user's role within a namespace.
@@ -3539,16 +3659,28 @@ components:
           allOf:
             - $ref: '#/components/schemas/Role'
     SetNamespaceRoleRequest:
-      description: Request to set a user's role in a namespace.
+      description: |
+        Request to set a user's role in a namespace.
+        The `none` role cannot be set; use DELETE to remove an explicit role.
       type: object
       additionalProperties: false
       required:
         - role
       properties:
         role:
+          description: |
+            Role to assign for the user in the namespace.
+            Must be contributor, editor, or manager.
           example: "manager"
-          allOf:
-            - $ref: '#/components/schemas/Role'
+          type: string
+          enum:
+            - contributor
+            - editor
+            - manager
+          x-enumDescriptions:
+            contributor: Assignable role that may create resources and read namespace metadata.
+            editor: Assignable role that may list and update resources and read deleted resources.
+            manager: Assignable role that may manage other users' roles in the namespace.
     PaginatedNamespaceRolesResponse:
       description: Paginated list of namespace roles.
       type: object
