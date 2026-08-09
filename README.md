@@ -67,7 +67,6 @@ The following tools & CI are used in the project:
   To check the openapi spec.
   Run with `vacuum lint ./spec/openapi.yaml --details --no-clip`.
   
-<!--
 ## Docker images
 
 Multi-arch images are published to GitHub Container Registry:
@@ -89,13 +88,10 @@ Examples:
 - **Postgres backend** (set `DSN` to point at your Postgres):
 
   `docker run --rm -p 8080:8080 -e DSN='host=postgres user=postgres password=postgres dbname=quickpid port=5432 sslmode=disable' ghcr.io/tkw1536/quickpid-postgres:latest`
--->
 
 ## Future Technical Work
 <!-- spellchecker:word staticcheck -->
 - update to `go1.27` final & re-enable `staticcheck` linter on CI
-- various other code cleanup
-- consistently name operation ids
 
 ## LICENSE
 
