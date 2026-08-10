@@ -31,6 +31,7 @@
     "preprocess",
     "quickpid",
     "rdzl",
+    "Seekable",
     "servertest",
     "shapass",
     "sslmode",

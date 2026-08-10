@@ -1,6 +1,7 @@
+//spellchecker:words openapi
 package openapi_test
 
-//spellchecker:words openapi
+//spellchecker:words github quickpid internal openapi
 import (
 	"fmt"
 

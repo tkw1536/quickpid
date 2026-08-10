@@ -1,6 +1,7 @@
+//spellchecker:words seekzero
 package seekzero_test
 
-//spellchecker:words resettable
+//spellchecker:words strings github quickpid internal seekzero
 import (
 	"fmt"
 	"io"

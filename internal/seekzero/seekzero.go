@@ -1,12 +1,14 @@
+//spellchecker:words seekzero
 package seekzero
 
+//spellchecker:words errors
 import (
 	"errors"
 	"io"
 )
 
 // MakeOnceSeekable ensures that the given [io.Reader] implements [io.ReadSeeker],
-// and can be seeked to zero at least once.
+// and can be sought to zero at least once.
 //
 // If the reader already implements [io.ReadSeeker] (and is not a [OnceSeekStartReader]), then the reader is returned as is.
 // Otherwise a new [OnceSeekStartReader] is returned.
@@ -19,7 +21,7 @@ func MakeOnceSeekable(reader io.Reader) io.ReadSeeker {
 	return NewOnceSeekStartReader(reader)
 }
 
-// OnceSeekStartReader is a reader that can be seeked to the beginning of the input once.
+// OnceSeekStartReader is a reader that can be sought to the beginning of the input once.
 // Seeking to zero means that the reader will re-read the entire input from the beginning.
 type OnceSeekStartReader struct {
 	didSeekToZero bool
@@ -34,7 +36,7 @@ func NewOnceSeekStartReader(reader io.Reader) *OnceSeekStartReader {
 var _ io.Seeker = (*OnceSeekStartReader)(nil)
 
 var (
-	errAlreadySeekedOnce = errors.New("OnceSeekStartReader: already seeked to zero")
+	errAlreadySoughtOnce = errors.New("OnceSeekStartReader: already sought to zero")
 	errInvalidSeek       = errors.New("OnceSeekStartReader: invalid seek")
 )
 
@@ -42,7 +44,7 @@ var (
 // It can only be called once.
 func (r *OnceSeekStartReader) SeekToStart() error {
 	if r.didSeekToZero {
-		return errAlreadySeekedOnce
+		return errAlreadySoughtOnce
 	}
 	r.didSeekToZero = true
 	return nil
@@ -59,7 +61,7 @@ func (r *OnceSeekStartReader) Seek(offset int64, whence int) (int64, error) {
 
 func (r *OnceSeekStartReader) SeekToOffset(offset int64) error {
 	if r.didSeekToZero {
-		return errAlreadySeekedOnce
+		return errAlreadySoughtOnce
 	}
 	r.didSeekToZero = true
 	return nil

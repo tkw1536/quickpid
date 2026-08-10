@@ -1,7 +1,7 @@
 //spellchecker:words strict
 package strict
 
-//spellchecker:words bytes encoding json jsontext errors
+//spellchecker:words bytes encoding json jsontext errors github quickpid internal seekzero
 import (
 	"bytes"
 	"encoding/json/jsontext"
@@ -33,7 +33,7 @@ func UnmarshalStrict[T any](data []byte) (T, error) {
 
 // UnmarshalStrictTo is like [UnmarshalStrict].
 // It accepts an [io.Reader] instead of a byte slice.
-// It unmarshals the JSON into the given value.
+// It decodes the JSON into the given value.
 func UnmarshalStrictTo(reader io.Reader, out any) error {
 	seekable := seekzero.MakeOnceSeekable(reader)
 	if err := mustNotBeNull(seekable); err != nil {
