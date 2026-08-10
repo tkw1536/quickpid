@@ -36,11 +36,11 @@ func (h *Handler) Log(ctx context.Context, r *http.Request, duration time.Durati
 	)
 
 	switch {
-	case status >= 200 && status < 300:
-		level = slog.LevelInfo
+	case status >= 200 && status < 400:
+		level = slog.LevelDebug
 		msg = "request success"
 	case status >= 400 && status < 500:
-		level = slog.LevelWarn
+		level = slog.LevelDebug
 		msg = "request client error"
 	case status >= 500 && status < 600:
 		level = slog.LevelError

@@ -51,6 +51,12 @@ The two database implementations are based on [GORM](https://gorm.io) and approp
 Beyond the standard library, dependencies are otherwise kept to a minimum.
 All parts of the code are well-documented and include tests, which can be run with `go test`, and are checked by CI.
 
+The default log level is `INFO`, which provides general information, and otherwise logs server errors only.
+To log all events, including successful and client error requests, pass `-log-level debug`.
+The database-driven executables furthermore allow to specify a log level for gorm, which can log all SQL queries.
+To set the log level for gorm, pass `-gorm-log-level $level`.
+Any events logged by gorm will only be displayed if the appropriate general log level matches.
+
 ### Tools & CI
 
 The following tools & CI are used in the project:
