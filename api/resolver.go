@@ -30,7 +30,7 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 		Tag       strict.Optional[strict.String] `json:"tag"`
 		PIDFormat strict.Optional[pid.Format]    `json:"pidFormat"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
@@ -77,7 +77,7 @@ func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 		Metadata strict.Optional[*string]            `json:"metadata"`
 		Tags     strict.Optional[strict.StringSlice] `json:"tags"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
@@ -222,7 +222,7 @@ func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 		Tags     strict.Optional[strict.StringSlice] `json:"tags"`
 		Deleted  strict.Optional[strict.Bool]        `json:"deleted"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal resource update request: %w", err)
 	}

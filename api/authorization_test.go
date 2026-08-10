@@ -57,7 +57,7 @@ func TestSetNamespaceRoleRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_nullBody",
 			body:      `null`,
 			wantErr:   true,
-			wantErrIn: []string{"expected JSON object"},
+			wantErrIn: []string{"json is null"},
 		},
 		{
 			name:      "fail_missingRole",

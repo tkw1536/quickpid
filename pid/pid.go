@@ -28,7 +28,7 @@ func (f *Format) UnmarshalJSON(data []byte) error {
 		Pattern    strict.Optional[strict.String] `json:"pattern"`
 		Characters strict.Optional[strict.String] `json:"characters"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}

@@ -3,8 +3,6 @@ package server
 
 //spellchecker:words encoding json jsontext errors http strconv github quickpid pkglib errorsx
 import (
-	"encoding/json/jsontext"
-	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -12,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/internal/strict"
 	"go.tkw01536.de/pkglib/errorsx"
 )
 
@@ -35,12 +34,11 @@ var (
 // - [api.BodySizeExceeded]
 // - [api.BodyMissing]
 // - [api.BodyInvalidJSON].
-func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) error {
+func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (decodeErr error) {
 	var body = r.Body
 	if maxBody := h.svc.Options().Limits.MaxBodyBytes; maxBody > 0 {
 		body = http.MaxBytesReader(w, body, maxBody)
 	}
-	var decodeErr error
 	defer func() {
 		if err := body.Close(); err != nil {
 			// This uses [api.BodyInvalidJSON] which isn't entirely correct.
@@ -54,25 +52,20 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) error
 		}
 	}()
 
-	dec := jsontext.NewDecoder(body, json.RejectUnknownMembers(true))
-
-	if err := json.UnmarshalDecode(dec, v); err != nil {
-		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-			return api.WithErrorString(fmt.Errorf("maximum body size exceeded: %w", err), api.BodySizeExceeded)
-		}
-		if errors.Is(err, io.EOF) {
-			return api.WithErrorString(fmt.Errorf("body is missing or incomplete: %w", err), api.BodyMissing)
-		}
-		return api.WithErrorString(fmt.Errorf("invalid json provided: %w", err), api.BodyInvalidJSON)
+	err := strict.UnmarshalStrictTo(body, v)
+	if errors.Is(err, io.EOF) {
+		return api.WithErrorString(fmt.Errorf("body is missing or incomplete: %w", err), api.BodyMissing)
 	}
-	_, err := dec.ReadToken()
-	if !errors.Is(err, io.EOF) || err == nil {
-		if err == nil {
-			err = errTrailingJSON
-		}
+	if _, isMaxBytesError := errors.AsType[*http.MaxBytesError](err); isMaxBytesError {
+		return api.WithErrorString(fmt.Errorf("maximum body size exceeded: %w", err), api.BodySizeExceeded)
+	}
+	if errors.Is(err, strict.ErrJsonNull) || errors.Is(err, strict.ErrFailedToDecode) || errors.Is(err, strict.ErrTrailingData) {
 		return api.WithErrorString(err, api.BodyInvalidJSON)
 	}
-	return decodeErr
+	if err != nil {
+		return fmt.Errorf("unknown error while decoding json: %w", err)
+	}
+	return nil
 }
 
 // parsePagination parses pagination parameters from the query string.

@@ -19,7 +19,7 @@ func (r *UserCreateRequest) UnmarshalJSON(data []byte) error {
 		Username  strict.Optional[strict.String] `json:"username"`
 		Superuser strict.Optional[strict.Bool]   `json:"superuser"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
@@ -89,7 +89,7 @@ func (r *UserUpdateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Superuser strict.Optional[strict.Bool] `json:"superuser"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
@@ -106,7 +106,7 @@ func (r *SetPasswordRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Password strict.Optional[*string] `json:"password"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal fields: %w", err)
 	}
@@ -176,7 +176,7 @@ func (r *KeyIssueRequest) UnmarshalJSON(data []byte) error {
 		Comment   strict.Optional[strict.String] `json:"comment"`
 		ExpiresAt strict.Optional[*strict.Time]  `json:"expiresAt"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
@@ -211,7 +211,7 @@ func (r *KeyRevokeRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		ID strict.Optional[strict.String] `json:"id"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}

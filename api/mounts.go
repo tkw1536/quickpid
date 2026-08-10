@@ -22,7 +22,7 @@ func (r *MountUpsertRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Namespace strict.Optional[strict.String] `json:"namespace"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}

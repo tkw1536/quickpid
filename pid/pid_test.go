@@ -271,19 +271,19 @@ func TestFormat_UnmarshalJSON(t *testing.T) {
 			name:      "nullBody_isError",
 			body:      `null`,
 			wantErr:   true,
-			wantErrIn: []string{"expected JSON object"},
+			wantErrIn: []string{"json is null"},
 		},
 		{
 			name:      "arrayBody_isError",
 			body:      `[]`,
 			wantErr:   true,
-			wantErrIn: []string{"expected JSON object"},
+			wantErrIn: []string{"failed to decode json"},
 		},
 		{
 			name:      "stringBody_isError",
 			body:      `"x"`,
 			wantErr:   true,
-			wantErrIn: []string{"expected JSON object"},
+			wantErrIn: []string{"failed to decode json"},
 		},
 		{
 			name:      "unknownField_isError",

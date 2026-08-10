@@ -43,7 +43,7 @@ func TestUserCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_nullBody",
 			body:      `null`,
 			wantErr:   true,
-			wantErrIn: []string{"expected JSON object"},
+			wantErrIn: []string{"json is null"},
 		},
 		{
 			name:      "fail_missingUsername",
@@ -313,7 +313,7 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_nullBody",
 			body:      `null`,
 			wantErr:   true,
-			wantErrIn: []string{"expected JSON object"},
+			wantErrIn: []string{"json is null"},
 		},
 		{
 			name:      "fail_missingComment",
@@ -401,7 +401,7 @@ func TestKeyRevokeRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_nullBody",
 			body:      `null`,
 			wantErr:   true,
-			wantErrIn: []string{"expected JSON object"},
+			wantErrIn: []string{"json is null"},
 		},
 		{
 			name:      "fail_missingID",

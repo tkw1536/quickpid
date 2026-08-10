@@ -47,7 +47,7 @@ func (r *SetNamespaceRoleRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
 		Role strict.Optional[strict.String] `json:"role"`
 	}
-	decoded, err := strict.UnmarshalStruct[internal](data)
+	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}

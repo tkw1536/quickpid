@@ -35,7 +35,7 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_nullBody",
 			body:      `null`,
 			wantErr:   true,
-			wantErrIn: []string{"expected JSON object"},
+			wantErrIn: []string{"json is null"},
 		},
 
 		{
@@ -67,20 +67,20 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_formatNull",
 			body:      `{"tag":"ns","pidFormat":null}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "expected JSON object"},
+			wantErrIn: []string{"failed to unmarshal fields", "json is null"},
 		},
 
 		{
 			name:      "fail_formatNull",
 			body:      `{"tag":"ns","pidFormat":null}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "expected JSON object"},
+			wantErrIn: []string{"failed to unmarshal fields", "json is null"},
 		},
 		{
 			name:      "fail_formatString",
 			body:      `{"tag":"ns","pidFormat":"***"}`,
 			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields", "expected JSON object"},
+			wantErrIn: []string{"failed to unmarshal fields", "failed to decode json"},
 		},
 		{
 			name:      "fail_formatPattern",
@@ -133,7 +133,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			name:      "fail_null",
 			body:      `null`,
 			wantErr:   true,
-			wantErrIn: []string{"expected JSON object"},
+			wantErrIn: []string{"json is null"},
 		},
 
 		// url
