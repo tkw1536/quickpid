@@ -28,7 +28,7 @@ func (h *Handler) handle[T any](
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		user, err := h.resolverCaller(r, s)
+		user, err := h.resolveCaller(r, s)
 		if err != nil {
 			duration := time.Since(start)
 			h.writeHandledError(w, r, duration, err, errors)
@@ -56,18 +56,18 @@ var (
 	errAuthenticationRequired           = errors.New("authentication required")
 )
 
-// resolverCaller resolves the caller of an API call according to the given scenario.
+// resolveCaller resolves the caller of an API call according to the given scenario.
 //
 // It may return nil values when authentication is disabled, optional authentication is not supplied.
 // Otherwise err === nil implies the user information is not nil.
 //
 // It can return errors annotated with:
 //
-// - [api.UnavailableInAnonymousMode] if the endpoint is unavailable in anonymous mode.
-// - [api.Unauthorized] if the authentication credentials are invalid, authentication is required but not supplied,
-//   or impersonation fails (non-superuser, invalid or missing target, or multiple impersonate headers).
-// - [api.DatabaseError] if the authenticated or impersonated user cannot be loaded for a database reason.
-func (h *Handler) resolverCaller(r *http.Request, scenario scenario) (*api.ValidUserInfo, error) {
+//   - [api.UnavailableInAnonymousMode] if the endpoint is unavailable in anonymous mode.
+//   - [api.Unauthorized] if the authentication credentials are invalid, authentication is required but not supplied,
+//     or impersonation fails (non-superuser, invalid or missing target, or multiple impersonate headers).
+//   - [api.DatabaseError] if the authenticated or impersonated user cannot be loaded for a database reason.
+func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.ValidUserInfo, error) {
 	// if we require auth mode, and we are in anonymous mode
 	// this endpoint is unavailable.
 	if scenario == requiredUser && h.auth.AnonymousMode() {
