@@ -33,8 +33,12 @@ func ExampleUnmarshalStruct() {
 	_, err = strict.UnmarshalStruct[Payload]([]byte(`{"name":"alice","extra":1}`))
 	fmt.Println(err != nil)
 
+	_, err = strict.UnmarshalStruct[Payload]([]byte(`{"name":"alice"}trailing data`))
+	fmt.Println(err != nil)
+
 	// Output:
 	// alice true
+	// true
 	// true
 	// true
 }
