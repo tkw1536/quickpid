@@ -98,9 +98,8 @@ func (r *UserUpdateRequest) UnmarshalJSON(data []byte) error {
 }
 
 // SetPasswordRequest is the JSON body for setUserPassword.
-
 type SetPasswordRequest struct {
-	Password **string `json:"password"`
+	Password *string `json:"password"`
 }
 
 func (r *SetPasswordRequest) UnmarshalJSON(data []byte) error {
@@ -114,19 +113,16 @@ func (r *SetPasswordRequest) UnmarshalJSON(data []byte) error {
 	if !decoded.Password.Present {
 		return missingRequiredFieldError("password")
 	}
-	r.Password = decoded.Password.ToPointer()
+	r.Password = decoded.Password.Value
 	return nil
 }
 
 // Validate checks if the given request is valid.
 func (r *SetPasswordRequest) Validate() (ValidSetPasswordRequest, error) {
 	if r.Password == nil {
-		return ValidSetPasswordRequest{}, missingRequiredFieldError("password")
-	}
-	if *r.Password == nil {
 		return ValidSetPasswordRequest{}, nil
 	}
-	password, err := NewPassword(**r.Password)
+	password, err := NewPassword(*r.Password)
 	if err != nil {
 		return ValidSetPasswordRequest{}, err
 	}

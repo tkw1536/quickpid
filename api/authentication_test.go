@@ -222,16 +222,13 @@ func TestSetPasswordRequest_UnmarshalJSON(t *testing.T) {
 				}
 				return
 			}
-			if req.Password == nil {
-				t.Fatal("req.Password = nil, want non-nil field marker")
-			}
 			if tt.wantNil {
-				if *req.Password != nil {
-					t.Fatalf("req.Password = %v, want nil payload", **req.Password)
+				if req.Password != nil {
+					t.Fatalf("req.Password = %v, want nil payload", *req.Password)
 				}
 				return
 			}
-			if *req.Password == nil || **req.Password != tt.wantValue {
+			if req.Password == nil || *req.Password != tt.wantValue {
 				t.Fatalf("req.Password = %v, want %q", req.Password, tt.wantValue)
 			}
 		})
@@ -244,9 +241,7 @@ func TestSetPasswordRequest_Validate(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
 		t.Parallel()
 
-		value := "secret"
-		ptr := &value
-		req := api.SetPasswordRequest{Password: &ptr}
+		req := api.SetPasswordRequest{Password: new("secret")}
 		valid, err := req.Validate()
 		if err != nil {
 			t.Fatalf("Validate() error = %v", err)
@@ -259,8 +254,7 @@ func TestSetPasswordRequest_Validate(t *testing.T) {
 	t.Run("null", func(t *testing.T) {
 		t.Parallel()
 
-		var ptr *string
-		req := api.SetPasswordRequest{Password: &ptr}
+		req := api.SetPasswordRequest{Password: (*string)(nil)}
 		valid, err := req.Validate()
 		if err != nil {
 			t.Fatalf("Validate() error = %v", err)
@@ -273,9 +267,7 @@ func TestSetPasswordRequest_Validate(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
 		t.Parallel()
 
-		value := ""
-		ptr := &value
-		req := api.SetPasswordRequest{Password: &ptr}
+		req := api.SetPasswordRequest{Password: new("")}
 		_, err := req.Validate()
 		if err == nil {
 			t.Fatal("Validate() error = nil, want error")
