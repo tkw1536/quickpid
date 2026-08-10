@@ -68,16 +68,11 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 type Time time.Time
 
 func (t *Time) UnmarshalJSON(data []byte) error {
-	dec := jsontext.NewDecoder(bytes.NewReader(data))
-	tok, err := dec.ReadToken()
-	if err != nil {
-		return fmt.Errorf("failed to read first token: %w", err)
+	var s String
+	if err := s.UnmarshalJSON(data); err != nil {
+		return err
 	}
-
-	if tok.Kind() != jsontext.KindString {
-		return errNotAString
-	}
-	parsed, err := time.Parse(time.RFC3339, tok.String())
+	parsed, err := time.Parse(time.RFC3339, string(s))
 	if err != nil {
 		return fmt.Errorf("%w: %w", errNotRFC3339, err)
 	}
