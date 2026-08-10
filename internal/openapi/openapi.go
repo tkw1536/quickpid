@@ -12,13 +12,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Server represents options for an openapi spec 'server' section.
-type Server struct {
-	MountPath string
-}
-
-// Rewrite loads input as an openapi yaml, updates the server according to the options, and then serializes it back as yaml.
-func Rewrite(input []byte, server Server) ([]byte, error) {
+// SetServersPath loads an openapi yaml specification and replaces the server url with the given one.
+func SetServersPath(input []byte, serverUrl string) ([]byte, error) {
 	// decode the yaml node
 	var node yaml.Node
 	if err := yaml.Unmarshal(input, &node); err != nil {
@@ -30,9 +25,13 @@ func Rewrite(input []byte, server Server) ([]byte, error) {
 		return nil, fmt.Errorf("failed to find root node: %w", err)
 	}
 
-	serversNode, err := openapiYAMLNode([]map[string]string{{"url": server.MountPath}})
+	serverYaml, err := yamlx.Marshal([]map[string]string{{"url": serverUrl}})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal yaml: %w", err)
+	}
+	serversNode, err := yamlx.Find(serverYaml)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find root node: %w", err)
 	}
 	if err := yamlx.Assign(root, "servers", *serversNode); err != nil {
 		return nil, fmt.Errorf("failed to assign servers node: %w", err)
@@ -48,16 +47,4 @@ func Rewrite(input []byte, server Server) ([]byte, error) {
 		return nil, fmt.Errorf("failed to close encoder: %w", err)
 	}
 	return buf.Bytes(), nil
-}
-
-func openapiYAMLNode(value any) (*yaml.Node, error) {
-	node, err := yamlx.Marshal(value)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal yaml: %w", err)
-	}
-	root, err := yamlx.Find(node)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find root node: %w", err)
-	}
-	return root, nil
 }

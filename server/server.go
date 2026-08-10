@@ -541,9 +541,7 @@ func (h *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 var openapiYAML = []byte(quickpid.Spec())
 
 func (h *Server) handleOpenAPISpec() http.HandlerFunc {
-	processed, err := openapi.Rewrite(openapiYAML, openapi.Server{
-		MountPath: h.ops.MountPath,
-	})
+	processed, err := openapi.SetServersPath(openapiYAML, h.ops.MountPath)
 	if err != nil {
 		h.logger.Error("failed to preprocess openapi.yaml", slog.Any("error", err))
 		processed = openapiYAML
