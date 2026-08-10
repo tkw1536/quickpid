@@ -308,7 +308,7 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 			wantErr: false,
 			want: api.KeyIssueRequest{
 				Comment:   "dev key",
-				ExpiresAt: ptrTime(time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC)),
+				ExpiresAt: new(time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC)),
 			},
 		},
 		{
@@ -452,8 +452,4 @@ func TestKeyRevokeRequest_UnmarshalJSON(t *testing.T) {
 			}
 		})
 	}
-}
-
-func ptrTime(t time.Time) *time.Time {
-	return &t
 }
