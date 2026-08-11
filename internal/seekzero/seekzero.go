@@ -94,6 +94,7 @@ func (r *OnceSeekStartReader) Read(p []byte) (int, error) {
 
 // wrapReadError wraps an (int, error) pair from the underlying reader.
 func (*OnceSeekStartReader) wrapReadError(n int, err error) (int, error) {
+	//spellchecker:words nolint errorlint
 	//nolint:errorlint // to guarantee implementing [io.Reader] properly, we want to retain the sentinel [io.EOF] value.
 	if err == nil || err == io.EOF {
 		return n, err
