@@ -389,8 +389,8 @@ func TestAuthHandlerLog(t *testing.T) {
 	if record.Message != "request client error" {
 		t.Fatalf("message = %q, want %q", record.Message, "request client error")
 	}
-	if record.Level != slog.LevelWarn {
-		t.Fatalf("level = %v, want %v", record.Level, slog.LevelWarn)
+	if record.Level != slog.LevelDebug {
+		t.Fatalf("level = %v, want %v", record.Level, slog.LevelDebug)
 	}
 	if record.Attrs["method"] != http.MethodGet {
 		t.Fatalf("method = %v, want %q", record.Attrs["method"], http.MethodGet)
