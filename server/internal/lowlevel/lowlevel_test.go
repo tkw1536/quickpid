@@ -133,18 +133,18 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						lastPassword string
 					)
 					h := lowlevel.NewHandler(&mockAuthService{
-						authenticateAPIKey: func(_ context.Context, apiKey string) (api.ValidUsername, error) {
+						authenticateAPIKey: func(_ context.Context, apiKey string) (api.ValidUsername, api.APIKeyInfo, error) {
 							lastAPIKey = apiKey
 							lastPassword = ""
 							switch apiKey {
 							case validKnownToken, validMissingToken, userFailToken:
-								return validUser.Username, nil
+								return validUser.Username, api.APIKeyInfo{}, nil
 							case invalidToken:
-								return api.ValidUsername{}, errUnauthorized
+								return api.ValidUsername{}, api.APIKeyInfo{}, errUnauthorized
 							case lookupFailToken:
-								return api.ValidUsername{}, errLookupFailure
+								return api.ValidUsername{}, api.APIKeyInfo{}, errLookupFailure
 							default:
-								return api.ValidUsername{}, errUnauthorized
+								return api.ValidUsername{}, api.APIKeyInfo{}, errUnauthorized
 							}
 						},
 						authenticatePassword: func(_ context.Context, username string, password string) (api.ValidUsername, error) {
@@ -226,9 +226,9 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 	var authenticateAPIKeyCalled bool
 	h := lowlevel.NewHandler(&mockAuthService{
 		anonymousMode: true,
-		authenticateAPIKey: func(context.Context, string) (api.ValidUsername, error) {
+		authenticateAPIKey: func(context.Context, string) (api.ValidUsername, api.APIKeyInfo, error) {
 			authenticateAPIKeyCalled = true
-			return api.ValidUsername{}, errUnauthorized
+			return api.ValidUsername{}, api.APIKeyInfo{}, errUnauthorized
 		},
 	}, nil)
 	handler := h.Restricted(
@@ -272,14 +272,14 @@ func TestImpersonation(t *testing.T) {
 
 	newHandler := func() *lowlevel.Handler {
 		return lowlevel.NewHandler(&mockAuthService{
-			authenticateAPIKey: func(_ context.Context, apiKey string) (api.ValidUsername, error) {
+			authenticateAPIKey: func(_ context.Context, apiKey string) (api.ValidUsername, api.APIKeyInfo, error) {
 				switch apiKey {
 				case rootToken:
-					return rootUser.Username, nil
+					return rootUser.Username, api.APIKeyInfo{}, nil
 				case aliceToken:
-					return aliceUser.Username, nil
+					return aliceUser.Username, api.APIKeyInfo{}, nil
 				default:
-					return api.ValidUsername{}, errUnauthorized
+					return api.ValidUsername{}, api.APIKeyInfo{}, errUnauthorized
 				}
 			},
 			loadUser: func(_ context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
@@ -415,7 +415,7 @@ type scenario struct {
 
 type mockAuthService struct {
 	anonymousMode        bool
-	authenticateAPIKey   func(context.Context, string) (api.ValidUsername, error)
+	authenticateAPIKey   func(context.Context, string) (api.ValidUsername, api.APIKeyInfo, error)
 	authenticatePassword func(context.Context, string, string) (api.ValidUsername, error)
 	loadUser             func(context.Context, api.ValidUsername) (api.ValidUserInfo, error)
 }
@@ -424,11 +424,11 @@ func (m *mockAuthService) AnonymousMode() bool {
 	return m.anonymousMode
 }
 
-func (m *mockAuthService) AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, error) {
+func (m *mockAuthService) AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, api.APIKeyInfo, error) {
 	if m.authenticateAPIKey != nil {
 		return m.authenticateAPIKey(ctx, apiKey)
 	}
-	return api.ValidUsername{}, errUnauthorized
+	return api.ValidUsername{}, api.APIKeyInfo{}, errUnauthorized
 }
 
 func (m *mockAuthService) AuthenticatePassword(ctx context.Context, username string, password string) (api.ValidUsername, error) {
@@ -534,13 +534,6 @@ func assertStatusAndCalled(t *testing.T, rec *httptest.ResponseRecorder, gotCall
 	}
 	if gotCalled != wantCalled {
 		t.Fatalf("impl called = %v, want %v", gotCalled, wantCalled)
-	}
-}
-
-func userInfoFromValid(user *api.ValidUserInfo) *api.UserInfo {
-	return &api.UserInfo{
-		Username:  user.Username.String(),
-		Superuser: user.Superuser,
 	}
 }
 

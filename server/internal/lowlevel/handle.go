@@ -81,6 +81,7 @@ func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.Authen
 
 	var (
 		username api.ValidUsername
+		method   api.AuthenticationMethod
 		err      error
 	)
 
@@ -94,9 +95,13 @@ func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.Authen
 		}
 		return nil, nil
 	case credentials.KindBearer:
-		username, err = h.auth.AuthenticateAPIKey(r.Context(), creds.BearerToken())
+		var key api.APIKeyInfo
+		username, key, err = h.auth.AuthenticateAPIKey(r.Context(), creds.BearerToken())
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("invalid api key: %w", err), api.Unauthorized)
+		}
+		method = api.TokenAuthentication{
+			Token: key,
 		}
 	case credentials.KindBasic:
 		basicUsername, basicPassword := creds.BasicAuth()
@@ -104,6 +109,7 @@ func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.Authen
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("invalid username and password: %w", err), api.Unauthorized)
 		}
+		method = api.BasicAuthentication{}
 	default:
 		panic("never reached")
 	}
@@ -112,7 +118,7 @@ func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.Authen
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("failed to load user object: %w", err), api.DatabaseError)
 	}
-	return h.resolveImpersonatedUser(r, user.Authenticate())
+	return h.resolveImpersonatedUser(r, user.Authenticate(method))
 }
 
 var (
@@ -158,7 +164,13 @@ func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.Authentica
 		return nil, api.WithErrorCode(fmt.Errorf("failed to load impersonated user object: %w", err), api.DatabaseError)
 	}
 
-	return new(user.Authenticate()), nil
+	return new(
+		user.Authenticate(
+			api.Impersonation{
+				User:   username,
+				Reason: caller.Method(),
+			}),
+	), nil
 }
 
 // writeHandledError validates that the error maps to a declared API error, logs it, and writes the JSON response.

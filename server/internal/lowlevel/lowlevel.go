@@ -56,9 +56,10 @@ func NewHandler(auth AuthService, logger *slog.Logger) *Handler {
 // AuthService provides the authentication operations needed by [Handler].
 type AuthService interface {
 	// AuthenticateAPIKey resolves a username from an API key.
+	// It returns the username, and the key used to authenticate it.
 	//
 	// Any non-nil error is considered to be an unauthorized user.
-	AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, error)
+	AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, api.APIKeyInfo, error)
 
 	// AuthenticatePassword resolves a username from a username / password pair.
 	//
