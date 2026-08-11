@@ -1,6 +1,6 @@
 {
-  "name": "resource_get_unauthorized",
-  "comment": "In authenticated mode, GET /resolver/namespaces/{namespace}/resources/{pid} without credentials returns 401 unauthorized.",
+  "name": "resource_get_unauthenticated_ok",
+  "comment": "In authenticated mode, GET /resolver/namespaces/{namespace}/resources/{pid} without credentials returns the full non-deleted resource.",
   "steps": [
     {
       "name": "create_namespace",
@@ -66,9 +66,17 @@
         "path": "/resolver/namespaces/b1000000-0000-4000-8000-000000000002/resources/aaa-bbb"
       },
       "response": {
-        "code": 401,
+        "code": 200,
         "body": {
-          "error": "unauthorized"
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "m",
+          "pid": "aaa-bbb",
+          "url": "https://example.com/r",
+          "tags": [
+            "t"
+          ]
         }
       }
     }

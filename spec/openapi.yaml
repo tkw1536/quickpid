@@ -1509,7 +1509,7 @@ paths:
 
         In authenticated mode, authentication is required to retrieve a non-deleted resource.
         Any authenticated caller may read a non-deleted resource (including users with the default `none` role).
-        Missing or invalid credentials yield `401`.
+        Invalid credentials yield `401`.
 
         Deleted resources: callers with at least the `editor` role for the namespace, or superuser privileges,
         receive the full resource object with `deleted: true` (HTTP 200).
@@ -1555,7 +1555,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
                   - $ref: '#/components/schemas/ErrorInvalidPID'
         '401':
-          description: Authentication is required or the credentials are incorrect when retrieving a resource.
+          description: Incorrect credentials when retrieving a resource.
           content:
             application/json:
               example: { error: "unauthorized" }

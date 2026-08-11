@@ -266,11 +266,7 @@ func (s *Service) GetResource(ctx context.Context, caller *api.AuthenticatedUser
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to get resource: %w", err), api.DatabaseError)
 	}
 
-	if s.AnonymousMode() {
-		return out, nil
-	}
-
-	if out.Deleted {
+	if !s.AnonymousMode() && out.Deleted {
 		if caller == nil {
 			return out.Redact(), nil
 		}
@@ -287,9 +283,6 @@ func (s *Service) GetResource(ctx context.Context, caller *api.AuthenticatedUser
 		return out.Redact(), nil
 	}
 
-	if caller == nil {
-		return nil, api.WithErrorCode(errUnauthorized, api.Unauthorized)
-	}
 	return out, nil
 }
 
