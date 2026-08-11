@@ -24,7 +24,7 @@ var (
 // It rejects:
 // - null inputs, returning an error wrapping [ErrJsonNull]
 // - unknown fields (like [json.RejectUnknownMembers]) returning an error wrapping [ErrFailedToDecode]
-// - trailing non-whitespace after the JSON value returning an error wrapping [ErrTrailingData]
+// - trailing non-whitespace after the JSON value returning an error wrapping [ErrTrailingData].
 func UnmarshalStrict[T any](data []byte) (T, error) {
 	var out T
 	err := UnmarshalStrictTo(bytes.NewReader(data), &out)
