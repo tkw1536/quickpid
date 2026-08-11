@@ -14,8 +14,6 @@ import (
 	"go.tkw01536.de/pkglib/errorsx"
 )
 
-var errTrailingJSON = errors.New("trailing json after value")
-
 var (
 	errLimitInvalid            = errors.New("invalid limit")
 	errLimitMustBeNonNegative  = errors.New("limit must be non-negative")
