@@ -4,6 +4,7 @@ package seekzero
 //spellchecker:words errors
 import (
 	"errors"
+	"fmt"
 	"io"
 )
 
@@ -73,17 +74,29 @@ func (r *OnceSeekStartReader) Read(p []byte) (int, error) {
 		// But keep a copy of the bytes in the buffer.
 		n, err := r.reader.Read(p)
 		r.buffer = append(r.buffer, p[:n]...)
-		return n, err
+		return r.wrapReadError(n, err)
 	}
 
 	// After reset: Drain the buffer first.
+	// We reset the buffer to nil if it's empty, to free up the memory and help the GC.
 	if len(r.buffer) > 0 {
 		n := copy(p, r.buffer)
 		r.buffer = r.buffer[n:]
+		if len(r.buffer) == 0 {
+			r.buffer = nil
+		}
 		return n, nil
 	}
 
 	// Clear the buffer, and read from the reader.
-	r.buffer = nil
-	return r.reader.Read(p)
+	return r.wrapReadError(r.reader.Read(p))
+}
+
+// wrapReadError wraps an (int, error) pair from the underlying reader.
+func (*OnceSeekStartReader) wrapReadError(n int, err error) (int, error) {
+	//nolint:errorlint // to guarantee implementing [io.Reader] properly, we want to retain the sentinel [io.EOF] value.
+	if err == nil || err == io.EOF {
+		return n, err
+	}
+	return n, fmt.Errorf("underlying reader returned an error: %w", err)
 }
