@@ -37,10 +37,10 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.ValidUserInfo,
 		// This SHOULD NEVER happen as we received the username from a user object.
 		// But a race condition between a concurrent delete user call or data corruption might trigger this.
 		// So we consider this a database error.
-		return nil, api.WithErrorString(fmt.Errorf("%w: %w", errExistingUserNotFound, err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("%w: %w", errExistingUserNotFound, err), api.DatabaseError)
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to list namespaces: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list namespaces: %w", err), api.DatabaseError)
 	}
 	return out, nil
 }
@@ -64,10 +64,10 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.ValidUserInfo, n
 	}
 	out, err := s.store.GetNamespace(ctx, namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, api.WithErrorString(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
 	}
 	return out, nil
 }
@@ -80,7 +80,7 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.ValidUserInfo, n
 func (s *Service) CountAllResources(ctx context.Context) (*api.ResourceCountResponse, error) {
 	n, err := s.store.CountAllResources(ctx)
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to count all resources: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to count all resources: %w", err), api.DatabaseError)
 	}
 	return &api.ResourceCountResponse{Total: int(n)}, nil
 }
@@ -108,11 +108,11 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.ValidUserInfo
 	for range maxAttempts {
 		name, err := s.runtime.NewNamespaceID()
 		if err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("runtime failed to generate namespace ID: %w", err), api.BadIDGeneration)
+			return nil, api.WithErrorCode(fmt.Errorf("runtime failed to generate namespace ID: %w", err), api.BadIDGeneration)
 		}
 		namespace, err := api.NewNamespaceID(name)
 		if err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("%w: %q is not a valid namespace id", errBadNamespaceID, name), api.BadIDGeneration)
+			return nil, api.WithErrorCode(fmt.Errorf("%w: %q is not a valid namespace id", errBadNamespaceID, name), api.BadIDGeneration)
 		}
 		out, err := s.store.CreateNamespace(ctx, namespace, req, owner, s.runtime.Now)
 		if err == nil {
@@ -122,13 +122,13 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.ValidUserInfo
 			// This SHOULD NEVER happen as we received the username from a user object.
 			// But a race condition between a concurrent delete user call or data corruption might trigger this.
 			// So we consider this a database error.
-			return nil, api.WithErrorString(fmt.Errorf("%w: %w", errExistingUserNotFound, err), api.DatabaseError)
+			return nil, api.WithErrorCode(fmt.Errorf("%w: %w", errExistingUserNotFound, err), api.DatabaseError)
 		}
 		if !errors.Is(err, backend.ErrDuplicateNamespaceID) {
-			return nil, api.WithErrorString(fmt.Errorf("backend failed to create namespace: %w", err), api.DatabaseError)
+			return nil, api.WithErrorCode(fmt.Errorf("backend failed to create namespace: %w", err), api.DatabaseError)
 		}
 	}
-	return nil, api.WithErrorString(fmt.Errorf("%w: gave up namespace id generation after %d attempts", errInsufficientEntropy, maxAttempts), api.InsufficientEntropy)
+	return nil, api.WithErrorCode(fmt.Errorf("%w: gave up namespace id generation after %d attempts", errInsufficientEntropy, maxAttempts), api.InsufficientEntropy)
 }
 
 // ListResources lists resources in a namespace.
@@ -150,10 +150,10 @@ func (s *Service) ListResources(ctx context.Context, caller *api.ValidUserInfo, 
 	}
 	out, err := s.store.ListResources(ctx, namespace, params)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, api.WithErrorString(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to list resources: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list resources: %w", err), api.DatabaseError)
 	}
 	return out, nil
 }
@@ -180,10 +180,10 @@ func (s *Service) CreateResource(ctx context.Context, caller *api.ValidUserInfo,
 
 	ns, err := s.store.GetNamespace(ctx, namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, api.WithErrorString(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
 	}
 
 	out, err := s.allocatePID(ns.PIDFormat, func(pid api.ValidPID) (*api.ResourceResponse, error) {
@@ -214,7 +214,7 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.ValidUse
 	s.mu.RUnlock()
 
 	if maxBatch > 0 && len(reqs) > maxBatch {
-		return nil, api.WithErrorString(fmt.Errorf("%w: %d > %d", errLimitExceeded, len(reqs), maxBatch), api.ItemLimitExceeded)
+		return nil, api.WithErrorCode(fmt.Errorf("%w: %d > %d", errLimitExceeded, len(reqs), maxBatch), api.ItemLimitExceeded)
 	}
 
 	if !s.AnonymousMode() {
@@ -228,10 +228,10 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.ValidUse
 
 	ns, err := s.store.GetNamespace(ctx, namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, api.WithErrorString(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
 	}
 
 	out, err := s.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []api.ValidPID) ([]api.ResourceResponse, error) {
@@ -257,13 +257,13 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.ValidUse
 func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, resourcePID api.ValidPID) (api.ResourceGetResult, error) {
 	out, err := s.store.GetResource(ctx, namespace, resourcePID)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, api.WithErrorString(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
 	if errors.Is(err, backend.ErrResourceNotFound) {
-		return nil, api.WithErrorString(fmt.Errorf("resource not found: %w", err), api.ResourceNotFound)
+		return nil, api.WithErrorCode(fmt.Errorf("resource not found: %w", err), api.ResourceNotFound)
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to get resource: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to get resource: %w", err), api.DatabaseError)
 	}
 
 	if s.AnonymousMode() {
@@ -288,7 +288,7 @@ func (s *Service) GetResource(ctx context.Context, caller *api.ValidUserInfo, na
 	}
 
 	if caller == nil {
-		return nil, api.WithErrorString(errUnauthorized, api.Unauthorized)
+		return nil, api.WithErrorCode(errUnauthorized, api.Unauthorized)
 	}
 	return out, nil
 }
@@ -314,13 +314,13 @@ func (s *Service) UpdateResource(ctx context.Context, caller *api.ValidUserInfo,
 
 	out, err := s.store.UpdateResource(ctx, namespace, resourcePID, req, s.runtime.Now)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, api.WithErrorString(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
 	if errors.Is(err, backend.ErrResourceNotFound) {
-		return nil, api.WithErrorString(fmt.Errorf("resource not found: %w", err), api.ResourceNotFound)
+		return nil, api.WithErrorCode(fmt.Errorf("resource not found: %w", err), api.ResourceNotFound)
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to update resource: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to update resource: %w", err), api.DatabaseError)
 	}
 	return out, nil
 }
@@ -349,7 +349,7 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]api.Valid
 			for range maxAttempts {
 				candidate, err := s.runtime.NewPID(format)
 				if err != nil {
-					return nil, api.WithErrorString(fmt.Errorf("runtime failed to generate PID: %w", err), api.BadIDGeneration)
+					return nil, api.WithErrorCode(fmt.Errorf("runtime failed to generate PID: %w", err), api.BadIDGeneration)
 				}
 				if _, exists := seen[candidate]; exists {
 					continue
@@ -357,13 +357,13 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]api.Valid
 				seen[candidate] = struct{}{}
 				pids[i], err = api.NewPID(candidate)
 				if err != nil {
-					return nil, api.WithErrorString(fmt.Errorf("runtime returned invalid PID: %w", err), api.BadIDGeneration)
+					return nil, api.WithErrorCode(fmt.Errorf("runtime returned invalid PID: %w", err), api.BadIDGeneration)
 				}
 				break
 			}
 
 			if !format.IsValid(pids[i].String()) {
-				return nil, api.WithErrorString(fmt.Errorf("%w: %q is not a valid pid", errBadPID, pids[i]), api.BadIDGeneration)
+				return nil, api.WithErrorCode(fmt.Errorf("%w: %q is not a valid pid", errBadPID, pids[i]), api.BadIDGeneration)
 			}
 		}
 
@@ -372,10 +372,10 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]api.Valid
 			return out, nil
 		}
 		if !errors.Is(err, backend.ErrPIDAllocationFailed) {
-			return nil, api.WithErrorString(err, api.DatabaseError)
+			return nil, api.WithErrorCode(err, api.DatabaseError)
 		}
 	}
-	return nil, api.WithErrorString(fmt.Errorf("%w: gave up pid generation after %d attempts", errInsufficientEntropy, maxAttempts), api.InsufficientEntropy)
+	return nil, api.WithErrorCode(fmt.Errorf("%w: gave up pid generation after %d attempts", errInsufficientEntropy, maxAttempts), api.InsufficientEntropy)
 }
 
 // allocatePID is like allocatePIDs but for a single PID.

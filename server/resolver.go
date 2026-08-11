@@ -97,7 +97,7 @@ func (h *Server) listResources(w http.ResponseWriter, r *http.Request, user *api
 	if query.Has("deleted") {
 		b, err := strconv.ParseBool(query.Get("deleted"))
 		if err != nil {
-			return nil, api.WithErrorString(errors.Join(errDeletedInvalid, err), api.InvalidQueryParameter)
+			return nil, api.WithErrorCode(errors.Join(errDeletedInvalid, err), api.InvalidQueryParameter)
 		}
 		deleted = &b
 	}

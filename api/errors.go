@@ -7,131 +7,121 @@ import (
 	"net/http"
 )
 
-type ErrorResponse struct {
-	Error ErrorString `json:"error"`
-}
-
-// ErrorString represents an error string from the api.
-type ErrorString string
+// ErrorCode represents an error from the api.
+type ErrorCode string
 
 const (
-	DatabaseError       ErrorString = "databaseError"       // An internal problem with the database
-	BadIDGeneration     ErrorString = "badIdGeneration"     // Server failed to generate a valid api key, namespace id or pid
-	InsufficientEntropy ErrorString = "insufficientEntropy" // Insufficient entropy for api, namespace or pid generation
+	DatabaseError       ErrorCode = "databaseError"       // An internal problem with the database
+	BadIDGeneration     ErrorCode = "badIdGeneration"     // Server failed to generate a valid api key, namespace id or pid
+	InsufficientEntropy ErrorCode = "insufficientEntropy" // Insufficient entropy for api, namespace or pid generation
 
-	BodyMissing      ErrorString = "bodyMissing"      // request body was missing (but it was required)
-	BodySizeExceeded ErrorString = "bodySizeExceeded" // request body size limit exceeded
-	BodyInvalidJSON  ErrorString = "bodyInvalidJson"  // request body did not contain JSON, or it was not in the expected format
+	BodyMissing      ErrorCode = "bodyMissing"      // request body was missing (but it was required)
+	BodySizeExceeded ErrorCode = "bodySizeExceeded" // request body size limit exceeded
+	BodyInvalidJSON  ErrorCode = "bodyInvalidJson"  // request body did not contain JSON, or it was not in the expected format
 
-	InvalidQueryParameter ErrorString = "invalidQueryParameter" // A query parameter that was sent was invalid
+	InvalidQueryParameter ErrorCode = "invalidQueryParameter" // A query parameter that was sent was invalid
 
-	ItemLimitExceeded ErrorString = "itemLimitExceeded" // The number of items in the request exceeded the limit
+	ItemLimitExceeded ErrorCode = "itemLimitExceeded" // The number of items in the request exceeded the limit
 
-	InvalidNamespaceID       ErrorString = "invalidNamespaceId"       // An invalid namespace id was sent
-	InvalidPID               ErrorString = "invalidPid"               // An invalid pid was sent
-	InvalidUsername          ErrorString = "invalidUsername"          // An invalid username was sent
-	InvalidAutocompleteQuery ErrorString = "invalidAutocompleteQuery" // An invalid query was sent
-	InvalidPassword          ErrorString = "invalidPassword"          // An invalid password was sent
-	InvalidBaseURI           ErrorString = "invalidBaseUri"           // An invalid base URI was sent
+	InvalidNamespaceID       ErrorCode = "invalidNamespaceId"       // An invalid namespace id was sent
+	InvalidPID               ErrorCode = "invalidPid"               // An invalid pid was sent
+	InvalidUsername          ErrorCode = "invalidUsername"          // An invalid username was sent
+	InvalidAutocompleteQuery ErrorCode = "invalidAutocompleteQuery" // An invalid query was sent
+	InvalidPassword          ErrorCode = "invalidPassword"          // An invalid password was sent
+	InvalidBaseURI           ErrorCode = "invalidBaseUri"           // An invalid base URI was sent
 
-	NamespaceNotFound ErrorString = "namespaceNotFound" // Namespace not found
-	ResourceNotFound  ErrorString = "resourceNotFound"  // Resource not found
-	MountNotFound     ErrorString = "mountNotFound"     // Mount not found
+	NamespaceNotFound ErrorCode = "namespaceNotFound" // Namespace not found
+	ResourceNotFound  ErrorCode = "resourceNotFound"  // Resource not found
+	MountNotFound     ErrorCode = "mountNotFound"     // Mount not found
 
-	RoleNotFound ErrorString = "roleNotFound" // Role record not found
-	InvalidRole  ErrorString = "invalidRole"  // Role is not allowed for this operation
+	RoleNotFound ErrorCode = "roleNotFound" // Role record not found
+	InvalidRole  ErrorCode = "invalidRole"  // Role is not allowed for this operation
 
-	InfoUnavailable ErrorString = "infoUnavailable" // Info is unavailable (possibly for security reasons)
+	InfoUnavailable ErrorCode = "infoUnavailable" // Info is unavailable (possibly for security reasons)
 
-	UnavailableInAnonymousMode ErrorString = "unavailableInAnonymousMode" // Route is not available in anonymous mode
+	UnavailableInAnonymousMode ErrorCode = "unavailableInAnonymousMode" // Route is not available in anonymous mode
 
-	DuplicateUsername ErrorString = "duplicateUsername" // Username is already in use
-	UserNotFound      ErrorString = "userNotFound"      // User not found
-	KeyNotFound       ErrorString = "keyNotFound"       // API key not found
+	DuplicateUsername ErrorCode = "duplicateUsername" // Username is already in use
+	UserNotFound      ErrorCode = "userNotFound"      // User not found
+	KeyNotFound       ErrorCode = "keyNotFound"       // API key not found
 
-	Unauthorized ErrorString = "unauthorized" // Authentication is required but no valid credentials were provided
-	Forbidden    ErrorString = "forbidden"    // The authenticated user is not allowed to perform this action
+	Unauthorized ErrorCode = "unauthorized" // Authentication is required but no valid credentials were provided
+	Forbidden    ErrorCode = "forbidden"    // The authenticated user is not allowed to perform this action
 )
 
-// WithErrorString annotates err with the given [ErrorString].
-//
-// The error message remains unchanged.
-// The new error can be Unwrapped to get the underlying error.
-func WithErrorString(err error, message ErrorString) error {
-	return withStringError{message: message, err: err}
+type ErrorResponse struct {
+	Error string `json:"error"`
 }
 
-// GetErrorString extracts an [ErrorString] that was added to the err using [WithErrorString].
-// If no [ErrorString] was added, the second return value is false.
-func GetErrorString(err error) (ErrorString, bool) {
-	annotated, ok := errors.AsType[withStringError](err)
-	return annotated.message, ok
+// String returns the underlying error code as a string.
+func (e ErrorCode) String() string {
+	return string(e)
 }
 
-type withStringError struct {
-	message ErrorString
-	err     error
-}
-
-func (err withStringError) Error() string {
-	// we don't just call err.err.Error() here to avoid err.err == nil or panicking.
-	// that's better handled by sprintf.
-	return fmt.Sprintf("%s", err.err)
-}
-
-func (err withStringError) Unwrap() error {
-	return err.err
-}
-
-// codes maps [ErrorString]s to HTTP status codes.
-var codes = map[ErrorString]int{
-	DatabaseError:       http.StatusInternalServerError,
-	BadIDGeneration:     http.StatusInternalServerError,
-	InsufficientEntropy: http.StatusServiceUnavailable,
-
-	InvalidQueryParameter: http.StatusBadRequest,
-
-	BodyMissing:      http.StatusBadRequest,
-	BodySizeExceeded: http.StatusRequestEntityTooLarge,
-	BodyInvalidJSON:  http.StatusBadRequest,
-
-	ItemLimitExceeded: http.StatusUnprocessableEntity,
-
-	InvalidNamespaceID:       http.StatusBadRequest,
-	InvalidPID:               http.StatusBadRequest,
-	InvalidUsername:          http.StatusBadRequest,
-	InvalidAutocompleteQuery: http.StatusBadRequest,
-	InvalidPassword:          http.StatusBadRequest,
-	InvalidBaseURI:           http.StatusBadRequest,
-
-	NamespaceNotFound: http.StatusNotFound,
-	ResourceNotFound:  http.StatusNotFound,
-	MountNotFound:     http.StatusNotFound,
-
-	RoleNotFound: http.StatusNotFound,
-	InvalidRole:  http.StatusBadRequest,
-
-	InfoUnavailable: http.StatusNotFound,
-
-	UnavailableInAnonymousMode: http.StatusNotFound,
-
-	DuplicateUsername: http.StatusConflict,
-	UserNotFound:      http.StatusNotFound,
-	KeyNotFound:       http.StatusNotFound,
-
-	Unauthorized: http.StatusUnauthorized,
-	Forbidden:    http.StatusForbidden,
+func (e ErrorCode) ToResponse() ErrorResponse {
+	return ErrorResponse{Error: e.String()}
 }
 
 // HTTPCode returns the HTTP status code for the error.
 //
 // If an error code is invalid, it panics.
-func (e ErrorString) HTTPCode() int {
-	code, ok := codes[e]
-	if !ok {
+func (e ErrorCode) HTTPCode() int {
+	switch e {
+	case DatabaseError, BadIDGeneration:
+		return http.StatusInternalServerError
+	case InsufficientEntropy:
+		return http.StatusServiceUnavailable
+	case BodySizeExceeded:
+		return http.StatusRequestEntityTooLarge
+	case ItemLimitExceeded:
+		return http.StatusUnprocessableEntity
+	case DuplicateUsername:
+		return http.StatusConflict
+	case Unauthorized:
+		return http.StatusUnauthorized
+	case Forbidden:
+		return http.StatusForbidden
+	case InvalidQueryParameter, BodyMissing, BodyInvalidJSON,
+		InvalidNamespaceID, InvalidPID, InvalidUsername, InvalidAutocompleteQuery, InvalidPassword, InvalidBaseURI,
+		InvalidRole:
+		return http.StatusBadRequest
+	case NamespaceNotFound, ResourceNotFound, MountNotFound,
+		RoleNotFound, InfoUnavailable, UnavailableInAnonymousMode,
+		UserNotFound, KeyNotFound:
+		return http.StatusNotFound
+	default:
 		panic("invalid error code")
 	}
-	return code
+}
+
+// WithErrorCode annotates err with the given [ErrorCode].
+//
+// The error message remains unchanged.
+// The new error can be Unwrapped to get the underlying error.
+func WithErrorCode(err error, code ErrorCode) error {
+	return withCodeError{code: code, err: err}
+}
+
+// GetErrorCode extracts an [ErrorCode] that was added to the err using [WithErrorCode].
+// If no [ErrorCode] was added, the second return value is false.
+func GetErrorCode(err error) (ErrorCode, bool) {
+	annotated, ok := errors.AsType[withCodeError](err)
+	return annotated.code, ok
+}
+
+type withCodeError struct {
+	code ErrorCode
+	err  error
+}
+
+func (err withCodeError) Error() string {
+	// we don't just call err.err.Error() here to avoid err.err == nil or panicking.
+	// that's better handled by sprintf.
+	return fmt.Sprintf("%s", err.err)
+}
+
+func (err withCodeError) Unwrap() error {
+	return err.err
 }
 
 // various internal sentinel errors.

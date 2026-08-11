@@ -21,7 +21,7 @@ const (
 func (h *Handler) Public[T any](
 	impl func(http.ResponseWriter, *http.Request) (T, error),
 	successCode func(T) int,
-	allowedErrors []api.ErrorString,
+	allowedErrors []api.ErrorCode,
 ) http.HandlerFunc {
 	return h.handle(
 		noAuthentication,
@@ -40,7 +40,7 @@ func (h *Handler) Public[T any](
 func (h *Handler) Restricted[T any](
 	impl func(http.ResponseWriter, *http.Request, api.ValidUserInfo) (T, error),
 	successCode func(T) int,
-	allowedErrors []api.ErrorString,
+	allowedErrors []api.ErrorCode,
 ) http.HandlerFunc {
 	return h.handle(
 		requiredUser,
@@ -62,7 +62,7 @@ func (h *Handler) Restricted[T any](
 func (h *Handler) Open[T any](
 	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
 	successCode func(T) int,
-	allowedErrors []api.ErrorString,
+	allowedErrors []api.ErrorCode,
 ) http.HandlerFunc {
 	return h.handle(
 		optionalUser,

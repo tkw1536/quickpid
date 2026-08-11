@@ -30,7 +30,7 @@ import (
 // The result will always be marshaled into the response body as JSON.
 // The status code of the response will be determined by the successCode function, which is typically [FixedStatusCode].
 //
-// If the error is not nil, it should wrap an [api.ErrorString] value, which will be returned to the client.
+// If the error is not nil, it should wrap an [api.ErrorCode] value, which will be returned to the client.
 // If there is no ErrorString, or it is not explicitly listed in the allowedErrors slice, this is considered an implementation error.
 //
 // Each of the methods is intended to support a different authentication scenario.
@@ -38,7 +38,7 @@ import (
 // - [Handler.Restricted] requires an authenticated user, and loads the whole user object from the database.
 // - [Handler.Open] is like [Handler.Restricted], but also allows anonymous users.
 //
-// Note that depending on the authentication scenario, they introduce additional possible [api.ErrorString] values, which act
+// Note that depending on the authentication scenario, they introduce additional possible [api.ErrorCode] values, which act
 // as if they had been returned by the implementation function and thus need to be listed in the allowedErrors slice.
 type Handler struct {
 	auth   AuthService

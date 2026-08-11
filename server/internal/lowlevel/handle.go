@@ -18,9 +18,9 @@ func (h *Handler) handle[T any](
 	s scenario,
 	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
 	successCode func(T) int,
-	allowedErrors []api.ErrorString,
+	allowedErrors []api.ErrorCode,
 ) http.HandlerFunc {
-	errors := make(map[api.ErrorString]struct{}, len(allowedErrors))
+	errors := make(map[api.ErrorCode]struct{}, len(allowedErrors))
 	for _, err := range allowedErrors {
 		errors[err] = struct{}{}
 	}
@@ -71,7 +71,7 @@ func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.ValidU
 	// if we require auth mode, and we are in anonymous mode
 	// this endpoint is unavailable.
 	if scenario == requiredUser && h.auth.AnonymousMode() {
-		return nil, api.WithErrorString(errUnavailableInAnonymousMode, api.UnavailableInAnonymousMode)
+		return nil, api.WithErrorCode(errUnavailableInAnonymousMode, api.UnavailableInAnonymousMode)
 	}
 
 	// if we said not to do any auth, don't load anything.
@@ -87,22 +87,22 @@ func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.ValidU
 	creds := credentials.Parse(r.Header)
 	switch creds.Kind() {
 	case credentials.KindInvalid:
-		return nil, api.WithErrorString(errInvalidAuthenticationCredentials, api.Unauthorized)
+		return nil, api.WithErrorCode(errInvalidAuthenticationCredentials, api.Unauthorized)
 	case credentials.KindEmpty:
 		if scenario != optionalUser {
-			return nil, api.WithErrorString(errAuthenticationRequired, api.Unauthorized)
+			return nil, api.WithErrorCode(errAuthenticationRequired, api.Unauthorized)
 		}
 		return nil, nil
 	case credentials.KindBearer:
 		username, err = h.auth.AuthenticateAPIKey(r.Context(), creds.BearerToken())
 		if err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("invalid api key: %w", err), api.Unauthorized)
+			return nil, api.WithErrorCode(fmt.Errorf("invalid api key: %w", err), api.Unauthorized)
 		}
 	case credentials.KindBasic:
 		basicUsername, basicPassword := creds.BasicAuth()
 		username, err = h.auth.AuthenticatePassword(r.Context(), basicUsername, basicPassword)
 		if err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("invalid username and password: %w", err), api.Unauthorized)
+			return nil, api.WithErrorCode(fmt.Errorf("invalid username and password: %w", err), api.Unauthorized)
 		}
 	default:
 		panic("never reached")
@@ -110,7 +110,7 @@ func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.ValidU
 
 	user, err := h.auth.LoadUser(r.Context(), username)
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("failed to load user object: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("failed to load user object: %w", err), api.DatabaseError)
 	}
 
 	return h.resolveImpersonatedUser(r, user)
@@ -139,24 +139,24 @@ func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.ValidUserI
 		return &caller, nil
 	case 1: /* see below */
 	default:
-		return nil, api.WithErrorString(errMultipleImpersonateHeaders, api.Unauthorized)
+		return nil, api.WithErrorCode(errMultipleImpersonateHeaders, api.Unauthorized)
 	}
 
 	if !caller.Superuser {
-		return nil, api.WithErrorString(errNotAllowedToImpersonate, api.Unauthorized)
+		return nil, api.WithErrorCode(errNotAllowedToImpersonate, api.Unauthorized)
 	}
 
 	username, err := api.NewUsername(strings.TrimSpace(headers[0]))
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("invalid impersonated username: %w", err), api.Unauthorized)
+		return nil, api.WithErrorCode(fmt.Errorf("invalid impersonated username: %w", err), api.Unauthorized)
 	}
 
 	user, err := h.auth.LoadUser(r.Context(), username)
 	if err != nil {
-		if code, ok := api.GetErrorString(err); ok && code == api.UserNotFound {
-			return nil, api.WithErrorString(fmt.Errorf("impersonated user not found: %w", err), api.Unauthorized)
+		if code, ok := api.GetErrorCode(err); ok && code == api.UserNotFound {
+			return nil, api.WithErrorCode(fmt.Errorf("impersonated user not found: %w", err), api.Unauthorized)
 		}
-		return nil, api.WithErrorString(fmt.Errorf("failed to load impersonated user object: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("failed to load impersonated user object: %w", err), api.DatabaseError)
 	}
 
 	return &user, nil
@@ -168,23 +168,23 @@ func (h *Handler) writeHandledError(
 	r *http.Request,
 	duration time.Duration,
 	err error,
-	allowedErrors map[api.ErrorString]struct{},
+	allowedErrors map[api.ErrorCode]struct{},
 ) {
-	specError, ok := api.GetErrorString(err)
+	code, ok := api.GetErrorCode(err)
 	if !ok {
 		panic("implementation error: did not carry an error string")
 	}
-	if _, ok := allowedErrors[specError]; !ok {
-		panic("implementation error: unexpected error " + specError + " returned")
+	if _, ok := allowedErrors[code]; !ok {
+		panic("implementation error: unexpected error " + code.String() + " returned")
 	}
 
 	h.Log(
 		r.Context(),
 		r,
 		duration,
-		specError.HTTPCode(),
-		slog.String("error", string(specError)),
+		code.HTTPCode(),
+		slog.String("error", code.String()),
 		slog.Any("cause", err),
 	)
-	h.writeJSONResponse(w, r, specError.HTTPCode(), api.ErrorResponse{Error: specError})
+	h.writeJSONResponse(w, r, code.HTTPCode(), code.ToResponse())
 }

@@ -25,7 +25,7 @@ func (h *Server) createUser(w http.ResponseWriter, r *http.Request, caller api.V
 
 	validReq, err := req.Validate()
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("failed to validate user create request: %w", err), api.InvalidUsername)
+		return nil, api.WithErrorCode(fmt.Errorf("failed to validate user create request: %w", err), api.InvalidUsername)
 	}
 
 	createdUser, err := h.svc.CreateUser(r.Context(), caller, validReq)
@@ -55,7 +55,7 @@ func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, caller 
 
 	validReq, err := req.Validate()
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("failed to validate set password request: %w", err), api.InvalidPassword)
+		return nil, api.WithErrorCode(fmt.Errorf("failed to validate set password request: %w", err), api.InvalidPassword)
 	}
 
 	response, err := h.svc.SetUserPassword(r.Context(), caller, validReq)

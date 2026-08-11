@@ -45,7 +45,7 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (deco
 			//
 			// This if most likely this happens when the underlying network connection had some error;
 			// meaning the client will never see if anyways.
-			decodeErr = api.WithErrorString(
+			decodeErr = api.WithErrorCode(
 				errorsx.Combine(decodeErr, fmt.Errorf("failed to close body: %w", err)),
 				api.BodyInvalidJSON,
 			)
@@ -54,13 +54,13 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (deco
 
 	err := strict.UnmarshalStrictTo(body, v)
 	if errors.Is(err, io.EOF) {
-		return api.WithErrorString(fmt.Errorf("body is missing or incomplete: %w", err), api.BodyMissing)
+		return api.WithErrorCode(fmt.Errorf("body is missing or incomplete: %w", err), api.BodyMissing)
 	}
 	if _, isMaxBytesError := errors.AsType[*http.MaxBytesError](err); isMaxBytesError {
-		return api.WithErrorString(fmt.Errorf("maximum body size exceeded: %w", err), api.BodySizeExceeded)
+		return api.WithErrorCode(fmt.Errorf("maximum body size exceeded: %w", err), api.BodySizeExceeded)
 	}
 	if errors.Is(err, strict.ErrJsonNull) || errors.Is(err, strict.ErrFailedToDecode) || errors.Is(err, strict.ErrTrailingData) {
-		return api.WithErrorString(err, api.BodyInvalidJSON)
+		return api.WithErrorCode(err, api.BodyInvalidJSON)
 	}
 	if err != nil {
 		return fmt.Errorf("unknown error while decoding json: %w", err)
@@ -83,10 +83,10 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, err er
 	if query.Has("limit") {
 		limit, err = strconv.Atoi(query.Get("limit"))
 		if err != nil {
-			return 0, 0, api.WithErrorString(fmt.Errorf("%w: %w", errLimitInvalid, err), api.InvalidQueryParameter)
+			return 0, 0, api.WithErrorCode(fmt.Errorf("%w: %w", errLimitInvalid, err), api.InvalidQueryParameter)
 		}
 		if limit < 0 {
-			return 0, 0, api.WithErrorString(errLimitMustBeNonNegative, api.InvalidQueryParameter)
+			return 0, 0, api.WithErrorCode(errLimitMustBeNonNegative, api.InvalidQueryParameter)
 		}
 	}
 	if limits.MaxPageLimit > 0 && limit > limits.MaxPageLimit {
@@ -97,10 +97,10 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, err er
 	if query.Has("offset") {
 		offset, err = strconv.Atoi(query.Get("offset"))
 		if err != nil {
-			return 0, 0, api.WithErrorString(fmt.Errorf("%w: %w", errOffsetInvalid, err), api.InvalidQueryParameter)
+			return 0, 0, api.WithErrorCode(fmt.Errorf("%w: %w", errOffsetInvalid, err), api.InvalidQueryParameter)
 		}
 		if offset < 0 {
-			return 0, 0, api.WithErrorString(errOffsetMustBeNonNegative, api.InvalidQueryParameter)
+			return 0, 0, api.WithErrorCode(errOffsetMustBeNonNegative, api.InvalidQueryParameter)
 		}
 	}
 	return limit, offset, nil
@@ -114,7 +114,7 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, err er
 func (*Server) readNamespaceParam(r *http.Request) (api.ValidNamespaceID, error) {
 	namespace, err := api.NewNamespaceID(r.PathValue("namespace"))
 	if err != nil {
-		return api.ValidNamespaceID{}, api.WithErrorString(fmt.Errorf("failed to parse namespace id: %w", err), api.InvalidNamespaceID)
+		return api.ValidNamespaceID{}, api.WithErrorCode(fmt.Errorf("failed to parse namespace id: %w", err), api.InvalidNamespaceID)
 	}
 	return namespace, nil
 }
@@ -127,7 +127,7 @@ func (*Server) readNamespaceParam(r *http.Request) (api.ValidNamespaceID, error)
 func (*Server) readPidParam(r *http.Request) (api.ValidPID, error) {
 	pid, err := api.NewPID(r.PathValue("pid"))
 	if err != nil {
-		return api.ValidPID{}, api.WithErrorString(fmt.Errorf("failed to parse pid: %w", err), api.InvalidPID)
+		return api.ValidPID{}, api.WithErrorCode(fmt.Errorf("failed to parse pid: %w", err), api.InvalidPID)
 	}
 	return pid, nil
 }
@@ -140,7 +140,7 @@ func (*Server) readPidParam(r *http.Request) (api.ValidPID, error) {
 func (*Server) readUsernameParam(r *http.Request) (api.ValidUsername, error) {
 	username, err := api.NewUsername(r.PathValue("username"))
 	if err != nil {
-		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
+		return api.ValidUsername{}, api.WithErrorCode(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
 	}
 	return username, nil
 }
@@ -153,7 +153,7 @@ func (*Server) readUsernameParam(r *http.Request) (api.ValidUsername, error) {
 func (*Server) readBaseURIParam(r *http.Request) (api.ValidBaseURI, error) {
 	baseURI, err := api.NewBaseURI(r.PathValue("baseUri"))
 	if err != nil {
-		return api.ValidBaseURI{}, api.WithErrorString(fmt.Errorf("failed to parse base uri: %w", err), api.InvalidBaseURI)
+		return api.ValidBaseURI{}, api.WithErrorCode(fmt.Errorf("failed to parse base uri: %w", err), api.InvalidBaseURI)
 	}
 	return baseURI, nil
 }
@@ -167,11 +167,11 @@ func (*Server) readBaseURIParam(r *http.Request) (api.ValidBaseURI, error) {
 func (s *Server) readRequiredUsernameFromQuery(r *http.Request) (api.ValidUsername, error) {
 	query := r.URL.Query()
 	if !query.Has("username") {
-		return api.ValidUsername{}, api.WithErrorString(errMissingUsernameQuery, api.InvalidQueryParameter)
+		return api.ValidUsername{}, api.WithErrorCode(errMissingUsernameQuery, api.InvalidQueryParameter)
 	}
 	username, err := api.NewUsername(r.URL.Query().Get("username"))
 	if err != nil {
-		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
+		return api.ValidUsername{}, api.WithErrorCode(fmt.Errorf("failed to parse username: %w", err), api.InvalidUsername)
 	}
 	return username, nil
 }
@@ -188,11 +188,11 @@ func (*Server) readRequiredAutocompleteFromQuery(r *http.Request) (api.ValidAuto
 
 	q := r.URL.Query()
 	if !q.Has("query") {
-		return api.ValidAutocompleteQuery{}, api.WithErrorString(errMissingQueryParameter, api.InvalidQueryParameter)
+		return api.ValidAutocompleteQuery{}, api.WithErrorCode(errMissingQueryParameter, api.InvalidQueryParameter)
 	}
 	query, err := api.NewAutocompleteQuery(q.Get("query"))
 	if err != nil {
-		return api.ValidAutocompleteQuery{}, api.WithErrorString(fmt.Errorf("failed to parse autocomplete query: %w", err), api.InvalidAutocompleteQuery)
+		return api.ValidAutocompleteQuery{}, api.WithErrorCode(fmt.Errorf("failed to parse autocomplete query: %w", err), api.InvalidAutocompleteQuery)
 	}
 	return query, nil
 }
@@ -215,6 +215,6 @@ func (*Server) readOptionalBooleanFromQuery(r *http.Request, name string) (*bool
 	case "false":
 		return new(false), nil
 	default:
-		return nil, api.WithErrorString(fmt.Errorf("%w: value %q for %q is not a boolean", errInvalidBooleanQuery, value, name), api.InvalidQueryParameter)
+		return nil, api.WithErrorCode(fmt.Errorf("%w: value %q for %q is not a boolean", errInvalidBooleanQuery, value, name), api.InvalidQueryParameter)
 	}
 }

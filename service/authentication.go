@@ -43,27 +43,27 @@ func (s *Service) AuthenticateAPIKey(ctx context.Context, apiKey string) (api.Va
 // May return errors that wrap [api.Unauthorized].
 func (s *Service) AuthenticatePassword(ctx context.Context, username string, password string) (api.ValidUsername, error) {
 	if s.AnonymousMode() || username == "" || password == "" {
-		return api.ValidUsername{}, api.WithErrorString(errUnauthorized, api.Unauthorized)
+		return api.ValidUsername{}, api.WithErrorCode(errUnauthorized, api.Unauthorized)
 	}
 
 	validUsername, err := api.NewUsername(username)
 	if err != nil {
-		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("invalid username provided: %w", err), api.Unauthorized)
+		return api.ValidUsername{}, api.WithErrorCode(fmt.Errorf("invalid username provided: %w", err), api.Unauthorized)
 	}
 	validPassword, err := api.NewPassword(password)
 	if err != nil {
-		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("failed to parse username: %w", err), api.Unauthorized)
+		return api.ValidUsername{}, api.WithErrorCode(fmt.Errorf("failed to parse username: %w", err), api.Unauthorized)
 	}
 
 	ok, err := s.store.CheckPassword(ctx, validUsername, validPassword)
 	if errors.Is(err, backend.ErrUserNotFound) {
-		return api.ValidUsername{}, api.WithErrorString(fmt.Errorf("user not found: %w", err), api.Unauthorized)
+		return api.ValidUsername{}, api.WithErrorCode(fmt.Errorf("user not found: %w", err), api.Unauthorized)
 	}
 	if err != nil {
 		return api.ValidUsername{}, fmt.Errorf("backend reported the username password combination is invalid: %w", err)
 	}
 	if !ok {
-		return api.ValidUsername{}, api.WithErrorString(errUnauthorized, api.Unauthorized)
+		return api.ValidUsername{}, api.WithErrorCode(errUnauthorized, api.Unauthorized)
 	}
 	return validUsername, nil
 }
@@ -77,14 +77,14 @@ func (s *Service) AuthenticatePassword(ctx context.Context, username string, pas
 func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
 	user, err := s.store.GetUser(ctx, username)
 	if errors.Is(err, backend.ErrUserNotFound) {
-		return api.ValidUserInfo{}, api.WithErrorString(fmt.Errorf("user not found: %w", err), api.UserNotFound)
+		return api.ValidUserInfo{}, api.WithErrorCode(fmt.Errorf("user not found: %w", err), api.UserNotFound)
 	}
 	if err != nil {
-		return api.ValidUserInfo{}, api.WithErrorString(fmt.Errorf("backend failed to get user: %w", err), api.DatabaseError)
+		return api.ValidUserInfo{}, api.WithErrorCode(fmt.Errorf("backend failed to get user: %w", err), api.DatabaseError)
 	}
 	info, err := user.Validate()
 	if err != nil {
-		return api.ValidUserInfo{}, api.WithErrorString(fmt.Errorf("backend returned invalid user: %w", err), api.DatabaseError)
+		return api.ValidUserInfo{}, api.WithErrorCode(fmt.Errorf("backend returned invalid user: %w", err), api.DatabaseError)
 	}
 	return info, nil
 }
@@ -97,7 +97,7 @@ func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api
 func (s *Service) SetUserPassword(ctx context.Context, caller api.ValidUserInfo, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
 	hasPassword, err := s.store.SetPassword(ctx, caller.Username, req.Password)
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to set password: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to set password: %w", err), api.DatabaseError)
 	}
 	return &api.SetPasswordResponse{Password: hasPassword}, nil
 }
@@ -127,7 +127,7 @@ func (s *Service) CreateUser(ctx context.Context, caller api.ValidUserInfo, req 
 		return nil, err
 	}
 	if req.Superuser && !caller.Superuser {
-		return nil, api.WithErrorString(errForbidden, api.Forbidden)
+		return nil, api.WithErrorCode(errForbidden, api.Forbidden)
 	}
 
 	user, err := s.store.CreateUser(ctx, req, s.runtime.Now)
@@ -135,7 +135,7 @@ func (s *Service) CreateUser(ctx context.Context, caller api.ValidUserInfo, req 
 		return nil, mapped
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to create user: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to create user: %w", err), api.DatabaseError)
 	}
 	return user, nil
 }
@@ -154,7 +154,7 @@ func (s *Service) DeleteUser(ctx context.Context, caller api.ValidUserInfo, targ
 	}
 
 	if target.String() == caller.Username.String() {
-		return api.WithErrorString(fmt.Errorf("cannot delete own account: %w", errForbidden), api.Forbidden)
+		return api.WithErrorCode(fmt.Errorf("cannot delete own account: %w", errForbidden), api.Forbidden)
 	}
 
 	err := s.store.DeleteUser(ctx, target)
@@ -162,7 +162,7 @@ func (s *Service) DeleteUser(ctx context.Context, caller api.ValidUserInfo, targ
 		return mapped
 	}
 	if err != nil {
-		return api.WithErrorString(fmt.Errorf("backend failed to delete user: %w", err), api.DatabaseError)
+		return api.WithErrorCode(fmt.Errorf("backend failed to delete user: %w", err), api.DatabaseError)
 	}
 	return nil
 }
@@ -181,7 +181,7 @@ func (s *Service) ListUsers(ctx context.Context, caller api.ValidUserInfo, param
 
 	page, err := s.store.ListUsers(ctx, params)
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to list users: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list users: %w", err), api.DatabaseError)
 	}
 	return page, nil
 }
@@ -198,7 +198,7 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller api.ValidUserInf
 
 	usernames, err := s.store.AutocompleteUsers(ctx, query, limit)
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to autocomplete users: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to autocomplete users: %w", err), api.DatabaseError)
 	}
 	return usernames, nil
 }
@@ -217,7 +217,7 @@ func (s *Service) ListKeys(ctx context.Context, caller api.ValidUserInfo, params
 		return nil, mapped
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to list keys: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list keys: %w", err), api.DatabaseError)
 	}
 	return page, nil
 }
@@ -316,7 +316,7 @@ func (s *Service) listAllKeys(ctx context.Context, format apikey.Format, usernam
 func (s *Service) IssueKey(ctx context.Context, caller api.ValidUserInfo, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
 	if req.ExpiresAt != nil {
 		if !req.ExpiresAt.After(s.runtime.Now()) {
-			return nil, api.WithErrorString(errExpiresAtInPast, api.InvalidQueryParameter)
+			return nil, api.WithErrorCode(errExpiresAtInPast, api.InvalidQueryParameter)
 		}
 	}
 
@@ -344,12 +344,12 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 	for range maxAttempts {
 		keyID, err := s.runtime.NewAPIKeyID()
 		if err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("failed to generate new api key id: %w", err), api.BadIDGeneration)
+			return nil, api.WithErrorCode(fmt.Errorf("failed to generate new api key id: %w", err), api.BadIDGeneration)
 		}
 
 		rawKey, err := s.runtime.NewAPIKey(format)
 		if err != nil {
-			return nil, api.WithErrorString(fmt.Errorf("failed to generate new api key: %w", err), api.BadIDGeneration)
+			return nil, api.WithErrorCode(fmt.Errorf("failed to generate new api key: %w", err), api.BadIDGeneration)
 		}
 
 		info, err := s.store.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
@@ -360,10 +360,10 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 			return nil, mapped
 		}
 		if !errors.Is(err, backend.ErrKeyCollision) {
-			return nil, api.WithErrorString(fmt.Errorf("backend failed to create key: %w", err), api.DatabaseError)
+			return nil, api.WithErrorCode(fmt.Errorf("backend failed to create key: %w", err), api.DatabaseError)
 		}
 	}
-	return nil, api.WithErrorString(fmt.Errorf("%w: gave up api key generation after %d attempts", errInsufficientEntropy, maxAttempts), api.InsufficientEntropy)
+	return nil, api.WithErrorCode(fmt.Errorf("%w: gave up api key generation after %d attempts", errInsufficientEntropy, maxAttempts), api.InsufficientEntropy)
 }
 
 // RevokeKey revokes an API key for the caller or another user when caller is a superuser.
@@ -375,10 +375,10 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 func (s *Service) RevokeKey(ctx context.Context, caller api.ValidUserInfo, req api.KeyRevokeRequest) error {
 	err := s.store.RevokeKey(ctx, s.apiKeyFormat(), caller.Username, req.ID)
 	if errors.Is(err, backend.ErrKeyNotFound) {
-		return api.WithErrorString(fmt.Errorf("key not found: %w", err), api.KeyNotFound)
+		return api.WithErrorCode(fmt.Errorf("key not found: %w", err), api.KeyNotFound)
 	}
 	if err != nil {
-		return api.WithErrorString(fmt.Errorf("backend failed to revoke key: %w", err), api.DatabaseError)
+		return api.WithErrorCode(fmt.Errorf("backend failed to revoke key: %w", err), api.DatabaseError)
 	}
 	return nil
 }
@@ -397,7 +397,7 @@ func (s *Service) UpdateUser(ctx context.Context, caller api.ValidUserInfo, targ
 	}
 
 	if target.String() == caller.Username.String() {
-		return nil, api.WithErrorString(errForbidden, api.Forbidden)
+		return nil, api.WithErrorCode(errForbidden, api.Forbidden)
 	}
 
 	user, err := s.store.UpdateUser(ctx, target, req)
@@ -405,7 +405,7 @@ func (s *Service) UpdateUser(ctx context.Context, caller api.ValidUserInfo, targ
 		return nil, mapped
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to update user: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to update user: %w", err), api.DatabaseError)
 	}
 	return user, nil
 }
@@ -417,7 +417,7 @@ func (s *Service) UpdateUser(ctx context.Context, caller api.ValidUserInfo, targ
 // - [api.Forbidden].
 func requireSuperuser(user api.ValidUserInfo) error {
 	if !user.Superuser {
-		return api.WithErrorString(errForbidden, api.Forbidden)
+		return api.WithErrorCode(errForbidden, api.Forbidden)
 	}
 	return nil
 }
@@ -430,11 +430,11 @@ func (s *Service) apiKeyFormat() apikey.Format {
 func mapAuthBackendError(err error) (error, bool) {
 	switch {
 	case errors.Is(err, backend.ErrDuplicateUsername):
-		return api.WithErrorString(fmt.Errorf("duplicate username: %w", err), api.DuplicateUsername), true
+		return api.WithErrorCode(fmt.Errorf("duplicate username: %w", err), api.DuplicateUsername), true
 	case errors.Is(err, backend.ErrUserNotFound):
-		return api.WithErrorString(fmt.Errorf("user not found: %w", err), api.UserNotFound), true
+		return api.WithErrorCode(fmt.Errorf("user not found: %w", err), api.UserNotFound), true
 	case errors.Is(err, backend.ErrKeyNotFound):
-		return api.WithErrorString(fmt.Errorf("key not found: %w", err), api.KeyNotFound), true
+		return api.WithErrorCode(fmt.Errorf("key not found: %w", err), api.KeyNotFound), true
 	default:
 		return nil, false
 	}

@@ -62,7 +62,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						return authProbeResponse{}, nil
 					},
 					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
-					[]api.ErrorString{api.DatabaseError},
+					[]api.ErrorCode{api.DatabaseError},
 				)
 
 				rec := runHandler(t, handler, scenario.authHeaders...)
@@ -91,7 +91,7 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 						return authProbeResponse{Username: username, User: userInfo}, nil
 					},
 					lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
-					[]api.ErrorString{api.Unauthorized, api.DatabaseError},
+					[]api.ErrorCode{api.Unauthorized, api.DatabaseError},
 				)
 
 				rec := runHandler(t, handler, scenario.authHeaders...)
@@ -236,7 +236,7 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 			return struct{}{}, nil
 		},
 		lowlevel.FixedStatusCode[struct{}](http.StatusOK),
-		[]api.ErrorString{api.Unauthorized, api.UnavailableInAnonymousMode, api.DatabaseError},
+		[]api.ErrorCode{api.Unauthorized, api.UnavailableInAnonymousMode, api.DatabaseError},
 	)
 
 	rec := runHandler(t, handler, "any-token")
@@ -284,7 +284,7 @@ func TestImpersonation(t *testing.T) {
 			loadUser: func(_ context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
 				user, ok := users[username.String()]
 				if !ok {
-					return api.ValidUserInfo{}, api.WithErrorString(errUserNotFound, api.UserNotFound)
+					return api.ValidUserInfo{}, api.WithErrorCode(errUserNotFound, api.UserNotFound)
 				}
 				return user, nil
 			},
@@ -306,7 +306,7 @@ func TestImpersonation(t *testing.T) {
 				}, nil
 			},
 			lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
-			[]api.ErrorString{api.Unauthorized, api.DatabaseError},
+			[]api.ErrorCode{api.Unauthorized, api.DatabaseError},
 		)
 		return handler, &gotCalled, &gotUser
 	}

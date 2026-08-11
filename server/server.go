@@ -62,7 +62,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver", h.lowlevel.Public(
 		h.getResolverInfo,
 		lowlevel.FixedStatusCode[*api.InfoResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InfoUnavailable,
 		},
 	))
@@ -78,7 +78,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		func(result *api.PaginatedNamespacesResponse) int {
 			return http.StatusOK
 		},
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
 			api.DatabaseError,
@@ -88,7 +88,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /resolver/namespaces", h.lowlevel.Open(
 		h.createNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusCreated),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.Unauthorized,
@@ -102,7 +102,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/resources/count", h.lowlevel.Public(
 		h.countAllResources,
 		lowlevel.FixedStatusCode[*api.ResourceCountResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.DatabaseError,
 		},
 	))
@@ -110,7 +110,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/mounts", h.lowlevel.Open(
 		h.listMounts,
 		lowlevel.FixedStatusCode[*api.PaginatedMountsResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
 			api.Forbidden,
@@ -121,7 +121,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/mounts/{baseUri}", h.lowlevel.Public(
 		h.resolveMountByBaseUri,
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidBaseURI,
 			api.MountNotFound,
 			api.DatabaseError,
@@ -130,7 +130,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("PUT /resolver/mounts/{baseUri}", h.lowlevel.Open(
 		h.upsertNamespaceMount,
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.InvalidBaseURI,
@@ -146,7 +146,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("DELETE /resolver/mounts/{baseUri}", h.lowlevel.Open(
 		h.deleteNamespaceMount,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidBaseURI,
 			api.Unauthorized,
 			api.Forbidden,
@@ -158,7 +158,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/mounts/{baseUri}/{pid}", h.lowlevel.Open(
 		h.resolveResourceByMountAndPID,
 		lowlevel.FixedStatusCode[api.ResourceGetResult](http.StatusFound),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidBaseURI,
 			api.InvalidPID,
 			api.Unauthorized,
@@ -172,7 +172,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/namespaces/{namespace}", h.lowlevel.Open(
 		h.getNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidNamespaceID,
 			api.Unauthorized,
 			api.Forbidden,
@@ -184,7 +184,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/mounts", h.lowlevel.Open(
 		h.listNamespaceMounts,
 		lowlevel.FixedStatusCode[*api.PaginatedBaseURIResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidNamespaceID,
 			api.InvalidQueryParameter,
 			api.Unauthorized,
@@ -197,7 +197,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles", h.lowlevel.Restricted(
 		h.listNamespaceRoles,
 		lowlevel.FixedStatusCode[*api.PaginatedNamespaceRolesResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidNamespaceID,
 			api.InvalidQueryParameter,
 			api.Unauthorized,
@@ -211,7 +211,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Restricted(
 		h.getNamespaceRole,
 		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidNamespaceID,
 			api.InvalidUsername,
 			api.Unauthorized,
@@ -224,7 +224,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("PUT /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Restricted(
 		h.setNamespaceRole,
 		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.InvalidNamespaceID,
@@ -242,7 +242,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Restricted(
 		h.removeNamespaceRole,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidNamespaceID,
 			api.InvalidUsername,
 			api.Unauthorized,
@@ -257,7 +257,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", h.lowlevel.Open(
 		h.listResources,
 		lowlevel.FixedStatusCode[*api.PaginatedResourcesResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidNamespaceID,
 			api.InvalidQueryParameter,
 			api.Unauthorized,
@@ -269,7 +269,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", h.lowlevel.Open(
 		h.createResource,
 		lowlevel.FixedStatusCode[*api.ResourceResponse](http.StatusCreated),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.InvalidNamespaceID,
@@ -286,7 +286,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources/batch", h.lowlevel.Open(
 		h.createResourceBatch,
 		lowlevel.FixedStatusCode[[]api.ResourceResponse](http.StatusCreated),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodySizeExceeded,
 			api.BodyMissing,
 			api.BodyInvalidJSON,
@@ -309,7 +309,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			}
 			return http.StatusOK
 		},
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidNamespaceID,
 			api.InvalidPID,
 			api.Unauthorized,
@@ -321,7 +321,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", h.lowlevel.Open(
 		h.updateResource,
 		lowlevel.FixedStatusCode[*api.ResourceResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.InvalidNamespaceID,
@@ -338,7 +338,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /user", h.lowlevel.Restricted(
 		h.getUserInfo,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.Unauthorized,
 			api.UnavailableInAnonymousMode,
 			api.DatabaseError,
@@ -347,7 +347,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("PATCH /user", h.lowlevel.Restricted(
 		h.updateUser,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.InvalidQueryParameter,
@@ -363,7 +363,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /user", h.lowlevel.Restricted(
 		h.createUser,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusCreated),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.InvalidUsername,
@@ -378,7 +378,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("DELETE /user", h.lowlevel.Restricted(
 		h.deleteUser,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidUsername,
 			api.InvalidQueryParameter,
 			api.Unauthorized,
@@ -392,7 +392,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /users/autocomplete", h.lowlevel.Restricted(
 		h.autocompleteUsers,
 		lowlevel.FixedStatusCode[[]string](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidQueryParameter,
 			api.InvalidAutocompleteQuery,
 			api.Unauthorized,
@@ -404,7 +404,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /users", h.lowlevel.Restricted(
 		h.listUsers,
 		lowlevel.FixedStatusCode[*api.PaginatedUsersResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
 			api.Forbidden,
@@ -416,7 +416,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /user/roles", h.lowlevel.Restricted(
 		h.getUserRoles,
 		lowlevel.FixedStatusCode[*api.PaginatedUserRolesResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
 			api.UnavailableInAnonymousMode,
@@ -427,7 +427,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("GET /user/key", h.lowlevel.Restricted(
 		h.listUserKeys,
 		lowlevel.FixedStatusCode[*api.PaginatedAPIKeysResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
 			api.UnavailableInAnonymousMode,
@@ -437,7 +437,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /user/key", h.lowlevel.Restricted(
 		h.issueUserKey,
 		lowlevel.FixedStatusCode[*api.IssueKeyResponse](http.StatusCreated),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.InvalidQueryParameter,
@@ -453,7 +453,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /user/password", h.lowlevel.Restricted(
 		h.setUserPassword,
 		lowlevel.FixedStatusCode[*api.SetPasswordResponse](http.StatusOK),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.InvalidPassword,
@@ -467,7 +467,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	h.mux.Handle("POST /user/key/revoke", h.lowlevel.Restricted(
 		h.revokeUserKey,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
-		[]api.ErrorString{
+		[]api.ErrorCode{
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.Unauthorized,

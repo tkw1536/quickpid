@@ -59,7 +59,7 @@ func (s *Service) GetResolverInfo() (*api.InfoResponse, error) {
 	opts := s.Options()
 
 	if !opts.InfoEnabled {
-		return nil, api.WithErrorString(errSpecInfoPrivate, api.InfoUnavailable)
+		return nil, api.WithErrorCode(errSpecInfoPrivate, api.InfoUnavailable)
 	}
 	resp := &api.InfoResponse{
 		MaxBodyBytes:     opts.Limits.MaxBodyBytes,

@@ -20,10 +20,10 @@ import (
 func (s *Service) GetMount(ctx context.Context, baseURI api.ValidBaseURI) (*api.MountResponse, error) {
 	namespaceID, err := s.store.GetMount(ctx, baseURI)
 	if errors.Is(err, backend.ErrMountNotFound) {
-		return nil, api.WithErrorString(fmt.Errorf("mount not found: %w", err), api.MountNotFound)
+		return nil, api.WithErrorCode(fmt.Errorf("mount not found: %w", err), api.MountNotFound)
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to get mount: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to get mount: %w", err), api.DatabaseError)
 	}
 	return &api.MountResponse{
 		BaseURI:   baseURI.String(),
@@ -53,7 +53,7 @@ func (s *Service) ListMounts(ctx context.Context, caller *api.ValidUserInfo, par
 
 	out, err := s.store.ListMounts(ctx, params)
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to list mounts: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list mounts: %w", err), api.DatabaseError)
 	}
 	return out, nil
 }
@@ -81,10 +81,10 @@ func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.ValidUser
 
 	out, err := s.store.ListNamespaceMounts(ctx, namespace, params)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return nil, api.WithErrorString(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
 	if err != nil {
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to list namespace mounts: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list namespace mounts: %w", err), api.DatabaseError)
 	}
 	return out, nil
 }
@@ -112,9 +112,9 @@ func (s *Service) SetMount(ctx context.Context, caller *api.ValidUserInfo, baseU
 
 	if err := s.store.SetMount(ctx, baseURI, req.Namespace); err != nil {
 		if errors.Is(err, backend.ErrNamespaceNotFound) {
-			return nil, api.WithErrorString(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+			return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 		}
-		return nil, api.WithErrorString(fmt.Errorf("backend failed to set mount: %w", err), api.DatabaseError)
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to set mount: %w", err), api.DatabaseError)
 	}
 
 	return &api.MountResponse{
@@ -146,9 +146,9 @@ func (s *Service) DeleteMount(ctx context.Context, caller *api.ValidUserInfo, ba
 
 	if err := s.store.DeleteMount(ctx, baseURI); err != nil {
 		if errors.Is(err, backend.ErrMountNotFound) {
-			return api.WithErrorString(fmt.Errorf("mount not found: %w", err), api.MountNotFound)
+			return api.WithErrorCode(fmt.Errorf("mount not found: %w", err), api.MountNotFound)
 		}
-		return api.WithErrorString(fmt.Errorf("backend failed to delete mount: %w", err), api.DatabaseError)
+		return api.WithErrorCode(fmt.Errorf("backend failed to delete mount: %w", err), api.DatabaseError)
 	}
 	return nil
 }

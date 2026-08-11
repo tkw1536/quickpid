@@ -15,7 +15,7 @@ linters:
         - go.tkw01536.de/pkglib/errorsx
         - go.tkw01536.de/pkglib/exit
       extra-ignore-sigs:
-        - api.WithErrorString( 
+        - api.WithErrorCode( 
   enable:
     - bidichk
     - bodyclose
