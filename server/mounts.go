@@ -21,7 +21,7 @@ func (h *Server) resolveMountByBaseUri(w http.ResponseWriter, r *http.Request) (
 	return mount, nil
 }
 
-func (h *Server) resolveResourceByMountAndPID(w http.ResponseWriter, r *http.Request, caller *api.ValidUserInfo) (api.ResourceGetResult, error) {
+func (h *Server) resolveResourceByMountAndPID(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (api.ResourceGetResult, error) {
 	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return nil, err
@@ -50,13 +50,13 @@ func (h *Server) resolveResourceByMountAndPID(w http.ResponseWriter, r *http.Req
 	return resource, nil
 }
 
-func (h *Server) listMounts(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedMountsResponse, error) {
+func (h *Server) listMounts(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.PaginatedMountsResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err
 	}
 
-	mounts, err := h.svc.ListMounts(r.Context(), user, api.ListMountsParams{
+	mounts, err := h.svc.ListMounts(r.Context(), caller, api.ListMountsParams{
 		Limit:  limit,
 		Offset: offset,
 	})
@@ -66,7 +66,7 @@ func (h *Server) listMounts(w http.ResponseWriter, r *http.Request, user *api.Va
 	return mounts, nil
 }
 
-func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.PaginatedBaseURIResponse, error) {
+func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.PaginatedBaseURIResponse, error) {
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, use
 		return nil, err
 	}
 
-	mounts, err := h.svc.ListNamespaceMounts(r.Context(), user, namespace, api.ListNamespaceMountsParams{
+	mounts, err := h.svc.ListNamespaceMounts(r.Context(), caller, namespace, api.ListNamespaceMountsParams{
 		Limit:  limit,
 		Offset: offset,
 	})
@@ -86,7 +86,7 @@ func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, use
 	return mounts, nil
 }
 
-func (h *Server) upsertNamespaceMount(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (*api.MountResponse, error) {
+func (h *Server) upsertNamespaceMount(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.MountResponse, error) {
 	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return nil, err
@@ -102,19 +102,19 @@ func (h *Server) upsertNamespaceMount(w http.ResponseWriter, r *http.Request, us
 		return nil, api.WithErrorCode(fmt.Errorf("failed to validate mount upsert request: %w", err), api.InvalidNamespaceID)
 	}
 
-	mount, err := h.svc.SetMount(r.Context(), user, baseURI, validReq)
+	mount, err := h.svc.SetMount(r.Context(), caller, baseURI, validReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set mount: %w", err)
 	}
 	return mount, nil
 }
 
-func (h *Server) deleteNamespaceMount(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (struct{}, error) {
+func (h *Server) deleteNamespaceMount(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (struct{}, error) {
 	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return struct{}{}, err
 	}
-	if err := h.svc.DeleteMount(r.Context(), user, baseURI); err != nil {
+	if err := h.svc.DeleteMount(r.Context(), caller, baseURI); err != nil {
 		return struct{}{}, fmt.Errorf("failed to delete mount: %w", err)
 	}
 	return struct{}{}, nil

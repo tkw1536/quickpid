@@ -9,7 +9,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.NamespaceRole, error) {
+func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.NamespaceRole, error) {
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
@@ -18,14 +18,14 @@ func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, user a
 	if err != nil {
 		return nil, err
 	}
-	role, err := h.svc.GetNamespaceRole(r.Context(), user, namespace, username)
+	role, err := h.svc.GetNamespaceRole(r.Context(), caller, namespace, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace role: %w", err)
 	}
 	return role, nil
 }
 
-func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.PaginatedNamespaceRolesResponse, error) {
+func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.PaginatedNamespaceRolesResponse, error) {
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, user
 		return nil, err
 	}
 
-	roles, err := h.svc.ListNamespaceRoles(r.Context(), user, namespace, api.ListNamespaceRolesParams{
+	roles, err := h.svc.ListNamespaceRoles(r.Context(), caller, namespace, api.ListNamespaceRolesParams{
 		Limit:  limit,
 		Offset: offset,
 	})
@@ -46,7 +46,7 @@ func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, user
 	return roles, nil
 }
 
-func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.NamespaceRole, error) {
+func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.NamespaceRole, error) {
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
@@ -61,14 +61,14 @@ func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, user a
 		return nil, err
 	}
 
-	role, err := h.svc.SetNamespaceRole(r.Context(), user, namespace, username, req)
+	role, err := h.svc.SetNamespaceRole(r.Context(), caller, namespace, username, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set namespace role: %w", err)
 	}
 	return role, nil
 }
 
-func (h *Server) removeNamespaceRole(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
+func (h *Server) removeNamespaceRole(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (struct{}, error) {
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return struct{}{}, err
@@ -84,13 +84,13 @@ func (h *Server) removeNamespaceRole(w http.ResponseWriter, r *http.Request, cal
 	return struct{}{}, nil
 }
 
-func (h *Server) getUserRoles(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (*api.PaginatedUserRolesResponse, error) {
+func (h *Server) getUserRoles(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.PaginatedUserRolesResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err
 	}
 
-	roles, err := h.svc.ListUserRoles(r.Context(), user, api.ListUserRolesParams{
+	roles, err := h.svc.ListUserRoles(r.Context(), caller, api.ListUserRolesParams{
 		Limit:  limit,
 		Offset: offset,
 	})

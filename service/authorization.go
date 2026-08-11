@@ -71,7 +71,7 @@ func canManageRoles(role api.Role) bool {
 // It can return the following errors:
 //
 // - [api.Unauthorized].
-func requireAuthenticated(caller *api.ValidUserInfo) error {
+func requireAuthenticated(caller *api.AuthenticatedUser) error {
 	if caller == nil {
 		return api.WithErrorCode(errUnauthorized, api.Unauthorized)
 	}
@@ -84,12 +84,12 @@ func requireAuthenticated(caller *api.ValidUserInfo) error {
 //
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) effectiveRole(ctx context.Context, caller api.ValidUserInfo, namespace api.ValidNamespaceID) (api.Role, error) {
-	if caller.Superuser {
+func (s *Service) effectiveRole(ctx context.Context, caller api.AuthenticatedUser, namespace api.ValidNamespaceID) (api.Role, error) {
+	if caller.Superuser() {
 		return api.RoleManager, nil
 	}
 
-	role, err := s.store.GetNamespaceRole(ctx, namespace, caller.Username)
+	role, err := s.store.GetNamespaceRole(ctx, namespace, caller.Username())
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return role, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
@@ -107,7 +107,7 @@ func (s *Service) effectiveRole(ctx context.Context, caller api.ValidUserInfo, n
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) requireNamespaceCapability(ctx context.Context, caller api.ValidUserInfo, namespace api.ValidNamespaceID, capability func(api.Role) bool) error {
+func (s *Service) requireNamespaceCapability(ctx context.Context, caller api.AuthenticatedUser, namespace api.ValidNamespaceID, capability func(api.Role) bool) error {
 	role, err := s.effectiveRole(ctx, caller, namespace)
 	if err != nil {
 		return err
@@ -140,8 +140,8 @@ func mapAuthorizationBackendError(err error) (error, bool) {
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) GetNamespaceRole(ctx context.Context, caller api.ValidUserInfo, namespace api.ValidNamespaceID, username api.ValidUsername) (*api.NamespaceRole, error) {
-	if username.String() != caller.Username.String() {
+func (s *Service) GetNamespaceRole(ctx context.Context, caller api.AuthenticatedUser, namespace api.ValidNamespaceID, username api.ValidUsername) (*api.NamespaceRole, error) {
+	if username.String() != caller.Username().String() {
 		if err := s.requireNamespaceCapability(ctx, caller, namespace, canManageRoles); err != nil {
 			return nil, err
 		}
@@ -166,7 +166,7 @@ func (s *Service) GetNamespaceRole(ctx context.Context, caller api.ValidUserInfo
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListNamespaceRoles(ctx context.Context, caller api.ValidUserInfo, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
+func (s *Service) ListNamespaceRoles(ctx context.Context, caller api.AuthenticatedUser, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManageRoles); err != nil {
 		return nil, err
 	}
@@ -188,8 +188,8 @@ func (s *Service) ListNamespaceRoles(ctx context.Context, caller api.ValidUserIn
 // It can return the following errors:
 //
 // - [api.DatabaseError].
-func (s *Service) ListUserRoles(ctx context.Context, caller api.ValidUserInfo, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
-	page, err := s.store.ListUserRoles(ctx, caller.Username, params)
+func (s *Service) ListUserRoles(ctx context.Context, caller api.AuthenticatedUser, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
+	page, err := s.store.ListUserRoles(ctx, caller.Username(), params)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list user roles: %w", err), api.DatabaseError)
 	}
@@ -206,11 +206,11 @@ func (s *Service) ListUserRoles(ctx context.Context, caller api.ValidUserInfo, p
 // - [api.InvalidRole]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) SetNamespaceRole(ctx context.Context, caller api.ValidUserInfo, namespace api.ValidNamespaceID, username api.ValidUsername, req api.SetNamespaceRoleRequest) (*api.NamespaceRole, error) {
+func (s *Service) SetNamespaceRole(ctx context.Context, caller api.AuthenticatedUser, namespace api.ValidNamespaceID, username api.ValidUsername, req api.SetNamespaceRoleRequest) (*api.NamespaceRole, error) {
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManageRoles); err != nil {
 		return nil, err
 	}
-	if username.String() == caller.Username.String() && !caller.Superuser {
+	if username.String() == caller.Username().String() && !caller.Superuser() {
 		return nil, api.WithErrorCode(errForbidden, api.Forbidden)
 	}
 	if req.Role == api.RoleNone {
@@ -247,7 +247,7 @@ func (s *Service) SetNamespaceRole(ctx context.Context, caller api.ValidUserInfo
 // - [api.NamespaceNotFound]
 // - [api.RoleNotFound]
 // - [api.DatabaseError].
-func (s *Service) DeleteNamespaceRole(ctx context.Context, caller api.ValidUserInfo, namespace api.ValidNamespaceID, username api.ValidUsername) error {
+func (s *Service) DeleteNamespaceRole(ctx context.Context, caller api.AuthenticatedUser, namespace api.ValidNamespaceID, username api.ValidUsername) error {
 	if _, err := s.store.GetNamespace(ctx, namespace); errors.Is(err, backend.ErrNamespaceNotFound) {
 		return api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	} else if err != nil {
@@ -256,7 +256,8 @@ func (s *Service) DeleteNamespaceRole(ctx context.Context, caller api.ValidUserI
 	if err := s.requireNamespaceCapability(ctx, caller, namespace, canManageRoles); err != nil {
 		return err
 	}
-	if username.String() == caller.Username.String() && !caller.Superuser {
+
+	if username.String() == caller.Username().String() && !caller.Superuser() {
 		return api.WithErrorCode(errForbidden, api.Forbidden)
 	}
 

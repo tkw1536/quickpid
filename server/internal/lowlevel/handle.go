@@ -16,7 +16,7 @@ import (
 
 func (h *Handler) handle[T any](
 	s scenario,
-	impl func(http.ResponseWriter, *http.Request, *api.ValidUserInfo) (T, error),
+	impl func(http.ResponseWriter, *http.Request, *api.AuthenticatedUser) (T, error),
 	successCode func(T) int,
 	allowedErrors []api.ErrorCode,
 ) http.HandlerFunc {
@@ -67,7 +67,7 @@ var (
 //   - [api.Unauthorized] if the authentication credentials are invalid, authentication is required but not supplied,
 //     or impersonation fails (non-superuser, invalid or missing target, or multiple impersonate headers).
 //   - [api.DatabaseError] if the authenticated or impersonated user cannot be loaded for a database reason.
-func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.ValidUserInfo, error) {
+func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.AuthenticatedUser, error) {
 	// if we require auth mode, and we are in anonymous mode
 	// this endpoint is unavailable.
 	if scenario == requiredUser && h.auth.AnonymousMode() {
@@ -112,8 +112,7 @@ func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.ValidU
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("failed to load user object: %w", err), api.DatabaseError)
 	}
-
-	return h.resolveImpersonatedUser(r, user)
+	return h.resolveImpersonatedUser(r, user.Authenticate())
 }
 
 var (
@@ -131,7 +130,7 @@ var (
 //   - [api.Unauthorized] if multiple impersonate headers are sent, the caller is not a superuser,
 //     the impersonated username is invalid, or the impersonated user does not exist.
 //   - [api.DatabaseError] if loading the impersonated user fails for a reason other than not found.
-func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.ValidUserInfo) (*api.ValidUserInfo, error) {
+func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.AuthenticatedUser) (*api.AuthenticatedUser, error) {
 	// get the impersonate header, and handle cases of no header and multiple headers.
 	headers := r.Header.Values(api.ImpersonateHeader)
 	switch len(headers) {
@@ -142,7 +141,7 @@ func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.ValidUserI
 		return nil, api.WithErrorCode(errMultipleImpersonateHeaders, api.Unauthorized)
 	}
 
-	if !caller.Superuser {
+	if !caller.Superuser() {
 		return nil, api.WithErrorCode(errNotAllowedToImpersonate, api.Unauthorized)
 	}
 
@@ -159,7 +158,7 @@ func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.ValidUserI
 		return nil, api.WithErrorCode(fmt.Errorf("failed to load impersonated user object: %w", err), api.DatabaseError)
 	}
 
-	return &user, nil
+	return new(user.Authenticate()), nil
 }
 
 // writeHandledError validates that the error maps to a declared API error, logs it, and writes the JSON response.

@@ -9,15 +9,12 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) getUserInfo(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.UserInfo, error) {
-	return &api.UserInfo{
-		Username:  caller.Username.String(),
-		Superuser: caller.Superuser,
-		Password:  caller.Password,
-	}, nil
+func (h *Server) getUserInfo(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.UserInfo, error) {
+	info := caller.PlainInfo()
+	return &info, nil
 }
 
-func (h *Server) createUser(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.UserInfo, error) {
+func (h *Server) createUser(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.UserInfo, error) {
 	var req api.UserCreateRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -35,7 +32,7 @@ func (h *Server) createUser(w http.ResponseWriter, r *http.Request, caller api.V
 	return createdUser, nil
 }
 
-func (h *Server) deleteUser(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
+func (h *Server) deleteUser(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (struct{}, error) {
 	target, err := h.readRequiredUsernameFromQuery(r)
 	if err != nil {
 		return struct{}{}, err
@@ -47,7 +44,7 @@ func (h *Server) deleteUser(w http.ResponseWriter, r *http.Request, caller api.V
 	return struct{}{}, nil
 }
 
-func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.SetPasswordResponse, error) {
+func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.SetPasswordResponse, error) {
 	var req api.SetPasswordRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -65,7 +62,7 @@ func (h *Server) setUserPassword(w http.ResponseWriter, r *http.Request, caller 
 	return response, nil
 }
 
-func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.PaginatedUsersResponse, error) {
+func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.PaginatedUsersResponse, error) {
 	superuser, err := h.readOptionalBooleanFromQuery(r, "superuser")
 	if err != nil {
 		return nil, err
@@ -91,7 +88,7 @@ func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, caller api.Va
 	return users, nil
 }
 
-func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) ([]string, error) {
+func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) ([]string, error) {
 	query, err := h.readRequiredAutocompleteFromQuery(r)
 	if err != nil {
 		return nil, err
@@ -103,7 +100,7 @@ func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, calle
 	return usernames, nil
 }
 
-func (h *Server) listUserKeys(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.PaginatedAPIKeysResponse, error) {
+func (h *Server) listUserKeys(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.PaginatedAPIKeysResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err
@@ -119,7 +116,7 @@ func (h *Server) listUserKeys(w http.ResponseWriter, r *http.Request, caller api
 	return keys, nil
 }
 
-func (h *Server) issueUserKey(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.IssueKeyResponse, error) {
+func (h *Server) issueUserKey(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.IssueKeyResponse, error) {
 	var req api.KeyIssueRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -132,7 +129,7 @@ func (h *Server) issueUserKey(w http.ResponseWriter, r *http.Request, caller api
 	return response, nil
 }
 
-func (h *Server) revokeUserKey(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (struct{}, error) {
+func (h *Server) revokeUserKey(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (struct{}, error) {
 	var req api.KeyRevokeRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return struct{}{}, err
@@ -144,7 +141,7 @@ func (h *Server) revokeUserKey(w http.ResponseWriter, r *http.Request, caller ap
 	return struct{}{}, nil
 }
 
-func (h *Server) updateUser(w http.ResponseWriter, r *http.Request, caller api.ValidUserInfo) (*api.UserInfo, error) {
+func (h *Server) updateUser(w http.ResponseWriter, r *http.Request, caller api.AuthenticatedUser) (*api.UserInfo, error) {
 	target, err := h.readRequiredUsernameFromQuery(r)
 	if err != nil {
 		return nil, err

@@ -94,8 +94,8 @@ func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api
 // It can return the following errors:
 //
 // - [api.DatabaseError].
-func (s *Service) SetUserPassword(ctx context.Context, caller api.ValidUserInfo, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
-	hasPassword, err := s.store.SetPassword(ctx, caller.Username, req.Password)
+func (s *Service) SetUserPassword(ctx context.Context, caller api.AuthenticatedUser, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
+	hasPassword, err := s.store.SetPassword(ctx, caller.Username(), req.Password)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to set password: %w", err), api.DatabaseError)
 	}
@@ -122,12 +122,9 @@ func (s *Service) CheckPassword(ctx context.Context, username api.ValidUsername,
 // - [api.Forbidden]
 // - [api.DuplicateUsername]
 // - [api.DatabaseError].
-func (s *Service) CreateUser(ctx context.Context, caller api.ValidUserInfo, req api.ValidUserCreateRequest) (*api.UserInfo, error) {
+func (s *Service) CreateUser(ctx context.Context, caller api.AuthenticatedUser, req api.ValidUserCreateRequest) (*api.UserInfo, error) {
 	if err := requireSuperuser(caller); err != nil {
 		return nil, err
-	}
-	if req.Superuser && !caller.Superuser {
-		return nil, api.WithErrorCode(errForbidden, api.Forbidden)
 	}
 
 	user, err := s.store.CreateUser(ctx, req, s.runtime.Now)
@@ -148,12 +145,12 @@ func (s *Service) CreateUser(ctx context.Context, caller api.ValidUserInfo, req 
 // - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
-func (s *Service) DeleteUser(ctx context.Context, caller api.ValidUserInfo, target api.ValidUsername) error {
+func (s *Service) DeleteUser(ctx context.Context, caller api.AuthenticatedUser, target api.ValidUsername) error {
 	if err := requireSuperuser(caller); err != nil {
 		return err
 	}
 
-	if target.String() == caller.Username.String() {
+	if target.String() == caller.Username().String() {
 		return api.WithErrorCode(fmt.Errorf("cannot delete own account: %w", errForbidden), api.Forbidden)
 	}
 
@@ -174,7 +171,7 @@ func (s *Service) DeleteUser(ctx context.Context, caller api.ValidUserInfo, targ
 // - [api.Unauthorized]
 // - [api.Forbidden]
 // - [api.DatabaseError].
-func (s *Service) ListUsers(ctx context.Context, caller api.ValidUserInfo, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
+func (s *Service) ListUsers(ctx context.Context, caller api.AuthenticatedUser, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
 	if err := requireSuperuser(caller); err != nil {
 		return nil, err
 	}
@@ -191,7 +188,7 @@ func (s *Service) ListUsers(ctx context.Context, caller api.ValidUserInfo, param
 // It can return the following errors:
 //
 // - [api.DatabaseError].
-func (s *Service) AutocompleteUsers(ctx context.Context, caller api.ValidUserInfo, query api.ValidAutocompleteQuery) ([]string, error) {
+func (s *Service) AutocompleteUsers(ctx context.Context, caller api.AuthenticatedUser, query api.ValidAutocompleteQuery) ([]string, error) {
 	s.mu.RLock()
 	limit := s.opts.Limits.MaxAutocompleteUsers
 	s.mu.RUnlock()
@@ -211,8 +208,8 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller api.ValidUserInf
 // - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListKeys(ctx context.Context, caller api.ValidUserInfo, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
-	page, err := s.listValidKeys(ctx, s.apiKeyFormat(), caller.Username, params)
+func (s *Service) ListKeys(ctx context.Context, caller api.AuthenticatedUser, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+	page, err := s.listValidKeys(ctx, s.apiKeyFormat(), caller.Username(), params)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, mapped
 	}
@@ -313,14 +310,14 @@ func (s *Service) listAllKeys(ctx context.Context, format apikey.Format, usernam
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
-func (s *Service) IssueKey(ctx context.Context, caller api.ValidUserInfo, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
+func (s *Service) IssueKey(ctx context.Context, caller api.AuthenticatedUser, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
 	if req.ExpiresAt != nil {
 		if !req.ExpiresAt.After(s.runtime.Now()) {
 			return nil, api.WithErrorCode(errExpiresAtInPast, api.InvalidQueryParameter)
 		}
 	}
 
-	issued, err := s.issueAPIKey(ctx, caller.Username, req)
+	issued, err := s.issueAPIKey(ctx, caller.Username(), req)
 	if err != nil {
 		return nil, err
 	}
@@ -372,8 +369,8 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 //
 // - [api.KeyNotFound]
 // - [api.DatabaseError].
-func (s *Service) RevokeKey(ctx context.Context, caller api.ValidUserInfo, req api.KeyRevokeRequest) error {
-	err := s.store.RevokeKey(ctx, s.apiKeyFormat(), caller.Username, req.ID)
+func (s *Service) RevokeKey(ctx context.Context, caller api.AuthenticatedUser, req api.KeyRevokeRequest) error {
+	err := s.store.RevokeKey(ctx, s.apiKeyFormat(), caller.Username(), req.ID)
 	if errors.Is(err, backend.ErrKeyNotFound) {
 		return api.WithErrorCode(fmt.Errorf("key not found: %w", err), api.KeyNotFound)
 	}
@@ -391,12 +388,12 @@ func (s *Service) RevokeKey(ctx context.Context, caller api.ValidUserInfo, req a
 // - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
-func (s *Service) UpdateUser(ctx context.Context, caller api.ValidUserInfo, target api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
+func (s *Service) UpdateUser(ctx context.Context, caller api.AuthenticatedUser, target api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
 	if err := requireSuperuser(caller); err != nil {
 		return nil, err
 	}
 
-	if target.String() == caller.Username.String() {
+	if target.String() == caller.Username().String() {
 		return nil, api.WithErrorCode(errForbidden, api.Forbidden)
 	}
 
@@ -415,8 +412,8 @@ func (s *Service) UpdateUser(ctx context.Context, caller api.ValidUserInfo, targ
 // It can return the following errors:
 //
 // - [api.Forbidden].
-func requireSuperuser(user api.ValidUserInfo) error {
-	if !user.Superuser {
+func requireSuperuser(user api.AuthenticatedUser) error {
+	if !user.Superuser() {
 		return api.WithErrorCode(errForbidden, api.Forbidden)
 	}
 	return nil

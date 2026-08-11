@@ -41,7 +41,7 @@ func (s *Service) GetMount(ctx context.Context, baseURI api.ValidBaseURI) (*api.
 // - [api.Unauthorized]
 // - [api.Forbidden]
 // - [api.DatabaseError].
-func (s *Service) ListMounts(ctx context.Context, caller *api.ValidUserInfo, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
+func (s *Service) ListMounts(ctx context.Context, caller *api.AuthenticatedUser, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
 	if !s.AnonymousMode() {
 		if err := requireAuthenticated(caller); err != nil {
 			return nil, err
@@ -69,7 +69,7 @@ func (s *Service) ListMounts(ctx context.Context, caller *api.ValidUserInfo, par
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.ValidUserInfo, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
+func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
 	if !s.AnonymousMode() {
 		if err := requireAuthenticated(caller); err != nil {
 			return nil, err
@@ -100,7 +100,7 @@ func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.ValidUser
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) SetMount(ctx context.Context, caller *api.ValidUserInfo, baseURI api.ValidBaseURI, req api.ValidMountUpsertRequest) (*api.MountResponse, error) {
+func (s *Service) SetMount(ctx context.Context, caller *api.AuthenticatedUser, baseURI api.ValidBaseURI, req api.ValidMountUpsertRequest) (*api.MountResponse, error) {
 	if !s.AnonymousMode() {
 		if err := requireAuthenticated(caller); err != nil {
 			return nil, err
@@ -134,7 +134,7 @@ func (s *Service) SetMount(ctx context.Context, caller *api.ValidUserInfo, baseU
 // - [api.Forbidden]
 // - [api.MountNotFound]
 // - [api.DatabaseError].
-func (s *Service) DeleteMount(ctx context.Context, caller *api.ValidUserInfo, baseURI api.ValidBaseURI) error {
+func (s *Service) DeleteMount(ctx context.Context, caller *api.AuthenticatedUser, baseURI api.ValidBaseURI) error {
 	if !s.AnonymousMode() {
 		if err := requireAuthenticated(caller); err != nil {
 			return err

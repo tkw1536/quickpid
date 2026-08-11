@@ -76,17 +76,18 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 
 				var (
 					gotCalled bool
-					gotUser   *api.ValidUserInfo
+					gotUser   *api.AuthenticatedUser
 				)
 				handler := h.Open(
-					func(w http.ResponseWriter, r *http.Request, user *api.ValidUserInfo) (authProbeResponse, error) {
+					func(w http.ResponseWriter, r *http.Request, user *api.AuthenticatedUser) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = user
 						var username *string
 						var userInfo *api.UserInfo
 						if user != nil {
-							username = new(user.Username.String())
-							userInfo = userInfoFromValid(user)
+							name := user.Username().String()
+							username = &name
+							userInfo = userInfoFromAuthenticated(user)
 						}
 						return authProbeResponse{Username: username, User: userInfo}, nil
 					},
@@ -231,7 +232,7 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 		},
 	}, nil)
 	handler := h.Restricted(
-		func(w http.ResponseWriter, r *http.Request, _ api.ValidUserInfo) (struct{}, error) {
+		func(w http.ResponseWriter, r *http.Request, _ api.AuthenticatedUser) (struct{}, error) {
 			t.Fatal("handler must not be called in anonymous mode")
 			return struct{}{}, nil
 		},
@@ -291,18 +292,18 @@ func TestImpersonation(t *testing.T) {
 		}, nil)
 	}
 
-	restrictedProbe := func(h *lowlevel.Handler) (http.HandlerFunc, *bool, **api.ValidUserInfo) {
+	restrictedProbe := func(h *lowlevel.Handler) (http.HandlerFunc, *bool, **api.AuthenticatedUser) {
 		var (
 			gotCalled bool
-			gotUser   *api.ValidUserInfo
+			gotUser   *api.AuthenticatedUser
 		)
 		handler := h.Restricted(
-			func(w http.ResponseWriter, r *http.Request, user api.ValidUserInfo) (authProbeResponse, error) {
+			func(w http.ResponseWriter, r *http.Request, user api.AuthenticatedUser) (authProbeResponse, error) {
 				gotCalled = true
 				gotUser = &user
 				return authProbeResponse{
-					Username: new(user.Username.String()),
-					User:     userInfoFromValid(&user),
+					Username: pointer(user.Username().String()),
+					User:     userInfoFromAuthenticated(&user),
 				}, nil
 			},
 			lowlevel.FixedStatusCode[authProbeResponse](http.StatusOK),
@@ -543,6 +544,11 @@ func userInfoFromValid(user *api.ValidUserInfo) *api.UserInfo {
 	}
 }
 
+func userInfoFromAuthenticated(user *api.AuthenticatedUser) *api.UserInfo {
+	info := user.PlainInfo()
+	return &info
+}
+
 func mustValidUser(t *testing.T, username string, superuser bool) *api.ValidUserInfo {
 	t.Helper()
 	name, err := api.NewUsername(username)
@@ -557,14 +563,18 @@ func basicAuthHeader(username string, password string) string {
 	return "Basic " + encoded
 }
 
-func assertOptionalUserEqual(t *testing.T, got, want *api.ValidUserInfo) {
+func assertOptionalUserEqual(t *testing.T, got *api.AuthenticatedUser, want *api.ValidUserInfo) {
 	t.Helper()
 	switch {
 	case got == nil && want == nil:
 		return
 	case got == nil || want == nil:
 		t.Fatalf("user pointer mismatch: got %v, want %v", got, want)
-	case got.Username.String() != want.Username.String() || got.Superuser != want.Superuser:
-		t.Fatalf("user = %+v, want %+v", *got, *want)
+	case got.Username().String() != want.Username.String() || got.Superuser() != want.Superuser:
+		t.Fatalf("user = %+v, want %+v", got.PlainInfo(), *want)
 	}
+}
+
+func pointer[T any](value T) *T {
+	return &value
 }

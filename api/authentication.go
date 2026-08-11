@@ -77,6 +77,43 @@ type ValidUserInfo struct {
 	Password  bool
 }
 
+func (u *ValidUserInfo) Authenticate() AuthenticatedUser {
+	return AuthenticatedUser{
+		username:  u.Username,
+		superuser: u.Superuser,
+		password:  u.Password,
+	}
+}
+
+// AuthenticatedUser represents an authenticated user.
+//
+// It is currently mirrors to a [ValidUserInfo], but in the future might allow tokens to restrict their permission level.
+type AuthenticatedUser struct {
+	username  ValidUsername
+	superuser bool
+	password  bool
+}
+
+func (u *AuthenticatedUser) Username() ValidUsername {
+	return u.username
+}
+
+func (u *AuthenticatedUser) Superuser() bool {
+	return u.superuser
+}
+
+// CompleteInfo returns the complete [UserInfo] for this authenticated user.
+//
+// This info does not reflect any limitations in this authenticated user info, and retains full permissions.
+// It MUST NOT be used for authorization decisions.
+func (u *AuthenticatedUser) PlainInfo() UserInfo {
+	return UserInfo{
+		Username:  u.username.String(),
+		Superuser: u.superuser,
+		Password:  u.password,
+	}
+}
+
 // UserUpdateRequest updates fields on an existing user account.
 //
 // A nil pointer indicates that no update should be performed on that field.
