@@ -8,6 +8,8 @@ import (
 	"regexp"
 )
 
+//spellchecker:words nolint recvcheck
+
 // This file defines several seemingly useless structs,
 // which at first glance look worse than a typedef string.
 //
