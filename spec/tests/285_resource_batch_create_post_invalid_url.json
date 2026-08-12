@@ -1,0 +1,41 @@
+{
+  "name": "285_resource_batch_create_post_invalid_url",
+  "comment": "POST batch create with a non-absolute resource URL in an item returns 400 invalidResourceUrl.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"batch-res\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "invalidUrl",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/batch",
+        "body": "[{\"url\":\"https://ok.example\",\"metadata\":null,\"tags\":[\"t\"]},{\"url\":\"/relative\",\"metadata\":null,\"tags\":[\"t\"]}]"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalidResourceUrl"
+        }
+      }
+    }
+  ]
+}

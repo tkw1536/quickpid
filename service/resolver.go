@@ -168,7 +168,7 @@ func (s *Service) ListResources(ctx context.Context, caller *api.AuthenticatedUs
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
-func (s *Service) CreateResource(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, req api.ResourceCreateRequest) (*api.ResourceResponse, error) {
+func (s *Service) CreateResource(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, req api.ValidResourceCreateRequest) (*api.ResourceResponse, error) {
 	if !s.AnonymousMode() {
 		if err := requireAuthenticated(caller); err != nil {
 			return nil, err
@@ -208,7 +208,7 @@ var errLimitExceeded = errors.New("batch create limit exceeded")
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
-func (s *Service) BatchCreateResources(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, reqs []api.ResourceCreateRequest) ([]api.ResourceResponse, error) {
+func (s *Service) BatchCreateResources(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, reqs []api.ValidResourceCreateRequest) ([]api.ResourceResponse, error) {
 	s.mu.RLock()
 	maxBatch := s.opts.Limits.MaxBatchItems
 	s.mu.RUnlock()
@@ -295,7 +295,7 @@ func (s *Service) GetResource(ctx context.Context, caller *api.AuthenticatedUser
 // - [api.DatabaseError]
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound].
-func (s *Service) UpdateResource(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, resourcePID api.ValidPID, req api.ResourceUpdateRequest) (*api.ResourceResponse, error) {
+func (s *Service) UpdateResource(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, resourcePID api.ValidPID, req api.ValidResourceUpdateRequest) (*api.ResourceResponse, error) {
 	if !s.AnonymousMode() {
 		if err := requireAuthenticated(caller); err != nil {
 			return nil, err

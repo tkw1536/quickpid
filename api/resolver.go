@@ -66,14 +66,14 @@ type PaginatedNamespacesResponse struct {
 
 // ResourceCreateRequest is the JSON body for createResource and batchCreateResources items.
 type ResourceCreateRequest struct {
-	URL      string
+	URL      *string
 	Metadata *string
 	Tags     []string
 }
 
 func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
-		URL      strict.Optional[strict.String]      `json:"url"`
+		URL      strict.Optional[*string]            `json:"url"`
 		Metadata strict.Optional[*string]            `json:"metadata"`
 		Tags     strict.Optional[strict.StringSlice] `json:"tags"`
 	}
@@ -85,7 +85,7 @@ func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	if !decoded.URL.Present {
 		return missingRequiredFieldError("url")
 	}
-	r.URL = string(decoded.URL.Value)
+	r.URL = decoded.URL.Value
 
 	if !decoded.Metadata.Present {
 		return missingRequiredFieldError("metadata")
@@ -100,10 +100,34 @@ func (r *ResourceCreateRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Validate checks if the given request is valid.
+func (r *ResourceCreateRequest) Validate() (ValidResourceCreateRequest, error) {
+	var url *ValidResourceURL
+	if r.URL != nil {
+		validated, err := NewResourceURL(*r.URL)
+		if err != nil {
+			return ValidResourceCreateRequest{}, err
+		}
+		url = &validated
+	}
+	return ValidResourceCreateRequest{
+		URL:      url,
+		Metadata: r.Metadata,
+		Tags:     r.Tags,
+	}, nil
+}
+
+// ValidResourceCreateRequest is like a [ResourceCreateRequest] but with a validated URL.
+type ValidResourceCreateRequest struct {
+	URL      *ValidResourceURL
+	Metadata *string
+	Tags     []string
+}
+
 // ResourceResponse is returned for resource operations.
 type ResourceResponse struct {
 	PID         string
-	URL         string
+	URL         *string
 	Metadata    *string
 	DateCreated string
 	DateUpdated string
@@ -122,7 +146,7 @@ type ResourceGetResult interface {
 func (r ResourceResponse) MarshalJSON() ([]byte, error) {
 	type out struct {
 		PID         string   `json:"pid"`
-		URL         string   `json:"url"`
+		URL         *string  `json:"url"`
 		Metadata    *string  `json:"metadata"`
 		DateCreated string   `json:"dateCreated"`
 		DateUpdated string   `json:"dateUpdated"`
@@ -208,8 +232,9 @@ type ResourceCountResponse struct {
 //
 // A nil pointer (or nil Tags slice) indicates that no update should be performed on that field.
 // When Tags is non-nil, it replaces the resource tags (which might be empty).
+// URL and Metadata use three-state pointers: nil = omit, &nil = clear/set null, &&value = set.
 type ResourceUpdateRequest struct {
-	URL      *string
+	URL      **string
 	Metadata **string
 	Tags     []string
 	Deleted  *bool
@@ -217,7 +242,7 @@ type ResourceUpdateRequest struct {
 
 func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
-		URL      strict.Optional[strict.String]      `json:"url"`
+		URL      strict.Optional[*string]            `json:"url"`
 		Metadata strict.Optional[*string]            `json:"metadata"`
 		Tags     strict.Optional[strict.StringSlice] `json:"tags"`
 		Deleted  strict.Optional[strict.Bool]        `json:"deleted"`
@@ -226,7 +251,7 @@ func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal resource update request: %w", err)
 	}
-	r.URL = strict.OptionalStringToPointer(decoded.URL)
+	r.URL = decoded.URL.ToPointer()
 	r.Metadata = decoded.Metadata.ToPointer()
 	r.Deleted = strict.OptionalBoolToPointer(decoded.Deleted)
 
@@ -237,6 +262,36 @@ func (r *ResourceUpdateRequest) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+// Validate checks if the given request is valid.
+func (r *ResourceUpdateRequest) Validate() (ValidResourceUpdateRequest, error) {
+	var url **ValidResourceURL
+	switch {
+	case r.URL == nil: /* keep url = nil */
+	case *r.URL == nil:
+		url = new(*ValidResourceURL)
+	default:
+		validated, err := NewResourceURL(**r.URL)
+		if err != nil {
+			return ValidResourceUpdateRequest{}, err
+		}
+		url = new(&validated)
+	}
+	return ValidResourceUpdateRequest{
+		URL:      url,
+		Metadata: r.Metadata,
+		Tags:     r.Tags,
+		Deleted:  r.Deleted,
+	}, nil
+}
+
+// ValidResourceUpdateRequest is like a [ResourceUpdateRequest] but with a validated URL.
+type ValidResourceUpdateRequest struct {
+	URL      **ValidResourceURL
+	Metadata **string
+	Tags     []string
+	Deleted  *bool
 }
 
 // ListResourcesParams carries path and query parameters for listResources.

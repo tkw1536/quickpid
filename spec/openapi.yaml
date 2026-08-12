@@ -1326,7 +1326,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResourceResponse'
         '400':
-          description: Invalid request body, JSON, or namespace id when creating a resource.
+          description: Invalid request body, JSON, namespace id, or resource URL when creating a resource.
           content:
             application/json:
               example: { error: "bodyMissing" }
@@ -1335,6 +1335,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorInvalidResourceUrl'
         '401':
           description: Authentication is required or the credentials are incorrect when creating a resource.
           content:
@@ -1434,7 +1435,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ResourceResponse'
         '400':
-          description: Invalid request body, JSON, or namespace id when creating a resource batch.
+          description: Invalid request body, JSON, namespace id, or resource URL when creating a resource batch.
           content:
             application/json:
               example: { error: "bodyMissing" }
@@ -1443,6 +1444,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorInvalidResourceUrl'
         '401':
           description: Authentication is required or the credentials are incorrect when creating a resource batch.
           content:
@@ -1642,7 +1644,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResourceResponse'
         '400':
-          description: Invalid request body, JSON, namespace id, or PID.
+          description: Invalid request body, JSON, namespace id, PID, or resource URL when updating a resource.
           content:
             application/json:
               example: { error: "bodyMissing" }
@@ -1652,6 +1654,7 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
                   - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
                   - $ref: '#/components/schemas/ErrorInvalidPID'
+                  - $ref: '#/components/schemas/ErrorInvalidResourceUrl'
         '401':
           description: Authentication is required or the credentials are incorrect when updating a resource.
           content:
@@ -2796,6 +2799,17 @@ components:
               enum:
                 - invalidBaseUri
           description: The base URI was invalid.
+    ErrorInvalidResourceUrl:
+      description: Error response when a resource URL fails validation.
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - invalidResourceUrl
+          description: The resource URL was invalid.
     ErrorNamespaceNotFound:
       description: Error response when the requested namespace does not exist.
       allOf:
@@ -3222,8 +3236,10 @@ components:
           example: "https://example.org/resource"
           description: |
             Target URL to store on the newly created resource.
+            The field must be present and may be null or a valid absolute URI string.
           type: string
           format: uri
+          nullable: true
         metadata:
           example: "sample metadata"
           description: |
@@ -3269,8 +3285,10 @@ components:
           example: "https://example.org/resource"
           description: |
             Current target URL stored on this resource.
+            May be null when no target URL is set.
           type: string
           format: uri
+          nullable: true
         metadata:
           example: "sample metadata"
           description: |
@@ -3349,8 +3367,10 @@ components:
           example: "https://example.org/resource"
           description: |
             Replacement target URL for the resource being updated.
+            Omitting the field leaves the URL unchanged; null clears it; a string must be a valid absolute URI.
           type: string
           format: uri
+          nullable: true
         metadata:
           example: "sample metadata"
           description: |

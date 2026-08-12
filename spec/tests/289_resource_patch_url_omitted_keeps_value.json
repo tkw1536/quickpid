@@ -1,0 +1,68 @@
+{
+  "name": "289_resource_patch_url_omitted_keeps_value",
+  "comment": "PATCH without a url field keeps an existing non-null resource URL unchanged.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"update-res\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "create_resource",
+      "config": {
+        "pids": [
+          "xjc-cjy"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":\"m\",\"tags\":[\"alpha\"]}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "patch_metadata_only",
+      "config": {
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/xjc-cjy",
+        "body": "{\"metadata\":\"updated\"}"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "updated",
+          "pid": "xjc-cjy",
+          "url": "https://example.com/a",
+          "tags": [
+            "alpha"
+          ]
+        }
+      }
+    }
+  ]
+}

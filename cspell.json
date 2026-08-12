@@ -22,6 +22,7 @@
     "httpfixture",
     "IDRE",
     "installsuffix",
+    "invalidResourceUrl",
     "nosec",
     "omitzero",
     "openapi",

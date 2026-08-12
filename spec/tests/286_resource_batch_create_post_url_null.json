@@ -1,0 +1,65 @@
+{
+  "name": "286_resource_batch_create_post_url_null",
+  "comment": "POST batch create accepts url null on an item and returns it as null.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"batch-res\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201
+      }
+    },
+    {
+      "name": "batch_withNullUrl",
+      "config": {
+        "pids": [
+          "xjc-cjy",
+          "8zk-pwt"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources/batch",
+        "body": "[{\"url\":\"https://example.com/a\",\"metadata\":null,\"tags\":[\"t\"]},{\"url\":null,\"metadata\":\"m\",\"tags\":[]}]"
+      },
+      "response": {
+        "code": 201,
+        "body": [
+          {
+            "dateCreated": "2020-01-02T03:04:05Z",
+            "dateUpdated": "2020-01-02T03:04:05Z",
+            "deleted": false,
+            "metadata": null,
+            "pid": "xjc-cjy",
+            "url": "https://example.com/a",
+            "tags": [
+              "t"
+            ]
+          },
+          {
+            "dateCreated": "2020-01-02T03:04:05Z",
+            "dateUpdated": "2020-01-02T03:04:05Z",
+            "deleted": false,
+            "metadata": "m",
+            "pid": "8zk-pwt",
+            "url": null,
+            "tags": []
+          }
+        ]
+      }
+    }
+  ]
+}

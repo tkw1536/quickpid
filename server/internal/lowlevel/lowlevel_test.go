@@ -302,7 +302,7 @@ func TestImpersonation(t *testing.T) {
 				gotCalled = true
 				gotUser = &user
 				return authProbeResponse{
-					Username: pointer(user.Username().String()),
+					Username: new(user.Username().String()),
 					User:     userInfoFromAuthenticated(&user),
 				}, nil
 			},
@@ -566,8 +566,4 @@ func assertOptionalUserEqual(t *testing.T, got *api.AuthenticatedUser, want *api
 	case got.Username().String() != want.Username.String() || got.Superuser() != want.Superuser:
 		t.Fatalf("user = %+v, want %+v", got.PlainInfo(), *want)
 	}
-}
-
-func pointer[T any](value T) *T {
-	return &value
 }

@@ -29,6 +29,7 @@ const (
 	InvalidAutocompleteQuery ErrorCode = "invalidAutocompleteQuery" // An invalid query was sent
 	InvalidPassword          ErrorCode = "invalidPassword"          // An invalid password was sent
 	InvalidBaseURI           ErrorCode = "invalidBaseUri"           // An invalid base URI was sent
+	InvalidResourceURL       ErrorCode = "invalidResourceUrl"       // An invalid resource URL was sent
 
 	NamespaceNotFound ErrorCode = "namespaceNotFound" // Namespace not found
 	ResourceNotFound  ErrorCode = "resourceNotFound"  // Resource not found
@@ -83,7 +84,7 @@ func (e ErrorCode) HTTPCode() int {
 		return http.StatusForbidden
 	case InvalidQueryParameter, BodyMissing, BodyInvalidJSON,
 		InvalidNamespaceID, InvalidPID, InvalidUsername, InvalidAutocompleteQuery, InvalidPassword, InvalidBaseURI,
-		InvalidRole:
+		InvalidResourceURL, InvalidRole:
 		return http.StatusBadRequest
 	case NamespaceNotFound, ResourceNotFound, MountNotFound,
 		RoleNotFound, InfoUnavailable, UnavailableInAnonymousMode,

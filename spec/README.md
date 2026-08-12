@@ -81,7 +81,7 @@ Only a single resource can be created at a time.
 A Resource can be created via the API.
 It is then issued a new unique PID in the format specified within its' namespace.
 During creation, three kinds of metadata must be provided:
-- A URL that the resource points to;
+- A URL that the resource points to (either an absolute URL or `null`);
 - Optional Metadata (either an opaque string or `null`); and
 - A Tag (see below).
 

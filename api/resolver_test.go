@@ -150,10 +150,14 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"},
 		},
 		{
-			name:      "fail_urlNull",
-			body:      `{"url":null,"metadata":"m","tags":["t"]}`,
-			wantErr:   true,
-			wantErrIn: []string{"failed to unmarshal fields"},
+			name:    "ok_urlNull",
+			body:    `{"url":null,"metadata":"m","tags":["t"]}`,
+			wantErr: false,
+			want: api.ResourceCreateRequest{
+				URL:      nil,
+				Metadata: new("m"),
+				Tags:     []string{"t"},
+			},
 		},
 
 		// tags
@@ -194,7 +198,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			body:    `{"url":"https://example.com","metadata":null,"tags":[]}`,
 			wantErr: false,
 			want: api.ResourceCreateRequest{
-				URL:      "https://example.com",
+				URL:      new("https://example.com"),
 				Metadata: nil,
 				Tags:     []string{},
 			},
@@ -204,7 +208,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			body:    `{"url":"https://example.com","metadata":null,"tags":["t"]}`,
 			wantErr: false,
 			want: api.ResourceCreateRequest{
-				URL:      "https://example.com",
+				URL:      new("https://example.com"),
 				Metadata: nil,
 				Tags:     []string{"t"},
 			},
@@ -214,7 +218,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			body:    `{"url":"https://example.com","metadata":"m","tags":["t"]}`,
 			wantErr: false,
 			want: api.ResourceCreateRequest{
-				URL:      "https://example.com",
+				URL:      new("https://example.com"),
 				Metadata: new("m"),
 				Tags:     []string{"t"},
 			},
@@ -224,7 +228,7 @@ func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 			body:    `{"url":"https://example.com","metadata":null,"tags":["a","b"]}`,
 			wantErr: false,
 			want: api.ResourceCreateRequest{
-				URL:      "https://example.com",
+				URL:      new("https://example.com"),
 				Metadata: nil,
 				Tags:     []string{"a", "b"},
 			},
@@ -268,9 +272,9 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			want      api.ResourceUpdateRequest
 		}{
 			{name: "absent", body: `{}`, want: api.ResourceUpdateRequest{URL: nil, Tags: nil, Deleted: nil, Metadata: nil}},
-			{name: "string", body: `{"url":"https://example.com"}`, want: api.ResourceUpdateRequest{URL: new("https://example.com"), Tags: nil, Deleted: nil, Metadata: nil}},
-			{name: "emptyString", body: `{"url":""}`, want: api.ResourceUpdateRequest{URL: new(""), Tags: nil, Deleted: nil, Metadata: nil}},
-			{name: "null_isError", body: `{"url":null}`, wantErr: true, wantErrIn: []string{"failed to decode json"}},
+			{name: "string", body: `{"url":"https://example.com"}`, want: api.ResourceUpdateRequest{URL: new(new("https://example.com")), Tags: nil, Deleted: nil, Metadata: nil}},
+			{name: "emptyString", body: `{"url":""}`, want: api.ResourceUpdateRequest{URL: new(new("")), Tags: nil, Deleted: nil, Metadata: nil}},
+			{name: "null", body: `{"url":null}`, want: api.ResourceUpdateRequest{URL: new(*string), Tags: nil, Deleted: nil, Metadata: nil}},
 			{name: "number_isError", body: `{"url":123}`, wantErr: true, wantErrIn: []string{"failed to decode json"}},
 			{name: "bool_isError", body: `{"url":true}`, wantErr: true, wantErrIn: []string{"failed to decode json"}},
 			{name: "object_isError", body: `{"url":{}}`, wantErr: true, wantErrIn: []string{"failed to decode json"}},
@@ -450,6 +454,102 @@ func TestResourceUpdateRequest_UnmarshalJSON(t *testing.T) {
 					t.Fatalf("req: got %+v want %+v", req, tt.want)
 				}
 			})
+		}
+	})
+}
+
+func TestResourceCreateRequest_Validate(t *testing.T) {
+	t.Parallel()
+
+	t.Run("validURL", func(t *testing.T) {
+		t.Parallel()
+		req := api.ResourceCreateRequest{
+			URL:      new("https://example.com/path?q=1#frag"),
+			Metadata: nil,
+			Tags:     []string{"t"},
+		}
+		got, err := req.Validate()
+		if err != nil {
+			t.Fatalf("Validate() error = %v", err)
+		}
+		if got.URL == nil || got.URL.String() != "https://example.com/path?q=1#frag" {
+			t.Fatalf("URL = %v, want validated https URL", got.URL)
+		}
+	})
+
+	t.Run("nullURL", func(t *testing.T) {
+		t.Parallel()
+		req := api.ResourceCreateRequest{URL: nil, Metadata: new("m"), Tags: []string{}}
+		got, err := req.Validate()
+		if err != nil {
+			t.Fatalf("Validate() error = %v", err)
+		}
+		if got.URL != nil {
+			t.Fatalf("URL = %v, want nil", got.URL)
+		}
+	})
+
+	t.Run("invalidURL", func(t *testing.T) {
+		t.Parallel()
+		req := api.ResourceCreateRequest{URL: new("not-a-uri"), Metadata: nil, Tags: []string{}}
+		_, err := req.Validate()
+		if err == nil {
+			t.Fatal("Validate() error = nil, want error")
+		}
+		if !strings.Contains(err.Error(), "not an absolute URI") {
+			t.Fatalf("Validate() error = %q, want absolute URI error", err.Error())
+		}
+	})
+}
+
+func TestResourceUpdateRequest_Validate(t *testing.T) {
+	t.Parallel()
+
+	t.Run("absentURL", func(t *testing.T) {
+		t.Parallel()
+		req := api.ResourceUpdateRequest{}
+		got, err := req.Validate()
+		if err != nil {
+			t.Fatalf("Validate() error = %v", err)
+		}
+		if got.URL != nil {
+			t.Fatalf("URL = %v, want nil", got.URL)
+		}
+	})
+
+	t.Run("nullURL", func(t *testing.T) {
+		t.Parallel()
+		req := api.ResourceUpdateRequest{URL: new(*string)}
+		got, err := req.Validate()
+		if err != nil {
+			t.Fatalf("Validate() error = %v", err)
+		}
+		if got.URL == nil || *got.URL != nil {
+			t.Fatalf("URL = %v, want &nil", got.URL)
+		}
+	})
+
+	t.Run("validURL", func(t *testing.T) {
+		t.Parallel()
+		req := api.ResourceUpdateRequest{URL: new(new("https://example.com"))}
+		got, err := req.Validate()
+		if err != nil {
+			t.Fatalf("Validate() error = %v", err)
+		}
+		if got.URL == nil || *got.URL == nil || (*got.URL).String() != "https://example.com" {
+			t.Fatalf("URL = %v, want validated https URL", got.URL)
+		}
+	})
+
+	t.Run("invalidURL", func(t *testing.T) {
+		t.Parallel()
+		req := api.ResourceUpdateRequest{URL: new(new("/relative"))}
+		_, err := req.Validate()
+		if err == nil {
+			t.Fatal("Validate() error = nil, want error")
+		}
+		if !strings.Contains(err.Error(), "not an absolute URI") {
+			t.Fatalf("Validate() error = %q, want absolute URI error", err.Error())
 		}
 	})
 }

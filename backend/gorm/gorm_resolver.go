@@ -173,7 +173,7 @@ func (s *Store) CountAllResources(ctx context.Context) (int64, error) {
 	})
 }
 
-func (s *Store) CreateResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ValidResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
@@ -182,7 +182,7 @@ func (s *Store) CreateResource(ctx context.Context, namespace api.ValidNamespace
 		row := resourceRow{
 			NamespaceID: namespace.String(),
 			PID:         pid.String(),
-			URL:         req.URL,
+			URL:         req.URL.StringPtr(),
 			Metadata:    req.Metadata,
 			Deleted:     false,
 			DateCreated: ts,
@@ -206,7 +206,7 @@ func (s *Store) CreateResource(ctx context.Context, namespace api.ValidNamespace
 	})
 }
 
-func (s *Store) BatchCreateResources(ctx context.Context, namespace api.ValidNamespaceID, pids []api.ValidPID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(ctx context.Context, namespace api.ValidNamespaceID, pids []api.ValidPID, reqs []api.ValidResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
@@ -225,7 +225,7 @@ func (s *Store) BatchCreateResources(ctx context.Context, namespace api.ValidNam
 			rows[i] = resourceRow{
 				NamespaceID: namespace.String(),
 				PID:         pids[i].String(),
-				URL:         req.URL,
+				URL:         req.URL.StringPtr(),
 				Metadata:    req.Metadata,
 				Deleted:     false,
 				DateCreated: ts,
@@ -273,7 +273,7 @@ func (s *Store) GetResource(ctx context.Context, namespace api.ValidNamespaceID,
 	})
 }
 
-func (s *Store) UpdateResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ValidResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.ResourceResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
@@ -288,7 +288,7 @@ func (s *Store) UpdateResource(ctx context.Context, namespace api.ValidNamespace
 		}
 
 		if req.URL != nil {
-			row.URL = *req.URL
+			row.URL = (*req.URL).StringPtr()
 		}
 		if req.Deleted != nil {
 			row.Deleted = *req.Deleted

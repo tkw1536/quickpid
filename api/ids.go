@@ -191,3 +191,44 @@ func NewBaseURI(value string) (ValidBaseURI, error) {
 	}
 	return ValidBaseURI{valid: true, value: value}, nil
 }
+
+// ValidResourceURL represents a valid absolute URI for a resource target URL.
+// The zero value is not valid.
+//
+// Use [NewResourceURL] to create a new resource URL.
+//
+//nolint:recvcheck // StringPtr method is intentionally used with a pointer.
+type ValidResourceURL struct {
+	valid bool
+	value string
+}
+
+// String returns the resource URL as a string.
+func (u ValidResourceURL) String() string {
+	if !u.valid {
+		panic("invalid resource url")
+	}
+	return u.value
+}
+
+// StringPtr returns the resource URL as a pointer to a string.
+func (u *ValidResourceURL) StringPtr() *string {
+	if u == nil {
+		return nil
+	}
+	return new(u.value)
+}
+
+// NewResourceURL creates a new resource URL.
+// The value must be a valid absolute URI with a non-empty scheme.
+// Unlike [NewBaseURI], query strings and fragments are allowed.
+func NewResourceURL(value string) (ValidResourceURL, error) {
+	parsed, err := url.Parse(value)
+	if err != nil {
+		return ValidResourceURL{}, fmt.Errorf("failed to parse as url: %w", err)
+	}
+	if !parsed.IsAbs() {
+		return ValidResourceURL{}, errNotAbsoluteURI
+	}
+	return ValidResourceURL{valid: true, value: value}, nil
+}

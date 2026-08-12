@@ -41,7 +41,7 @@ type resourceRow struct {
 	NamespaceID string `gorm:"column:namespace_id;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:1"`
 	PID         string `gorm:"column:pid;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:2"`
 
-	URL      string  `gorm:"column:url;type:text;not null"`
+	URL      *string `gorm:"column:url;type:text"`
 	Metadata *string `gorm:"column:metadata;type:text"`
 
 	DateCreated time.Time `gorm:"column:date_created;not null"`

@@ -1,0 +1,62 @@
+{
+  "name": "283_resource_create_post_url_null_roundtrip",
+  "comment": "url may be null on create and is returned as null in the response.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "46c14e5d-c048-4159-a26a-f37bc0110c85"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"create-res\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "create-res"
+        }
+      }
+    },
+    {
+      "name": "urlNull_roundTrips",
+      "config": {
+        "pids": [
+          "8zk-pwt"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces/46c14e5d-c048-4159-a26a-f37bc0110c85/resources",
+        "body": "{\"url\":null,\"metadata\":\"m\",\"tags\":[\"alpha\"]}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
+          "deleted": false,
+          "metadata": "m",
+          "pid": "8zk-pwt",
+          "url": null,
+          "tags": [
+            "alpha"
+          ]
+        }
+      }
+    }
+  ]
+}

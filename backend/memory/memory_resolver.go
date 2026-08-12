@@ -144,7 +144,7 @@ func (s *Store) CountAllResources(_ context.Context) (int64, error) {
 	return n, nil
 }
 
-func (s *Store) CreateResource(_ context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) CreateResource(_ context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ValidResourceCreateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -158,7 +158,7 @@ func (s *Store) CreateResource(_ context.Context, namespace api.ValidNamespaceID
 	ts := now().UTC().Format(time.RFC3339)
 	res := api.ResourceResponse{
 		PID:         pid.String(),
-		URL:         req.URL,
+		URL:         req.URL.StringPtr(),
 		Metadata:    req.Metadata,
 		DateCreated: ts,
 		DateUpdated: ts,
@@ -169,7 +169,7 @@ func (s *Store) CreateResource(_ context.Context, namespace api.ValidNamespaceID
 	return &res, nil
 }
 
-func (s *Store) BatchCreateResources(_ context.Context, namespace api.ValidNamespaceID, pids []api.ValidPID, reqs []api.ResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
+func (s *Store) BatchCreateResources(_ context.Context, namespace api.ValidNamespaceID, pids []api.ValidPID, reqs []api.ValidResourceCreateRequest, now func() time.Time) ([]api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -197,7 +197,7 @@ func (s *Store) BatchCreateResources(_ context.Context, namespace api.ValidNames
 	for i, req := range reqs {
 		res := api.ResourceResponse{
 			PID:         pids[i].String(),
-			URL:         req.URL,
+			URL:         req.URL.StringPtr(),
 			Metadata:    req.Metadata,
 			DateCreated: ts,
 			DateUpdated: ts,
@@ -224,7 +224,7 @@ func (s *Store) GetResource(_ context.Context, namespace api.ValidNamespaceID, p
 	return &res, nil
 }
 
-func (s *Store) UpdateResource(_ context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
+func (s *Store) UpdateResource(_ context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ValidResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -238,7 +238,7 @@ func (s *Store) UpdateResource(_ context.Context, namespace api.ValidNamespaceID
 
 	res := prev
 	if req.URL != nil {
-		res.URL = *req.URL
+		res.URL = (*req.URL).StringPtr()
 	}
 	if req.Tags != nil {
 		res.Tags = append([]string(nil), req.Tags...)

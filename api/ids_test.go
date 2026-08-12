@@ -126,6 +126,67 @@ func TestNewBaseURI(t *testing.T) {
 	}
 }
 
+func TestNewResourceURL(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		input   string
+		wantErr string
+	}{
+		{
+			name:  "valid_https",
+			input: "https://example.com/resource",
+		},
+		{
+			name:  "valid_with_query_and_fragment",
+			input: "https://example.com/path?q=1#section",
+		},
+		{
+			name:  "valid_http_with_port",
+			input: "http://localhost:8080/api",
+		},
+		{
+			name:    "invalid_empty",
+			input:   "",
+			wantErr: "not an absolute URI",
+		},
+		{
+			name:    "invalid_relative",
+			input:   "/relative/path",
+			wantErr: "not an absolute URI",
+		},
+		{
+			name:    "invalid_no_scheme",
+			input:   "example.com/foo",
+			wantErr: "not an absolute URI",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			uri, err := api.NewResourceURL(tt.input)
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Fatalf("NewResourceURL(%q) error = %v, want nil", tt.input, err)
+				}
+				if uri.String() != tt.input {
+					t.Fatalf("uri.String() = %q, want %q", uri.String(), tt.input)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("NewResourceURL(%q) error = nil, want %q", tt.input, tt.wantErr)
+			}
+			if err.Error() != tt.wantErr {
+				t.Fatalf("NewResourceURL(%q) error = %q, want %q", tt.input, err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
 func testIdentifierValidation[T any](t *testing.T, validate func(string) (T, error), wantInvalidMsg string) {
 	t.Helper()
 

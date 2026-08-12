@@ -125,12 +125,17 @@ func (h *Server) createResource(w http.ResponseWriter, r *http.Request, caller *
 		return nil, err
 	}
 
+	validReq, err := req.Validate()
+	if err != nil {
+		return nil, api.WithErrorCode(fmt.Errorf("failed to validate resource create request: %w", err), api.InvalidResourceURL)
+	}
+
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
 
-	resource, err := h.svc.CreateResource(r.Context(), caller, namespace, req)
+	resource, err := h.svc.CreateResource(r.Context(), caller, namespace, validReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
@@ -143,12 +148,21 @@ func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, cal
 		return nil, err
 	}
 
+	validReqs := make([]api.ValidResourceCreateRequest, len(reqs))
+	for i := range reqs {
+		validReq, err := reqs[i].Validate()
+		if err != nil {
+			return nil, api.WithErrorCode(fmt.Errorf("failed to validate resource create request: %w", err), api.InvalidResourceURL)
+		}
+		validReqs[i] = validReq
+	}
+
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
 	}
 
-	resources, err := h.svc.BatchCreateResources(r.Context(), caller, namespace, reqs)
+	resources, err := h.svc.BatchCreateResources(r.Context(), caller, namespace, validReqs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to batch create resources: %w", err)
 	}
@@ -177,6 +191,12 @@ func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, caller *
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
 	}
+
+	validReq, err := req.Validate()
+	if err != nil {
+		return nil, api.WithErrorCode(fmt.Errorf("failed to validate resource update request: %w", err), api.InvalidResourceURL)
+	}
+
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
@@ -187,7 +207,7 @@ func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, caller *
 		return nil, err
 	}
 
-	resource, err := h.svc.UpdateResource(r.Context(), caller, namespace, resourcePID, req)
+	resource, err := h.svc.UpdateResource(r.Context(), caller, namespace, resourcePID, validReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update resource: %w", err)
 	}
