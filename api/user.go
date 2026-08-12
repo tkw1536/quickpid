@@ -6,8 +6,9 @@ import (
 	"fmt"
 )
 
-func (u *ValidUserInfo) Authenticate(method AuthenticationMethod) AuthenticatedUser {
-	return AuthenticatedUser{
+// Caller returns a [Caller] struct for the given user info and authentication method.
+func (u *ValidUserInfo) Caller(method AuthenticationMethod) Caller {
+	return Caller{
 		username:  u.Username,
 		superuser: u.Superuser,
 		password:  u.Password,
@@ -15,37 +16,46 @@ func (u *ValidUserInfo) Authenticate(method AuthenticationMethod) AuthenticatedU
 	}
 }
 
-// AuthenticatedUser represents an authenticated user.
+// Caller represents an caller of the api.
 //
 // It holds information like a [ValidUserInfo], but also includes the authentication method used.
-type AuthenticatedUser struct {
+type Caller struct {
 	username  ValidUsername
 	superuser bool
 	password  bool
 	method    AuthenticationMethod
 }
 
-func (u *AuthenticatedUser) Method() AuthenticationMethod {
-	return u.method
+func (c *Caller) Method() AuthenticationMethod {
+	if c == nil {
+		return nil
+	}
+	return c.method
 }
 
-func (u *AuthenticatedUser) Username() ValidUsername {
-	return u.username
+func (c *Caller) Username() ValidUsername {
+	if c == nil {
+		return ValidUsername{}
+	}
+	return c.username
 }
 
-func (u *AuthenticatedUser) Superuser() bool {
-	return u.superuser
+func (c *Caller) Superuser() bool {
+	if c == nil {
+		return false
+	}
+	return c.superuser
 }
 
 // CompleteInfo returns the complete [UserInfo] for this authenticated user.
 //
 // This info does not reflect any limitations in this authenticated user info, and retains full permissions.
 // It MUST NOT be used for authorization decisions.
-func (u *AuthenticatedUser) PlainInfo() UserInfo {
+func (c *Caller) PlainInfo() UserInfo {
 	return UserInfo{
-		Username:  u.username.String(),
-		Superuser: u.superuser,
-		Password:  u.password,
+		Username:  c.username.String(),
+		Superuser: c.superuser,
+		Password:  c.password,
 	}
 }
 

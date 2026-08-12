@@ -17,7 +17,12 @@ import (
 //
 // - [api.MountNotFound]
 // - [api.DatabaseError].
-func (s *Service) GetMount(ctx context.Context, baseURI api.ValidBaseURI) (*api.MountResponse, error) {
+func (s *Service) GetMount(ctx context.Context, caller *api.Caller, baseURI api.ValidBaseURI) (*api.MountResponse, error) {
+	can := s.canUser(caller)
+	if err := can.GetMount(); err != nil {
+		return nil, fmt.Errorf("GetMount() check failed: %w", err)
+	}
+
 	namespaceID, err := s.store.GetMount(ctx, baseURI)
 	if errors.Is(err, backend.ErrMountNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("mount not found: %w", err), api.MountNotFound)
@@ -41,14 +46,10 @@ func (s *Service) GetMount(ctx context.Context, baseURI api.ValidBaseURI) (*api.
 // - [api.Unauthorized]
 // - [api.Forbidden]
 // - [api.DatabaseError].
-func (s *Service) ListMounts(ctx context.Context, caller *api.AuthenticatedUser, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
-		if err := requireSuperuser(*caller); err != nil {
-			return nil, err
-		}
+func (s *Service) ListMounts(ctx context.Context, caller *api.Caller, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
+	can := s.canUser(caller)
+	if err := can.ListMounts(); err != nil {
+		return nil, fmt.Errorf("ListMounts() check failed: %w", err)
 	}
 
 	out, err := s.store.ListMounts(ctx, params)
@@ -69,14 +70,13 @@ func (s *Service) ListMounts(ctx context.Context, caller *api.AuthenticatedUser,
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
-		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canReadNamespaceMetadata); err != nil {
-			return nil, err
-		}
+func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
+	can, err := s.canNamespace(ctx, caller, namespace)
+	if err != nil {
+		return nil, err
+	}
+	if err := can.ListMounts(); err != nil {
+		return nil, fmt.Errorf("ListMounts() check failed: %w", err)
 	}
 
 	out, err := s.store.ListNamespaceMounts(ctx, namespace, params)
@@ -100,14 +100,10 @@ func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.Authentic
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) SetMount(ctx context.Context, caller *api.AuthenticatedUser, baseURI api.ValidBaseURI, req api.ValidMountUpsertRequest) (*api.MountResponse, error) {
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
-		if err := requireSuperuser(*caller); err != nil {
-			return nil, err
-		}
+func (s *Service) SetMount(ctx context.Context, caller *api.Caller, baseURI api.ValidBaseURI, req api.ValidMountUpsertRequest) (*api.MountResponse, error) {
+	can := s.canUser(caller)
+	if err := can.SetMount(); err != nil {
+		return nil, fmt.Errorf("SetMount() check failed: %w", err)
 	}
 
 	if err := s.store.SetMount(ctx, baseURI, req.Namespace); err != nil {
@@ -134,14 +130,10 @@ func (s *Service) SetMount(ctx context.Context, caller *api.AuthenticatedUser, b
 // - [api.Forbidden]
 // - [api.MountNotFound]
 // - [api.DatabaseError].
-func (s *Service) DeleteMount(ctx context.Context, caller *api.AuthenticatedUser, baseURI api.ValidBaseURI) error {
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return err
-		}
-		if err := requireSuperuser(*caller); err != nil {
-			return err
-		}
+func (s *Service) DeleteMount(ctx context.Context, caller *api.Caller, baseURI api.ValidBaseURI) error {
+	can := s.canUser(caller)
+	if err := can.DeleteMount(); err != nil {
+		return fmt.Errorf("DeleteMount() check failed: %w", err)
 	}
 
 	if err := s.store.DeleteMount(ctx, baseURI); err != nil {

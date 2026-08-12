@@ -76,10 +76,10 @@ func TestAuthHandlerAuthVariants(t *testing.T) {
 
 				var (
 					gotCalled bool
-					gotUser   *api.AuthenticatedUser
+					gotUser   *api.Caller
 				)
 				handler := h.Open(
-					func(w http.ResponseWriter, r *http.Request, user *api.AuthenticatedUser) (authProbeResponse, error) {
+					func(w http.ResponseWriter, r *http.Request, user *api.Caller) (authProbeResponse, error) {
 						gotCalled = true
 						gotUser = user
 						var username *string
@@ -232,7 +232,7 @@ func TestHandleRequiredUserInAuthModeUnavailableInAnonymousMode(t *testing.T) {
 		},
 	}, nil)
 	handler := h.Restricted(
-		func(w http.ResponseWriter, r *http.Request, _ api.AuthenticatedUser) (struct{}, error) {
+		func(w http.ResponseWriter, r *http.Request, _ api.Caller) (struct{}, error) {
 			t.Fatal("handler must not be called in anonymous mode")
 			return struct{}{}, nil
 		},
@@ -292,13 +292,13 @@ func TestImpersonation(t *testing.T) {
 		}, nil)
 	}
 
-	restrictedProbe := func(h *lowlevel.Handler) (http.HandlerFunc, *bool, **api.AuthenticatedUser) {
+	restrictedProbe := func(h *lowlevel.Handler) (http.HandlerFunc, *bool, **api.Caller) {
 		var (
 			gotCalled bool
-			gotUser   *api.AuthenticatedUser
+			gotUser   *api.Caller
 		)
 		handler := h.Restricted(
-			func(w http.ResponseWriter, r *http.Request, user api.AuthenticatedUser) (authProbeResponse, error) {
+			func(w http.ResponseWriter, r *http.Request, user api.Caller) (authProbeResponse, error) {
 				gotCalled = true
 				gotUser = &user
 				return authProbeResponse{
@@ -537,7 +537,7 @@ func assertStatusAndCalled(t *testing.T, rec *httptest.ResponseRecorder, gotCall
 	}
 }
 
-func userInfoFromAuthenticated(user *api.AuthenticatedUser) *api.UserInfo {
+func userInfoFromAuthenticated(user *api.Caller) *api.UserInfo {
 	info := user.PlainInfo()
 	return &info
 }
@@ -556,7 +556,7 @@ func basicAuthHeader(username string, password string) string {
 	return "Basic " + encoded
 }
 
-func assertOptionalUserEqual(t *testing.T, got *api.AuthenticatedUser, want *api.ValidUserInfo) {
+func assertOptionalUserEqual(t *testing.T, got *api.Caller, want *api.ValidUserInfo) {
 	t.Helper()
 	switch {
 	case got == nil && want == nil:

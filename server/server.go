@@ -99,7 +99,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/resources/count", h.lowlevel.Public(
+	h.mux.Handle("GET /resolver/resources/count", h.lowlevel.Open(
 		h.countAllResources,
 		lowlevel.FixedStatusCode[*api.ResourceCountResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -118,7 +118,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/mounts/{baseUri}", h.lowlevel.Public(
+	h.mux.Handle("GET /resolver/mounts/{baseUri}", h.lowlevel.Open(
 		h.resolveMountByBaseUri,
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -222,7 +222,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Restricted(
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Open(
 		h.getNamespaceRole,
 		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
 		[]api.ErrorCode{
@@ -459,6 +459,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.BodyInvalidJSON,
 			api.InvalidQueryParameter,
 			api.Unauthorized,
+			api.Forbidden,
 			api.UnavailableInAnonymousMode,
 			api.BodySizeExceeded,
 			api.DatabaseError,
@@ -475,6 +476,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.BodyInvalidJSON,
 			api.InvalidPassword,
 			api.Unauthorized,
+			api.Forbidden,
 			api.UnavailableInAnonymousMode,
 			api.BodySizeExceeded,
 			api.DatabaseError,

@@ -9,19 +9,19 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) resolveMountByBaseUri(w http.ResponseWriter, r *http.Request) (*api.MountResponse, error) {
+func (h *Server) resolveMountByBaseUri(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.MountResponse, error) {
 	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return nil, err
 	}
-	mount, err := h.svc.GetMount(r.Context(), baseURI)
+	mount, err := h.svc.GetMount(r.Context(), caller, baseURI)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get mount: %w", err)
 	}
 	return mount, nil
 }
 
-func (h *Server) resolveResourceByMountAndPID(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (api.ResourceGetResult, error) {
+func (h *Server) resolveResourceByMountAndPID(w http.ResponseWriter, r *http.Request, caller *api.Caller) (api.ResourceGetResult, error) {
 	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (h *Server) resolveResourceByMountAndPID(w http.ResponseWriter, r *http.Req
 		return nil, err
 	}
 
-	mount, err := h.svc.GetMount(r.Context(), baseURI)
+	mount, err := h.svc.GetMount(r.Context(), caller, baseURI)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get mount: %w", err)
 	}
@@ -50,7 +50,7 @@ func (h *Server) resolveResourceByMountAndPID(w http.ResponseWriter, r *http.Req
 	return resource, nil
 }
 
-func (h *Server) listMounts(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.PaginatedMountsResponse, error) {
+func (h *Server) listMounts(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.PaginatedMountsResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (h *Server) listMounts(w http.ResponseWriter, r *http.Request, caller *api.
 	return mounts, nil
 }
 
-func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.PaginatedBaseURIResponse, error) {
+func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.PaginatedBaseURIResponse, error) {
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, cal
 	return mounts, nil
 }
 
-func (h *Server) upsertNamespaceMount(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.MountResponse, error) {
+func (h *Server) upsertNamespaceMount(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.MountResponse, error) {
 	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func (h *Server) upsertNamespaceMount(w http.ResponseWriter, r *http.Request, ca
 	return mount, nil
 }
 
-func (h *Server) deleteNamespaceMount(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (struct{}, error) {
+func (h *Server) deleteNamespaceMount(w http.ResponseWriter, r *http.Request, caller *api.Caller) (struct{}, error) {
 	baseURI, err := h.readBaseURIParam(r)
 	if err != nil {
 		return struct{}{}, err

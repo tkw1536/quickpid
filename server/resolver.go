@@ -24,7 +24,7 @@ func (h *Server) getResolverMeta(w http.ResponseWriter, r *http.Request) (*api.M
 	return &meta, nil
 }
 
-func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.PaginatedNamespacesResponse, error) {
+func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.PaginatedNamespacesResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, caller *
 	return namespaces, nil
 }
 
-func (h *Server) getNamespace(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.NamespaceResponse, error) {
+func (h *Server) getNamespace(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.NamespaceResponse, error) {
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (h *Server) getNamespace(w http.ResponseWriter, r *http.Request, caller *ap
 	return res, nil
 }
 
-func (h *Server) updateNamespace(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.NamespaceResponse, error) {
+func (h *Server) updateNamespace(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.NamespaceResponse, error) {
 	var req api.NamespaceUpdateRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -82,15 +82,15 @@ func (h *Server) updateNamespace(w http.ResponseWriter, r *http.Request, caller 
 	return res, nil
 }
 
-func (h *Server) countAllResources(w http.ResponseWriter, r *http.Request) (*api.ResourceCountResponse, error) {
-	count, err := h.svc.CountAllResources(r.Context())
+func (h *Server) countAllResources(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.ResourceCountResponse, error) {
+	count, err := h.svc.CountAllResources(r.Context(), caller)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count all resources: %w", err)
 	}
 	return count, nil
 }
 
-func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.NamespaceResponse, error) {
+func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.NamespaceResponse, error) {
 	var req api.NamespaceCreateRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, caller 
 	return namespace, nil
 }
 
-func (h *Server) listResources(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.PaginatedResourcesResponse, error) {
+func (h *Server) listResources(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.PaginatedResourcesResponse, error) {
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func (h *Server) listResources(w http.ResponseWriter, r *http.Request, caller *a
 	return resources, nil
 }
 
-func (h *Server) createResource(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.ResourceResponse, error) {
+func (h *Server) createResource(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.ResourceResponse, error) {
 	var req api.ResourceCreateRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -164,7 +164,7 @@ func (h *Server) createResource(w http.ResponseWriter, r *http.Request, caller *
 	return resource, nil
 }
 
-func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) ([]api.ResourceResponse, error) {
+func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, caller *api.Caller) ([]api.ResourceResponse, error) {
 	var reqs []api.ResourceCreateRequest
 	if err := h.decodeJSON(w, r, &reqs); err != nil {
 		return nil, err
@@ -191,7 +191,7 @@ func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, cal
 	return resources, nil
 }
 
-func (h *Server) getResource(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (api.ResourceGetResult, error) {
+func (h *Server) getResource(w http.ResponseWriter, r *http.Request, caller *api.Caller) (api.ResourceGetResult, error) {
 	namespace, err := h.readNamespaceParam(r)
 	if err != nil {
 		return nil, err
@@ -208,7 +208,7 @@ func (h *Server) getResource(w http.ResponseWriter, r *http.Request, caller *api
 	return resource, nil
 }
 
-func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.ResourceResponse, error) {
+func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.ResourceResponse, error) {
 	var req api.ResourceUpdateRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err

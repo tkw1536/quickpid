@@ -2502,6 +2502,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The caller is not allowed to issue an API key with the current authentication method.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode when issuing an API key.
           content:
@@ -2590,6 +2597,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The caller is not allowed to set the password with the current authentication method while setting or clearing a password.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode when setting or clearing a password.
           content:

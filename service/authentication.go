@@ -89,19 +89,6 @@ func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api
 	return info, nil
 }
 
-// SetUserPassword sets or clears a password for the caller.
-//
-// It can return the following errors:
-//
-// - [api.DatabaseError].
-func (s *Service) SetUserPassword(ctx context.Context, caller api.AuthenticatedUser, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
-	hasPassword, err := s.store.SetPassword(ctx, caller.Username(), req.Password)
-	if err != nil {
-		return nil, api.WithErrorCode(fmt.Errorf("backend failed to set password: %w", err), api.DatabaseError)
-	}
-	return &api.SetPasswordResponse{Password: hasPassword}, nil
-}
-
 // CheckPassword reports whether password matches the stored password for username.
 func (s *Service) CheckPassword(ctx context.Context, username api.ValidUsername, password api.ValidPassword) (bool, error) {
 	ok, err := s.store.CheckPassword(ctx, username, password)
@@ -114,6 +101,25 @@ func (s *Service) CheckPassword(ctx context.Context, username api.ValidUsername,
 	return ok, nil
 }
 
+// SetUserPassword sets or clears a password for the caller.
+//
+// It can return the following errors:
+//
+// - [api.DatabaseError]
+// - [api.Forbidden].
+func (s *Service) SetUserPassword(ctx context.Context, caller api.Caller, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
+	can := s.canUser(&caller)
+	if err := can.SetPassword(); err != nil {
+		return nil, fmt.Errorf("SetPassword() check failed: %w", err)
+	}
+
+	hasPassword, err := s.store.SetPassword(ctx, caller.Username(), req.Password)
+	if err != nil {
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to set password: %w", err), api.DatabaseError)
+	}
+	return &api.SetPasswordResponse{Password: hasPassword}, nil
+}
+
 // CreateUser creates a new user account. Caller must be a superuser.
 //
 // It can return the following errors:
@@ -122,11 +128,11 @@ func (s *Service) CheckPassword(ctx context.Context, username api.ValidUsername,
 // - [api.Forbidden]
 // - [api.DuplicateUsername]
 // - [api.DatabaseError].
-func (s *Service) CreateUser(ctx context.Context, caller api.AuthenticatedUser, req api.ValidUserCreateRequest) (*api.UserInfo, error) {
-	if err := requireSuperuser(caller); err != nil {
-		return nil, err
+func (s *Service) CreateUser(ctx context.Context, caller api.Caller, req api.ValidUserCreateRequest) (*api.UserInfo, error) {
+	can := s.canUser(&caller)
+	if err := can.CreateUser(); err != nil {
+		return nil, fmt.Errorf("CreateUser() check failed: %w", err)
 	}
-
 	user, err := s.store.CreateUser(ctx, req, s.runtime.Now)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, mapped
@@ -145,9 +151,10 @@ func (s *Service) CreateUser(ctx context.Context, caller api.AuthenticatedUser, 
 // - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
-func (s *Service) DeleteUser(ctx context.Context, caller api.AuthenticatedUser, target api.ValidUsername) error {
-	if err := requireSuperuser(caller); err != nil {
-		return err
+func (s *Service) DeleteUser(ctx context.Context, caller api.Caller, target api.ValidUsername) error {
+	can := s.canUser(&caller)
+	if err := can.DeleteUser(); err != nil {
+		return fmt.Errorf("DeleteUser() check failed: %w", err)
 	}
 
 	if target.String() == caller.Username().String() {
@@ -171,9 +178,10 @@ func (s *Service) DeleteUser(ctx context.Context, caller api.AuthenticatedUser, 
 // - [api.Unauthorized]
 // - [api.Forbidden]
 // - [api.DatabaseError].
-func (s *Service) ListUsers(ctx context.Context, caller api.AuthenticatedUser, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
-	if err := requireSuperuser(caller); err != nil {
-		return nil, err
+func (s *Service) ListUsers(ctx context.Context, caller api.Caller, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
+	can := s.canUser(&caller)
+	if err := can.ListUsers(); err != nil {
+		return nil, fmt.Errorf("ListUsers() check failed: %w", err)
 	}
 
 	page, err := s.store.ListUsers(ctx, params)
@@ -188,7 +196,7 @@ func (s *Service) ListUsers(ctx context.Context, caller api.AuthenticatedUser, p
 // It can return the following errors:
 //
 // - [api.DatabaseError].
-func (s *Service) AutocompleteUsers(ctx context.Context, caller api.AuthenticatedUser, query api.ValidAutocompleteQuery) ([]string, error) {
+func (s *Service) AutocompleteUsers(ctx context.Context, caller api.Caller, query api.ValidAutocompleteQuery) ([]string, error) {
 	s.mu.RLock()
 	limit := s.opts.Limits.MaxAutocompleteUsers
 	s.mu.RUnlock()
@@ -208,7 +216,12 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller api.Authenticate
 // - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListKeys(ctx context.Context, caller api.AuthenticatedUser, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+func (s *Service) ListKeys(ctx context.Context, caller api.Caller, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+	can := s.canUser(&caller)
+	if err := can.ListOwnKeys(); err != nil {
+		return nil, fmt.Errorf("ListOwnKeys() check failed: %w", err)
+	}
+
 	page, err := s.listValidKeys(ctx, s.apiKeyFormat(), caller.Username(), params)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, mapped
@@ -309,8 +322,14 @@ func (s *Service) listAllKeys(ctx context.Context, format apikey.Format, usernam
 // - [api.InvalidQueryParameter]
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
-// - [api.InsufficientEntropy].
-func (s *Service) IssueKey(ctx context.Context, caller api.AuthenticatedUser, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
+// - [api.InsufficientEntropy]
+// - [api.Forbidden].
+func (s *Service) IssueKey(ctx context.Context, caller api.Caller, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
+	can := s.canUser(&caller)
+	if err := can.IssueKey(); err != nil {
+		return nil, fmt.Errorf("IssueKey() check failed: %w", err)
+	}
+
 	if req.ExpiresAt != nil {
 		if !req.ExpiresAt.After(s.runtime.Now()) {
 			return nil, api.WithErrorCode(errExpiresAtInPast, api.InvalidQueryParameter)
@@ -369,7 +388,12 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 //
 // - [api.KeyNotFound]
 // - [api.DatabaseError].
-func (s *Service) RevokeKey(ctx context.Context, caller api.AuthenticatedUser, req api.KeyRevokeRequest) error {
+func (s *Service) RevokeKey(ctx context.Context, caller api.Caller, req api.KeyRevokeRequest) error {
+	can := s.canUser(&caller)
+	if err := can.RevokeKey(); err != nil {
+		return fmt.Errorf("RevokeKey() check failed: %w", err)
+	}
+
 	err := s.store.RevokeKey(ctx, s.apiKeyFormat(), caller.Username(), req.ID)
 	if errors.Is(err, backend.ErrKeyNotFound) {
 		return api.WithErrorCode(fmt.Errorf("key not found: %w", err), api.KeyNotFound)
@@ -388,9 +412,10 @@ func (s *Service) RevokeKey(ctx context.Context, caller api.AuthenticatedUser, r
 // - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
-func (s *Service) UpdateUser(ctx context.Context, caller api.AuthenticatedUser, target api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
-	if err := requireSuperuser(caller); err != nil {
-		return nil, err
+func (s *Service) UpdateUser(ctx context.Context, caller api.Caller, target api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
+	can := s.canUser(&caller)
+	if err := can.UpdateUser(); err != nil {
+		return nil, fmt.Errorf("UpdateUser() check failed: %w", err)
 	}
 
 	if target.String() == caller.Username().String() {
@@ -405,18 +430,6 @@ func (s *Service) UpdateUser(ctx context.Context, caller api.AuthenticatedUser, 
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to update user: %w", err), api.DatabaseError)
 	}
 	return user, nil
-}
-
-// requireSuperuser reports whether user is a superuser.
-//
-// It can return the following errors:
-//
-// - [api.Forbidden].
-func requireSuperuser(user api.AuthenticatedUser) error {
-	if !user.Superuser() {
-		return api.WithErrorCode(errForbidden, api.Forbidden)
-	}
-	return nil
 }
 
 func (s *Service) apiKeyFormat() apikey.Format {

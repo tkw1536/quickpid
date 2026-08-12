@@ -11,12 +11,13 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/can"
 	"github.com/tkw1536/quickpid/server/internal/credentials"
 )
 
 func (h *Handler) handle[T any](
 	s scenario,
-	impl func(http.ResponseWriter, *http.Request, *api.AuthenticatedUser) (T, error),
+	impl func(http.ResponseWriter, *http.Request, *api.Caller) (T, error),
 	successCode func(T) int,
 	allowedErrors []api.ErrorCode,
 ) http.HandlerFunc {
@@ -67,7 +68,7 @@ var (
 //   - [api.Unauthorized] if the authentication credentials are invalid, authentication is required but not supplied,
 //     or impersonation fails (non-superuser, invalid or missing target, or multiple impersonate headers).
 //   - [api.DatabaseError] if the authenticated or impersonated user cannot be loaded for a database reason.
-func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.AuthenticatedUser, error) {
+func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.Caller, error) {
 	// if we require auth mode, and we are in anonymous mode
 	// this endpoint is unavailable.
 	if scenario == requiredUser && h.auth.AnonymousMode() {
@@ -118,7 +119,7 @@ func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.Authen
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("failed to load user object: %w", err), api.DatabaseError)
 	}
-	return h.resolveImpersonatedUser(r, user.Authenticate(method))
+	return h.resolveImpersonatedUser(r, user.Caller(method))
 }
 
 var (
@@ -136,7 +137,7 @@ var (
 //   - [api.Unauthorized] if multiple impersonate headers are sent, the caller is not a superuser,
 //     the impersonated username is invalid, or the impersonated user does not exist.
 //   - [api.DatabaseError] if loading the impersonated user fails for a reason other than not found.
-func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.AuthenticatedUser) (*api.AuthenticatedUser, error) {
+func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.Caller) (*api.Caller, error) {
 	// get the impersonate header, and handle cases of no header and multiple headers.
 	headers := r.Header.Values(api.ImpersonateHeader)
 	switch len(headers) {
@@ -147,8 +148,9 @@ func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.Authentica
 		return nil, api.WithErrorCode(errMultipleImpersonateHeaders, api.Unauthorized)
 	}
 
-	if !caller.Superuser() {
-		return nil, api.WithErrorCode(errNotAllowedToImpersonate, api.Unauthorized)
+	err := can.NewUser(&caller).Impersonate()
+	if err != nil {
+		return nil, api.WithErrorCode(fmt.Errorf("%w: %w", errNotAllowedToImpersonate, err), api.Unauthorized)
 	}
 
 	username, err := api.NewUsername(strings.TrimSpace(headers[0]))
@@ -165,7 +167,7 @@ func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.Authentica
 	}
 
 	return new(
-		user.Authenticate(
+		user.Caller(
 			api.Impersonation{
 				User:   username,
 				Reason: caller.Method(),

@@ -20,19 +20,19 @@ var errExistingUserNotFound = errors.New("existing user not found")
 //
 // - [api.Unauthorized]
 // - [api.DatabaseError].
-func (s *Service) ListNamespaces(ctx context.Context, caller *api.AuthenticatedUser, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
-	// in authenticated mode, require the caller to be authenticated.
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
+func (s *Service) ListNamespaces(ctx context.Context, caller *api.Caller, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+	can := s.canUser(caller)
+	if err := can.ListNamespaces(); err != nil {
+		return nil, fmt.Errorf("ListNamespaces() check failed: %w", err)
 	}
 
 	var user *api.ValidUsername
 	if caller != nil && !caller.Superuser() {
 		user = new(caller.Username())
 	}
+	// TODO: Filter this caller site ...
 	out, err := s.store.ListNamespaces(ctx, user, params)
+
 	if errors.Is(err, backend.ErrUserNotFound) {
 		// This SHOULD NEVER happen as we received the username from a user object.
 		// But a race condition between a concurrent delete user call or data corruption might trigger this.
@@ -53,15 +53,15 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.AuthenticatedU
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) GetNamespace(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
-		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canReadNamespaceMetadata); err != nil {
-			return nil, err
-		}
+func (s *Service) GetNamespace(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
+	can, err := s.canNamespace(ctx, caller, namespace)
+	if err != nil {
+		return nil, api.WithErrorCode(fmt.Errorf("failed to check namespace capabilities: %w", err), api.DatabaseError)
 	}
+	if err := can.ReadMetadata(); err != nil {
+		return nil, fmt.Errorf("ReadMetadata() check failed: %w", err)
+	}
+
 	out, err := s.store.GetNamespace(ctx, namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -80,15 +80,15 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.AuthenticatedUse
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) UpdateNamespace(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest) (*api.NamespaceResponse, error) {
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
-		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canManageRoles); err != nil {
-			return nil, err
-		}
+func (s *Service) UpdateNamespace(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest) (*api.NamespaceResponse, error) {
+	can, err := s.canNamespace(ctx, caller, namespace)
+	if err != nil {
+		return nil, err
 	}
+	if err := can.PatchMetadata(); err != nil {
+		return nil, fmt.Errorf("PatchMetadata() check failed: %w", err)
+	}
+
 	out, err := s.store.UpdateNamespace(ctx, namespace, req, s.runtime.Now)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -103,8 +103,15 @@ func (s *Service) UpdateNamespace(ctx context.Context, caller *api.Authenticated
 //
 // It can return the following errors:
 //
+// - [api.Unauthorized]
+// - [api.Forbidden]
 // - [api.DatabaseError].
-func (s *Service) CountAllResources(ctx context.Context) (*api.ResourceCountResponse, error) {
+func (s *Service) CountAllResources(ctx context.Context, caller *api.Caller) (*api.ResourceCountResponse, error) {
+	can := s.canUser(caller)
+	if err := can.CountAllResources(); err != nil {
+		return nil, fmt.Errorf("CountAllResources() check failed: %w", err)
+	}
+
 	n, err := s.store.CountAllResources(ctx)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to count all resources: %w", err), api.DatabaseError)
@@ -120,7 +127,12 @@ func (s *Service) CountAllResources(ctx context.Context) (*api.ResourceCountResp
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
-func (s *Service) CreateNamespace(ctx context.Context, caller *api.AuthenticatedUser, req api.NamespaceCreateRequest) (*api.NamespaceResponse, error) {
+func (s *Service) CreateNamespace(ctx context.Context, caller *api.Caller, req api.NamespaceCreateRequest) (*api.NamespaceResponse, error) {
+	can := s.canUser(caller)
+	if err := can.CreateNamespace(); err != nil {
+		return nil, fmt.Errorf("CreateNamespace() check failed: %w", err)
+	}
+
 	s.mu.RLock()
 	maxAttempts := s.opts.Limits.MaxNamespaceIDAttempts
 	s.mu.RUnlock()
@@ -166,15 +178,15 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.Authenticated
 // - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (s *Service) ListResources(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
-		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canListResources); err != nil {
-			return nil, err
-		}
+func (s *Service) ListResources(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
+	can, err := s.canNamespace(ctx, caller, namespace)
+	if err != nil {
+		return nil, err
 	}
+	if err := can.ListResources(); err != nil {
+		return nil, fmt.Errorf("ListResources() check failed: %w", err)
+	}
+
 	out, err := s.store.ListResources(ctx, namespace, params)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -195,14 +207,13 @@ func (s *Service) ListResources(ctx context.Context, caller *api.AuthenticatedUs
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
-func (s *Service) CreateResource(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, req api.ValidResourceCreateRequest) (*api.ResourceResponse, error) {
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
-		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canCreateResource); err != nil {
-			return nil, err
-		}
+func (s *Service) CreateResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, req api.ValidResourceCreateRequest) (*api.ResourceResponse, error) {
+	can, err := s.canNamespace(ctx, caller, namespace)
+	if err != nil {
+		return nil, err
+	}
+	if err := can.CreateResource(); err != nil {
+		return nil, fmt.Errorf("CreateResource() check failed: %w", err)
 	}
 
 	ns, err := s.store.GetNamespace(ctx, namespace)
@@ -235,22 +246,21 @@ var errLimitExceeded = errors.New("batch create limit exceeded")
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
-func (s *Service) BatchCreateResources(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, reqs []api.ValidResourceCreateRequest) ([]api.ResourceResponse, error) {
+func (s *Service) BatchCreateResources(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, reqs []api.ValidResourceCreateRequest) ([]api.ResourceResponse, error) {
+	can, err := s.canNamespace(ctx, caller, namespace)
+	if err != nil {
+		return nil, err
+	}
+	if err := can.BatchCreateResources(); err != nil {
+		return nil, fmt.Errorf("BatchCreateResources() check failed: %w", err)
+	}
+
 	s.mu.RLock()
 	maxBatch := s.opts.Limits.MaxBatchItems
 	s.mu.RUnlock()
 
 	if maxBatch > 0 && len(reqs) > maxBatch {
 		return nil, api.WithErrorCode(fmt.Errorf("%w: %d > %d", errLimitExceeded, len(reqs), maxBatch), api.ItemLimitExceeded)
-	}
-
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
-		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canCreateResource); err != nil {
-			return nil, err
-		}
 	}
 
 	ns, err := s.store.GetNamespace(ctx, namespace)
@@ -281,7 +291,15 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.Authenti
 //
 // When the resource is deleted and the caller is not allowed to see the full
 // object, it returns a [api.RedactedResourceResponse] (HTTP 410) instead of an error.
-func (s *Service) GetResource(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, resourcePID api.ValidPID) (api.ResourceGetResult, error) {
+func (s *Service) GetResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, resourcePID api.ValidPID) (api.ResourceGetResult, error) {
+	can, err := s.canNamespace(ctx, caller, namespace)
+	if err != nil {
+		return nil, err
+	}
+	if err := can.GetResource(); err != nil {
+		return nil, fmt.Errorf("GetResource() check failed: %w", err)
+	}
+
 	out, err := s.store.GetResource(ctx, namespace, resourcePID)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -293,23 +311,11 @@ func (s *Service) GetResource(ctx context.Context, caller *api.AuthenticatedUser
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to get resource: %w", err), api.DatabaseError)
 	}
 
-	if !s.AnonymousMode() && out.Deleted {
-		if caller == nil {
+	if out.Deleted {
+		if err := can.SeeDeletedResource(); err != nil {
 			return out.Redact(), nil
 		}
-		if caller.Superuser() {
-			return out, nil
-		}
-		role, err := s.effectiveRole(ctx, *caller, namespace)
-		if err != nil {
-			return nil, err
-		}
-		if canReadDeletedResource(role) {
-			return out, nil
-		}
-		return out.Redact(), nil
 	}
-
 	return out, nil
 }
 
@@ -322,14 +328,13 @@ func (s *Service) GetResource(ctx context.Context, caller *api.AuthenticatedUser
 // - [api.DatabaseError]
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound].
-func (s *Service) UpdateResource(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, resourcePID api.ValidPID, req api.ValidResourceUpdateRequest) (*api.ResourceResponse, error) {
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
-		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canUpdateResource); err != nil {
-			return nil, err
-		}
+func (s *Service) UpdateResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, resourcePID api.ValidPID, req api.ValidResourceUpdateRequest) (*api.ResourceResponse, error) {
+	can, err := s.canNamespace(ctx, caller, namespace)
+	if err != nil {
+		return nil, err
+	}
+	if err := can.UpdateResource(); err != nil {
+		return nil, fmt.Errorf("UpdateResource() check failed: %w", err)
 	}
 
 	out, err := s.store.UpdateResource(ctx, namespace, resourcePID, req, s.runtime.Now)
