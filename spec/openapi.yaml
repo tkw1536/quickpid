@@ -134,7 +134,7 @@ paths:
       parameters:
         - name: tag
           description: |
-            Filter namespaces by their tag.
+            Filter namespaces to those that include the given tag among their tags.
             If omitted, namespaces of all tags are included.
             If provided with an empty value, the value is treated as the empty string.
           in: query
@@ -171,7 +171,7 @@ paths:
             A paginated list of namespaces, sorted by their id in increasing order.
           content:
             application/json:
-              example: { total: 1, offset: 0, items: [ { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:00:00Z" } ] }
+              example: { total: 1, offset: 0, items: [ { id: "bafac567-6170-4df2-8c45-17797eb43c88", tags: [ "project-a" ], pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:00:00Z" } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedNamespacesResponse'
         '400':
@@ -215,7 +215,7 @@ paths:
           If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
-            example: { tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" } }
+            example: { tags: [ "project-a" ], pidFormat: { pattern: "***-***", characters: "readable" } }
             schema:
               $ref: '#/components/schemas/NamespaceCreateRequest'
 
@@ -224,7 +224,7 @@ paths:
           description: Namespace created successfully.
           content:
             application/json:
-              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:00:00Z" }
+              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tags: [ "project-a" ], pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:00:00Z" }
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
@@ -690,7 +690,7 @@ paths:
           description: Namespace found.
           content:
             application/json:
-              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:00:00Z" }
+              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tags: [ "project-a" ], pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:00:00Z" }
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
@@ -734,7 +734,7 @@ paths:
       operationId: updateNamespace
       description: |
         Updates a namespace using patch semantics.
-        Only the `tag` field may be changed.
+        Only the `tags` field may be changed.
         Omitted fields are not changed.
 
         In anonymous mode, this route is accessible without authentication.
@@ -755,12 +755,12 @@ paths:
       requestBody:
         description: |
           The namespace changes to apply.
-          The namespace update request uses patch semantics: if `tag` is omitted, it is not changed.
+          The namespace update request uses patch semantics: if `tags` is omitted, it is not changed.
           If the configured maximum request body size is exceeded, a 413 response is returned.
         required: true
         content:
           application/json:
-            example: { tag: "project-b" }
+            example: { tags: [ "project-b" ] }
             schema:
               $ref: '#/components/schemas/NamespaceUpdateRequest'
       responses:
@@ -768,7 +768,7 @@ paths:
           description: Namespace updated.
           content:
             application/json:
-              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-b", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:05:00Z" }
+              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tags: [ "project-b" ], pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:05:00Z" }
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
@@ -3072,36 +3072,45 @@ components:
     NamespaceCreateRequest:
       description: |
         Namespace to be created. The server assigns an opaque id.
+        The `tags` field is required and may be an empty array.
       type: object
       additionalProperties: false
       required:
-        - tag
+        - tags
         - pidFormat
       properties:
-        tag:
-          example: "project-a"
+        tags:
+          example: ["project-a"]
           description: |
-            A tag for this namespace. Tags can be used for filtering when listing namespaces.
-          type: string
+            Initial tags for the namespace being created.
+            Tags can be used when filtering namespace list results.
+            May be empty.
+          type: array
+          items:
+            type: string
         pidFormat:
           $ref: '#/components/schemas/PIDFormat'
     NamespaceUpdateRequest:
       description: |
-        Namespace fields to update. Only the tag may be changed.
+        Namespace fields to update. Only the tags may be changed.
+        When `tags` is present it replaces the namespace tags and may be empty.
       type: object
       additionalProperties: false
       properties:
-        tag:
-          example: "project-b"
+        tags:
+          example: ["project-b"]
           description: |
-            Replacement tag stored on the namespace.
-          type: string
+            Replacement tags stored on the namespace.
+            When present, replaces all existing tags and may be empty.
+          type: array
+          items:
+            type: string
     Namespace:
       description: A namespace available on this resolver.
       type: object
       required:
         - id
-        - tag
+        - tags
         - pidFormat
         - dateCreated
         - dateUpdated
@@ -3112,11 +3121,15 @@ components:
             Server-assigned opaque namespace id. Use this value in resource URLs.
           allOf:
             - $ref: '#/components/schemas/NamespaceId'
-        tag:
-          example: "project-a"
+        tags:
+          example: ["project-a"]
           description: |
-            Tag stored on the namespace. Used when filtering namespace list results.
-          type: string
+            Tags currently stored on this namespace.
+            Tags can be used when filtering namespace list results.
+            May be empty.
+          type: array
+          items:
+            type: string
         pidFormat:
 
           $ref: '#/components/schemas/PIDFormat'

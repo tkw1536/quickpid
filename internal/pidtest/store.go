@@ -129,7 +129,7 @@ func validPassword(t *testing.T, value string) api.ValidPassword {
 
 func namespaceReq() api.NamespaceCreateRequest {
 	return api.NamespaceCreateRequest{
-		Tag:       "test-tag",
+		Tags:      []string{"test-tag"},
 		PIDFormat: pid.Format{Pattern: "***-***", Characters: pid.Full},
 	}
 }

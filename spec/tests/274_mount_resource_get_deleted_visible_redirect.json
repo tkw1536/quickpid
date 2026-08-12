@@ -135,7 +135,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"perm-ns\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "body": "{\"tags\":[\"perm-ns\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
         "headers": [
           [
             "Authorization",

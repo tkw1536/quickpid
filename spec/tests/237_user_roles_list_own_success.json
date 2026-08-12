@@ -104,7 +104,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"ns-b\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "body": "{\"tags\":[\"ns-b\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
         "headers": [
           [
             "Authorization",
@@ -122,7 +122,9 @@
             "characters": "full",
             "pattern": "***-***"
           },
-          "tag": "ns-b"
+          "tags": [
+            "ns-b"
+          ]
         }
       }
     },
@@ -137,7 +139,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"ns-a\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "body": "{\"tags\":[\"ns-a\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
         "headers": [
           [
             "Authorization",
@@ -155,7 +157,9 @@
             "characters": "full",
             "pattern": "***-***"
           },
-          "tag": "ns-a"
+          "tags": [
+            "ns-a"
+          ]
         }
       }
     },

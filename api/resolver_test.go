@@ -23,10 +23,28 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 	}{
 		{
 			name:    "ok",
-			body:    `{"tag":"ns","pidFormat":{"pattern":"***","characters":"full"}}`,
+			body:    `{"tags":["ns"],"pidFormat":{"pattern":"***","characters":"full"}}`,
 			wantErr: false,
 			want: api.NamespaceCreateRequest{
-				Tag:       "ns",
+				Tags:      []string{"ns"},
+				PIDFormat: pid.Format{Pattern: "***", Characters: pid.Full},
+			},
+		},
+		{
+			name:    "ok_emptyTags",
+			body:    `{"tags":[],"pidFormat":{"pattern":"***","characters":"full"}}`,
+			wantErr: false,
+			want: api.NamespaceCreateRequest{
+				Tags:      []string{},
+				PIDFormat: pid.Format{Pattern: "***", Characters: pid.Full},
+			},
+		},
+		{
+			name:    "ok_multiTags",
+			body:    `{"tags":["a","b"],"pidFormat":{"pattern":"***","characters":"full"}}`,
+			wantErr: false,
+			want: api.NamespaceCreateRequest{
+				Tags:      []string{"a", "b"},
 				PIDFormat: pid.Format{Pattern: "***", Characters: pid.Full},
 			},
 		},
@@ -39,58 +57,58 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 		},
 
 		{
-			name:      "fail_missingTag",
+			name:      "fail_missingTags",
 			body:      `{"pidFormat":{"pattern":"***","characters":"full"}}`,
 			wantErr:   true,
-			wantErrIn: []string{"missing required field", "tag"},
+			wantErrIn: []string{"missing required field", "tags"},
 		},
 		{
 			name:      "fail_unknownField",
-			body:      `{"tag":"ns","pidFormat":{"pattern":"***","characters":"full"},"unknown":123}`,
+			body:      `{"tags":["ns"],"pidFormat":{"pattern":"***","characters":"full"},"unknown":123}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"},
 		},
 		{
 			name:      "fail_missingFormat",
-			body:      `{"tag":"ns"}`,
+			body:      `{"tags":["ns"]}`,
 			wantErr:   true,
 			wantErrIn: []string{"missing required field", "pidFormat"},
 		},
 
 		{
-			name:      "fail_tagNull",
-			body:      `{"tag":null,"pidFormat":{"pattern":"***","characters":"full"}}`,
+			name:      "fail_tagsNull",
+			body:      `{"tags":null,"pidFormat":{"pattern":"***","characters":"full"}}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields"},
 		},
 		{
 			name:      "fail_formatNull",
-			body:      `{"tag":"ns","pidFormat":null}`,
+			body:      `{"tags":["ns"],"pidFormat":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "json is null"},
 		},
 
 		{
 			name:      "fail_formatNull",
-			body:      `{"tag":"ns","pidFormat":null}`,
+			body:      `{"tags":["ns"],"pidFormat":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "json is null"},
 		},
 		{
 			name:      "fail_formatString",
-			body:      `{"tag":"ns","pidFormat":"***"}`,
+			body:      `{"tags":["ns"],"pidFormat":"***"}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "failed to decode json"},
 		},
 		{
 			name:      "fail_formatPattern",
-			body:      `{"tag":"ns","pidFormat":{"characters":"full"}}`,
+			body:      `{"tags":["ns"],"pidFormat":{"characters":"full"}}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "missing required field", "pattern"},
 		},
 		{
 			name:      "fail_formatCharactersMissing",
-			body:      `{"tag":"ns","pidFormat":{"pattern":"***"}}`,
+			body:      `{"tags":["ns"],"pidFormat":{"pattern":"***"}}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "missing required field", "characters"},
 		},
@@ -136,11 +154,19 @@ func TestNamespaceUpdateRequest_UnmarshalJSON(t *testing.T) {
 			want:    api.NamespaceUpdateRequest{},
 		},
 		{
-			name:    "ok_tag",
-			body:    `{"tag":"ns-updated"}`,
+			name:    "ok_tags",
+			body:    `{"tags":["ns-updated"]}`,
 			wantErr: false,
 			want: api.NamespaceUpdateRequest{
-				Tag: new("ns-updated"),
+				Tags: []string{"ns-updated"},
+			},
+		},
+		{
+			name:    "ok_tagsEmpty",
+			body:    `{"tags":[]}`,
+			wantErr: false,
+			want: api.NamespaceUpdateRequest{
+				Tags: []string{},
 			},
 		},
 		{
@@ -151,13 +177,13 @@ func TestNamespaceUpdateRequest_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			name:      "fail_unknownField",
-			body:      `{"tag":"ns","unknown":123}`,
+			body:      `{"tags":["ns"],"unknown":123}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal namespace update request", "unknown object member name", "unknown"},
 		},
 		{
-			name:      "fail_tagNull",
-			body:      `{"tag":null}`,
+			name:      "fail_tagsNull",
+			body:      `{"tags":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal namespace update request"},
 		},

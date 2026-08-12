@@ -1,12 +1,12 @@
 {
-  "name": "291_namespace_patch_anonymous_success",
-  "comment": "PATCH /resolver/namespaces/{namespace} updates the namespace tags in anonymous mode.",
+  "name": "297_namespace_patch_tags_replace_and_clear",
+  "comment": "PATCH namespace tags replaces the full list, and an empty array clears all tags.",
   "steps": [
     {
       "name": "create_namespace",
       "config": {
         "namespaceIDs": [
-          "d1000000-0000-4000-8000-000000000001"
+          "f1000000-0000-4000-8000-000000000002"
         ],
         "now": "2020-01-02T03:04:05Z",
         "anonymous": true
@@ -14,73 +14,74 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tags\":[\"flow-tag\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tags\":[\"one\",\"two\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
           "dateUpdated": "2020-01-02T03:04:05Z",
-          "id": "d1000000-0000-4000-8000-000000000001",
+          "id": "f1000000-0000-4000-8000-000000000002",
           "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },
           "tags": [
-            "flow-tag"
+            "one",
+            "two"
           ]
         }
       }
     },
     {
-      "name": "patch_namespace",
+      "name": "replace_tags",
       "config": {
         "now": "2020-01-02T03:05:06Z",
         "anonymous": true
       },
       "request": {
         "method": "PATCH",
-        "path": "/resolver/namespaces/d1000000-0000-4000-8000-000000000001",
-        "body": "{\"tags\":[\"updated-tag\"]}"
+        "path": "/resolver/namespaces/f1000000-0000-4000-8000-000000000002",
+        "body": "{\"tags\":[\"three\"]}"
       },
       "response": {
         "code": 200,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
           "dateUpdated": "2020-01-02T03:05:06Z",
-          "id": "d1000000-0000-4000-8000-000000000001",
+          "id": "f1000000-0000-4000-8000-000000000002",
           "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },
           "tags": [
-            "updated-tag"
+            "three"
           ]
         }
       }
     },
     {
-      "name": "get_namespace",
+      "name": "clear_tags",
       "config": {
+        "now": "2020-01-02T03:06:07Z",
         "anonymous": true
       },
       "request": {
-        "method": "GET",
-        "path": "/resolver/namespaces/d1000000-0000-4000-8000-000000000001"
+        "method": "PATCH",
+        "path": "/resolver/namespaces/f1000000-0000-4000-8000-000000000002",
+        "body": "{\"tags\":[]}"
       },
       "response": {
         "code": 200,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
-          "dateUpdated": "2020-01-02T03:05:06Z",
-          "id": "d1000000-0000-4000-8000-000000000001",
+          "dateUpdated": "2020-01-02T03:06:07Z",
+          "id": "f1000000-0000-4000-8000-000000000002",
           "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },
-          "tags": [
-            "updated-tag"
-          ]
+          "tags": []
         }
       }
     }

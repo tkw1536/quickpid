@@ -164,7 +164,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"list-auth\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "body": "{\"tags\":[\"list-auth\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
         "headers": [
           [
             "Authorization",
@@ -182,7 +182,9 @@
             "characters": "full",
             "pattern": "***-***"
           },
-          "tag": "list-auth"
+          "tags": [
+            "list-auth"
+          ]
         }
       }
     },

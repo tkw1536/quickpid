@@ -14,7 +14,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"p\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tags\":[\"p\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201,
@@ -26,7 +26,9 @@
             "characters": "full",
             "pattern": "***-***"
           },
-          "tag": "p"
+          "tags": [
+            "p"
+          ]
         }
       }
     },

@@ -14,7 +14,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"batch-res\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tags\":[\"batch-res\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201

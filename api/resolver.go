@@ -17,8 +17,8 @@ import (
 
 // NamespaceCreateRequest is the JSON body for createNamespace.
 type NamespaceCreateRequest struct {
-	Tag       string     `json:"tag"`
-	PIDFormat pid.Format `json:"pidFormat"`
+	Tags      []string
+	PIDFormat pid.Format
 }
 
 var (
@@ -27,17 +27,17 @@ var (
 
 func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
-		Tag       strict.Optional[strict.String] `json:"tag"`
-		PIDFormat strict.Optional[pid.Format]    `json:"pidFormat"`
+		Tags      strict.Optional[strict.StringSlice] `json:"tags"`
+		PIDFormat strict.Optional[pid.Format]         `json:"pidFormat"`
 	}
 	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
 	}
-	if !decoded.Tag.Present {
-		return missingRequiredFieldError("tag")
+	if !decoded.Tags.Present {
+		return missingRequiredFieldError("tags")
 	}
-	r.Tag = string(decoded.Tag.Value)
+	r.Tags = decoded.Tags.Value.Strings()
 	if !decoded.PIDFormat.Present {
 		return missingRequiredFieldError("pidFormat")
 	}
@@ -50,23 +50,25 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 }
 
 // NamespaceUpdateRequest is the JSON body for updateNamespace.
+//
+// A nil Tags slice indicates that no update should be performed on that field.
+// When Tags is non-nil, it replaces the namespace tags (which might be empty).
 type NamespaceUpdateRequest struct {
-	Tag *string `json:"tag"`
+	Tags []string
 }
 
 func (r *NamespaceUpdateRequest) UnmarshalJSON(data []byte) error {
 	type internal struct {
-		Tag strict.Optional[strict.String] `json:"tag"`
+		Tags strict.Optional[strict.StringSlice] `json:"tags"`
 	}
 	decoded, err := strict.UnmarshalStrict[internal](data)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal namespace update request: %w", err)
 	}
-	if decoded.Tag.Present {
-		tag := string(decoded.Tag.Value)
-		r.Tag = &tag
+	if decoded.Tags.Present {
+		r.Tags = decoded.Tags.Value.Strings()
 	} else {
-		r.Tag = nil
+		r.Tags = nil
 	}
 	return nil
 }
@@ -74,22 +76,47 @@ func (r *NamespaceUpdateRequest) UnmarshalJSON(data []byte) error {
 // Validate checks if the given request is valid.
 func (r *NamespaceUpdateRequest) Validate() (ValidNamespaceUpdateRequest, error) {
 	return ValidNamespaceUpdateRequest{
-		Tag: r.Tag,
+		Tags: r.Tags,
 	}, nil
 }
 
 // ValidNamespaceUpdateRequest is like a [NamespaceUpdateRequest].
 type ValidNamespaceUpdateRequest struct {
-	Tag *string
+	Tags []string
 }
 
 // NamespaceResponse is returned for namespace operations.
 type NamespaceResponse struct {
-	ID          string     `json:"id"`
-	Tag         string     `json:"tag"`
-	PIDFormat   pid.Format `json:"pidFormat"`
-	DateCreated time.Time  `json:"dateCreated"`
-	DateUpdated time.Time  `json:"dateUpdated"`
+	ID          string
+	Tags        []string
+	PIDFormat   pid.Format
+	DateCreated time.Time
+	DateUpdated time.Time
+}
+
+func (n NamespaceResponse) MarshalJSON() ([]byte, error) {
+	type out struct {
+		ID          string     `json:"id"`
+		Tags        []string   `json:"tags"`
+		PIDFormat   pid.Format `json:"pidFormat"`
+		DateCreated time.Time  `json:"dateCreated"`
+		DateUpdated time.Time  `json:"dateUpdated"`
+	}
+	tags := n.Tags
+	if tags == nil {
+		tags = []string{}
+	}
+	bytes, err := json.Marshal(out{
+		ID:          n.ID,
+		Tags:        tags,
+		PIDFormat:   n.PIDFormat,
+		DateCreated: n.DateCreated,
+		DateUpdated: n.DateUpdated,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal namespace response: %w", err)
+	}
+	return bytes, nil
 }
 
 type PaginatedNamespacesResponse struct {

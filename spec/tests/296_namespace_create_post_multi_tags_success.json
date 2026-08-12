@@ -1,65 +1,67 @@
 {
-  "name": "161_anonymous_namespace_list_get_allowed",
-  "comment": "In anonymous mode, namespaces can be listed without authentication.",
+  "name": "296_namespace_create_post_multi_tags_success",
+  "comment": "POST /resolver/namespaces accepts multiple tags and returns them in order.",
   "steps": [
     {
-      "name": "create_namespace_anonymous",
+      "name": "create_multi_tags",
       "config": {
-        "anonymous": true,
         "namespaceIDs": [
-          "d1000000-0000-4000-8000-000000000001"
+          "f1000000-0000-4000-8000-000000000001"
         ],
-        "now": "2020-01-02T03:04:05Z"
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
       },
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tags\":[\"anon-ns\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+        "body": "{\"tags\":[\"alpha\",\"beta\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
           "dateUpdated": "2020-01-02T03:04:05Z",
-          "id": "d1000000-0000-4000-8000-000000000001",
+          "id": "f1000000-0000-4000-8000-000000000001",
           "pidFormat": {
             "characters": "full",
             "pattern": "***-***"
           },
           "tags": [
-            "anon-ns"
+            "alpha",
+            "beta"
           ]
         }
       }
     },
     {
-      "name": "list_namespaces_anonymous",
+      "name": "filter_by_second_tag",
       "config": {
         "anonymous": true
       },
       "request": {
         "method": "GET",
-        "path": "/resolver/namespaces"
+        "path": "/resolver/namespaces?tag=beta"
       },
       "response": {
         "code": 200,
         "body": {
+          "offset": 0,
+          "total": 1,
           "items": [
             {
               "dateCreated": "2020-01-02T03:04:05Z",
               "dateUpdated": "2020-01-02T03:04:05Z",
-              "id": "d1000000-0000-4000-8000-000000000001",
+              "id": "f1000000-0000-4000-8000-000000000001",
               "pidFormat": {
                 "characters": "full",
                 "pattern": "***-***"
               },
               "tags": [
-                "anon-ns"
+                "alpha",
+                "beta"
               ]
             }
-          ],
-          "offset": 0,
-          "total": 1
+          ]
         }
       }
     }

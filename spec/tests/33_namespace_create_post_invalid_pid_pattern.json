@@ -10,7 +10,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"t\",\"pidFormat\":{\"pattern\":\"!!not-a-valid-pattern!!\",\"characters\":\"full\"}}"
+        "body": "{\"tags\":[\"t\"],\"pidFormat\":{\"pattern\":\"!!not-a-valid-pattern!!\",\"characters\":\"full\"}}"
       },
       "response": {
         "code": 400,

@@ -1,6 +1,6 @@
 {
   "name": "293_namespace_patch_contributor_forbidden",
-  "comment": "A contributor cannot PATCH a namespace tag in authenticated mode.",
+  "comment": "A contributor cannot PATCH namespace tags in authenticated mode.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -164,7 +164,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"owner-tag\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "body": "{\"tags\":[\"owner-tag\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
         "headers": [
           [
             "Authorization",
@@ -182,7 +182,9 @@
             "characters": "full",
             "pattern": "***-***"
           },
-          "tag": "owner-tag"
+          "tags": [
+            "owner-tag"
+          ]
         }
       }
     },
@@ -214,7 +216,7 @@
       "request": {
         "method": "PATCH",
         "path": "/resolver/namespaces/d1000000-0000-4000-8000-000000000003",
-        "body": "{\"tag\":\"forbidden-tag\"}",
+        "body": "{\"tags\":[\"forbidden-tag\"]}",
         "headers": [
           [
             "Authorization",

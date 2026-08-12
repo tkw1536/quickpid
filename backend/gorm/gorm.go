@@ -69,6 +69,7 @@ const DefaultBatchSize = 100
 func Migrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(
 		&namespaceRow{},
+		&namespaceTagRow{},
 		&resourceRow{},
 		&resourceTagRow{},
 		&userRow{},

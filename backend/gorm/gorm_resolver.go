@@ -26,7 +26,11 @@ func (s *Store) ListNamespaces(ctx context.Context, user *api.ValidUsername, par
 				Where("authz_namespace_roles.username = ?", user.String())
 		}
 		if params.Tag != nil {
-			q = q.Where("namespaces.tag = ?", *params.Tag)
+			q = q.Where(`EXISTS (
+				SELECT 1 FROM namespace_tags
+				WHERE namespace_tags.namespace_id = namespaces.id
+					AND namespace_tags.tag = ?
+			)`, *params.Tag)
 		}
 
 		var total int64
@@ -45,7 +49,7 @@ func (s *Store) ListNamespaces(ctx context.Context, user *api.ValidUsername, par
 		}
 
 		var rows []namespaceRow
-		if err := q.Order("namespaces.id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
+		if err := q.Preload("TagRows", preloadNamespaceTags).Order("namespaces.id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		items := make([]api.NamespaceResponse, len(rows))
@@ -71,7 +75,6 @@ func (s *Store) CreateNamespace(ctx context.Context, namespace api.ValidNamespac
 		ts := now().UTC()
 		ns := namespaceRow{
 			ID:          namespace.String(),
-			Tag:         req.Tag,
 			PIDPattern:  req.PIDFormat.Pattern,
 			PIDChars:    req.PIDFormat.Characters,
 			DateCreated: ts,
@@ -83,6 +86,14 @@ func (s *Store) CreateNamespace(ctx context.Context, namespace api.ValidNamespac
 			}
 			return nil, err
 		}
+
+		tagRows := namespaceTagRowsFor(namespace.String(), req.Tags)
+		if len(tagRows) > 0 {
+			if err := tx.Create(tagRows).Error; err != nil {
+				return nil, err
+			}
+		}
+		ns.TagRows = tagRows
 
 		if owner != nil {
 			perm := namespaceRoleRow{
@@ -103,7 +114,7 @@ func (s *Store) CreateNamespace(ctx context.Context, namespace api.ValidNamespac
 func (s *Store) GetNamespace(ctx context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		var ns namespaceRow
-		if err := tx.First(&ns, "id = ?", namespace.String()).Error; err != nil {
+		if err := tx.Preload("TagRows", preloadNamespaceTags).First(&ns, "id = ?", namespace.String()).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, backend.ErrNamespaceNotFound
 			}
@@ -117,14 +128,17 @@ func (s *Store) GetNamespace(ctx context.Context, namespace api.ValidNamespaceID
 func (s *Store) UpdateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		var ns namespaceRow
-		if err := tx.First(&ns, "id = ?", namespace.String()).Error; err != nil {
+		if err := tx.Preload("TagRows", preloadNamespaceTags).First(&ns, "id = ?", namespace.String()).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, backend.ErrNamespaceNotFound
 			}
 			return nil, err
 		}
-		if req.Tag != nil {
-			ns.Tag = *req.Tag
+		if req.Tags != nil {
+			if err := replaceNamespaceTags(tx, namespace.String(), req.Tags); err != nil {
+				return nil, err
+			}
+			ns.TagRows = namespaceTagRowsFor(namespace.String(), req.Tags)
 		}
 		ns.DateUpdated = now().UTC()
 		if err := tx.Save(&ns).Error; err != nil {

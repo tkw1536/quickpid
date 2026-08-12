@@ -21,15 +21,23 @@ type namespaceRow struct {
 	PIDPattern pid.Pattern      `gorm:"column:pid_pattern;type:text;not null"`
 	PIDChars   pid.CharacterSet `gorm:"column:pid_chars;type:text;not null"`
 
-	Tag string `gorm:"column:tag;type:text;not null;index"`
+	TagRows []namespaceTagRow `gorm:"foreignKey:NamespaceID;references:ID;constraint:OnDelete:CASCADE"`
 }
 
 func (namespaceRow) TableName() string { return "namespaces" }
 
+type namespaceTagRow struct {
+	NamespaceID string `gorm:"column:namespace_id;type:text;not null;primaryKey;index:idx_namespace_tags_ns_tag,priority:1"`
+	Pos         int    `gorm:"column:pos;not null;primaryKey"`
+	Tag         string `gorm:"column:tag;type:text;not null;index:idx_namespace_tags_ns_tag,priority:2"`
+}
+
+func (namespaceTagRow) TableName() string { return "namespace_tags" }
+
 func (n namespaceRow) toSpec() api.NamespaceResponse {
 	return api.NamespaceResponse{
-		ID:  n.ID,
-		Tag: n.Tag,
+		ID:   n.ID,
+		Tags: namespaceTagsFromRows(n.TagRows),
 		PIDFormat: pid.Format{
 			Pattern:    n.PIDPattern,
 			Characters: n.PIDChars,
@@ -37,6 +45,45 @@ func (n namespaceRow) toSpec() api.NamespaceResponse {
 		DateCreated: n.DateCreated.UTC(),
 		DateUpdated: n.DateUpdated.UTC(),
 	}
+}
+
+func namespaceTagRowsFor(namespaceID string, tags []string) []namespaceTagRow {
+	rows := make([]namespaceTagRow, len(tags))
+	for i, tag := range tags {
+		rows[i] = namespaceTagRow{
+			NamespaceID: namespaceID,
+			Pos:         i,
+			Tag:         tag,
+		}
+	}
+	return rows
+}
+
+func namespaceTagsFromRows(rows []namespaceTagRow) []string {
+	if len(rows) == 0 {
+		return nil
+	}
+	sorted := append([]namespaceTagRow(nil), rows...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Pos < sorted[j].Pos })
+	tags := make([]string, len(sorted))
+	for i := range sorted {
+		tags[i] = sorted[i].Tag
+	}
+	return tags
+}
+
+func replaceNamespaceTags(tx *gorm.DB, namespaceID string, tags []string) error {
+	if err := tx.Where("namespace_id = ?", namespaceID).Delete(&namespaceTagRow{}).Error; err != nil {
+		return err
+	}
+	if len(tags) == 0 {
+		return nil
+	}
+	return tx.Create(namespaceTagRowsFor(namespaceID, tags)).Error
+}
+
+func preloadNamespaceTags(db *gorm.DB) *gorm.DB {
+	return db.Order("pos ASC")
 }
 
 type resourceRow struct {

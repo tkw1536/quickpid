@@ -24,7 +24,7 @@ func (s *Store) ListNamespaces(_ context.Context, user *api.ValidUsername, param
 
 	all := make([]api.NamespaceResponse, 0, len(s.namespaces))
 	for id, ns := range s.namespaces {
-		if params.Tag != nil && ns.Tag != *params.Tag {
+		if params.Tag != nil && !slices.Contains(ns.Tags, *params.Tag) {
 			continue
 		}
 		if user != nil {
@@ -71,7 +71,7 @@ func (s *Store) CreateNamespace(_ context.Context, namespace api.ValidNamespaceI
 	ts := now().UTC()
 	ns := api.NamespaceResponse{
 		ID:          namespace.String(),
-		Tag:         req.Tag,
+		Tags:        append([]string(nil), req.Tags...),
 		PIDFormat:   req.PIDFormat,
 		DateCreated: ts,
 		DateUpdated: ts,
@@ -107,8 +107,8 @@ func (s *Store) UpdateNamespace(_ context.Context, namespace api.ValidNamespaceI
 	if !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
-	if req.Tag != nil {
-		ns.Tag = *req.Tag
+	if req.Tags != nil {
+		ns.Tags = append([]string(nil), req.Tags...)
 	}
 	ns.DateUpdated = now().UTC()
 	s.namespaces[namespace.String()] = ns

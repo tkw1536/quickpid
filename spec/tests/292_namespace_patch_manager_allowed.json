@@ -1,6 +1,6 @@
 {
   "name": "292_namespace_patch_manager_allowed",
-  "comment": "A namespace manager can PATCH the namespace tag in authenticated mode.",
+  "comment": "A namespace manager can PATCH the namespace tags in authenticated mode, while an editor cannot.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -164,7 +164,7 @@
       "request": {
         "method": "POST",
         "path": "/resolver/namespaces",
-        "body": "{\"tag\":\"owner-tag\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "body": "{\"tags\":[\"owner-tag\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
         "headers": [
           [
             "Authorization",
@@ -182,7 +182,9 @@
             "characters": "full",
             "pattern": "***-***"
           },
-          "tag": "owner-tag"
+          "tags": [
+            "owner-tag"
+          ]
         }
       }
     },
@@ -216,7 +218,7 @@
       "request": {
         "method": "PATCH",
         "path": "/resolver/namespaces/d1000000-0000-4000-8000-000000000002",
-        "body": "{\"tag\":\"editor-updated\"}",
+        "body": "{\"tags\":[\"editor-updated\"]}",
         "headers": [
           [
             "Authorization",
@@ -239,7 +241,7 @@
       "request": {
         "method": "PATCH",
         "path": "/resolver/namespaces/d1000000-0000-4000-8000-000000000002",
-        "body": "{\"tag\":\"manager-updated\"}",
+        "body": "{\"tags\":[\"manager-updated\"]}",
         "headers": [
           [
             "Authorization",
@@ -257,7 +259,9 @@
             "characters": "full",
             "pattern": "***-***"
           },
-          "tag": "manager-updated"
+          "tags": [
+            "manager-updated"
+          ]
         }
       }
     },
@@ -284,7 +288,9 @@
             "characters": "full",
             "pattern": "***-***"
           },
-          "tag": "manager-updated"
+          "tags": [
+            "manager-updated"
+          ]
         }
       }
     }

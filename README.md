@@ -98,7 +98,6 @@ Examples:
 ## Future Technical Work
 <!-- spellchecker:word staticcheck -->
 - update to `go1.27` final & re-enable `staticcheck` linter on CI
-- multiple tags for namespace?
 - scopes for API?
 
 ## LICENSE

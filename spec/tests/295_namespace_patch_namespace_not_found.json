@@ -39,7 +39,7 @@
       "request": {
         "method": "PATCH",
         "path": "/resolver/namespaces/e1000000-0000-4000-8000-000000000001",
-        "body": "{\"tag\":\"missing\"}",
+        "body": "{\"tags\":[\"missing\"]}",
         "headers": [
           [
             "Authorization",
