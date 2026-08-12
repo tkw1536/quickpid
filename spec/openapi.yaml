@@ -171,7 +171,7 @@ paths:
             A paginated list of namespaces, sorted by their id in increasing order.
           content:
             application/json:
-              example: { total: 1, offset: 0, items: [ { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z" } ] }
+              example: { total: 1, offset: 0, items: [ { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:00:00Z" } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedNamespacesResponse'
         '400':
@@ -224,7 +224,7 @@ paths:
           description: Namespace created successfully.
           content:
             application/json:
-              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z" }
+              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:00:00Z" }
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
@@ -690,7 +690,7 @@ paths:
           description: Namespace found.
           content:
             application/json:
-              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z" }
+              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-a", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:00:00Z" }
               schema:
                 $ref: '#/components/schemas/Namespace'
         '400':
@@ -723,6 +723,94 @@ paths:
                 $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '500':
           description: Internal server error while retrieving a namespace.
+          content:
+            application/json:
+              example: { error: "databaseError" }
+              schema:
+                $ref: '#/components/schemas/ErrorDatabaseError'
+
+    patch:
+      summary: Update a namespace by id.
+      operationId: updateNamespace
+      description: |
+        Updates a namespace using patch semantics.
+        Only the `tag` field may be changed.
+        Omitted fields are not changed.
+
+        In anonymous mode, this route is accessible without authentication.
+
+        In authenticated mode, the caller must have the manager role for the namespace, or be a superuser.
+        If the namespace exists but the caller lacks required access, a 403 response is returned.
+        If the namespace does not exist, a 404 response is returned.
+      tags:
+        - namespaces
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          description: |
+            Server-assigned namespace id of the namespace to update.
+          schema:
+            $ref: '#/components/schemas/NamespaceId'
+      requestBody:
+        description: |
+          The namespace changes to apply.
+          The namespace update request uses patch semantics: if `tag` is omitted, it is not changed.
+          If the configured maximum request body size is exceeded, a 413 response is returned.
+        required: true
+        content:
+          application/json:
+            example: { tag: "project-b" }
+            schema:
+              $ref: '#/components/schemas/NamespaceUpdateRequest'
+      responses:
+        '200':
+          description: Namespace updated.
+          content:
+            application/json:
+              example: { id: "bafac567-6170-4df2-8c45-17797eb43c88", tag: "project-b", pidFormat: { pattern: "***-***", characters: "readable" }, dateCreated: "2026-07-30T10:00:00Z", dateUpdated: "2026-07-30T10:05:00Z" }
+              schema:
+                $ref: '#/components/schemas/Namespace'
+        '400':
+          description: Invalid request body, JSON, or namespace id when updating a namespace.
+          content:
+            application/json:
+              example: { error: "bodyMissing" }
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+        '401':
+          description: Authentication is required or the credentials are incorrect when updating a namespace.
+          content:
+            application/json:
+              example: { error: "unauthorized" }
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The namespace exists but the authenticated user is not allowed to patch it.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: Namespace does not exist when updating by id.
+          content:
+            application/json:
+              example: { error: "namespaceNotFound" }
+              schema:
+                $ref: '#/components/schemas/ErrorNamespaceNotFound'
+        '413':
+          description: Request body for updating a namespace exceeds the configured maximum size.
+          content:
+            application/json:
+              example: { error: "bodySizeExceeded" }
+              schema:
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
+        '500':
+          description: Internal server error while updating a namespace.
           content:
             application/json:
               example: { error: "databaseError" }
@@ -2997,6 +3085,17 @@ components:
           type: string
         pidFormat:
           $ref: '#/components/schemas/PIDFormat'
+    NamespaceUpdateRequest:
+      description: |
+        Namespace fields to update. Only the tag may be changed.
+      type: object
+      additionalProperties: false
+      properties:
+        tag:
+          example: "project-b"
+          description: |
+            Replacement tag stored on the namespace.
+          type: string
     Namespace:
       description: A namespace available on this resolver.
       type: object
@@ -3005,6 +3104,7 @@ components:
         - tag
         - pidFormat
         - dateCreated
+        - dateUpdated
       properties:
         id:
           example: "bafac567-6170-4df2-8c45-17797eb43c88"
@@ -3023,6 +3123,11 @@ components:
         dateCreated:
           example: "2026-07-30T10:00:00Z"
           description: The date and time the namespace was created.
+          type: string
+          format: date-time
+        dateUpdated:
+          example: "2026-07-30T10:00:00Z"
+          description: The date and time the namespace object itself was last updated (not any resource within the namespace).
           type: string
           format: date-time
     PIDFormat:

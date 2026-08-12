@@ -75,6 +75,7 @@ func (s *Store) CreateNamespace(ctx context.Context, namespace api.ValidNamespac
 			PIDPattern:  req.PIDFormat.Pattern,
 			PIDChars:    req.PIDFormat.Characters,
 			DateCreated: ts,
+			DateUpdated: ts,
 		}
 		if err := tx.Create(&ns).Error; err != nil {
 			if isUniqueConstraintError(err) {
@@ -106,6 +107,27 @@ func (s *Store) GetNamespace(ctx context.Context, namespace api.ValidNamespaceID
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, backend.ErrNamespaceNotFound
 			}
+			return nil, err
+		}
+		out := ns.toSpec()
+		return &out, nil
+	})
+}
+
+func (s *Store) UpdateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
+	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
+		var ns namespaceRow
+		if err := tx.First(&ns, "id = ?", namespace.String()).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, backend.ErrNamespaceNotFound
+			}
+			return nil, err
+		}
+		if req.Tag != nil {
+			ns.Tag = *req.Tag
+		}
+		ns.DateUpdated = now().UTC()
+		if err := tx.Save(&ns).Error; err != nil {
 			return nil, err
 		}
 		out := ns.toSpec()

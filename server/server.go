@@ -180,6 +180,20 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
+	h.mux.Handle("PATCH /resolver/namespaces/{namespace}", h.lowlevel.Open(
+		h.updateNamespace,
+		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusOK),
+		[]api.ErrorCode{
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidNamespaceID,
+			api.Unauthorized,
+			api.Forbidden,
+			api.NamespaceNotFound,
+			api.BodySizeExceeded,
+			api.DatabaseError,
+		},
+	))
 
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/mounts", h.lowlevel.Open(
 		h.listNamespaceMounts,

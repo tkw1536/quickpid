@@ -1,0 +1,23 @@
+{
+  "name": "294_namespace_patch_invalid_namespace_id",
+  "comment": "PATCH /resolver/namespaces/{namespace} rejects an invalid namespace id.",
+  "steps": [
+    {
+      "name": "patch_invalid_namespace",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/invalid namespace",
+        "body": "{}"
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalidNamespaceId"
+        }
+      }
+    }
+  ]
+}

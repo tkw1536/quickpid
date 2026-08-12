@@ -176,6 +176,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2026-07-05T12:00:00Z",
+          "dateUpdated": "2026-07-05T12:00:00Z",
           "id": "ns-list-auth",
           "pidFormat": {
             "characters": "full",

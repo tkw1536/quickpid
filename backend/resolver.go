@@ -31,6 +31,10 @@ type ResolverBackend interface {
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	GetNamespace(ctx context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error)
 
+	// Updates a namespace by its identifier.
+	// Should return [ErrNamespaceNotFound] if the namespace is not found.
+	UpdateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest, now func() time.Time) (*api.NamespaceResponse, error)
+
 	// Lists all resources in a namespace, ordered ascending by pid.
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	ListResources(ctx context.Context, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error)

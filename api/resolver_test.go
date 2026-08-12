@@ -119,6 +119,73 @@ func TestNamespaceCreateRequest_UnmarshalJSON(t *testing.T) {
 	}
 }
 
+func TestNamespaceUpdateRequest_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		body      string
+		wantErr   bool
+		wantErrIn []string
+		want      api.NamespaceUpdateRequest
+	}{
+		{
+			name:    "ok_empty",
+			body:    `{}`,
+			wantErr: false,
+			want:    api.NamespaceUpdateRequest{},
+		},
+		{
+			name:    "ok_tag",
+			body:    `{"tag":"ns-updated"}`,
+			wantErr: false,
+			want: api.NamespaceUpdateRequest{
+				Tag: new("ns-updated"),
+			},
+		},
+		{
+			name:      "fail_nullBody",
+			body:      `null`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal namespace update request", "json is null"},
+		},
+		{
+			name:      "fail_unknownField",
+			body:      `{"tag":"ns","unknown":123}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal namespace update request", "unknown object member name", "unknown"},
+		},
+		{
+			name:      "fail_tagNull",
+			body:      `{"tag":null}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal namespace update request"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var req api.NamespaceUpdateRequest
+			err := json.Unmarshal([]byte(tt.body), &req)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("error: got %v wantErr %v", err, tt.wantErr)
+			}
+			if err != nil && len(tt.wantErrIn) > 0 {
+				es := err.Error()
+				for _, wantIn := range tt.wantErrIn {
+					if !strings.Contains(es, wantIn) {
+						t.Fatalf("error: got %q want substring %q", es, wantIn)
+					}
+				}
+			}
+			if err == nil && !tt.wantErr && !reflect.DeepEqual(req, tt.want) {
+				t.Fatalf("req: got %+v want %+v", req, tt.want)
+			}
+		})
+	}
+}
+
 func TestResourceCreateRequest_UnmarshalJSON(t *testing.T) {
 	t.Parallel()
 

@@ -20,6 +20,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "ns-aaa",
           "pidFormat": {
             "characters": "full",
@@ -47,6 +48,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "ns-bbb",
           "pidFormat": {
             "characters": "full",
@@ -203,6 +205,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "ns-empty",
           "pidFormat": {
             "characters": "full",

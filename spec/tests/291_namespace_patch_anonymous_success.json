@@ -1,0 +1,82 @@
+{
+  "name": "291_namespace_patch_anonymous_success",
+  "comment": "PATCH /resolver/namespaces/{namespace} updates the namespace tag in anonymous mode.",
+  "steps": [
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "d1000000-0000-4000-8000-000000000001"
+        ],
+        "now": "2020-01-02T03:04:05Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tag\":\"flow-tag\",\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}"
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
+          "id": "d1000000-0000-4000-8000-000000000001",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "flow-tag"
+        }
+      }
+    },
+    {
+      "name": "patch_namespace",
+      "config": {
+        "now": "2020-01-02T03:05:06Z",
+        "anonymous": true
+      },
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/d1000000-0000-4000-8000-000000000001",
+        "body": "{\"tag\":\"updated-tag\"}"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:05:06Z",
+          "id": "d1000000-0000-4000-8000-000000000001",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "updated-tag"
+        }
+      }
+    },
+    {
+      "name": "get_namespace",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/namespaces/d1000000-0000-4000-8000-000000000001"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:05:06Z",
+          "id": "d1000000-0000-4000-8000-000000000001",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tag": "updated-tag"
+        }
+      }
+    }
+  ]
+}

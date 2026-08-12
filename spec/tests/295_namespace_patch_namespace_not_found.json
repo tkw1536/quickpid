@@ -1,0 +1,58 @@
+{
+  "name": "295_namespace_patch_namespace_not_found",
+  "comment": "PATCH /resolver/namespaces/{namespace} returns 404 when the namespace does not exist.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "patch_missing_namespace",
+      "config": {},
+      "request": {
+        "method": "PATCH",
+        "path": "/resolver/namespaces/e1000000-0000-4000-8000-000000000001",
+        "body": "{\"tag\":\"missing\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 404,
+        "body": {
+          "error": "namespaceNotFound"
+        }
+      }
+    }
+  ]
+}

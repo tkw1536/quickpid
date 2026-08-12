@@ -72,6 +72,33 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.AuthenticatedUse
 	return out, nil
 }
 
+// UpdateNamespace updates a namespace by id.
+//
+// It can return the following errors:
+//
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError].
+func (s *Service) UpdateNamespace(ctx context.Context, caller *api.AuthenticatedUser, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest) (*api.NamespaceResponse, error) {
+	if !s.AnonymousMode() {
+		if err := requireAuthenticated(caller); err != nil {
+			return nil, err
+		}
+		if err := s.requireNamespaceCapability(ctx, *caller, namespace, canManageRoles); err != nil {
+			return nil, err
+		}
+	}
+	out, err := s.store.UpdateNamespace(ctx, namespace, req, s.runtime.Now)
+	if errors.Is(err, backend.ErrNamespaceNotFound) {
+		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+	}
+	if err != nil {
+		return nil, api.WithErrorCode(fmt.Errorf("backend failed to update namespace: %w", err), api.DatabaseError)
+	}
+	return out, nil
+}
+
 // CountAllResources returns the total number of resources across all namespaces.
 //
 // It can return the following errors:

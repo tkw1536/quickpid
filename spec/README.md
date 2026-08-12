@@ -3,17 +3,16 @@
 > [!WARNING]
 > See [the main README](../README.md) for a generic introduction to what a PID is and why it is needed.
 
-
 ![Architectural Sketch Of The PID system](pid_arch.svg "The PID System Architecture")
 
 We propose that a PID system consists of the following components, also seen in the sketch above:
 
-- An internal __Resolver API__ and associated database backend.
+- An internal **Resolver API** and associated database backend.
   It is the central system that handles issuing and storing PIDs and associated metadata.
-- A __Management API__, which handles authentication and authorization.
-- A public __Read-Only Frontend__ that can display each PID and respond to clients with an HTTP redirect response for specific PIDs.
-- A __Customer Frontend__, which allows customers to manage their PIDs, and optionally adds SSO support.
-- Further __Internal Clients__, which may connect directly to the resolver API.
+- A **Management API**, which handles authentication and authorization.
+- A public **Read-Only Frontend** that can display each PID and respond to clients with an HTTP redirect response for specific PIDs.
+- A **Customer Frontend**, which allows customers to manage their PIDs, and optionally adds SSO support.
+- Further **Internal Clients**, which may connect directly to the resolver API.
 
 This folder provides a specification for the Resolver and Management API, although there is no strict distinction between them.
 
@@ -23,6 +22,7 @@ This folder only provides a technical documentation and specification for the Qu
 These were written up by me (Tom Wiesing).
 
 The system as a whole, and the Resolver API in particular, were designed collaboratively with input, feedback, and discussion from (in alphabetical order):
+
 <!-- spellchecker:words Dominik Schmid Amann Walther Bidisha Borgohain -->
 
 - Kai Amann
@@ -47,13 +47,13 @@ In particular, all routes always require explicit parameters and in most cases a
 Implementations should also validate objects passed, and return appropriate error codes when they do not match.
 
 The API roughly splits into a `Resolver API` and a `Management API`.
-The Resolver API is responsible for creating PIDs, whereas the Management API is responsible for authentication and authorization. 
+The Resolver API is responsible for creating PIDs, whereas the Management API is responsible for authentication and authorization.
 
 In principle, the API can be run in one of two modes:
 
 - `Anonymous Mode`:
   The Management API is disabled, and no authentication for any API routes is required.
-  This corresponds to just running the Resolver API in the architecture sketch above.   
+  This corresponds to just running the Resolver API in the architecture sketch above.
 - `Authenticated Mode`:
   Both Management and Resolver API are active.
   Users need to authenticate to access specific resolver routes.
@@ -63,6 +63,7 @@ Continuing, this document first discusses the pure Resolver API, and then moves 
 ### Resolver API
 
 The Resolver API talks about three kinds of objects:
+
 - **Namespaces**, which hold a set of Resources;
 - **Resources**, which represent a PID along with the associated metadata; and
 - **Mounts**, which map an absolute base URI to a namespace.
@@ -81,6 +82,7 @@ Only a single resource can be created at a time.
 A Resource can be created via the API.
 It is then issued a new unique PID in the format specified within its' namespace.
 During creation, three kinds of metadata must be provided:
+
 - A URL that the resource points to (either an absolute URL or `null`);
 - Optional Metadata (either an opaque string or `null`); and
 - A Tag (see below).
@@ -99,7 +101,7 @@ Resources hold a `tags` array used for filtering.
 The array may be empty.
 Resource tags can be updated.
 
-The API implements soft deletion - resource can be hidden from public view with a `deleted` flag. 
+The API implements soft deletion - resource can be hidden from public view with a `deleted` flag.
 Soft-deleted resources remain addressable by namespace and PID.
 In anonymous mode, retrieval always returns the full resource object, including when `deleted` is true.
 In authenticated mode, callers with at least the `editor` role (or superusers) receive the full deleted resource;
@@ -164,22 +166,24 @@ Impersonation requires successful authentication first; the request then acts as
 In authenticated mode, access to most resolver operations is controlled by a per-namespace role.
 
 There are four namespace roles:
+
 - `none` (only public actions; the default role)
 - `contributor` (can add new resources)
 - `editor` (`contributor` + can edit existing resources)
-- `manager` (`editor` + can manage permissions for other users)
+- `manager` (`editor` + can update namespace tag + manage permissions for other users)
 
 The default role is `none` (no explicit assignment).
 Creating a namespace automatically grants the creator the `manager` role for it.
 The `none` role cannot be assigned explicitly; removing a role returns a user to `none`.
 
 | Capability                            | `none` | `contributor` | `editor` | `manager` |
-|---------------------------------------|--------|---------------|----------|-----------|
+| ------------------------------------- | ------ | ------------- | -------- | --------- |
 | Read non-deleted resource by PID      | yes    | yes           | yes      | yes       |
 | Create resources                      | no     | yes           | yes      | yes       |
 | Read namespace / list its mounts      | no     | yes           | yes      | yes       |
 | Read complete deleted resource by PID | no     | no            | yes      | yes       |
 | List / update resources               | no     | no            | yes      | yes       |
+| Update namespace tag                  | no     | no            | no       | yes       |
 | Manage namespace roles                | no     | no            | no       | yes       |
 
 In authenticated mode, reading a non-deleted resource by PID requires authentication (`401` if credentials are missing or invalid).
@@ -217,7 +221,7 @@ Fields may be omitted in case they are not relevant for the test case.
     - **`MaxBodyBytes`**
     - **`DefaultPageLimit`**
     - **`MaxPageLimit`**
-    - **`MaxBatchItems`**, 
+    - **`MaxBatchItems`**,
     - **`maxAutocompleteUsers`**
     - **`MaxNamespaceIDAttempts`**
     - **`MaxPIDAttempts`**
@@ -234,4 +238,4 @@ Fields may be omitted in case they are not relevant for the test case.
     - **`code`** (HTTP status integer); optional
     - **`headers`** (same shape as the request) with the following difference:
     - optional **`body`**, a JSON **value** (typically an object) representing the expected response body.
-    Comparison is JSON-semantic (e.g. object key order ignored).
+      Comparison is JSON-semantic (e.g. object key order ignored).

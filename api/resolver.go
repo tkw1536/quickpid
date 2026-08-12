@@ -49,12 +49,47 @@ func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// NamespaceUpdateRequest is the JSON body for updateNamespace.
+type NamespaceUpdateRequest struct {
+	Tag *string `json:"tag"`
+}
+
+func (r *NamespaceUpdateRequest) UnmarshalJSON(data []byte) error {
+	type internal struct {
+		Tag strict.Optional[strict.String] `json:"tag"`
+	}
+	decoded, err := strict.UnmarshalStrict[internal](data)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal namespace update request: %w", err)
+	}
+	if decoded.Tag.Present {
+		tag := string(decoded.Tag.Value)
+		r.Tag = &tag
+	} else {
+		r.Tag = nil
+	}
+	return nil
+}
+
+// Validate checks if the given request is valid.
+func (r *NamespaceUpdateRequest) Validate() (ValidNamespaceUpdateRequest, error) {
+	return ValidNamespaceUpdateRequest{
+		Tag: r.Tag,
+	}, nil
+}
+
+// ValidNamespaceUpdateRequest is like a [NamespaceUpdateRequest].
+type ValidNamespaceUpdateRequest struct {
+	Tag *string
+}
+
 // NamespaceResponse is returned for namespace operations.
 type NamespaceResponse struct {
 	ID          string     `json:"id"`
 	Tag         string     `json:"tag"`
 	PIDFormat   pid.Format `json:"pidFormat"`
 	DateCreated time.Time  `json:"dateCreated"`
+	DateUpdated time.Time  `json:"dateUpdated"`
 }
 
 type PaginatedNamespacesResponse struct {

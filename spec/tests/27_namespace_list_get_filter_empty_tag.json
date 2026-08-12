@@ -20,6 +20,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "e1000000-0000-4000-8000-000000000001",
           "pidFormat": {
             "characters": "full",
@@ -47,6 +48,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "e1000000-0000-4000-8000-000000000002",
           "pidFormat": {
             "characters": "full",
@@ -75,6 +77,7 @@
               "id": "e1000000-0000-4000-8000-000000000001",
               "tag": "",
               "dateCreated": "2020-01-02T03:04:05Z",
+              "dateUpdated": "2020-01-02T03:04:05Z",
               "pidFormat": {
                 "characters": "full",
                 "pattern": "***-***"

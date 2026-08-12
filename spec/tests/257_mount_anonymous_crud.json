@@ -20,6 +20,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee1",
           "pidFormat": {
             "characters": "full",
@@ -47,6 +48,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeee2",
           "pidFormat": {
             "characters": "full",

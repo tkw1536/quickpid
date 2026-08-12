@@ -68,11 +68,13 @@ func (s *Store) CreateNamespace(_ context.Context, namespace api.ValidNamespaceI
 		return nil, backend.ErrDuplicateNamespaceID
 	}
 
+	ts := now().UTC()
 	ns := api.NamespaceResponse{
 		ID:          namespace.String(),
 		Tag:         req.Tag,
 		PIDFormat:   req.PIDFormat,
-		DateCreated: now().UTC(),
+		DateCreated: ts,
+		DateUpdated: ts,
 	}
 	s.namespaces[namespace.String()] = ns
 	s.resources[namespace.String()] = make(map[string]api.ResourceResponse)
@@ -94,6 +96,22 @@ func (s *Store) GetNamespace(_ context.Context, namespace api.ValidNamespaceID) 
 	if !ok {
 		return nil, backend.ErrNamespaceNotFound
 	}
+	return &ns, nil
+}
+
+func (s *Store) UpdateNamespace(_ context.Context, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	ns, ok := s.namespaces[namespace.String()]
+	if !ok {
+		return nil, backend.ErrNamespaceNotFound
+	}
+	if req.Tag != nil {
+		ns.Tag = *req.Tag
+	}
+	ns.DateUpdated = now().UTC()
+	s.namespaces[namespace.String()] = ns
 	return &ns, nil
 }
 

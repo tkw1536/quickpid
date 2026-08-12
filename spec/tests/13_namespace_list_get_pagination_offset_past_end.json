@@ -20,6 +20,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "46c14e5d-c048-4159-a26a-f37bc0110c85",
           "pidFormat": {
             "characters": "full",
@@ -47,6 +48,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "31d0952d-8d73-4119-8e95-b5f19d6f9df7",
           "pidFormat": {
             "characters": "full",
@@ -74,6 +76,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "c00420c4-1461-4824-a2cc-34e3d04524d4",
           "pidFormat": {
             "characters": "full",
@@ -101,6 +104,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "5565d865-a6dc-45e7-a086-28e49669e8a6",
           "pidFormat": {
             "characters": "full",
@@ -128,6 +132,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "aaecb6eb-f0c7-4cf4-976d-f8e7aefcf7ef",
           "pidFormat": {
             "characters": "full",

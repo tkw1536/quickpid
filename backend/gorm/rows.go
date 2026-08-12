@@ -16,6 +16,7 @@ type namespaceRow struct {
 	ID string `gorm:"column:id;type:text;primaryKey"`
 
 	DateCreated time.Time `gorm:"column:date_created;not null"`
+	DateUpdated time.Time `gorm:"column:date_updated;not null"`
 
 	PIDPattern pid.Pattern      `gorm:"column:pid_pattern;type:text;not null"`
 	PIDChars   pid.CharacterSet `gorm:"column:pid_chars;type:text;not null"`
@@ -34,6 +35,7 @@ func (n namespaceRow) toSpec() api.NamespaceResponse {
 			Characters: n.PIDChars,
 		},
 		DateCreated: n.DateCreated.UTC(),
+		DateUpdated: n.DateUpdated.UTC(),
 	}
 }
 

@@ -89,6 +89,7 @@
         "code": 201,
         "body": {
           "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
           "id": "c1000000-0000-4000-8000-000000000001",
           "pidFormat": {
             "characters": "full",

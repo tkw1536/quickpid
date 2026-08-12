@@ -60,6 +60,28 @@ func (h *Server) getNamespace(w http.ResponseWriter, r *http.Request, caller *ap
 	return res, nil
 }
 
+func (h *Server) updateNamespace(w http.ResponseWriter, r *http.Request, caller *api.AuthenticatedUser) (*api.NamespaceResponse, error) {
+	var req api.NamespaceUpdateRequest
+	if err := h.decodeJSON(w, r, &req); err != nil {
+		return nil, err
+	}
+
+	validReq, err := req.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate namespace update request: %w", err)
+	}
+
+	namespace, err := h.readNamespaceParam(r)
+	if err != nil {
+		return nil, err
+	}
+	res, err := h.svc.UpdateNamespace(r.Context(), caller, namespace, validReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update namespace: %w", err)
+	}
+	return res, nil
+}
+
 func (h *Server) countAllResources(w http.ResponseWriter, r *http.Request) (*api.ResourceCountResponse, error) {
 	count, err := h.svc.CountAllResources(r.Context())
 	if err != nil {
