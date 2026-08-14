@@ -1,12 +1,12 @@
 module github.com/tkw1536/quickpid
 
-go 1.27rc2
+go 1.27rc3
 
 require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/swaggest/swgui v1.8.9
-	go.tkw01536.de/pkglib v0.0.0-20260703071639-6b0b0b91646c
-	golang.org/x/crypto v0.54.0
+	go.tkw01536.de/pkglib v0.0.0-20260814054005-69569605f915
+	golang.org/x/crypto v0.55.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.6.2
 	gorm.io/gorm v1.31.2
@@ -77,7 +77,7 @@ require (
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/firefart/nonamedreturns v1.0.8 // indirect
-	github.com/fsnotify/fsnotify v1.9.0 // indirect
+	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/fzipp/gocyclo v0.6.0 // indirect
 	github.com/ghostiam/protogetter v0.3.21 // indirect
 	github.com/glebarez/go-sqlite v1.23.0 // indirect
@@ -240,7 +240,7 @@ require (
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
