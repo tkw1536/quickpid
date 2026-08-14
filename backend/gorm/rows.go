@@ -189,7 +189,7 @@ type apiKeyRow struct {
 	ExpiresAt *time.Time `gorm:"column:expires_at"`
 
 	Prefix string `gorm:"column:prefix;type:text;not null;index"`
-	Digest []byte `gorm:"column:digest;type:blob;not null"`
+	Digest []byte `gorm:"column:digest;not null"`
 }
 
 func (apiKeyRow) TableName() string { return "auth_api_keys" }
