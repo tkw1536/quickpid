@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words slog http sync github swaggest swgui quickpid internal openapi server lowlevel service
+//spellchecker:words slog http sync github swaggest swgui quickpid internal openapi scopes server lowlevel service
 import (
 	"log/slog"
 	"net/http"
@@ -12,6 +12,7 @@ import (
 	quickpid "github.com/tkw1536/quickpid"
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/internal/openapi"
+	"github.com/tkw1536/quickpid/scopes"
 	"github.com/tkw1536/quickpid/server/internal/lowlevel"
 	"github.com/tkw1536/quickpid/service"
 )
@@ -73,7 +74,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		nil,
 	))
 
-	h.mux.Handle("GET /resolver/namespaces", h.lowlevel.Open(
+	h.mux.Handle("GET /resolver/namespaces", h.lowlevel.UserScope(
+		scopes.ScopeListNamespaces,
 		h.listNamespaces,
 		func(result *api.PaginatedNamespacesResponse) int {
 			return http.StatusOK
@@ -85,7 +87,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("POST /resolver/namespaces", h.lowlevel.Open(
+	h.mux.Handle("POST /resolver/namespaces", h.lowlevel.UserScope(
+		scopes.ScopeCreateNamespace,
 		h.createNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusCreated),
 		[]api.ErrorCode{
@@ -99,7 +102,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/resources/count", h.lowlevel.Open(
+	h.mux.Handle("GET /resolver/resources/count", h.lowlevel.UserScope(
+		scopes.ScopeCountAllResources,
 		h.countAllResources,
 		lowlevel.FixedStatusCode[*api.ResourceCountResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -107,7 +111,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/mounts", h.lowlevel.Open(
+	h.mux.Handle("GET /resolver/mounts", h.lowlevel.UserScope(
+		scopes.ScopeListMounts,
 		h.listMounts,
 		lowlevel.FixedStatusCode[*api.PaginatedMountsResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -118,7 +123,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/mounts/{baseUri}", h.lowlevel.Open(
+	h.mux.Handle("GET /resolver/mounts/{baseUri}", h.lowlevel.UserScope(
+		scopes.ScopeGetMount,
 		h.resolveMountByBaseUri,
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -127,7 +133,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PUT /resolver/mounts/{baseUri}", h.lowlevel.Open(
+	h.mux.Handle("PUT /resolver/mounts/{baseUri}", h.lowlevel.UserScope(
+		scopes.ScopeSetMount,
 		h.upsertNamespaceMount,
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -143,7 +150,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("DELETE /resolver/mounts/{baseUri}", h.lowlevel.Open(
+	h.mux.Handle("DELETE /resolver/mounts/{baseUri}", h.lowlevel.UserScope(
+		scopes.ScopeDeleteMount,
 		h.deleteNamespaceMount,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorCode{
@@ -155,7 +163,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/mounts/{baseUri}/{pid}", h.lowlevel.Open(
+	h.mux.Handle("GET /resolver/mounts/{baseUri}/{pid}", h.lowlevel.UserScope(
+		scopes.ScopeGetMount,
 		h.resolveResourceByMountAndPID,
 		lowlevel.FixedStatusCode[api.ResourceGetResult](http.StatusFound),
 		[]api.ErrorCode{
@@ -361,7 +370,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PATCH /user", h.lowlevel.Restricted(
+	h.mux.Handle("PATCH /user", h.lowlevel.UserScope(
+		scopes.ScopeUpdateUser,
 		h.updateUser,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
 		[]api.ErrorCode{
@@ -377,7 +387,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("POST /user", h.lowlevel.Restricted(
+	h.mux.Handle("POST /user", h.lowlevel.UserScope(
+		scopes.ScopeCreateUser,
 		h.createUser,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusCreated),
 		[]api.ErrorCode{
@@ -392,7 +403,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("DELETE /user", h.lowlevel.Restricted(
+	h.mux.Handle("DELETE /user", h.lowlevel.UserScope(
+		scopes.ScopeDeleteUser,
 		h.deleteUser,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorCode{
@@ -418,7 +430,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /users", h.lowlevel.Restricted(
+	h.mux.Handle("GET /users", h.lowlevel.UserScope(
+		scopes.ScopeListUsers,
 		h.listUsers,
 		lowlevel.FixedStatusCode[*api.PaginatedUsersResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -430,7 +443,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /user/roles", h.lowlevel.Restricted(
+	h.mux.Handle("GET /user/roles", h.lowlevel.UserScope(
+		scopes.ScopeListUserRoles,
 		h.getUserRoles,
 		lowlevel.FixedStatusCode[*api.PaginatedUserRolesResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -441,7 +455,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /user/key", h.lowlevel.Restricted(
+	h.mux.Handle("GET /user/key", h.lowlevel.UserScope(
+		scopes.ScopeListOwnKeys,
 		h.listUserKeys,
 		lowlevel.FixedStatusCode[*api.PaginatedAPIKeysResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -451,7 +466,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("POST /user/key", h.lowlevel.Restricted(
+	h.mux.Handle("POST /user/key", h.lowlevel.UserScope(
+		scopes.ScopeIssueKey,
 		h.issueUserKey,
 		lowlevel.FixedStatusCode[*api.IssueKeyResponse](http.StatusCreated),
 		[]api.ErrorCode{
@@ -468,7 +484,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("POST /user/password", h.lowlevel.Restricted(
+	h.mux.Handle("POST /user/password", h.lowlevel.UserScope(
+		scopes.ScopeSetPassword,
 		h.setUserPassword,
 		lowlevel.FixedStatusCode[*api.SetPasswordResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -483,7 +500,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("POST /user/key/revoke", h.lowlevel.Restricted(
+	h.mux.Handle("POST /user/key/revoke", h.lowlevel.UserScope(
+		scopes.ScopeRevokeKey,
 		h.revokeUserKey,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorCode{

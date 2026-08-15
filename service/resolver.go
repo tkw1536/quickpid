@@ -19,13 +19,8 @@ var errExistingUserNotFound = errors.New("existing user not found")
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
 // - [api.DatabaseError].
 func (s *Service) ListNamespaces(ctx context.Context, caller *api.Caller, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
-	if err := s.checkUserScope(caller, scopes.ScopeListNamespaces); err != nil {
-		return nil, fmt.Errorf("ListNamespaces() check failed: %w", err)
-	}
-
 	var user *api.ValidUsername
 	if caller != nil && !caller.Superuser() {
 		user = new(caller.Username())
@@ -95,14 +90,8 @@ func (s *Service) UpdateNamespace(ctx context.Context, caller *api.Caller, names
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.DatabaseError].
 func (s *Service) CountAllResources(ctx context.Context, caller *api.Caller) (*api.ResourceCountResponse, error) {
-	if err := s.checkUserScope(caller, scopes.ScopeCountAllResources); err != nil {
-		return nil, fmt.Errorf("CountAllResources() check failed: %w", err)
-	}
-
 	n, err := s.store.CountAllResources(ctx)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to count all resources: %w", err), api.DatabaseError)
@@ -114,24 +103,16 @@ func (s *Service) CountAllResources(ctx context.Context, caller *api.Caller) (*a
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
 func (s *Service) CreateNamespace(ctx context.Context, caller *api.Caller, req api.NamespaceCreateRequest) (*api.NamespaceResponse, error) {
-	if err := s.checkUserScope(caller, scopes.ScopeCreateNamespace); err != nil {
-		return nil, fmt.Errorf("CreateNamespace() check failed: %w", err)
-	}
-
 	s.mu.RLock()
 	maxAttempts := s.opts.Limits.MaxNamespaceIDAttempts
 	s.mu.RUnlock()
 
 	var owner *api.ValidUsername
-	if !s.AnonymousMode() {
-		if err := requireAuthenticated(caller); err != nil {
-			return nil, err
-		}
+	if caller != nil {
 		owner = new(caller.Username())
 	}
 	for range maxAttempts {

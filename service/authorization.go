@@ -12,19 +12,6 @@ import (
 	"github.com/tkw1536/quickpid/scopes"
 )
 
-// requireAuthenticated reports whether caller is authenticated.
-// A nil error return guarantees that caller is not nil.
-//
-// It can return the following errors:
-//
-// - [api.Unauthorized].
-func requireAuthenticated(caller *api.Caller) error {
-	if caller == nil {
-		return api.WithErrorCode(errUnauthorized, api.Unauthorized)
-	}
-	return nil
-}
-
 // mapAuthorizationBackendError translates backend store errors to API-annotated errors.
 func mapAuthorizationBackendError(err error) (error, bool) {
 	if errors.Is(err, backend.ErrInvalidRole) {
@@ -98,10 +85,6 @@ func (s *Service) ListNamespaceRoles(ctx context.Context, caller api.Caller, nam
 //
 // - [api.DatabaseError].
 func (s *Service) ListUserRoles(ctx context.Context, caller api.Caller, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
-	if err := s.checkUserScope(&caller, scopes.ScopeListUserRoles); err != nil {
-		return nil, fmt.Errorf("ListUserRoles() check failed: %w", err)
-	}
-
 	page, err := s.store.ListUserRoles(ctx, caller.Username(), params)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list user roles: %w", err), api.DatabaseError)

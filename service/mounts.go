@@ -19,10 +19,6 @@ import (
 // - [api.MountNotFound]
 // - [api.DatabaseError].
 func (s *Service) GetMount(ctx context.Context, caller *api.Caller, baseURI api.ValidBaseURI) (*api.MountResponse, error) {
-	if err := s.checkUserScope(caller, scopes.ScopeGetMount); err != nil {
-		return nil, fmt.Errorf("GetMount() check failed: %w", err)
-	}
-
 	namespaceID, err := s.store.GetMount(ctx, baseURI)
 	if errors.Is(err, backend.ErrMountNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("mount not found: %w", err), api.MountNotFound)
@@ -43,14 +39,8 @@ func (s *Service) GetMount(ctx context.Context, caller *api.Caller, baseURI api.
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.DatabaseError].
 func (s *Service) ListMounts(ctx context.Context, caller *api.Caller, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
-	if err := s.checkUserScope(caller, scopes.ScopeListMounts); err != nil {
-		return nil, fmt.Errorf("ListMounts() check failed: %w", err)
-	}
-
 	out, err := s.store.ListMounts(ctx, params)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list mounts: %w", err), api.DatabaseError)
@@ -91,15 +81,9 @@ func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.Caller, n
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) SetMount(ctx context.Context, caller *api.Caller, baseURI api.ValidBaseURI, req api.ValidMountUpsertRequest) (*api.MountResponse, error) {
-	if err := s.checkUserScope(caller, scopes.ScopeSetMount); err != nil {
-		return nil, fmt.Errorf("SetMount() check failed: %w", err)
-	}
-
 	if err := s.store.SetMount(ctx, baseURI, req.Namespace); err != nil {
 		if errors.Is(err, backend.ErrNamespaceNotFound) {
 			return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -120,15 +104,9 @@ func (s *Service) SetMount(ctx context.Context, caller *api.Caller, baseURI api.
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.MountNotFound]
 // - [api.DatabaseError].
 func (s *Service) DeleteMount(ctx context.Context, caller *api.Caller, baseURI api.ValidBaseURI) error {
-	if err := s.checkUserScope(caller, scopes.ScopeDeleteMount); err != nil {
-		return fmt.Errorf("DeleteMount() check failed: %w", err)
-	}
-
 	if err := s.store.DeleteMount(ctx, baseURI); err != nil {
 		if errors.Is(err, backend.ErrMountNotFound) {
 			return api.WithErrorCode(fmt.Errorf("mount not found: %w", err), api.MountNotFound)

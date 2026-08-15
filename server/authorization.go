@@ -84,13 +84,13 @@ func (h *Server) removeNamespaceRole(w http.ResponseWriter, r *http.Request, cal
 	return struct{}{}, nil
 }
 
-func (h *Server) getUserRoles(w http.ResponseWriter, r *http.Request, caller api.Caller) (*api.PaginatedUserRolesResponse, error) {
+func (h *Server) getUserRoles(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.PaginatedUserRolesResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err
 	}
 
-	roles, err := h.svc.ListUserRoles(r.Context(), caller, api.ListUserRolesParams{
+	roles, err := h.svc.ListUserRoles(r.Context(), *caller, api.ListUserRolesParams{
 		Limit:  limit,
 		Offset: offset,
 	})

@@ -39,7 +39,7 @@
       "request": {
         "method": "POST",
         "path": "/user",
-        "body": "{\"username\":\"alice\"}",
+        "body": "{\"username\":\"alice\",\"superuser\":true}",
         "headers": [
           [
             "Authorization",
@@ -50,7 +50,7 @@
       "response": {
         "code": 201,
         "body": {
-          "superuser": false,
+          "superuser": true,
           "username": "alice",
           "password": false
         }

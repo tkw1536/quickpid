@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors slog sync github quickpid backend internal apikey scopes
+//spellchecker:words context errors slog sync github quickpid backend internal apikey
 import (
 	"context"
 	"errors"
@@ -12,7 +12,6 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/apikey"
-	"github.com/tkw1536/quickpid/scopes"
 )
 
 // AuthenticateAPIKey looks up the username for a valid API key.
@@ -106,13 +105,8 @@ func (s *Service) CheckPassword(ctx context.Context, username api.ValidUsername,
 //
 // It can return the following errors:
 //
-// - [api.DatabaseError]
-// - [api.Forbidden].
+// - [api.DatabaseError].
 func (s *Service) SetUserPassword(ctx context.Context, caller api.Caller, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
-	if err := s.checkUserScope(&caller, scopes.ScopeSetPassword); err != nil {
-		return nil, fmt.Errorf("SetPassword() check failed: %w", err)
-	}
-
 	hasPassword, err := s.store.SetPassword(ctx, caller.Username(), req.Password)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to set password: %w", err), api.DatabaseError)
@@ -120,18 +114,13 @@ func (s *Service) SetUserPassword(ctx context.Context, caller api.Caller, req ap
 	return &api.SetPasswordResponse{Password: hasPassword}, nil
 }
 
-// CreateUser creates a new user account. Caller must be a superuser.
+// CreateUser creates a new user account.
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.DuplicateUsername]
 // - [api.DatabaseError].
 func (s *Service) CreateUser(ctx context.Context, caller api.Caller, req api.ValidUserCreateRequest) (*api.UserInfo, error) {
-	if err := s.checkUserScope(&caller, scopes.ScopeCreateUser); err != nil {
-		return nil, fmt.Errorf("CreateUser() check failed: %w", err)
-	}
 	user, err := s.store.CreateUser(ctx, req, s.runtime.Now)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, mapped
@@ -142,19 +131,14 @@ func (s *Service) CreateUser(ctx context.Context, caller api.Caller, req api.Val
 	return user, nil
 }
 
-// DeleteUser deletes a user account. Caller must be a superuser and cannot delete their own account.
+// DeleteUser deletes a user account.
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
 // - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
 func (s *Service) DeleteUser(ctx context.Context, caller api.Caller, target api.ValidUsername) error {
-	if err := s.checkUserScope(&caller, scopes.ScopeDeleteUser); err != nil {
-		return fmt.Errorf("DeleteUser() check failed: %w", err)
-	}
-
 	if target.String() == caller.Username().String() {
 		return api.WithErrorCode(fmt.Errorf("cannot delete own account: %w", errForbidden), api.Forbidden)
 	}
@@ -173,14 +157,8 @@ func (s *Service) DeleteUser(ctx context.Context, caller api.Caller, target api.
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.DatabaseError].
 func (s *Service) ListUsers(ctx context.Context, caller api.Caller, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
-	if err := s.checkUserScope(&caller, scopes.ScopeListUsers); err != nil {
-		return nil, fmt.Errorf("ListUsers() check failed: %w", err)
-	}
-
 	page, err := s.store.ListUsers(ctx, params)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list users: %w", err), api.DatabaseError)
@@ -209,15 +187,9 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller api.Caller, quer
 //
 // It can return the following errors:
 //
-// - [api.UnavailableInAnonymousMode]
-// - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
 func (s *Service) ListKeys(ctx context.Context, caller api.Caller, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
-	if err := s.checkUserScope(&caller, scopes.ScopeListOwnKeys); err != nil {
-		return nil, fmt.Errorf("ListOwnKeys() check failed: %w", err)
-	}
-
 	page, err := s.listValidKeys(ctx, s.apiKeyFormat(), caller.Username(), params)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, mapped
@@ -314,17 +286,11 @@ func (s *Service) listAllKeys(ctx context.Context, format apikey.Format, usernam
 //
 // It can return the following errors:
 //
-// - [api.UnavailableInAnonymousMode]
 // - [api.InvalidQueryParameter]
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
-// - [api.InsufficientEntropy]
-// - [api.Forbidden].
+// - [api.InsufficientEntropy].
 func (s *Service) IssueKey(ctx context.Context, caller api.Caller, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
-	if err := s.checkUserScope(&caller, scopes.ScopeIssueKey); err != nil {
-		return nil, fmt.Errorf("IssueKey() check failed: %w", err)
-	}
-
 	if req.ExpiresAt != nil {
 		if !req.ExpiresAt.After(s.runtime.Now()) {
 			return nil, api.WithErrorCode(errExpiresAtInPast, api.InvalidQueryParameter)
@@ -384,10 +350,6 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 // - [api.KeyNotFound]
 // - [api.DatabaseError].
 func (s *Service) RevokeKey(ctx context.Context, caller api.Caller, req api.KeyRevokeRequest) error {
-	if err := s.checkUserScope(&caller, scopes.ScopeRevokeKey); err != nil {
-		return fmt.Errorf("RevokeKey() check failed: %w", err)
-	}
-
 	err := s.store.RevokeKey(ctx, s.apiKeyFormat(), caller.Username(), req.ID)
 	if errors.Is(err, backend.ErrKeyNotFound) {
 		return api.WithErrorCode(fmt.Errorf("key not found: %w", err), api.KeyNotFound)
@@ -402,15 +364,10 @@ func (s *Service) RevokeKey(ctx context.Context, caller api.Caller, req api.KeyR
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
 // - [api.Forbidden]
 // - [api.UserNotFound]
 // - [api.DatabaseError].
 func (s *Service) UpdateUser(ctx context.Context, caller api.Caller, target api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
-	if err := s.checkUserScope(&caller, scopes.ScopeUpdateUser); err != nil {
-		return nil, fmt.Errorf("UpdateUser() check failed: %w", err)
-	}
-
 	if target.String() == caller.Username().String() {
 		return nil, api.WithErrorCode(errForbidden, api.Forbidden)
 	}

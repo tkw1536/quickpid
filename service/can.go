@@ -52,23 +52,3 @@ func (s *Service) checkNamespaceScope(ctx context.Context, namespace api.ValidNa
 	}
 	return nil
 }
-
-// checkUserScope evaluates if the given action is available for the given user.
-//
-// When the action is not available, an error of one of the following [api.ErrorCode]s is returned:
-//
-// - [api.Unauthorized]
-// - [api.Forbidden]
-// - [api.UnavailableInAnonymousMode].
-func (s *Service) checkUserScope(caller *api.Caller, scope scopes.UserScope) error {
-	if s.AnonymousMode() {
-		if err := scopes.EvaluateAnonymousModeUserScope(scope); err != nil {
-			return fmt.Errorf("scope %q not fulfilled: %w", scope, err)
-		}
-		return nil
-	}
-	if err := scopes.EvaluateUserScope(caller, scope); err != nil {
-		return fmt.Errorf("scope %q not fulfilled for user: %w", scope, err)
-	}
-	return nil
-}
