@@ -9,6 +9,7 @@ import (
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/internal/filter"
 	"github.com/tkw1536/quickpid/pid"
 )
 
@@ -19,13 +20,12 @@ var errExistingUserNotFound = errors.New("existing user not found")
 // It can return the following errors:
 //
 // - [api.DatabaseError].
-func (s *Service) ListNamespaces(ctx context.Context, caller *api.Caller, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
-	var user *api.ValidUsername
+func (s *Service) ListNamespaces(ctx context.Context, caller *api.Caller, params api.ListNamespacesParams, checkAccess func(ctx context.Context, namespace api.ValidNamespaceID) bool) (*api.PaginatedNamespacesResponse, error) {
+	var callerToFilterBy *api.Caller
 	if caller != nil && !caller.Superuser() {
-		user = new(caller.Username())
+		callerToFilterBy = caller
 	}
-	// TODO: Filter this caller site ...
-	out, err := s.store.ListNamespaces(ctx, user, params)
+	out, err := s.listVisibleNamespaces(ctx, callerToFilterBy, params, checkAccess)
 
 	if errors.Is(err, backend.ErrUserNotFound) {
 		// This SHOULD NEVER happen as we received the username from a user object.
@@ -37,6 +37,52 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.Caller, params
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list namespaces: %w", err), api.DatabaseError)
 	}
 	return out, nil
+}
+
+func (s *Service) listVisibleNamespaces(ctx context.Context, caller *api.Caller, params api.ListNamespacesParams, checkAccess func(ctx context.Context, namespace api.ValidNamespaceID) bool) (*api.PaginatedNamespacesResponse, error) {
+	// No filtering to apply; directly call the backend.
+	if caller == nil {
+		namespaces, err := s.store.ListNamespaces(ctx, nil, params)
+		if err != nil {
+			return nil, api.WithErrorCode(fmt.Errorf("backend failed to list namespaces: %w", err), api.DatabaseError)
+		}
+		return namespaces, nil
+	}
+
+	// Determine the effective page limit to call the backend with.
+	options := s.Options().Limits
+	pageLimit := options.DefaultPageLimit
+	if options.MaxPageLimit > 0 && pageLimit > options.MaxPageLimit {
+		pageLimit = options.MaxPageLimit
+	}
+
+	username := new(caller.Username())
+	filtered, err := filter.Filter(ctx, func(ctx context.Context, limit, offset int) ([]api.NamespaceResponse, error) {
+		params := params
+		params.Limit = limit
+		params.Offset = offset
+
+		namespaces, err := s.store.ListNamespaces(ctx, username, params)
+		if err != nil {
+			return nil, api.WithErrorCode(fmt.Errorf("backend failed to list namespaces: %w", err), api.DatabaseError)
+		}
+		return namespaces.Items, nil
+	}, func(ctx context.Context, namespace api.NamespaceResponse) (bool, error) {
+		name, err := api.NewNamespaceID(namespace.ID)
+		if err != nil {
+			return false, api.WithErrorCode(fmt.Errorf("backend returned invalid namespace id: %w", err), api.DatabaseError)
+		}
+		return checkAccess(ctx, name), nil
+	}, pageLimit, params.Limit, params.Offset)
+
+	if err != nil {
+		return nil, api.WithErrorCode(fmt.Errorf("filter returned error: %w", err), api.DatabaseError)
+	}
+	return &api.PaginatedNamespacesResponse{
+		Items:  filtered.Items,
+		Total:  filtered.Total,
+		Offset: filtered.Offset,
+	}, nil
 }
 
 // GetNamespace returns one namespace by id.

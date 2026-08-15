@@ -3,6 +3,7 @@ package server
 
 //spellchecker:words errors http strconv github quickpid scopes
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -42,6 +43,8 @@ func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, caller *
 		Tag:    tag,
 		Limit:  limit,
 		Offset: offset,
+	}, func(ctx context.Context, namespace api.ValidNamespaceID) bool {
+		return h.lowlevel.CheckNamespaceScope(r, namespace, caller, scopes.ScopeReadMetadata) == nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list namespaces: %w", err)
