@@ -41,7 +41,7 @@ func (h *Server) resolveResourceByMountAndPID(w http.ResponseWriter, r *http.Req
 		return nil, api.WithErrorCode(fmt.Errorf("backend returned invalid namespace id: %w", err), api.DatabaseError)
 	}
 
-	resource, err := h.svc.GetResource(r.Context(), caller, namespace, resourcePID)
+	resource, err := h.svc.GetResource(r.Context(), caller, namespace, resourcePID, h.shouldRedactResource(r, caller, namespace))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resource: %w", err)
 	}

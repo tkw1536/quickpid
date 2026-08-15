@@ -12,6 +12,9 @@ import (
 // Service provides high-level PID resolver and authentication operations.
 //
 // The zero value is not ready to use; use [New] instead.
+//
+// Service itself does not perform any authentication or authorization checks;
+// These should always be performed by the caller, and possibly provided by means of a callback.
 type Service struct {
 	mu      sync.RWMutex
 	opts    Options

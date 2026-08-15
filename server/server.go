@@ -57,7 +57,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	// 1. keep the same order of routes.
 	// 2. keep the same names for path variable names as in the spec.
 	// 3. keep an empty line between different paths, but no space between handlers for the same path but different method.
-	// 4. keep the error strings matching any 'Error*' spec type, in the same order.
+	// 4. keep the api codes any 'Error*' spec type, in the same order.
 	// 5. name the internal the same as the 'operationId' in the spec.
 
 	h.mux.Handle("GET /resolver", h.lowlevel.Public(
@@ -236,6 +236,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.DynamicNamespaceScope(
+		h.getNamespaceRoleScope,
 		h.getNamespaceRole,
 		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
 		[]api.ErrorCode{
@@ -249,6 +250,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("PUT /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.DynamicNamespaceScope(
+		h.setNamespaceRoleScope,
 		h.setNamespaceRole,
 		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
 		[]api.ErrorCode{
@@ -267,6 +269,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.DynamicNamespaceScope(
+		h.removeNamespaceRoleScope,
 		h.removeNamespaceRole,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorCode{

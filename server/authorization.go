@@ -10,20 +10,19 @@ import (
 	"github.com/tkw1536/quickpid/scopes"
 )
 
-func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID, check func(scopes.NamespaceScope) error) (*api.NamespaceRole, error) {
+func (h *Server) getNamespaceRoleScope(r *http.Request, caller *api.Caller) (api.ValidUsername, scopes.NamespaceScope, error) {
 	username, err := h.readUsernameParam(r)
 	if err != nil {
-		return nil, err
+		return api.ValidUsername{}, "", err
 	}
-
 	scope := scopes.ScopeGetOtherNamespaceRole
 	if caller != nil && username == caller.Username() {
 		scope = scopes.ScopeGetOwnNamespaceRole
 	}
-	if err := check(scope); err != nil {
-		return nil, err
-	}
+	return username, scope, nil
+}
 
+func (h *Server) getNamespaceRole(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID, username api.ValidUsername) (*api.NamespaceRole, error) {
 	role, err := h.svc.GetNamespaceRole(r.Context(), caller, namespace, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace role: %w", err)
@@ -47,20 +46,19 @@ func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, call
 	return roles, nil
 }
 
-func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID, check func(scopes.NamespaceScope) error) (*api.NamespaceRole, error) {
+func (h *Server) setNamespaceRoleScope(r *http.Request, caller *api.Caller) (api.ValidUsername, scopes.NamespaceScope, error) {
 	username, err := h.readUsernameParam(r)
 	if err != nil {
-		return nil, err
+		return api.ValidUsername{}, "", err
 	}
-
 	scope := scopes.ScopeSetOtherNamespaceRole
 	if caller != nil && username == caller.Username() {
 		scope = scopes.ScopeSetOwnNamespaceRole
 	}
-	if err := check(scope); err != nil {
-		return nil, err
-	}
+	return username, scope, nil
+}
 
+func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID, username api.ValidUsername) (*api.NamespaceRole, error) {
 	var req api.SetNamespaceRoleRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -73,20 +71,19 @@ func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, caller
 	return role, nil
 }
 
-func (h *Server) removeNamespaceRole(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID, check func(scopes.NamespaceScope) error) (struct{}, error) {
+func (h *Server) removeNamespaceRoleScope(r *http.Request, caller *api.Caller) (api.ValidUsername, scopes.NamespaceScope, error) {
 	username, err := h.readUsernameParam(r)
 	if err != nil {
-		return struct{}{}, err
+		return api.ValidUsername{}, "", err
 	}
-
 	scope := scopes.ScopeClearOtherNamespaceRole
 	if caller != nil && username == caller.Username() {
 		scope = scopes.ScopeClearOwnNamespaceRole
 	}
-	if err := check(scope); err != nil {
-		return struct{}{}, err
-	}
+	return username, scope, nil
+}
 
+func (h *Server) removeNamespaceRole(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID, username api.ValidUsername) (struct{}, error) {
 	if err := h.svc.DeleteNamespaceRole(r.Context(), *caller, namespace, username); err != nil {
 		return struct{}{}, fmt.Errorf("failed to delete namespace role: %w", err)
 	}

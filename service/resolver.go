@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend scopes
+//spellchecker:words context errors github quickpid backend
 import (
 	"context"
 	"errors"
@@ -10,7 +10,6 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/pid"
-	"github.com/tkw1536/quickpid/scopes"
 )
 
 var errExistingUserNotFound = errors.New("existing user not found")
@@ -218,9 +217,9 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.Caller, 
 // - [api.ResourceNotFound]
 // - [api.DatabaseError].
 //
-// When the resource is deleted and the caller is not allowed to see the full
-// object, it returns a [api.RedactedResourceResponse] (HTTP 410) instead of an error.
-func (s *Service) GetResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, resourcePID api.ValidPID) (api.ResourceGetResult, error) {
+// When redact is true, and the resource is deleted, the caller is not allowed to see the full
+// object, and this function returns a [api.RedactedResourceResponse] (HTTP 410) instead of an error.
+func (s *Service) GetResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, resourcePID api.ValidPID, shouldRedact func() bool) (api.ResourceGetResult, error) {
 	out, err := s.store.GetResource(ctx, namespace, resourcePID)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -232,10 +231,8 @@ func (s *Service) GetResource(ctx context.Context, caller *api.Caller, namespace
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to get resource: %w", err), api.DatabaseError)
 	}
 
-	if out.Deleted {
-		if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeSeeDeletedResource); err != nil {
-			return out.Redact(), nil
-		}
+	if out.Deleted && shouldRedact() {
+		return out.Redact(), nil
 	}
 	return out, nil
 }

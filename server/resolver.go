@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words errors http strconv github quickpid
+//spellchecker:words errors http strconv github quickpid scopes
 import (
 	"errors"
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/scopes"
 )
 
 func (h *Server) getResolverInfo(w http.ResponseWriter, r *http.Request) (*api.InfoResponse, error) {
@@ -169,13 +170,20 @@ func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, cal
 	return resources, nil
 }
 
+// shouldRedactResource returns a function that can check if the caller should see a redacted resource in the given namespace.
+func (h *Server) shouldRedactResource(r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) func() bool {
+	return func() bool {
+		return h.lowlevel.CheckNamespaceScope(r, namespace, caller, scopes.ScopeSeeDeletedResource) != nil
+	}
+}
+
 func (h *Server) getResource(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) (api.ResourceGetResult, error) {
 	resourcePID, err := h.readPidParam(r)
 	if err != nil {
 		return nil, err
 	}
 
-	resource, err := h.svc.GetResource(r.Context(), caller, namespace, resourcePID)
+	resource, err := h.svc.GetResource(r.Context(), caller, namespace, resourcePID, h.shouldRedactResource(r, caller, namespace))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resource: %w", err)
 	}
