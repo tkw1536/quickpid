@@ -44,15 +44,9 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.Caller, params
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) GetNamespace(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
-	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeReadMetadata); err != nil {
-		return nil, fmt.Errorf("ReadMetadata() check failed: %w", err)
-	}
-
 	out, err := s.store.GetNamespace(ctx, namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -67,15 +61,9 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.Caller, namespac
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) UpdateNamespace(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest) (*api.NamespaceResponse, error) {
-	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopePatchMetadata); err != nil {
-		return nil, fmt.Errorf("PatchMetadata() check failed: %w", err)
-	}
-
 	out, err := s.store.UpdateNamespace(ctx, namespace, req, s.runtime.Now)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -145,15 +133,9 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.Caller, req a
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) ListResources(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
-	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeListResources); err != nil {
-		return nil, fmt.Errorf("ListResources() check failed: %w", err)
-	}
-
 	out, err := s.store.ListResources(ctx, namespace, params)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -168,17 +150,11 @@ func (s *Service) ListResources(ctx context.Context, caller *api.Caller, namespa
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
 func (s *Service) CreateResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, req api.ValidResourceCreateRequest) (*api.ResourceResponse, error) {
-	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeCreateResource); err != nil {
-		return nil, fmt.Errorf("CreateResource() check failed: %w", err)
-	}
-
 	ns, err := s.store.GetNamespace(ctx, namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -203,17 +179,11 @@ var errLimitExceeded = errors.New("batch create limit exceeded")
 // It can return the following errors:
 //
 // - [api.ItemLimitExceeded]
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError]
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
 func (s *Service) BatchCreateResources(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, reqs []api.ValidResourceCreateRequest) ([]api.ResourceResponse, error) {
-	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeCreateResource); err != nil {
-		return nil, fmt.Errorf("BatchCreateResources() check failed: %w", err)
-	}
-
 	s.mu.RLock()
 	maxBatch := s.opts.Limits.MaxBatchItems
 	s.mu.RUnlock()
@@ -251,10 +221,6 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.Caller, 
 // When the resource is deleted and the caller is not allowed to see the full
 // object, it returns a [api.RedactedResourceResponse] (HTTP 410) instead of an error.
 func (s *Service) GetResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, resourcePID api.ValidPID) (api.ResourceGetResult, error) {
-	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeGetResource); err != nil {
-		return nil, fmt.Errorf("GetResource() check failed: %w", err)
-	}
-
 	out, err := s.store.GetResource(ctx, namespace, resourcePID)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -278,16 +244,10 @@ func (s *Service) GetResource(ctx context.Context, caller *api.Caller, namespace
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.DatabaseError]
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound].
 func (s *Service) UpdateResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, resourcePID api.ValidPID, req api.ValidResourceUpdateRequest) (*api.ResourceResponse, error) {
-	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeUpdateResource); err != nil {
-		return nil, fmt.Errorf("UpdateResource() check failed: %w", err)
-	}
-
 	out, err := s.store.UpdateResource(ctx, namespace, resourcePID, req, s.runtime.Now)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)

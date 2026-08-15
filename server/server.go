@@ -178,7 +178,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}", h.lowlevel.Open(
+	h.mux.Handle("GET /resolver/namespaces/{namespace}", h.lowlevel.NamespaceScope(
+		scopes.ScopeReadMetadata,
 		h.getNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -189,7 +190,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PATCH /resolver/namespaces/{namespace}", h.lowlevel.Open(
+	h.mux.Handle("PATCH /resolver/namespaces/{namespace}", h.lowlevel.NamespaceScope(
+		scopes.ScopePatchMetadata,
 		h.updateNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -204,7 +206,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/mounts", h.lowlevel.Open(
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/mounts", h.lowlevel.NamespaceScope(
+		scopes.ScopeListNamespaceMounts,
 		h.listNamespaceMounts,
 		lowlevel.FixedStatusCode[*api.PaginatedBaseURIResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -217,7 +220,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles", h.lowlevel.Restricted(
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles", h.lowlevel.NamespaceScope(
+		scopes.ScopeListNamespaceRoles,
 		h.listNamespaceRoles,
 		lowlevel.FixedStatusCode[*api.PaginatedNamespaceRolesResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -231,7 +235,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Open(
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.DynamicNamespaceScope(
 		h.getNamespaceRole,
 		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
 		[]api.ErrorCode{
@@ -244,7 +248,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PUT /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Restricted(
+	h.mux.Handle("PUT /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.DynamicNamespaceScope(
 		h.setNamespaceRole,
 		lowlevel.FixedStatusCode[*api.NamespaceRole](http.StatusOK),
 		[]api.ErrorCode{
@@ -262,7 +266,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.Restricted(
+	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.DynamicNamespaceScope(
 		h.removeNamespaceRole,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorCode{
@@ -277,7 +281,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", h.lowlevel.Open(
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", h.lowlevel.NamespaceScope(
+		scopes.ScopeListResources,
 		h.listResources,
 		lowlevel.FixedStatusCode[*api.PaginatedResourcesResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -289,7 +294,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", h.lowlevel.Open(
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", h.lowlevel.NamespaceScope(
+		scopes.ScopeCreateResource,
 		h.createResource,
 		lowlevel.FixedStatusCode[*api.ResourceResponse](http.StatusCreated),
 		[]api.ErrorCode{
@@ -307,7 +313,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources/batch", h.lowlevel.Open(
+	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources/batch", h.lowlevel.NamespaceScope(
+		scopes.ScopeCreateResource,
 		h.createResourceBatch,
 		lowlevel.FixedStatusCode[[]api.ResourceResponse](http.StatusCreated),
 		[]api.ErrorCode{
@@ -326,7 +333,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", h.lowlevel.Open(
+	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", h.lowlevel.NamespaceScope(
+		scopes.ScopeGetResource,
 		h.getResource,
 		func(result api.ResourceGetResult) int {
 			if redacted, ok := result.(api.RedactedResourceResponse); ok {
@@ -343,7 +351,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", h.lowlevel.Open(
+	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", h.lowlevel.NamespaceScope(
+		scopes.ScopeUpdateResource,
 		h.updateResource,
 		lowlevel.FixedStatusCode[*api.ResourceResponse](http.StatusOK),
 		[]api.ErrorCode{

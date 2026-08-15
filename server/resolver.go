@@ -48,11 +48,7 @@ func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, caller *
 	return namespaces, nil
 }
 
-func (h *Server) getNamespace(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.NamespaceResponse, error) {
-	namespace, err := h.readNamespaceParam(r)
-	if err != nil {
-		return nil, err
-	}
+func (h *Server) getNamespace(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
 	res, err := h.svc.GetNamespace(r.Context(), caller, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace: %w", err)
@@ -60,7 +56,7 @@ func (h *Server) getNamespace(w http.ResponseWriter, r *http.Request, caller *ap
 	return res, nil
 }
 
-func (h *Server) updateNamespace(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.NamespaceResponse, error) {
+func (h *Server) updateNamespace(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
 	var req api.NamespaceUpdateRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -71,10 +67,6 @@ func (h *Server) updateNamespace(w http.ResponseWriter, r *http.Request, caller 
 		return nil, fmt.Errorf("failed to validate namespace update request: %w", err)
 	}
 
-	namespace, err := h.readNamespaceParam(r)
-	if err != nil {
-		return nil, err
-	}
 	res, err := h.svc.UpdateNamespace(r.Context(), caller, namespace, validReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update namespace: %w", err)
@@ -102,11 +94,7 @@ func (h *Server) createNamespace(w http.ResponseWriter, r *http.Request, caller 
 	return namespace, nil
 }
 
-func (h *Server) listResources(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.PaginatedResourcesResponse, error) {
-	namespace, err := h.readNamespaceParam(r)
-	if err != nil {
-		return nil, err
-	}
+func (h *Server) listResources(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) (*api.PaginatedResourcesResponse, error) {
 	query := r.URL.Query()
 
 	var tag *string
@@ -141,7 +129,7 @@ func (h *Server) listResources(w http.ResponseWriter, r *http.Request, caller *a
 	return resources, nil
 }
 
-func (h *Server) createResource(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.ResourceResponse, error) {
+func (h *Server) createResource(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) (*api.ResourceResponse, error) {
 	var req api.ResourceCreateRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -152,11 +140,6 @@ func (h *Server) createResource(w http.ResponseWriter, r *http.Request, caller *
 		return nil, api.WithErrorCode(fmt.Errorf("failed to validate resource create request: %w", err), api.InvalidResourceURL)
 	}
 
-	namespace, err := h.readNamespaceParam(r)
-	if err != nil {
-		return nil, err
-	}
-
 	resource, err := h.svc.CreateResource(r.Context(), caller, namespace, validReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create resource: %w", err)
@@ -164,7 +147,7 @@ func (h *Server) createResource(w http.ResponseWriter, r *http.Request, caller *
 	return resource, nil
 }
 
-func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, caller *api.Caller) ([]api.ResourceResponse, error) {
+func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) ([]api.ResourceResponse, error) {
 	var reqs []api.ResourceCreateRequest
 	if err := h.decodeJSON(w, r, &reqs); err != nil {
 		return nil, err
@@ -179,11 +162,6 @@ func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, cal
 		validReqs[i] = validReq
 	}
 
-	namespace, err := h.readNamespaceParam(r)
-	if err != nil {
-		return nil, err
-	}
-
 	resources, err := h.svc.BatchCreateResources(r.Context(), caller, namespace, validReqs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to batch create resources: %w", err)
@@ -191,11 +169,7 @@ func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, cal
 	return resources, nil
 }
 
-func (h *Server) getResource(w http.ResponseWriter, r *http.Request, caller *api.Caller) (api.ResourceGetResult, error) {
-	namespace, err := h.readNamespaceParam(r)
-	if err != nil {
-		return nil, err
-	}
+func (h *Server) getResource(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) (api.ResourceGetResult, error) {
 	resourcePID, err := h.readPidParam(r)
 	if err != nil {
 		return nil, err
@@ -208,7 +182,7 @@ func (h *Server) getResource(w http.ResponseWriter, r *http.Request, caller *api
 	return resource, nil
 }
 
-func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.ResourceResponse, error) {
+func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) (*api.ResourceResponse, error) {
 	var req api.ResourceUpdateRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
@@ -217,11 +191,6 @@ func (h *Server) updateResource(w http.ResponseWriter, r *http.Request, caller *
 	validReq, err := req.Validate()
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("failed to validate resource update request: %w", err), api.InvalidResourceURL)
-	}
-
-	namespace, err := h.readNamespaceParam(r)
-	if err != nil {
-		return nil, err
 	}
 
 	resourcePID, err := h.readPidParam(r)

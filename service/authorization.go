@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend scopes
+//spellchecker:words context errors github quickpid backend
 import (
 	"context"
 	"errors"
@@ -9,7 +9,6 @@ import (
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/scopes"
 )
 
 // mapAuthorizationBackendError translates backend store errors to API-annotated errors.
@@ -25,26 +24,11 @@ func mapAuthorizationBackendError(err error) (error, bool) {
 
 // GetNamespaceRole returns a user's role in a namespace.
 //
-// Callers may read their own role; reading another user's role requires manager.
-//
 // It can return the following errors:
 //
-// - [api.UnavailableInAnonymousMode]
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) GetNamespaceRole(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, username api.ValidUsername) (*api.NamespaceRole, error) {
-	if caller != nil && username == caller.Username() {
-		if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeGetOwnNamespaceRole); err != nil {
-			return nil, fmt.Errorf("GetOwnNamespaceRole() check failed: %w", err)
-		}
-	} else {
-		if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeGetOtherNamespaceRole); err != nil {
-			return nil, fmt.Errorf("GetOtherUserNamespaceRole() check failed: %w", err)
-		}
-	}
-
 	role, err := s.store.GetNamespaceRole(ctx, namespace, username)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -55,20 +39,13 @@ func (s *Service) GetNamespaceRole(ctx context.Context, caller *api.Caller, name
 	return &api.NamespaceRole{Username: username.String(), Role: role}, nil
 }
 
-// ListNamespaceRoles lists explicit roles in a namespace. Caller must be a manager.
+// ListNamespaceRoles lists explicit roles in a namespace.
 //
 // It can return the following errors:
 //
-// - [api.UnavailableInAnonymousMode]
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) ListNamespaceRoles(ctx context.Context, caller api.Caller, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
-	if err := s.checkNamespaceScope(ctx, namespace, &caller, scopes.ScopeListNamespaceRoles); err != nil {
-		return nil, fmt.Errorf("ListNamespaceRoles() check failed: %w", err)
-	}
-
 	page, err := s.store.ListNamespaceRoles(ctx, namespace, params)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -92,27 +69,14 @@ func (s *Service) ListUserRoles(ctx context.Context, caller api.Caller, params a
 	return page, nil
 }
 
-// SetNamespaceRole sets a user's role in a namespace. Caller must be a manager.
+// SetNamespaceRole sets a user's role in a namespace.
 //
 // It can return the following errors:
 //
-// - [api.UnavailableInAnonymousMode]
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.InvalidRole]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) SetNamespaceRole(ctx context.Context, caller api.Caller, namespace api.ValidNamespaceID, username api.ValidUsername, req api.SetNamespaceRoleRequest) (*api.NamespaceRole, error) {
-	if username == caller.Username() {
-		if err := s.checkNamespaceScope(ctx, namespace, &caller, scopes.ScopeSetOwnNamespaceRole); err != nil {
-			return nil, fmt.Errorf("SetOwnNamespaceRole() check failed: %w", err)
-		}
-	} else {
-		if err := s.checkNamespaceScope(ctx, namespace, &caller, scopes.ScopeSetOtherNamespaceRole); err != nil {
-			return nil, fmt.Errorf("SetOtherNamespaceRole() check failed: %w", err)
-		}
-	}
-
 	if req.Role == api.RoleNone {
 		return nil, api.WithErrorCode(backend.ErrInvalidRole, api.InvalidRole)
 	}
@@ -137,13 +101,10 @@ func (s *Service) SetNamespaceRole(ctx context.Context, caller api.Caller, names
 	return &api.NamespaceRole{Username: username.String(), Role: role}, nil
 }
 
-// DeleteNamespaceRole removes an explicit role record. Caller must be a manager.
+// DeleteNamespaceRole removes an explicit role record.
 //
 // It can return the following errors:
 //
-// - [api.UnavailableInAnonymousMode]
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.RoleNotFound]
 // - [api.DatabaseError].
@@ -152,16 +113,6 @@ func (s *Service) DeleteNamespaceRole(ctx context.Context, caller api.Caller, na
 		return api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	} else if err != nil {
 		return api.WithErrorCode(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
-	}
-
-	if username == caller.Username() {
-		if err := s.checkNamespaceScope(ctx, namespace, &caller, scopes.ScopeClearOwnNamespaceRole); err != nil {
-			return fmt.Errorf("ClearOwnNamespaceRole() check failed: %w", err)
-		}
-	} else {
-		if err := s.checkNamespaceScope(ctx, namespace, &caller, scopes.ScopeClearOtherNamespaceRole); err != nil {
-			return fmt.Errorf("ClearOtherNamespaceRole() check failed: %w", err)
-		}
 	}
 
 	if err := s.store.DeleteNamespaceRole(ctx, namespace, username); err != nil {

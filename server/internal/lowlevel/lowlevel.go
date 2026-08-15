@@ -37,6 +37,8 @@ import (
 // - [Handler.Public] creates handlers that do not perform any authentication.
 // - [Handler.Restricted] requires an authenticated user, and loads the whole user object from the database.
 // - [Handler.Open] is like [Handler.Restricted], but also allows anonymous users.
+// - [Handler.UserScope] / [Handler.dynamicUserScope] require a user scope to be fulfilled.
+// - [Handler.NamespaceScope] / [Handler.DynamicNamespaceScope] parse a namespace path parameter and require a namespace scope.
 //
 // Note that depending on the authentication scenario, they introduce additional possible [api.ErrorCode] values, which act
 // as if they had been returned by the implementation function and thus need to be listed in the allowedErrors slice.
@@ -71,6 +73,11 @@ type AuthService interface {
 	// This method is only called after [AuthenticateAPIKey] or [AuthenticatePassword] have succeeded.
 	// Hence any error is considered a database error, regardless of the actual underlying error.
 	LoadUser(ctx context.Context, username api.ValidUsername) (api.ValidUserInfo, error)
+
+	// ExplicitNamespaceRole returns the user's explicit role in a namespace for scope checks.
+	// Returns [api.RoleNone] when no role is stored.
+	// Errors are annotated with [api.NamespaceNotFound] or [api.DatabaseError].
+	ExplicitNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error)
 
 	// AnonymousMode reports whether the server is in anonymous mode.
 	AnonymousMode() bool

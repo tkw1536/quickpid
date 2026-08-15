@@ -414,10 +414,11 @@ type scenario struct {
 }
 
 type mockAuthService struct {
-	anonymousMode        bool
-	authenticateAPIKey   func(context.Context, string) (api.ValidUsername, api.APIKeyInfo, error)
-	authenticatePassword func(context.Context, string, string) (api.ValidUsername, error)
-	loadUser             func(context.Context, api.ValidUsername) (api.ValidUserInfo, error)
+	anonymousMode          bool
+	authenticateAPIKey     func(context.Context, string) (api.ValidUsername, api.APIKeyInfo, error)
+	authenticatePassword   func(context.Context, string, string) (api.ValidUsername, error)
+	loadUser               func(context.Context, api.ValidUsername) (api.ValidUserInfo, error)
+	explicitNamespaceRole  func(context.Context, api.ValidNamespaceID, api.ValidUsername) (api.Role, error)
 }
 
 func (m *mockAuthService) AnonymousMode() bool {
@@ -443,6 +444,13 @@ func (m *mockAuthService) LoadUser(ctx context.Context, username api.ValidUserna
 		return m.loadUser(ctx, username)
 	}
 	return api.ValidUserInfo{}, errUnauthorized
+}
+
+func (m *mockAuthService) ExplicitNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error) {
+	if m.explicitNamespaceRole != nil {
+		return m.explicitNamespaceRole(ctx, namespace, username)
+	}
+	return api.RoleNone, nil
 }
 
 var errUnauthorized = errors.New("unauthorized")

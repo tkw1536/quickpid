@@ -104,19 +104,6 @@ func (h *Server) parsePagination(r *http.Request) (limit int, offset int, err er
 	return limit, offset, nil
 }
 
-// readNamespaceParam gets the namespace from the request path.
-//
-// It can return the following errors:
-//
-// - [api.InvalidNamespaceID].
-func (*Server) readNamespaceParam(r *http.Request) (api.ValidNamespaceID, error) {
-	namespace, err := api.NewNamespaceID(r.PathValue("namespace"))
-	if err != nil {
-		return api.ValidNamespaceID{}, api.WithErrorCode(fmt.Errorf("failed to parse namespace id: %w", err), api.InvalidNamespaceID)
-	}
-	return namespace, nil
-}
-
 // readPidParam gets the pid from the request path.
 //
 // It can return the following errors:

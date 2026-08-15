@@ -66,11 +66,7 @@ func (h *Server) listMounts(w http.ResponseWriter, r *http.Request, caller *api.
 	return mounts, nil
 }
 
-func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.PaginatedBaseURIResponse, error) {
-	namespace, err := h.readNamespaceParam(r)
-	if err != nil {
-		return nil, err
-	}
+func (h *Server) listNamespaceMounts(w http.ResponseWriter, r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) (*api.PaginatedBaseURIResponse, error) {
 	limit, offset, err := h.parsePagination(r)
 	if err != nil {
 		return nil, err

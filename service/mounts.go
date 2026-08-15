@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend scopes
+//spellchecker:words context errors github quickpid backend
 import (
 	"context"
 	"errors"
@@ -9,7 +9,6 @@ import (
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/scopes"
 )
 
 // GetMount resolves a base URI to a namespace mount.
@@ -55,15 +54,9 @@ func (s *Service) ListMounts(ctx context.Context, caller *api.Caller, params api
 //
 // It can return the following errors:
 //
-// - [api.Unauthorized]
-// - [api.Forbidden]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
-	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeListNamespaceMounts); err != nil {
-		return nil, fmt.Errorf("ListMounts() check failed: %w", err)
-	}
-
 	out, err := s.store.ListNamespaceMounts(ctx, namespace, params)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
