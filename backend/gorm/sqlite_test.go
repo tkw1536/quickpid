@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func newStore(t *testing.T) backend.Store {
+func newSqliteStore(t *testing.T) backend.Store {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:?_pragma=foreign_keys(1)"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
@@ -27,17 +27,17 @@ func newStore(t *testing.T) backend.Store {
 	return gormstore.NewStore(db, 0)
 }
 
-func TestStore(t *testing.T) {
+func TestStore_sqlite(t *testing.T) {
 	t.Parallel()
 
-	servertest.RunStoreTests(t, newStore)
+	servertest.RunStoreTests(t, newSqliteStore)
 }
 
-func TestStore_ResolverHTTP(t *testing.T) {
+func TestStore_Flows_sqlite(t *testing.T) {
 	t.Parallel()
 
-	servertest.RunServerTests(t, func(t *testing.T) backend.Store {
+	servertest.RunFlowTests(t, func(t *testing.T) backend.Store {
 		t.Helper()
-		return newStore(t)
+		return newSqliteStore(t)
 	})
 }

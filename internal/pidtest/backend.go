@@ -12,9 +12,16 @@ import (
 	"github.com/tkw1536/quickpid"
 )
 
-// RunServerTests starts an httptest server and runs a sequential suite of
+// RunFlowTests starts an httptest server and runs a sequential suite of
 // subtests against resolver HTTP routes.
-func RunServerTests(t *testing.T, factory StoreFactory) {
+//
+// Each sub-test is known as a "flow" test and corresponds to a single .json
+// file from the specification.
+//
+// If the server behaves as expected, then the test succeeds.
+// If the server behaves differently, the test fails and debug output from the
+// logger is printed to test output.
+func RunFlowTests(t *testing.T, factory StoreFactory) {
 	t.Helper()
 
 	flows, err := loadTestData()

@@ -63,7 +63,9 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 
 	// Buffer all log output, and dump it to the console if the test fails.
 	var buf bytes.Buffer
-	logger := slog.New(slog.NewTextHandler(&buf, nil))
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 	t.Cleanup(func() {
 		if !t.Failed() {
 			return

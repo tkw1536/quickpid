@@ -23,10 +23,10 @@ func TestStore(t *testing.T) {
 	})
 }
 
-func TestStore_ResolverHTTP(t *testing.T) {
+func TestStore_Flows(t *testing.T) {
 	t.Parallel()
 
-	servertest.RunServerTests(t, func(t *testing.T) backend.Store {
+	servertest.RunFlowTests(t, func(t *testing.T) backend.Store {
 		t.Helper()
 		return memory.NewStore()
 	})
