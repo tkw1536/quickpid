@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors slog sync github quickpid backend internal apikey
+//spellchecker:words context errors slog sync github quickpid backend internal apikey filter
 import (
 	"context"
 	"errors"
@@ -203,7 +203,6 @@ func (s *Service) ListKeys(ctx context.Context, caller api.Caller, params api.Li
 
 // listValidKeys is like [s.store.ListKeys], but only contains keys that are still valid according to the runtime.
 func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
-
 	// Determine the effective page limit to call the backend with.
 	options := s.Options().Limits
 	pageLimit := options.DefaultPageLimit
@@ -249,7 +248,7 @@ func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, usern
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("Filter returned error: %w", err)
+		return nil, fmt.Errorf("filter returned error: %w", err)
 	}
 	return &api.PaginatedAPIKeysResponse{
 		Items:  keys.Items,

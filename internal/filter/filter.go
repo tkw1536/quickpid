@@ -1,11 +1,13 @@
+//spellchecker:words filter
 package filter
 
+//spellchecker:words context
 import (
 	"context"
 	"fmt"
 )
 
-// Filter walks every item from Get, keeps those for which condition returns true, then
+// Filter walks every item from get, keeps those for which condition returns true, then
 // applies limit/offset pagination over the matching items.
 //
 // Total is the number of items that satisfied condition across the entire source, not
@@ -17,7 +19,7 @@ import (
 // Errors from Get or condition are returned immediately and stop iteration.
 func Filter[V any](
 	ctx context.Context,
-	Get PaginatedGetterFunc[V],
+	get PaginatedGetterFunc[V],
 	condition func(context.Context, V) (bool, error),
 	pageLimit int,
 	limit, offset int,
@@ -27,7 +29,7 @@ func Filter[V any](
 	// The Total field will be updated as we encounter valid items.
 	var res FilterResult[V]
 
-	for value := range Get.all(ctx, pageLimit) {
+	for value := range get.all(ctx, pageLimit) {
 		if value.err != nil {
 			return nil, fmt.Errorf("failed to get values: %w", value.err)
 		}

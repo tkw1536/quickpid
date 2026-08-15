@@ -105,11 +105,17 @@ func (h *Handler) dynamicUserScope[T, S any](
 // - [api.Forbidden]
 // - [api.UnavailableInAnonymousMode]
 // - [api.DatabaseError].
-func (h Handler) CheckUserScope(r *http.Request, user *api.Caller, scope scopes.UserScope) error {
+func (h *Handler) CheckUserScope(r *http.Request, user *api.Caller, scope scopes.UserScope) error {
 	if h.auth.AnonymousMode() {
-		return scopes.EvaluateAnonymousModeUserScope(scope)
+		if err := scopes.EvaluateAnonymousModeUserScope(scope); err != nil {
+			return fmt.Errorf("scope %q not fulfilled in anonymous mode: %w", scope, err)
+		}
+		return nil
 	}
-	return scopes.EvaluateUserScope(user, scope)
+	if err := scopes.EvaluateUserScope(user, scope); err != nil {
+		return fmt.Errorf("scope %q not fulfilled for user %q: %w", scope, user.Username(), err)
+	}
+	return nil
 }
 
 // NamespaceScope returns a handler that parses the namespace path parameter and requires the provided namespace scope.

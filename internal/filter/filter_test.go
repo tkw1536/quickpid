@@ -1,5 +1,7 @@
+//spellchecker:words filter
 package filter_test
 
+//spellchecker:words context errors testing github quickpid internal filter
 import (
 	"context"
 	"errors"
@@ -98,30 +100,32 @@ func TestFilter_scansBeyondFirstPage(t *testing.T) {
 	assertResult(t, got, []int{1, 2, 3}, 7, 0)
 }
 
+var errStoreWantError = errors.New("store failed")
+
 func TestFilter_getterError(t *testing.T) {
 	t.Parallel()
 
-	wantErr := errors.New("store failed")
 	get := func(context.Context, int, int) ([]int, error) {
-		return nil, wantErr
+		return nil, errStoreWantError
 	}
 	_, err := filter.Filter(context.Background(), get, alwaysTrue[int], 5, 5, 0)
 	if err == nil {
 		t.Fatal("Filter() error = nil, want wrapped getter error")
 	}
-	if !errors.Is(err, wantErr) {
-		t.Fatalf("Filter() error = %v, want %v", err, wantErr)
+	if !errors.Is(err, errStoreWantError) {
+		t.Fatalf("Filter() error = %v, want %v", err, errStoreWantError)
 	}
 }
+
+var errConditionWantError = errors.New("condition failed")
 
 func TestFilter_conditionError(t *testing.T) {
 	t.Parallel()
 
-	wantErr := errors.New("condition failed")
 	get := sliceGetter([]int{1, 2, 3})
 	condition := func(_ context.Context, v int) (bool, error) {
 		if v == 2 {
-			return false, wantErr
+			return false, errConditionWantError
 		}
 		return true, nil
 	}
@@ -129,8 +133,8 @@ func TestFilter_conditionError(t *testing.T) {
 	if err == nil {
 		t.Fatal("Filter() error = nil, want wrapped condition error")
 	}
-	if !errors.Is(err, wantErr) {
-		t.Fatalf("Filter() error = %v, want %v", err, wantErr)
+	if !errors.Is(err, errConditionWantError) {
+		t.Fatalf("Filter() error = %v, want %v", err, errConditionWantError)
 	}
 }
 
