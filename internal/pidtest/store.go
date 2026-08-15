@@ -7,6 +7,7 @@ package pidtest
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
@@ -18,12 +19,17 @@ import (
 )
 
 // RunStoreTests tests various store operations, without creating an external server.
-func RunStoreTests(t *testing.T, newStore StoreFactory) {
+//
+// reset is like the reset parameter in [RunFlowTests], and indicates a function
+// that can be called to reset any backend state between tests.
+func RunStoreTests(t *testing.T, newStore StoreFactory, reset StoreResetter) {
 	t.Helper()
+
+	initialReset := reset.onceFunc(t)
 
 	for _, test := range []struct {
 		Name string
-		Test func(t *testing.T, newStore StoreFactory)
+		Test func(t *testing.T, l *slog.Logger, newStore StoreFactory)
 	}{
 		{
 			Name: "AuthUserCRUD",
@@ -79,8 +85,20 @@ func RunStoreTests(t *testing.T, newStore StoreFactory) {
 		},
 	} {
 		t.Run(test.Name, func(t *testing.T) {
-			t.Parallel()
-			test.Test(t, newStore)
+			initialReset()
+			reset.startTest(t)
+
+			test.Test(t, slog.New(slog.DiscardHandler), func(t *testing.T, l *slog.Logger) backend.Store {
+				t.Helper()
+
+				store := newStore(t, l)
+				t.Cleanup(func() {
+					if err := store.Shutdown(context.Background()); err != nil {
+						t.Fatalf("failed to close store: %s", err)
+					}
+				})
+				return store
+			})
 		})
 	}
 }
@@ -135,10 +153,10 @@ func namespaceReq() api.NamespaceCreateRequest {
 }
 
 // testAuthUserCRUD runs user CRUD tests against an auth backend.
-func testAuthUserCRUD(t *testing.T, newStore StoreFactory) {
+func testAuthUserCRUD(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newStore(t)
+	b := newStore(t, l)
 	now := fixedNow()
 
 	created, err := b.CreateUser(ctx, userReq("alice"), now)
@@ -170,10 +188,10 @@ func testAuthUserCRUD(t *testing.T, newStore StoreFactory) {
 }
 
 // testAuthKeyLifecycle runs API key lifecycle tests.
-func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
+func testAuthKeyLifecycle(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newStore(t)
+	b := newStore(t, l)
 	now := fixedNow()
 
 	if _, err := b.CreateUser(ctx, userReq("alice"), now); err != nil {
@@ -226,10 +244,10 @@ func testAuthKeyLifecycle(t *testing.T, newStore StoreFactory) {
 }
 
 // testAuthNotFoundErrors runs auth not-found error tests.
-func testAuthNotFoundErrors(t *testing.T, newStore StoreFactory) {
+func testAuthNotFoundErrors(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newStore(t)
+	b := newStore(t, l)
 	now := fixedNow()
 
 	if _, err := b.GetUser(ctx, user("missing")); !errors.Is(err, backend.ErrUserNotFound) {
@@ -257,10 +275,10 @@ func testAuthNotFoundErrors(t *testing.T, newStore StoreFactory) {
 }
 
 // testAuthListKeysSorted runs list keys ordering tests.
-func testAuthListKeysSorted(t *testing.T, newStore StoreFactory) {
+func testAuthListKeysSorted(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newStore(t)
+	b := newStore(t, l)
 	now := fixedNow()
 
 	if _, err := b.CreateUser(ctx, userReq("alice"), now); err != nil {
@@ -289,10 +307,10 @@ func testAuthListKeysSorted(t *testing.T, newStore StoreFactory) {
 }
 
 // testAuthListUsers runs list users tests.
-func testAuthListUsers(t *testing.T, newStore StoreFactory) {
+func testAuthListUsers(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newStore(t)
+	b := newStore(t, l)
 	now := fixedNow()
 
 	for _, username := range []string{"carol", "alice", "bob"} {
@@ -346,10 +364,10 @@ func testAuthListUsers(t *testing.T, newStore StoreFactory) {
 }
 
 // testAuthAutocompleteUsers runs autocomplete users tests.
-func testAuthAutocompleteUsers(t *testing.T, newStore StoreFactory) {
+func testAuthAutocompleteUsers(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newStore(t)
+	b := newStore(t, l)
 	now := fixedNow()
 
 	for _, username := range []string{"alice", "alex", "bob", "carol"} {
@@ -400,10 +418,10 @@ func testAuthAutocompleteUsers(t *testing.T, newStore StoreFactory) {
 }
 
 // testAuthSuperuser runs superuser tests.
-func testAuthSuperuser(t *testing.T, newStore StoreFactory) {
+func testAuthSuperuser(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newStore(t)
+	b := newStore(t, l)
 	now := fixedNow()
 
 	created, err := b.CreateUser(ctx, api.ValidUserCreateRequest{Username: user("admin"), Superuser: true}, now)
@@ -432,10 +450,10 @@ func testAuthSuperuser(t *testing.T, newStore StoreFactory) {
 	}
 }
 
-func testAuthPasswordLifecycle(t *testing.T, newStore StoreFactory) {
+func testAuthPasswordLifecycle(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	b := newStore(t)
+	b := newStore(t, l)
 	now := fixedNow()
 
 	if _, err := b.CreateUser(ctx, userReq("alice"), now); err != nil {
@@ -520,10 +538,10 @@ func testAuthPasswordLifecycle(t *testing.T, newStore StoreFactory) {
 }
 
 // testAuthorizationCRUD runs namespace role CRUD tests.
-func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
+func testAuthorizationCRUD(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	s := newStore(t)
+	s := newStore(t, l)
 	now := fixedNow()
 
 	ns1, err := api.NewNamespaceID("ns-1")
@@ -600,10 +618,10 @@ func testAuthorizationCRUD(t *testing.T, newStore StoreFactory) {
 }
 
 // testListUserRoles runs list-roles-by-user tests.
-func testListUserRoles(t *testing.T, newStore StoreFactory) {
+func testListUserRoles(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	s := newStore(t)
+	s := newStore(t, l)
 	now := fixedNow()
 
 	nsB, err := api.NewNamespaceID("ns-b")
@@ -682,10 +700,11 @@ func testListUserRoles(t *testing.T, newStore StoreFactory) {
 }
 
 // testCreateNamespaceWithOwner runs namespace creation with owner tests.
-func testCreateNamespaceWithOwner(t *testing.T, newStore StoreFactory) {
+func testCreateNamespaceWithOwner(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	s := newStore(t)
+
+	s := newStore(t, l)
 	now := fixedNow()
 
 	nsMissingOwner, err := api.NewNamespaceID("ns-missing-owner")
@@ -718,10 +737,10 @@ func testCreateNamespaceWithOwner(t *testing.T, newStore StoreFactory) {
 }
 
 // testDeleteUserCascadesRoles runs user deletion cascade tests.
-func testDeleteUserCascadesRoles(t *testing.T, newStore StoreFactory) {
+func testDeleteUserCascadesRoles(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	s := newStore(t)
+	s := newStore(t, l)
 	now := fixedNow()
 
 	ns1, err := api.NewNamespaceID("ns-1")
@@ -773,10 +792,10 @@ func SeedNamespaceOwner(t *testing.T, s backend.AuthenticationBackend) {
 }
 
 // testMountCRUD runs namespace mount CRUD tests.
-func testMountCRUD(t *testing.T, newStore StoreFactory) {
+func testMountCRUD(t *testing.T, l *slog.Logger, newStore StoreFactory) {
 	t.Helper()
 	ctx := context.Background()
-	s := newStore(t)
+	s := newStore(t, l)
 	now := fixedNow()
 
 	ns1, err := api.NewNamespaceID("ns-1")

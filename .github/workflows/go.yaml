@@ -8,6 +8,20 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: quickpid
+          POSTGRES_DB: quickpid
+        options: >-
+          --health-cmd "pg_isready -U postgres -d quickpid"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -16,6 +30,8 @@ jobs:
       - name: Download dependencies
         run: 'go mod download'
       - name: Run tests
+        env:
+          TEST_POSTGRES_DSN: host=localhost user=postgres password=quickpid dbname=quickpid port=5432 sslmode=disable
         run: go test -mod=readonly -v ./...
   golangci:
     name: lint

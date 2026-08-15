@@ -18,10 +18,16 @@ import (
 // Each sub-test is known as a "flow" test and corresponds to a single .json
 // file from the specification.
 //
+// If reset is not nil, then it is called before any flow test is run,
+// as well as after each flow test.
+// This is useful for testing in stores that use a single backend for testing.
+// When reset is not nil, tests are run sequentially.
+// Otherwise, tests are run in parallel.
+//
 // If the server behaves as expected, then the test succeeds.
 // If the server behaves differently, the test fails and debug output from the
 // logger is printed to test output.
-func RunFlowTests(t *testing.T, factory StoreFactory) {
+func RunFlowTests(t *testing.T, factory StoreFactory, reset StoreResetter) {
 	t.Helper()
 
 	flows, err := loadTestData()
@@ -29,12 +35,15 @@ func RunFlowTests(t *testing.T, factory StoreFactory) {
 		t.Fatal(err)
 	}
 
+	// initial reset for the first flow test
+	initialReset := reset.onceFunc(t)
+
 	for _, flow := range flows {
 		t.Run(flow.Name, func(t *testing.T) {
-			t.Parallel()
+			initialReset()
+			reset.startTest(t)
 
-			s := factory(t)
-			flow.Run(t, s)
+			flow.Run(t, factory)
 		})
 	}
 }

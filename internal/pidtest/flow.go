@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/apikey"
 	"github.com/tkw1536/quickpid/internal/httpfixture"
 	"github.com/tkw1536/quickpid/pid"
@@ -55,11 +54,8 @@ type flow struct {
 	} `json:"steps"`
 }
 
-func (f flow) Run(t *testing.T, s backend.Store) {
+func (f flow) Run(t *testing.T, factory StoreFactory) {
 	t.Helper()
-
-	var runtime testRuntime
-	svc := service.New(s, &runtime, service.Options{})
 
 	// Buffer all log output, and dump it to the console if the test fails.
 	var buf bytes.Buffer
@@ -74,6 +70,16 @@ func (f flow) Run(t *testing.T, s backend.Store) {
 		_, _ = t.Output().Write(buf.Bytes())
 		_, _ = t.Output().Write([]byte("--- END FAILED TEST LOG\n"))
 	})
+
+	s := factory(t, logger)
+	t.Cleanup(func() {
+		if err := s.Shutdown(context.Background()); err != nil {
+			t.Fatalf("failed to close store: %s", err)
+		}
+	})
+
+	var runtime testRuntime
+	svc := service.New(s, &runtime, service.Options{})
 
 	handler := server.NewServer(server.Options{}, svc, logger)
 

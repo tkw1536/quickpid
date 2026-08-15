@@ -61,6 +61,10 @@ Any events logged by gorm will only be displayed if the appropriate general log 
 
 The following tools & CI are used in the project:
 
+- `go test`
+  The standard go tests are run during CI.
+  Tests by default test against the in-memory implementation, as well as sqlite.
+  To test against postgres, the `TEST_POSTGRES_DSN` variable is set accordingly.
 - [golangci-lint](https://golangci-lint.run)
   Run via `go tool golangci-lint run ./...`.
 - [go-check-spellchecker](https://github.com/tkw1536/go-check-spellchecker)

@@ -3,6 +3,7 @@ package memory_test
 
 //spellchecker:words testing github quickpid backend memory internal pidtest servertest
 import (
+	"log/slog"
 	"testing"
 
 	"github.com/tkw1536/quickpid/backend"
@@ -10,24 +11,19 @@ import (
 	servertest "github.com/tkw1536/quickpid/internal/pidtest"
 )
 
-func newStore() backend.Store {
+func newStore(t *testing.T, l *slog.Logger) backend.Store {
+	t.Helper()
 	return memory.NewStore()
 }
 
 func TestStore(t *testing.T) {
 	t.Parallel()
 
-	servertest.RunStoreTests(t, func(t *testing.T) backend.Store {
-		t.Helper()
-		return newStore()
-	})
+	servertest.RunStoreTests(t, newStore, nil)
 }
 
 func TestStore_Flows(t *testing.T) {
 	t.Parallel()
 
-	servertest.RunFlowTests(t, func(t *testing.T) backend.Store {
-		t.Helper()
-		return memory.NewStore()
-	})
+	servertest.RunFlowTests(t, newStore, nil)
 }
