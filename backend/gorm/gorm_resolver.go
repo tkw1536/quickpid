@@ -12,19 +12,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Store) ListNamespaces(ctx context.Context, user *api.ValidUsername, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
-		if user != nil {
-			if err := ensureUserExists(tx, *user); err != nil {
-				return nil, err
-			}
-		}
-
 		q := tx.Model(&namespaceRow{})
-		if user != nil {
-			q = q.Joins("INNER JOIN authz_namespace_roles ON authz_namespace_roles.namespace = namespaces.id").
-				Where("authz_namespace_roles.username = ?", user.String())
-		}
 		if params.Tag != nil {
 			q = q.Where(`EXISTS (
 				SELECT 1 FROM namespace_tags

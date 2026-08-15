@@ -12,29 +12,14 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 )
 
-func (s *Store) ListNamespaces(_ context.Context, user *api.ValidUsername, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if user != nil {
-		if _, exists := s.users[user.String()]; !exists {
-			return nil, backend.ErrUserNotFound
-		}
-	}
-
 	all := make([]api.NamespaceResponse, 0, len(s.namespaces))
-	for id, ns := range s.namespaces {
+	for _, ns := range s.namespaces {
 		if params.Tag != nil && !slices.Contains(ns.Tags, *params.Tag) {
 			continue
-		}
-		if user != nil {
-			byUser, ok := s.roles[id]
-			if !ok {
-				continue
-			}
-			if _, ok := byUser[user.String()]; !ok {
-				continue
-			}
 		}
 		all = append(all, ns)
 	}

@@ -56,7 +56,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 }(
 	namespaceAction{
 		Scope:                ScopeReadMetadata,
-		Description:          "Read namespace metadata",
+		Description:          "Read namespace metadata and have it appear in the list of namespaces",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
 		MinRole:              api.RoleContributor,

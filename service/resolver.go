@@ -40,9 +40,9 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.Caller, params
 }
 
 func (s *Service) listVisibleNamespaces(ctx context.Context, caller *api.Caller, params api.ListNamespacesParams, checkAccess func(ctx context.Context, namespace api.ValidNamespaceID) bool) (*api.PaginatedNamespacesResponse, error) {
-	// No filtering to apply; directly call the backend.
+	// No filtering to apply: just directly call the backend.
 	if caller == nil {
-		namespaces, err := s.store.ListNamespaces(ctx, nil, params)
+		namespaces, err := s.store.ListNamespaces(ctx, params)
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("backend failed to list namespaces: %w", err), api.DatabaseError)
 		}
@@ -56,13 +56,12 @@ func (s *Service) listVisibleNamespaces(ctx context.Context, caller *api.Caller,
 		pageLimit = options.MaxPageLimit
 	}
 
-	username := new(caller.Username())
 	filtered, err := filter.Filter(ctx, func(ctx context.Context, limit, offset int) ([]api.NamespaceResponse, error) {
 		params := params
 		params.Limit = limit
 		params.Offset = offset
 
-		namespaces, err := s.store.ListNamespaces(ctx, username, params)
+		namespaces, err := s.store.ListNamespaces(ctx, params)
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("backend failed to list namespaces: %w", err), api.DatabaseError)
 		}

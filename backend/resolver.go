@@ -14,11 +14,8 @@ import (
 //
 //spellchecker:words context errors time github quickpid
 type ResolverBackend interface {
-	// Lists all available namespaces that the given user has some access to and that are ordered ascending by namespace id.
-	// User may be omitted in which case all namespaces should be considered.
-	//
-	// Should return [ErrUserNotFound] if owner does not exist.
-	ListNamespaces(ctx context.Context, user *api.ValidUsername, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error)
+	// Lists all available namespaces ordered ascending by namespace id.
+	ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error)
 
 	// Creates a new namespace and grants the manager role to the owner.
 	// If owner is nil, no manager role is granted.
