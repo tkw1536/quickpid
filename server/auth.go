@@ -9,7 +9,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-func (h *Server) getUserInfo(w http.ResponseWriter, r *http.Request, caller api.Caller) (*api.UserInfo, error) {
+func (h *Server) getUserInfo(w http.ResponseWriter, r *http.Request, caller *api.Caller) (*api.UserInfo, error) {
 	info := caller.PlainInfo()
 	return &info, nil
 }
@@ -88,12 +88,12 @@ func (h *Server) listUsers(w http.ResponseWriter, r *http.Request, caller *api.C
 	return users, nil
 }
 
-func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, caller api.Caller) ([]string, error) {
+func (h *Server) autocompleteUsers(w http.ResponseWriter, r *http.Request, caller *api.Caller) ([]string, error) {
 	query, err := h.readRequiredAutocompleteFromQuery(r)
 	if err != nil {
 		return nil, err
 	}
-	usernames, err := h.svc.AutocompleteUsers(r.Context(), caller, query)
+	usernames, err := h.svc.AutocompleteUsers(r.Context(), *caller, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to autocomplete users: %w", err)
 	}

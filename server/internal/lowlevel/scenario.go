@@ -36,45 +36,6 @@ func (h *Handler) Public[T any](
 	)
 }
 
-// Restricted returns a handler that requires a signed-in user.
-//
-// When the server is in anonymous mode, the handler returns [api.UnavailableInAnonymousMode].
-// When in authenticated mode, the handler can return [api.Unauthorized] and [api.DatabaseError].
-func (h *Handler) Restricted[T any](
-	impl func(http.ResponseWriter, *http.Request, api.Caller) (T, error),
-	successCode func(T) int,
-	allowedErrors []api.ErrorCode,
-) http.HandlerFunc {
-	return h.handle(
-		requiredUser,
-		func(w http.ResponseWriter, r *http.Request, user *api.Caller) (T, error) {
-			if user == nil {
-				panic("never reached: required user authentication returned nil user")
-			}
-			return impl(w, r, *user)
-		},
-		successCode,
-		allowedErrors,
-	)
-}
-
-// Open returns a handler that optionally requires a signed-in user.
-//
-// When in anonymous mode, the handler returns no additional errors.
-// When in authenticated mode, the handler can return [api.Unauthorized] and [api.DatabaseError].
-func (h *Handler) Open[T any](
-	impl func(http.ResponseWriter, *http.Request, *api.Caller) (T, error),
-	successCode func(T) int,
-	allowedErrors []api.ErrorCode,
-) http.HandlerFunc {
-	return h.handle(
-		optionalUser,
-		impl,
-		successCode,
-		allowedErrors,
-	)
-}
-
 // UserScope returns a handler that requires the provided user scope to be fulfilled.
 //
 // When the server is in anonymous mode, the handler returns [api.UnavailableInAnonymousMode].

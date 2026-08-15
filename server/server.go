@@ -370,7 +370,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /user", h.lowlevel.Restricted(
+	h.mux.Handle("GET /user", h.lowlevel.UserScope(
+		scopes.ScopeGetUserInfo,
 		h.getUserInfo,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
 		[]api.ErrorCode{
@@ -427,7 +428,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 
-	h.mux.Handle("GET /users/autocomplete", h.lowlevel.Restricted(
+	h.mux.Handle("GET /users/autocomplete", h.lowlevel.UserScope(
+		scopes.ScopeAutocompleteUsers,
 		h.autocompleteUsers,
 		lowlevel.FixedStatusCode[[]string](http.StatusOK),
 		[]api.ErrorCode{

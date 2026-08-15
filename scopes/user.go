@@ -34,9 +34,11 @@ type UserScope string
 const (
 	ScopeImpersonate       UserScope = "impersonate"
 	ScopeSetPassword       UserScope = "set_password"
+	ScopeGetUserInfo       UserScope = "get_user_info"
 	ScopeCreateUser        UserScope = "create_user"
 	ScopeDeleteUser        UserScope = "delete_user"
 	ScopeListUsers         UserScope = "list_users"
+	ScopeAutocompleteUsers UserScope = "autocomplete_users"
 	ScopeListOwnKeys       UserScope = "list_own_keys"
 	ScopeIssueKey          UserScope = "issue_key"
 	ScopeRevokeKey         UserScope = "revoke_key"
@@ -73,6 +75,13 @@ var userActions = func(actions ...userActionDefinition) map[UserScope]userAction
 		RequireSuperuser:     false,
 	},
 	userActionDefinition{
+		Scope:                ScopeGetUserInfo,
+		Description:          "Get current user info",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
+	},
+	userActionDefinition{
 		Scope:                ScopeCreateUser,
 		Description:          "Create a new user",
 		AnonymousMode:        false,
@@ -92,6 +101,13 @@ var userActions = func(actions ...userActionDefinition) map[UserScope]userAction
 		AnonymousMode:        false,
 		AllowUnauthenticated: false,
 		RequireSuperuser:     true,
+	},
+	userActionDefinition{
+		Scope:                ScopeAutocompleteUsers,
+		Description:          "Autocomplete usernames",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
 	},
 	userActionDefinition{
 		Scope:                ScopeListOwnKeys,

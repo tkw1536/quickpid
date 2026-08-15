@@ -166,7 +166,7 @@ func (s *Service) ListUsers(ctx context.Context, caller api.Caller, params api.L
 	return page, nil
 }
 
-// AutocompleteUsers returns usernames matching a prefix. Any authenticated caller is allowed.
+// AutocompleteUsers returns usernames matching a prefix.
 //
 // It can return the following errors:
 //
