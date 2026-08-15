@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words errors slog http strings time github quickpid server internal credentials
+//spellchecker:words errors slog http strings time github quickpid scopes server internal credentials
 import (
 	"errors"
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/can"
+	"github.com/tkw1536/quickpid/scopes"
 	"github.com/tkw1536/quickpid/server/internal/credentials"
 )
 
@@ -148,8 +148,7 @@ func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.Caller) (*
 		return nil, api.WithErrorCode(errMultipleImpersonateHeaders, api.Unauthorized)
 	}
 
-	err := can.NewUser(&caller).Impersonate()
-	if err != nil {
+	if err := scopes.EvaluateUserScope(&caller, scopes.ScopeImpersonate); err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("%w: %w", errNotAllowedToImpersonate, err), api.Unauthorized)
 	}
 

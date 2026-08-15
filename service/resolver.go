@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend
+//spellchecker:words context errors github quickpid backend scopes
 import (
 	"context"
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/pid"
+	"github.com/tkw1536/quickpid/scopes"
 )
 
 var errExistingUserNotFound = errors.New("existing user not found")
@@ -21,8 +22,7 @@ var errExistingUserNotFound = errors.New("existing user not found")
 // - [api.Unauthorized]
 // - [api.DatabaseError].
 func (s *Service) ListNamespaces(ctx context.Context, caller *api.Caller, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
-	can := s.canUser(caller)
-	if err := can.ListNamespaces(); err != nil {
+	if err := s.checkUserScope(caller, scopes.ScopeListNamespaces); err != nil {
 		return nil, fmt.Errorf("ListNamespaces() check failed: %w", err)
 	}
 
@@ -54,11 +54,7 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.Caller, params
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) GetNamespace(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
-	can, err := s.canNamespace(ctx, caller, namespace)
-	if err != nil {
-		return nil, api.WithErrorCode(fmt.Errorf("failed to check namespace capabilities: %w", err), api.DatabaseError)
-	}
-	if err := can.ReadMetadata(); err != nil {
+	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeReadMetadata); err != nil {
 		return nil, fmt.Errorf("ReadMetadata() check failed: %w", err)
 	}
 
@@ -81,11 +77,7 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.Caller, namespac
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) UpdateNamespace(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest) (*api.NamespaceResponse, error) {
-	can, err := s.canNamespace(ctx, caller, namespace)
-	if err != nil {
-		return nil, err
-	}
-	if err := can.PatchMetadata(); err != nil {
+	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopePatchMetadata); err != nil {
 		return nil, fmt.Errorf("PatchMetadata() check failed: %w", err)
 	}
 
@@ -107,8 +99,7 @@ func (s *Service) UpdateNamespace(ctx context.Context, caller *api.Caller, names
 // - [api.Forbidden]
 // - [api.DatabaseError].
 func (s *Service) CountAllResources(ctx context.Context, caller *api.Caller) (*api.ResourceCountResponse, error) {
-	can := s.canUser(caller)
-	if err := can.CountAllResources(); err != nil {
+	if err := s.checkUserScope(caller, scopes.ScopeCountAllResources); err != nil {
 		return nil, fmt.Errorf("CountAllResources() check failed: %w", err)
 	}
 
@@ -128,8 +119,7 @@ func (s *Service) CountAllResources(ctx context.Context, caller *api.Caller) (*a
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
 func (s *Service) CreateNamespace(ctx context.Context, caller *api.Caller, req api.NamespaceCreateRequest) (*api.NamespaceResponse, error) {
-	can := s.canUser(caller)
-	if err := can.CreateNamespace(); err != nil {
+	if err := s.checkUserScope(caller, scopes.ScopeCreateNamespace); err != nil {
 		return nil, fmt.Errorf("CreateNamespace() check failed: %w", err)
 	}
 
@@ -179,11 +169,7 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.Caller, req a
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) ListResources(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
-	can, err := s.canNamespace(ctx, caller, namespace)
-	if err != nil {
-		return nil, err
-	}
-	if err := can.ListResources(); err != nil {
+	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeListResources); err != nil {
 		return nil, fmt.Errorf("ListResources() check failed: %w", err)
 	}
 
@@ -208,11 +194,7 @@ func (s *Service) ListResources(ctx context.Context, caller *api.Caller, namespa
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
 func (s *Service) CreateResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, req api.ValidResourceCreateRequest) (*api.ResourceResponse, error) {
-	can, err := s.canNamespace(ctx, caller, namespace)
-	if err != nil {
-		return nil, err
-	}
-	if err := can.CreateResource(); err != nil {
+	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeCreateResource); err != nil {
 		return nil, fmt.Errorf("CreateResource() check failed: %w", err)
 	}
 
@@ -247,11 +229,7 @@ var errLimitExceeded = errors.New("batch create limit exceeded")
 // - [api.BadIDGeneration]
 // - [api.InsufficientEntropy].
 func (s *Service) BatchCreateResources(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, reqs []api.ValidResourceCreateRequest) ([]api.ResourceResponse, error) {
-	can, err := s.canNamespace(ctx, caller, namespace)
-	if err != nil {
-		return nil, err
-	}
-	if err := can.BatchCreateResources(); err != nil {
+	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeCreateResource); err != nil {
 		return nil, fmt.Errorf("BatchCreateResources() check failed: %w", err)
 	}
 
@@ -292,11 +270,7 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.Caller, 
 // When the resource is deleted and the caller is not allowed to see the full
 // object, it returns a [api.RedactedResourceResponse] (HTTP 410) instead of an error.
 func (s *Service) GetResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, resourcePID api.ValidPID) (api.ResourceGetResult, error) {
-	can, err := s.canNamespace(ctx, caller, namespace)
-	if err != nil {
-		return nil, err
-	}
-	if err := can.GetResource(); err != nil {
+	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeGetResource); err != nil {
 		return nil, fmt.Errorf("GetResource() check failed: %w", err)
 	}
 
@@ -312,7 +286,7 @@ func (s *Service) GetResource(ctx context.Context, caller *api.Caller, namespace
 	}
 
 	if out.Deleted {
-		if err := can.SeeDeletedResource(); err != nil {
+		if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeSeeDeletedResource); err != nil {
 			return out.Redact(), nil
 		}
 	}
@@ -329,11 +303,7 @@ func (s *Service) GetResource(ctx context.Context, caller *api.Caller, namespace
 // - [api.NamespaceNotFound]
 // - [api.ResourceNotFound].
 func (s *Service) UpdateResource(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, resourcePID api.ValidPID, req api.ValidResourceUpdateRequest) (*api.ResourceResponse, error) {
-	can, err := s.canNamespace(ctx, caller, namespace)
-	if err != nil {
-		return nil, err
-	}
-	if err := can.UpdateResource(); err != nil {
+	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeUpdateResource); err != nil {
 		return nil, fmt.Errorf("UpdateResource() check failed: %w", err)
 	}
 

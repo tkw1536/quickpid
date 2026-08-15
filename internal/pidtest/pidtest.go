@@ -3,7 +3,7 @@
 //spellchecker:words pidtest
 package pidtest
 
-//spellchecker:words testing github quickpid backend
+//spellchecker:words slog sync testing github quickpid backend
 import (
 	"log/slog"
 	"sync"

@@ -1,7 +1,7 @@
 //spellchecker:words memory
 package memory_test
 
-//spellchecker:words testing github quickpid backend memory internal pidtest servertest
+//spellchecker:words slog testing github quickpid backend memory internal pidtest servertest
 import (
 	"log/slog"
 	"testing"

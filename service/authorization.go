@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend
+//spellchecker:words context errors github quickpid backend scopes
 import (
 	"context"
 	"errors"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/scopes"
 )
 
 // requireAuthenticated reports whether caller is authenticated.
@@ -47,17 +48,12 @@ func mapAuthorizationBackendError(err error) (error, bool) {
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) GetNamespaceRole(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, username api.ValidUsername) (*api.NamespaceRole, error) {
-	can, err := s.canNamespace(ctx, caller, namespace)
-	if err != nil {
-		return nil, err
-	}
-
 	if caller != nil && username == caller.Username() {
-		if err := can.GetOwnNamespaceRole(); err != nil {
+		if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeGetOwnNamespaceRole); err != nil {
 			return nil, fmt.Errorf("GetOwnNamespaceRole() check failed: %w", err)
 		}
 	} else {
-		if err := can.GetOtherUserNamespaceRole(); err != nil {
+		if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeGetOtherNamespaceRole); err != nil {
 			return nil, fmt.Errorf("GetOtherUserNamespaceRole() check failed: %w", err)
 		}
 	}
@@ -82,11 +78,7 @@ func (s *Service) GetNamespaceRole(ctx context.Context, caller *api.Caller, name
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) ListNamespaceRoles(ctx context.Context, caller api.Caller, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
-	can, err := s.canNamespace(ctx, &caller, namespace)
-	if err != nil {
-		return nil, err
-	}
-	if err := can.ListNamespaceRoles(); err != nil {
+	if err := s.checkNamespaceScope(ctx, namespace, &caller, scopes.ScopeListNamespaceRoles); err != nil {
 		return nil, fmt.Errorf("ListNamespaceRoles() check failed: %w", err)
 	}
 
@@ -106,8 +98,7 @@ func (s *Service) ListNamespaceRoles(ctx context.Context, caller api.Caller, nam
 //
 // - [api.DatabaseError].
 func (s *Service) ListUserRoles(ctx context.Context, caller api.Caller, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
-	can := s.canUser(&caller)
-	if err := can.ListUserRoles(); err != nil {
+	if err := s.checkUserScope(&caller, scopes.ScopeListUserRoles); err != nil {
 		return nil, fmt.Errorf("ListUserRoles() check failed: %w", err)
 	}
 
@@ -129,16 +120,12 @@ func (s *Service) ListUserRoles(ctx context.Context, caller api.Caller, params a
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) SetNamespaceRole(ctx context.Context, caller api.Caller, namespace api.ValidNamespaceID, username api.ValidUsername, req api.SetNamespaceRoleRequest) (*api.NamespaceRole, error) {
-	can, err := s.canNamespace(ctx, &caller, namespace)
-	if err != nil {
-		return nil, err
-	}
 	if username == caller.Username() {
-		if err := can.SetOwnNamespaceRole(); err != nil {
+		if err := s.checkNamespaceScope(ctx, namespace, &caller, scopes.ScopeSetOwnNamespaceRole); err != nil {
 			return nil, fmt.Errorf("SetOwnNamespaceRole() check failed: %w", err)
 		}
 	} else {
-		if err := can.SetOtherNamespaceRole(); err != nil {
+		if err := s.checkNamespaceScope(ctx, namespace, &caller, scopes.ScopeSetOtherNamespaceRole); err != nil {
 			return nil, fmt.Errorf("SetOtherNamespaceRole() check failed: %w", err)
 		}
 	}
@@ -178,11 +165,6 @@ func (s *Service) SetNamespaceRole(ctx context.Context, caller api.Caller, names
 // - [api.RoleNotFound]
 // - [api.DatabaseError].
 func (s *Service) DeleteNamespaceRole(ctx context.Context, caller api.Caller, namespace api.ValidNamespaceID, username api.ValidUsername) error {
-	can, err := s.canNamespace(ctx, &caller, namespace)
-	if err != nil {
-		return err
-	}
-
 	if _, err := s.store.GetNamespace(ctx, namespace); errors.Is(err, backend.ErrNamespaceNotFound) {
 		return api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	} else if err != nil {
@@ -190,11 +172,11 @@ func (s *Service) DeleteNamespaceRole(ctx context.Context, caller api.Caller, na
 	}
 
 	if username == caller.Username() {
-		if err := can.ClearOwnNamespaceRole(); err != nil {
+		if err := s.checkNamespaceScope(ctx, namespace, &caller, scopes.ScopeClearOwnNamespaceRole); err != nil {
 			return fmt.Errorf("ClearOwnNamespaceRole() check failed: %w", err)
 		}
 	} else {
-		if err := can.ClearOtherNamespaceRole(); err != nil {
+		if err := s.checkNamespaceScope(ctx, namespace, &caller, scopes.ScopeClearOtherNamespaceRole); err != nil {
 			return fmt.Errorf("ClearOtherNamespaceRole() check failed: %w", err)
 		}
 	}

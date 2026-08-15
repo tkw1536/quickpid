@@ -1,7 +1,7 @@
 //spellchecker:words pidtest
 package pidtest
 
-//spellchecker:words bytes context errors slog slices testing time github quickpid backend internal apikey httpfixture server service
+//spellchecker:words bytes context errors slog slices testing time github quickpid internal apikey httpfixture server service
 import (
 	"bytes"
 	"context"

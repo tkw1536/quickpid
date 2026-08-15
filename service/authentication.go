@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors slog sync github quickpid backend internal apikey
+//spellchecker:words context errors slog sync github quickpid backend internal apikey scopes
 import (
 	"context"
 	"errors"
@@ -12,6 +12,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/scopes"
 )
 
 // AuthenticateAPIKey looks up the username for a valid API key.
@@ -108,8 +109,7 @@ func (s *Service) CheckPassword(ctx context.Context, username api.ValidUsername,
 // - [api.DatabaseError]
 // - [api.Forbidden].
 func (s *Service) SetUserPassword(ctx context.Context, caller api.Caller, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
-	can := s.canUser(&caller)
-	if err := can.SetPassword(); err != nil {
+	if err := s.checkUserScope(&caller, scopes.ScopeSetPassword); err != nil {
 		return nil, fmt.Errorf("SetPassword() check failed: %w", err)
 	}
 
@@ -129,8 +129,7 @@ func (s *Service) SetUserPassword(ctx context.Context, caller api.Caller, req ap
 // - [api.DuplicateUsername]
 // - [api.DatabaseError].
 func (s *Service) CreateUser(ctx context.Context, caller api.Caller, req api.ValidUserCreateRequest) (*api.UserInfo, error) {
-	can := s.canUser(&caller)
-	if err := can.CreateUser(); err != nil {
+	if err := s.checkUserScope(&caller, scopes.ScopeCreateUser); err != nil {
 		return nil, fmt.Errorf("CreateUser() check failed: %w", err)
 	}
 	user, err := s.store.CreateUser(ctx, req, s.runtime.Now)
@@ -152,8 +151,7 @@ func (s *Service) CreateUser(ctx context.Context, caller api.Caller, req api.Val
 // - [api.UserNotFound]
 // - [api.DatabaseError].
 func (s *Service) DeleteUser(ctx context.Context, caller api.Caller, target api.ValidUsername) error {
-	can := s.canUser(&caller)
-	if err := can.DeleteUser(); err != nil {
+	if err := s.checkUserScope(&caller, scopes.ScopeDeleteUser); err != nil {
 		return fmt.Errorf("DeleteUser() check failed: %w", err)
 	}
 
@@ -179,8 +177,7 @@ func (s *Service) DeleteUser(ctx context.Context, caller api.Caller, target api.
 // - [api.Forbidden]
 // - [api.DatabaseError].
 func (s *Service) ListUsers(ctx context.Context, caller api.Caller, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
-	can := s.canUser(&caller)
-	if err := can.ListUsers(); err != nil {
+	if err := s.checkUserScope(&caller, scopes.ScopeListUsers); err != nil {
 		return nil, fmt.Errorf("ListUsers() check failed: %w", err)
 	}
 
@@ -217,8 +214,7 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller api.Caller, quer
 // - [api.UserNotFound]
 // - [api.DatabaseError].
 func (s *Service) ListKeys(ctx context.Context, caller api.Caller, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
-	can := s.canUser(&caller)
-	if err := can.ListOwnKeys(); err != nil {
+	if err := s.checkUserScope(&caller, scopes.ScopeListOwnKeys); err != nil {
 		return nil, fmt.Errorf("ListOwnKeys() check failed: %w", err)
 	}
 
@@ -325,8 +321,7 @@ func (s *Service) listAllKeys(ctx context.Context, format apikey.Format, usernam
 // - [api.InsufficientEntropy]
 // - [api.Forbidden].
 func (s *Service) IssueKey(ctx context.Context, caller api.Caller, req api.KeyIssueRequest) (*api.IssueKeyResponse, error) {
-	can := s.canUser(&caller)
-	if err := can.IssueKey(); err != nil {
+	if err := s.checkUserScope(&caller, scopes.ScopeIssueKey); err != nil {
 		return nil, fmt.Errorf("IssueKey() check failed: %w", err)
 	}
 
@@ -389,8 +384,7 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 // - [api.KeyNotFound]
 // - [api.DatabaseError].
 func (s *Service) RevokeKey(ctx context.Context, caller api.Caller, req api.KeyRevokeRequest) error {
-	can := s.canUser(&caller)
-	if err := can.RevokeKey(); err != nil {
+	if err := s.checkUserScope(&caller, scopes.ScopeRevokeKey); err != nil {
 		return fmt.Errorf("RevokeKey() check failed: %w", err)
 	}
 
@@ -413,8 +407,7 @@ func (s *Service) RevokeKey(ctx context.Context, caller api.Caller, req api.KeyR
 // - [api.UserNotFound]
 // - [api.DatabaseError].
 func (s *Service) UpdateUser(ctx context.Context, caller api.Caller, target api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
-	can := s.canUser(&caller)
-	if err := can.UpdateUser(); err != nil {
+	if err := s.checkUserScope(&caller, scopes.ScopeUpdateUser); err != nil {
 		return nil, fmt.Errorf("UpdateUser() check failed: %w", err)
 	}
 

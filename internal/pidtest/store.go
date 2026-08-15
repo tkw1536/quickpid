@@ -3,7 +3,7 @@
 //spellchecker:words pidtest
 package pidtest
 
-//spellchecker:words context errors strings testing time github quickpid backend internal apikey
+//spellchecker:words context errors slog strings testing time github quickpid backend internal apikey
 import (
 	"context"
 	"errors"

@@ -1,7 +1,7 @@
 //spellchecker:words gorm
 package gorm_test
 
-//spellchecker:words testing github glebarez sqlite quickpid backend gorm gormstore internal pidtest servertest logger
+//spellchecker:words slog testing github glebarez sqlite quickpid backend gorm gormstore internal pidtest servertest logger Logger
 import (
 	"log/slog"
 	"testing"

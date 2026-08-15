@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend
+//spellchecker:words context errors github quickpid backend scopes
 import (
 	"context"
 	"errors"
@@ -9,16 +9,26 @@ import (
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
-	"github.com/tkw1536/quickpid/can"
+	"github.com/tkw1536/quickpid/scopes"
 )
 
-// canNamespace returns a [can.Namespace] struct representing the callers capabilities for the given namespace.
+// checkNamespaceScope evaluates if the given action is available for the given namespace.
 //
-// When err is not nil, it is annotated with [api.DatabaseError] or [api.NamespaceNotFound].
-func (s *Service) canNamespace(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID) (can.Namespace, error) {
-	// in anonymous role, everyone magically is a manager everywhere.
+// When the action is not available, an error of one of the following [api.ErrorCode]s is returned:
+//
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.UnavailableInAnonymousMode]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError]
+//
+// It should only be called in [Service.checkNamespaceScope].
+func (s *Service) checkNamespaceScope(ctx context.Context, namespace api.ValidNamespaceID, caller *api.Caller, scope scopes.NamespaceScope) error {
 	if s.AnonymousMode() {
-		return can.NewAnonymousModeNamespace(namespace), nil
+		if err := scopes.EvaluateAnonymousModeNamespaceScope(namespace, scope); err != nil {
+			return fmt.Errorf("scope %q not fulfilled for namespace %q: %w", scope, namespace.String(), err)
+		}
+		return nil
 	}
 
 	// by default, the caller has no explicit role
@@ -27,38 +37,38 @@ func (s *Service) canNamespace(ctx context.Context, caller *api.Caller, namespac
 	// if the caller is authenticated, we should ask the backend for their explicit role.
 	if caller != nil {
 		var err error
-		role, err = s.effectiveRole(ctx, *caller, namespace)
+
+		role, err = s.store.GetNamespaceRole(ctx, namespace, caller.Username())
+		if errors.Is(err, backend.ErrNamespaceNotFound) {
+			return api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+		}
 		if err != nil {
-			return can.Namespace{}, err
+			return api.WithErrorCode(fmt.Errorf("backend failed to get namespace role: %w", err), api.DatabaseError)
 		}
 	}
 
-	// and create the new can struct
-	return can.NewNamespace(namespace, role, caller), nil
+	if err := scopes.EvaluateNamespaceScope(namespace, role, caller, scope); err != nil {
+		return fmt.Errorf("scope %q not fulfilled for namespace %q: %w", scope, namespace.String(), err)
+	}
+	return nil
 }
 
-// effectiveRole returns the caller's role in namespace.
-// This function should only be called in [Service.canNamespace].
+// checkUserScope evaluates if the given action is available for the given user.
 //
-// It can return the following errors:
+// When the action is not available, an error of one of the following [api.ErrorCode]s is returned:
 //
-// - [api.NamespaceNotFound]
-// - [api.DatabaseError].
-func (s *Service) effectiveRole(ctx context.Context, caller api.Caller, namespace api.ValidNamespaceID) (api.Role, error) {
-	role, err := s.store.GetNamespaceRole(ctx, namespace, caller.Username())
-	if errors.Is(err, backend.ErrNamespaceNotFound) {
-		return role, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
-	}
-	if err != nil {
-		return role, api.WithErrorCode(fmt.Errorf("backend failed to get namespace role: %w", err), api.DatabaseError)
-	}
-	return role, nil
-}
-
-// canUser returns a [can.User] struct representing the callers capabilities for the current caller.
-func (s *Service) canUser(caller *api.Caller) can.User {
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.UnavailableInAnonymousMode].
+func (s *Service) checkUserScope(caller *api.Caller, scope scopes.UserScope) error {
 	if s.AnonymousMode() {
-		return can.NewAnonymousModeUser()
+		if err := scopes.EvaluateAnonymousModeUserScope(scope); err != nil {
+			return fmt.Errorf("scope %q not fulfilled: %w", scope, err)
+		}
+		return nil
 	}
-	return can.NewUser(caller)
+	if err := scopes.EvaluateUserScope(caller, scope); err != nil {
+		return fmt.Errorf("scope %q not fulfilled for user: %w", scope, err)
+	}
+	return nil
 }

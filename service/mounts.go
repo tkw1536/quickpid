@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend
+//spellchecker:words context errors github quickpid backend scopes
 import (
 	"context"
 	"errors"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/scopes"
 )
 
 // GetMount resolves a base URI to a namespace mount.
@@ -18,8 +19,7 @@ import (
 // - [api.MountNotFound]
 // - [api.DatabaseError].
 func (s *Service) GetMount(ctx context.Context, caller *api.Caller, baseURI api.ValidBaseURI) (*api.MountResponse, error) {
-	can := s.canUser(caller)
-	if err := can.GetMount(); err != nil {
+	if err := s.checkUserScope(caller, scopes.ScopeGetMount); err != nil {
 		return nil, fmt.Errorf("GetMount() check failed: %w", err)
 	}
 
@@ -47,8 +47,7 @@ func (s *Service) GetMount(ctx context.Context, caller *api.Caller, baseURI api.
 // - [api.Forbidden]
 // - [api.DatabaseError].
 func (s *Service) ListMounts(ctx context.Context, caller *api.Caller, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
-	can := s.canUser(caller)
-	if err := can.ListMounts(); err != nil {
+	if err := s.checkUserScope(caller, scopes.ScopeListMounts); err != nil {
 		return nil, fmt.Errorf("ListMounts() check failed: %w", err)
 	}
 
@@ -71,11 +70,7 @@ func (s *Service) ListMounts(ctx context.Context, caller *api.Caller, params api
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
-	can, err := s.canNamespace(ctx, caller, namespace)
-	if err != nil {
-		return nil, err
-	}
-	if err := can.ListMounts(); err != nil {
+	if err := s.checkNamespaceScope(ctx, namespace, caller, scopes.ScopeListNamespaceMounts); err != nil {
 		return nil, fmt.Errorf("ListMounts() check failed: %w", err)
 	}
 
@@ -101,8 +96,7 @@ func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.Caller, n
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) SetMount(ctx context.Context, caller *api.Caller, baseURI api.ValidBaseURI, req api.ValidMountUpsertRequest) (*api.MountResponse, error) {
-	can := s.canUser(caller)
-	if err := can.SetMount(); err != nil {
+	if err := s.checkUserScope(caller, scopes.ScopeSetMount); err != nil {
 		return nil, fmt.Errorf("SetMount() check failed: %w", err)
 	}
 
@@ -131,8 +125,7 @@ func (s *Service) SetMount(ctx context.Context, caller *api.Caller, baseURI api.
 // - [api.MountNotFound]
 // - [api.DatabaseError].
 func (s *Service) DeleteMount(ctx context.Context, caller *api.Caller, baseURI api.ValidBaseURI) error {
-	can := s.canUser(caller)
-	if err := can.DeleteMount(); err != nil {
+	if err := s.checkUserScope(caller, scopes.ScopeDeleteMount); err != nil {
 		return fmt.Errorf("DeleteMount() check failed: %w", err)
 	}
 
