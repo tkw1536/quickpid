@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
@@ -15,8 +16,225 @@ import (
 	"github.com/tkw1536/quickpid/server/internal/credentials"
 )
 
+// Public returns a new handler that does not consider any authentication (not even validating for correctness).
+//
+// When successful, the handler returns the result of the provided implementation.
+// When an error occurs, the handler returns the appropriate error code.
+//
+// successCode is a function that converts the result of the implementation into a HTTP status code.
+// allowedErrors is a list of error codes that are allowed to be returned by the implementation; if an error is returned that is not in this list, the handler will panic.
+func (h *Handler) Public[T any](
+	impl func(http.ResponseWriter, *http.Request) (T, error),
+	successCode func(T) int,
+	allowedErrors []api.ErrorCode,
+) http.HandlerFunc {
+	return h.handle(
+		false,
+		func(w http.ResponseWriter, r *http.Request, _ *api.Caller) (T, error) {
+			return impl(w, r)
+		},
+		successCode,
+		allowedErrors,
+	)
+}
+
+// UserScope returns a handler that requires the provided user scope to be fulfilled.
+//
+// When the server is in anonymous mode, the handler returns [api.UnavailableInAnonymousMode].
+// When in authenticated mode, the handler can return [api.Unauthorized] and [api.DatabaseError].
+//
+// When successful, the handler returns the result of the provided implementation.
+// When the scope is not fulfilled, the handler returns an error derived from checking the appropriate scope.
+//
+// successCode is a function that converts the result of the implementation into a HTTP status code.
+// allowedErrors is a list of error codes that are allowed to be returned by the implementation; if an error is returned that is not in this list, the handler will panic.
+func (h *Handler) UserScope[T any](
+	scope scopes.UserScope,
+	impl func(http.ResponseWriter, *http.Request, *api.Caller) (T, error),
+	successCode func(T) int,
+	allowedErrors []api.ErrorCode,
+) http.HandlerFunc {
+	return h.dynamicUserScope(func(w http.ResponseWriter, r *http.Request, user *api.Caller, check func(scopes.UserScope) error) (T, error) {
+		if err := check(scope); err != nil {
+			var zero T
+			return zero, err
+		}
+		return impl(w, r, user)
+	}, successCode, allowedErrors)
+}
+
+// dynamicUserScope is like [UserScope], except that the scope may be dynamically determined by impl.
+// impl *must* call the provided check function exactly once per invocation, or the handler will panic.
+func (h *Handler) dynamicUserScope[T any](
+	impl func(http.ResponseWriter, *http.Request, *api.Caller, func(scopes.UserScope) error) (T, error),
+	successCode func(T) int,
+	allowedErrors []api.ErrorCode,
+) http.HandlerFunc {
+	return h.handle(
+		true,
+		func(w http.ResponseWriter, r *http.Request, user *api.Caller) (T, error) {
+			var (
+				called bool
+				m      sync.Mutex
+			)
+
+			result, err := impl(w, r, user, func(scope scopes.UserScope) error {
+				m.Lock()
+				defer m.Unlock()
+
+				if called {
+					panic("DynamicUserScope: check function called multiple times")
+				}
+				called = true
+
+				if h.auth.AnonymousMode() {
+					return scopes.EvaluateAnonymousModeUserScope(scope)
+				}
+				return scopes.EvaluateUserScope(user, scope)
+			})
+
+			if !called {
+				panic("DynamicUserScope: check function not called")
+			}
+
+			if err != nil {
+				var zero T
+				return zero, fmt.Errorf("DynamicUserScope: %w", err)
+			}
+
+			return result, nil
+		},
+		successCode,
+		allowedErrors,
+	)
+}
+
+// NamespaceScope returns a handler that parses the namespace path parameter and requires the provided namespace scope.
+//
+// When the server is in anonymous mode, the handler returns [api.UnavailableInAnonymousMode].
+// When in authenticated mode, the handler can return [api.Unauthorized], [api.Forbidden], [api.NamespaceNotFound], and [api.DatabaseError].
+// Invalid namespace path values return [api.InvalidNamespaceID].
+//
+// When successful, the handler returns the result of the provided implementation.
+// When the scope is not fulfilled, the handler returns an error derived from checking the appropriate scope.
+// /
+// successCode is a function that converts the result of the implementation into a HTTP status code.
+// allowedErrors is a list of error codes that are allowed to be returned by the implementation; if an error is returned that is not in this list, the handler will panic.
+func (h *Handler) NamespaceScope[T any](
+	scope scopes.NamespaceScope,
+	impl func(http.ResponseWriter, *http.Request, *api.Caller, api.ValidNamespaceID) (T, error),
+	successCode func(T) int,
+	allowedErrors []api.ErrorCode,
+) http.HandlerFunc {
+	return h.DynamicNamespaceScope(func(w http.ResponseWriter, r *http.Request, user *api.Caller, namespace api.ValidNamespaceID, check func(scopes.NamespaceScope) error) (T, error) {
+		if err := check(scope); err != nil {
+			var zero T
+			return zero, err
+		}
+		return impl(w, r, user, namespace)
+	}, successCode, allowedErrors)
+}
+
+// DynamicNamespaceScope is like [NamespaceScope], except that the scope may be dynamically determined by impl.
+//
+// impl *must* call the provided check function exactly once on the success path.
+// Returning an error before calling check (for example path-parameter validation) is allowed;
+// returning successfully without calling check, or calling check more than once, panics.
+func (h *Handler) DynamicNamespaceScope[T any](
+	impl func(http.ResponseWriter, *http.Request, *api.Caller, api.ValidNamespaceID, func(scopes.NamespaceScope) error) (T, error),
+	successCode func(T) int,
+	allowedErrors []api.ErrorCode,
+) http.HandlerFunc {
+	return h.handle(
+		true,
+		func(w http.ResponseWriter, r *http.Request, user *api.Caller) (T, error) {
+			namespace, err := readNamespaceParam(r)
+			if err != nil {
+				var zero T
+				return zero, err
+			}
+
+			var (
+				called bool
+				m      sync.Mutex
+			)
+
+			result, err := impl(w, r, user, namespace, func(scope scopes.NamespaceScope) error {
+				m.Lock()
+				defer m.Unlock()
+
+				if called {
+					panic("DynamicNamespaceScope: check function called multiple times")
+				}
+				called = true
+
+				return h.checkNamespaceScope(r, namespace, user, scope)
+			})
+
+			if err != nil {
+				var zero T
+				return zero, fmt.Errorf("DynamicNamespaceScope: %w", err)
+			}
+
+			if !called {
+				panic("DynamicNamespaceScope: check function not called")
+			}
+
+			return result, nil
+		},
+		successCode,
+		allowedErrors,
+	)
+}
+
+// readNamespaceParam gets the namespace from the request path.
+//
+// It can return the following errors:
+//
+// - [api.InvalidNamespaceID].
+func readNamespaceParam(r *http.Request) (api.ValidNamespaceID, error) {
+	namespace, err := api.NewNamespaceID(r.PathValue("namespace"))
+	if err != nil {
+		return api.ValidNamespaceID{}, api.WithErrorCode(fmt.Errorf("failed to parse namespace id: %w", err), api.InvalidNamespaceID)
+	}
+	return namespace, nil
+}
+
+// checkNamespaceScope evaluates if the given action is available for the given namespace.
+//
+// When the action is not available, an error of one of the following [api.ErrorCode]s is returned:
+//
+// - [api.Unauthorized]
+// - [api.Forbidden]
+// - [api.UnavailableInAnonymousMode]
+// - [api.NamespaceNotFound]
+// - [api.DatabaseError].
+func (h *Handler) checkNamespaceScope(r *http.Request, namespace api.ValidNamespaceID, caller *api.Caller, scope scopes.NamespaceScope) error {
+	if h.auth.AnonymousMode() {
+		if err := scopes.EvaluateAnonymousModeNamespaceScope(namespace, scope); err != nil {
+			return fmt.Errorf("scope %q not fulfilled for namespace %q: %w", scope, namespace.String(), err)
+		}
+		return nil
+	}
+
+	role := api.RoleNone
+	if caller != nil {
+		var err error
+		role, err = h.auth.ExplicitNamespaceRole(r.Context(), namespace, caller.Username())
+		if err != nil {
+			return fmt.Errorf("scope %q not fulfilled for namespace %q: %w", scope, namespace.String(), err)
+		}
+	}
+
+	if err := scopes.EvaluateNamespaceScope(namespace, role, caller, scope); err != nil {
+		return fmt.Errorf("scope %q not fulfilled for namespace %q: %w", scope, namespace.String(), err)
+	}
+	return nil
+}
+
+// handle implements the common logic for all lowlevel handlers.
 func (h *Handler) handle[T any](
-	s scenario,
+	auth bool,
 	impl func(http.ResponseWriter, *http.Request, *api.Caller) (T, error),
 	successCode func(T) int,
 	allowedErrors []api.ErrorCode,
@@ -29,11 +247,15 @@ func (h *Handler) handle[T any](
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		user, err := h.resolveCaller(r, s)
-		if err != nil {
-			duration := time.Since(start)
-			h.writeHandledError(w, r, duration, err, errors)
-			return
+		var user *api.Caller
+		if auth {
+			var err error
+			user, err = h.resolveCaller(r)
+			if err != nil {
+				duration := time.Since(start)
+				h.writeHandledError(w, r, duration, err, errors)
+				return
+			}
 		}
 
 		value, err := impl(w, r, user)
@@ -50,17 +272,11 @@ func (h *Handler) handle[T any](
 	}
 }
 
-var errUnavailableInAnonymousMode = errors.New("unavailable in anonymous mode")
-
 var (
 	errInvalidAuthenticationCredentials = errors.New("invalid authentication credentials")
-	errAuthenticationRequired           = errors.New("authentication required")
 )
 
-// resolveCaller resolves the caller of an API call according to the given scenario.
-//
-// It may return nil values when authentication is disabled, optional authentication is not supplied.
-// Otherwise err === nil implies the user information is not nil.
+// resolveCaller resolves the caller of an API call.
 //
 // It can return errors annotated with:
 //
@@ -68,18 +284,7 @@ var (
 //   - [api.Unauthorized] if the authentication credentials are invalid, authentication is required but not supplied,
 //     or impersonation fails (non-superuser, invalid or missing target, or multiple impersonate headers).
 //   - [api.DatabaseError] if the authenticated or impersonated user cannot be loaded for a database reason.
-func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.Caller, error) {
-	// if we require auth mode, and we are in anonymous mode
-	// this endpoint is unavailable.
-	if scenario == requiredUser && h.auth.AnonymousMode() {
-		return nil, api.WithErrorCode(errUnavailableInAnonymousMode, api.UnavailableInAnonymousMode)
-	}
-
-	// if we said not to do any auth, don't load anything.
-	if scenario == noAuthentication {
-		return nil, nil
-	}
-
+func (h *Handler) resolveCaller(r *http.Request) (*api.Caller, error) {
 	var (
 		username api.ValidUsername
 		method   api.AuthenticationMethod
@@ -91,9 +296,6 @@ func (h *Handler) resolveCaller(r *http.Request, scenario scenario) (*api.Caller
 	case credentials.KindInvalid:
 		return nil, api.WithErrorCode(errInvalidAuthenticationCredentials, api.Unauthorized)
 	case credentials.KindEmpty:
-		if scenario != optionalUser {
-			return nil, api.WithErrorCode(errAuthenticationRequired, api.Unauthorized)
-		}
 		return nil, nil
 	case credentials.KindBearer:
 		var key api.APIKeyInfo

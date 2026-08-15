@@ -33,15 +33,9 @@ import (
 // If the error is not nil, it should wrap an [api.ErrorCode] value, which will be returned to the client.
 // If there is no ErrorString, or it is not explicitly listed in the allowedErrors slice, this is considered an implementation error.
 //
-// Each of the methods is intended to support a different authentication scenario.
-// - [Handler.Public] creates handlers that do not perform any authentication.
-// - [Handler.Restricted] requires an authenticated user, and loads the whole user object from the database.
-// - [Handler.Open] is like [Handler.Restricted], but also allows anonymous users.
-// - [Handler.UserScope] / [Handler.dynamicUserScope] require a user scope to be fulfilled.
-// - [Handler.NamespaceScope] / [Handler.DynamicNamespaceScope] parse a namespace path parameter and require a namespace scope.
-//
-// Note that depending on the authentication scenario, they introduce additional possible [api.ErrorCode] values, which act
-// as if they had been returned by the implementation function and thus need to be listed in the allowedErrors slice.
+// Methods additionally may check specific [scopes.UserScope] or [scopes.NamespaceScope] values.
+// If using a method that supports these scopes, they will be checked before the handler is ever called.
+// If they fail, the return appropriate [api.ErrorCode] values.
 type Handler struct {
 	auth   AuthService
 	logger *slog.Logger
