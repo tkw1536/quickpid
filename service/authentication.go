@@ -12,6 +12,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/apikey"
+	"github.com/tkw1536/quickpid/internal/filter"
 )
 
 // AuthenticateAPIKey looks up the username for a valid API key.
@@ -202,10 +203,13 @@ func (s *Service) ListKeys(ctx context.Context, caller api.Caller, params api.Li
 
 // listValidKeys is like [s.store.ListKeys], but only contains keys that are still valid according to the runtime.
 func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
-	// The current api response
-	//
-	// The Total field will be updated as we encounter valid keys.
-	var res api.PaginatedAPIKeysResponse
+
+	// Determine the effective page limit to call the backend with.
+	options := s.Options().Limits
+	pageLimit := options.DefaultPageLimit
+	if options.MaxPageLimit > 0 && pageLimit > options.MaxPageLimit {
+		pageLimit = options.MaxPageLimit
+	}
 
 	// We want to check for all keys at a consistent time.
 	// We also don't get the time if we don't need it.
@@ -214,72 +218,44 @@ func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, usern
 	// even though it will never be called concurrently.
 	now := sync.OnceValue(s.runtime.Now)
 
-	for key := range s.listAllKeys(ctx, format, username, params) {
-		if key.err != nil {
-			return nil, key.err
-		}
+	// Filter the keys to only includes ones that are still valid according to the current time.
+	// This is a client-side filter, because the store backend does not have access to the runtime,
+	// and even then is not expected to be able to reduce this to a database query.
+	keys, err := filter.Filter(
+		ctx,
+		func(ctx context.Context, limit, offset int) ([]api.APIKeyInfo, error) {
+			// Create new params for each page by shadowing the original params.
+			// We could create a new struct, but this includes any future parameters for listing.
+			params := params
+			params.Limit = limit
+			params.Offset = offset
 
-		// skip invalid keys
-		if !key.info.Valid(now) {
-			continue
-		}
-		res.Total++
-
-		// only add keys according to the underlying offset and limit.
-		if res.Total > params.Offset && len(res.Items) < params.Limit {
-			res.Items = append(res.Items, key.info)
-		}
-	}
-
-	res.Offset = params.Offset
-	return &res, nil
-}
-
-type keyInfoOrError struct {
-	err  error
-	info api.APIKeyInfo
-}
-
-// listAllKeys returns a channel that yields all keys for username.
-//
-// This ignores offset and limit of [ListKeysParams], but should respect any future parameters.
-func (s *Service) listAllKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) chan keyInfoOrError {
-	ch := make(chan keyInfoOrError)
-	go func() {
-		defer close(ch)
-
-		// Determine the maximum page limit
-		// for the configured size.
-		limits := s.Options().Limits
-		params.Limit = limits.MaxPageLimit
-		if params.Limit < 1 {
-			params.Limit = limits.DefaultPageLimit
-		}
-
-		params.Offset = 0
-
-		for {
-			// list the current page or bail out in case of an error.
-			page, err := s.store.ListKeys(ctx, format, username, params)
+			// List the actual keys, and return only the items.
+			result, err := s.store.ListKeys(ctx, format, username, params)
 			if err != nil {
-				ch <- keyInfoOrError{err: err}
-				return
+				return nil, fmt.Errorf("backend failed to list keys: %w", err)
 			}
-
-			// yield individual items.
-			for _, info := range page.Items {
-				ch <- keyInfoOrError{info: info}
+			return result.Items, nil
+		},
+		func(ctx context.Context, key api.APIKeyInfo) (bool, error) {
+			if err := ctx.Err(); err != nil {
+				return false, fmt.Errorf("context cancelled: %w", err)
 			}
+			return key.Valid(now), nil
+		},
+		pageLimit,
+		params.Limit,
+		params.Offset,
+	)
 
-			// check if the next page still exists.
-			params.Offset += len(page.Items)
-			if len(page.Items) == 0 || params.Offset >= page.Total {
-				return
-			}
-		}
-	}()
-
-	return ch
+	if err != nil {
+		return nil, fmt.Errorf("Filter returned error: %w", err)
+	}
+	return &api.PaginatedAPIKeysResponse{
+		Items:  keys.Items,
+		Total:  keys.Total,
+		Offset: keys.Offset,
+	}, nil
 }
 
 // IssueKey issues a new API key for caller or another user when caller is a superuser.
