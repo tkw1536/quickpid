@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words errors http strconv github quickpid internal strict pkglib errorsx
+//spellchecker:words errors http strconv github quickpid internal combine strict
 import (
 	"errors"
 	"fmt"
@@ -10,8 +10,8 @@ import (
 	"strconv"
 
 	"github.com/tkw1536/quickpid/api"
+	"github.com/tkw1536/quickpid/internal/combine"
 	"github.com/tkw1536/quickpid/internal/strict"
-	"go.tkw01536.de/pkglib/errorsx"
 )
 
 var (
@@ -44,7 +44,7 @@ func (h *Server) decodeJSON(w http.ResponseWriter, r *http.Request, v any) (deco
 			// This if most likely this happens when the underlying network connection had some error;
 			// meaning the client will never see if anyways.
 			decodeErr = api.WithErrorCode(
-				errorsx.Combine(decodeErr, fmt.Errorf("failed to close body: %w", err)),
+				combine.Combine(decodeErr, fmt.Errorf("failed to close body: %w", err)),
 				api.BodyInvalidJSON,
 			)
 		}

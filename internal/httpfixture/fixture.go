@@ -3,7 +3,7 @@
 //spellchecker:words httpfixture
 package httpfixture
 
-//spellchecker:words bytes context encoding json jsontext errors http httptest slices strconv strings pkglib errorsx
+//spellchecker:words bytes context encoding json jsontext errors http httptest slices strconv strings github quickpid internal combine
 import (
 	"bytes"
 	"context"
@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"strings"
 
-	"go.tkw01536.de/pkglib/errorsx"
+	"github.com/tkw1536/quickpid/internal/combine"
 )
 
 // Fixture represents a HTTP test case.
@@ -163,7 +163,7 @@ func (resp Response) Compare(actual *httptest.ResponseRecorder) error {
 	}
 
 join_and_return:
-	return errorsx.Combine(errs...)
+	return combine.Combine(errs...)
 }
 
 // canonicalJSON reads a JSON value from r, and returns its canonical JSON serialization.

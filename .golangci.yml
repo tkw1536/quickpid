@@ -11,10 +11,8 @@ linters:
       require-specific: true
       allow-no-explanation: ["paralleltest", "tparallel"]
     wrapcheck:
-      ignore-package-globs:
-        - go.tkw01536.de/pkglib/errorsx
-        - go.tkw01536.de/pkglib/exit
       extra-ignore-sigs:
+        - combine.Combine(
         - api.WithErrorCode( 
   enable:
     - bidichk
