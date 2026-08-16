@@ -1,0 +1,307 @@
+{
+  "name": "298_resolver_scopes_list",
+  "comment": "GET /resolver/scopes returns alphabetically sorted scope definitions in authenticated mode, and empty lists in anonymous mode.",
+  "steps": [
+    {
+      "name": "scopes_authenticated_mode",
+      "request": {
+        "method": "GET",
+        "path": "/resolver/scopes"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "user": [
+            {
+              "scope": "autocompleteUsers",
+              "description": "Autocomplete usernames by prefix.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "countAllResources",
+              "description": "Return the total number of resources (issued PIDs) stored across all namespaces.",
+              "anonymousMode": true,
+              "allowUnauthenticated": true,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "createNamespace",
+              "description": "Creates a new namespace.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "createUser",
+              "description": "Create a new user account.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": true
+            },
+            {
+              "scope": "deleteMount",
+              "description": "Delete a namespace mount.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "requireSuperuser": true
+            },
+            {
+              "scope": "deleteUser",
+              "description": "Delete a user account.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": true
+            },
+            {
+              "scope": "getMount",
+              "description": "Resolve a resource using a mounted base URI and PID.",
+              "anonymousMode": true,
+              "allowUnauthenticated": true,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "getUserInfo",
+              "description": "Return information about a user account.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "impersonate",
+              "description": "Impersonate another user.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": true
+            },
+            {
+              "scope": "issueKey",
+              "description": "Issue a new API key.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "listMounts",
+              "description": "List all namespace mounts.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "requireSuperuser": true
+            },
+            {
+              "scope": "listNamespaces",
+              "description": "List namespaces available on the resolver.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "listOwnKeys",
+              "description": "List API keys for a user account.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "listUserRoles",
+              "description": "List explicit namespace roles for a user.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "listUsers",
+              "description": "List all user accounts.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": true
+            },
+            {
+              "scope": "resolveMountResource",
+              "description": "Resolve a namespace mount by base URI.",
+              "anonymousMode": true,
+              "allowUnauthenticated": true,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "revokeKey",
+              "description": "Revoke an API key for a user account.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "setMount",
+              "description": "Create or replace a namespace mount.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "requireSuperuser": true
+            },
+            {
+              "scope": "setPassword",
+              "description": "Set or clear a user password.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "updateUser",
+              "description": "Update a user account.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": true
+            }
+          ],
+          "namespace": [
+            {
+              "scope": "createResource",
+              "description": "Create a resource within a namespace.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "minRole": "contributor",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "createResourceBatch",
+              "description": "Create several resources within a namespace.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "minRole": "contributor",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "getNamespace",
+              "description": "Retrieve a single namespace by id, or see it in the list of namespaces.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "minRole": "contributor",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "getNamespaceRoleOther",
+              "description": "Get another user's role in a namespace.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "minRole": "manager",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "getNamespaceRoleSelf",
+              "description": "Get own role in a namespace.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "minRole": "none",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "getResource",
+              "description": "Retrieve a resource by PID within a namespace.",
+              "anonymousMode": true,
+              "allowUnauthenticated": true,
+              "minRole": "none",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "listNamespaceMounts",
+              "description": "List mounts for a namespace.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "minRole": "contributor",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "listNamespaceRoles",
+              "description": "List explicit namespace roles.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "minRole": "manager",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "listResources",
+              "description": "List resources within a namespace.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "minRole": "editor",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "removeNamespaceRoleOther",
+              "description": "Remove another user's explicit role in a namespace.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "minRole": "manager",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "removeNamespaceRoleSelf",
+              "description": "Remove own explicit role in a namespace.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "minRole": "none",
+              "requireSuperuser": true
+            },
+            {
+              "scope": "seeDeletedResource",
+              "description": "See an un-redacted deleted resource.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "minRole": "editor",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "setNamespaceRoleOther",
+              "description": "Set another user's role in a namespace.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "minRole": "manager",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "setNamespaceRoleSelf",
+              "description": "Set own role in a namespace.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "minRole": "none",
+              "requireSuperuser": true
+            },
+            {
+              "scope": "updateNamespace",
+              "description": "Update a namespace by id.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "minRole": "manager",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "updateResource",
+              "description": "Update a resource by PID within a namespace.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "minRole": "editor",
+              "requireSuperuser": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "scopes_anonymous_mode_empty",
+      "config": {
+        "anonymous": true
+      },
+      "request": {
+        "method": "GET",
+        "path": "/resolver/scopes"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "user": [],
+          "namespace": []
+        }
+      }
+    }
+  ]
+}

@@ -1,9 +1,12 @@
 package api
 
-//spellchecker:words errors
+//spellchecker:words errors slices strings sync
 import (
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
+	"sync"
 )
 
 // NamespaceScope describes a permission that can be granted to a user for a specific namespace.
@@ -58,21 +61,21 @@ const (
 
 // NamespaceScopeDefinition defines a [NamespaceScope] and its associated permissions.
 type NamespaceScopeDefinition struct {
-	Scope       NamespaceScope
-	Description string
+	Scope       NamespaceScope `json:"scope"`
+	Description string         `json:"description"`
 
 	// AnonymousMode indicates if the given action is available in anonymous mode.
-	AnonymousMode bool
+	AnonymousMode bool `json:"anonymousMode"`
 
 	// AllowUnauthenticated indicates if the given action is available to unauthenticated users.
-	AllowUnauthenticated bool
+	AllowUnauthenticated bool `json:"allowUnauthenticated"`
 
 	// MinRole is the minimum explicit namespace role that grants access.
 	// [RoleNone] means no role grants access by itself.
-	MinRole Role
+	MinRole Role `json:"minRole"`
 
 	// RequireSuperuser indicates if only a superuser may perform the action.
-	RequireSuperuser bool
+	RequireSuperuser bool `json:"requireSuperuser"`
 }
 
 var namespaceDefs = func(actions ...NamespaceScopeDefinition) map[NamespaceScope]NamespaceScopeDefinition {
@@ -220,3 +223,38 @@ var namespaceDefs = func(actions ...NamespaceScopeDefinition) map[NamespaceScope
 		RequireSuperuser:     false,
 	},
 )
+
+// GetNamespaceScopes returns an array of all defined namespace scopes.
+// The scopes are sorted alphabetically.
+//
+// The returned slice is safe for manipulation.
+func GetNamespaceScopes() []NamespaceScope {
+	return slices.Clone(namespaceScopesInternal())
+}
+
+var namespaceScopesInternal = sync.OnceValue(func() []NamespaceScope {
+	scopes := make([]NamespaceScope, 0, len(namespaceDefs))
+	for _, def := range namespaceDefs {
+		scopes = append(scopes, def.Scope)
+	}
+	slices.Sort(scopes)
+	return scopes
+})
+
+// GetNamespaceScopeDefinitions returns all namespace scope definitions sorted alphabetically by scope.
+//
+// The returned slice is safe for manipulation.
+func GetNamespaceScopeDefinitions() []NamespaceScopeDefinition {
+	return slices.Clone(namespaceScopeDefinitionsInternal())
+}
+
+var namespaceScopeDefinitionsInternal = sync.OnceValue(func() []NamespaceScopeDefinition {
+	defs := make([]NamespaceScopeDefinition, 0, len(namespaceDefs))
+	for _, def := range namespaceDefs {
+		defs = append(defs, def)
+	}
+	slices.SortFunc(defs, func(a, b NamespaceScopeDefinition) int {
+		return strings.Compare(string(a.Scope), string(b.Scope))
+	})
+	return defs
+})

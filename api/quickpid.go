@@ -19,3 +19,10 @@ type MetaResponse struct {
 	Software string `json:"software,omitempty"`
 	Version  string `json:"version,omitempty"`
 }
+
+// ScopesResponse is the catalogue of user and namespace scope definitions.
+// Both arrays are empty when the server runs in anonymous mode.
+type ScopesResponse struct {
+	User      []UserScopeDefinition      `json:"user"`
+	Namespace []NamespaceScopeDefinition `json:"namespace"`
+}

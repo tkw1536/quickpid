@@ -76,6 +76,12 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		nil,
 	))
 
+	h.mux.Handle("GET /resolver/scopes", h.lowlevel.Public(
+		h.listScopes,
+		lowlevel.FixedStatusCode[*api.ScopesResponse](http.StatusOK),
+		nil,
+	))
+
 	h.mux.Handle("GET /resolver/namespaces", h.lowlevel.UserScope(
 		api.ScopeListNamespaces,
 		h.listNamespaces,

@@ -116,6 +116,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/MetaResponse'
 
+  /resolver/scopes:
+    get:
+      summary: List all user and namespace scope definitions.
+      operationId: listScopes
+      description: |
+        Returns the full catalogue of user scopes and namespace scopes known to this server,
+        including each scope's description and authorization flags.
+
+        Both arrays are sorted ascending by the `scope` string.
+        When the server is in anonymous mode, both arrays are empty because scopes are not used.
+
+        This endpoint always returns 200 and does not require authentication.
+      security: []
+      tags:
+        - quickpid
+      responses:
+        '200':
+          description: Scope definitions successfully retrieved.
+          content:
+            application/json:
+              example: { user: [ { scope: "listNamespaces", description: "List namespaces available on the resolver.", anonymousMode: true, allowUnauthenticated: false, requireSuperuser: false } ], namespace: [ { scope: "getNamespace", description: "Retrieve a single namespace by id, or see it in the list of namespaces.", anonymousMode: true, allowUnauthenticated: false, minRole: "contributor", requireSuperuser: false } ] }
+              schema:
+                $ref: '#/components/schemas/ScopesResponse'
+
   /resolver/namespaces:
     get:
       summary: List namespaces available on the resolver.
@@ -3168,6 +3192,118 @@ components:
             Version of the software running this server.
           type: string
           minLength: 1
+    ScopesResponse:
+      description: |
+        Catalogue of user and namespace scope definitions returned by GET /resolver/scopes.
+        Arrays are empty when the server runs in anonymous mode.
+      type: object
+      additionalProperties: false
+      required:
+        - user
+        - namespace
+      properties:
+        user:
+          example: []
+          description: |
+            User scope definitions sorted ascending by scope name.
+            Empty when the server is in anonymous mode.
+          type: array
+          items:
+            $ref: '#/components/schemas/UserScopeDefinition'
+        namespace:
+          example: []
+          description: |
+            Namespace scope definitions sorted ascending by scope name.
+            Empty when the server is in anonymous mode.
+          type: array
+          items:
+            $ref: '#/components/schemas/NamespaceScopeDefinition'
+    UserScopeDefinition:
+      description: |
+        Definition of a single user-level scope and its authorization flags.
+      type: object
+      additionalProperties: false
+      required:
+        - scope
+        - description
+        - anonymousMode
+        - allowUnauthenticated
+        - requireSuperuser
+      properties:
+        scope:
+          example: "listNamespaces"
+          description: |
+            Stable identifier of the user scope, typically matching an OpenAPI operationId.
+          type: string
+          minLength: 1
+        description:
+          example: "List namespaces available on the resolver."
+          description: |
+            Human-readable summary of what the user scope authorizes.
+          type: string
+          minLength: 1
+        anonymousMode:
+          example: true
+          description: |
+            Whether this user scope is available when the server runs in anonymous mode.
+          type: boolean
+        allowUnauthenticated:
+          example: false
+          description: |
+            Whether this user scope may be exercised without an authenticated caller in authenticated mode.
+          type: boolean
+        requireSuperuser:
+          example: false
+          description: |
+            Whether only a superuser may exercise this user scope.
+          type: boolean
+    NamespaceScopeDefinition:
+      description: |
+        Definition of a single namespace-level scope and its authorization flags.
+      type: object
+      additionalProperties: false
+      required:
+        - scope
+        - description
+        - anonymousMode
+        - allowUnauthenticated
+        - minRole
+        - requireSuperuser
+      properties:
+        scope:
+          example: "getNamespace"
+          description: |
+            Stable identifier of the namespace scope, typically matching an OpenAPI operationId.
+          type: string
+          minLength: 1
+        description:
+          example: "Retrieve a single namespace by id, or see it in the list of namespaces."
+          description: |
+            Human-readable summary of what the namespace scope authorizes.
+          type: string
+          minLength: 1
+        anonymousMode:
+          example: true
+          description: |
+            Whether this namespace scope is available when the server runs in anonymous mode.
+          type: boolean
+        allowUnauthenticated:
+          example: false
+          description: |
+            Whether this namespace scope may be exercised without an authenticated caller in authenticated mode.
+          type: boolean
+        minRole:
+          example: "contributor"
+          description: |
+            Minimum explicit namespace role that grants this namespace scope.
+            The value `none` means no role alone is sufficient.
+          allOf:
+            - $ref: '#/components/schemas/Role'
+        requireSuperuser:
+          example: false
+          description: |
+            Whether only a superuser may exercise this namespace scope.
+          type: boolean
     UsernameListResponse:
       description: |
         A list of usernames.

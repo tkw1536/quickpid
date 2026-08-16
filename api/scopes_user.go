@@ -1,10 +1,11 @@
 package api
 
-//spellchecker:words errors slices sync
+//spellchecker:words errors slices strings sync
 import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"sync"
 )
 
@@ -26,17 +27,17 @@ func (scope UserScope) Definition() (UserScopeDefinition, error) {
 
 // UserScopeDefinition defines a [UserScope] and its associated permissions.
 type UserScopeDefinition struct {
-	Scope       UserScope
-	Description string
+	Scope       UserScope `json:"scope"`
+	Description string    `json:"description"`
 
 	// AnonymousMode indicates if the given action is available in anonymous mode.
-	AnonymousMode bool
+	AnonymousMode bool `json:"anonymousMode"`
 
 	// RequireAuthentication indicates if the given action is available to unauthenticated users.
-	AllowUnauthenticated bool
+	AllowUnauthenticated bool `json:"allowUnauthenticated"`
 
 	// RequireSuperuser indicates if the given action is available to superuser users.
-	RequireSuperuser bool
+	RequireSuperuser bool `json:"requireSuperuser"`
 }
 
 // UserScope names.
@@ -262,4 +263,22 @@ var scopesInternal = sync.OnceValue(func() []UserScope {
 	}
 	slices.Sort(scopes)
 	return scopes
+})
+
+// GetUserScopeDefinitions returns all user scope definitions sorted alphabetically by scope.
+//
+// The returned slice is safe for manipulation.
+func GetUserScopeDefinitions() []UserScopeDefinition {
+	return slices.Clone(userScopeDefinitionsInternal())
+}
+
+var userScopeDefinitionsInternal = sync.OnceValue(func() []UserScopeDefinition {
+	defs := make([]UserScopeDefinition, 0, len(userDefs))
+	for _, def := range userDefs {
+		defs = append(defs, def)
+	}
+	slices.SortFunc(defs, func(a, b UserScopeDefinition) int {
+		return strings.Compare(string(a.Scope), string(b.Scope))
+	})
+	return defs
 })
