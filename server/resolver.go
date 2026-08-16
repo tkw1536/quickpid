@@ -43,7 +43,7 @@ func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, caller *
 		Limit:  limit,
 		Offset: offset,
 	}, func(ctx context.Context, namespace api.ValidNamespaceID) bool {
-		return h.lowlevel.CheckNamespaceScope(r, namespace, caller, api.ScopeReadMetadata) == nil
+		return h.lowlevel.CheckNamespaceScope(r, namespace, caller, api.ScopeGetNamespace) == nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list namespaces: %w", err)

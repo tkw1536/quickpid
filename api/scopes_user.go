@@ -1,9 +1,31 @@
 package api
 
-//spellchecker:words errors
-import "errors"
+//spellchecker:words errors slices sync
+import (
+	"errors"
+	"fmt"
+	"slices"
+	"sync"
+)
 
-type userActionDefinition struct {
+// UserScope describes a permission that can be granted to a user.
+// Each scope typically corresponds to the appropriate operation id in the spec.
+type UserScope string
+
+var errUnknownUserScope error = errors.New("unknown user scope")
+
+// Definition returns the definition of the given scope.
+// If the scope is not defined, it returns an error.
+func (scope UserScope) Definition() (UserScopeDefinition, error) {
+	def, ok := userDefs[scope]
+	if !ok {
+		return UserScopeDefinition{}, errUnknownUserScope
+	}
+	return def, nil
+}
+
+// UserScopeDefinition defines a [UserScope] and its associated permissions.
+type UserScopeDefinition struct {
 	Scope       UserScope
 	Description string
 
@@ -17,182 +39,227 @@ type userActionDefinition struct {
 	RequireSuperuser bool
 }
 
-var errUnknownUserScope error = errors.New("unknown user scope")
-
-// getUserActionDefinition returns the action with the given scope.
-// If the action does not exist, it panics.
-func getUserActionDefinition(scope UserScope) (userActionDefinition, error) {
-	action, ok := userActions[scope]
-	if !ok {
-		return userActionDefinition{}, errUnknownUserScope
-	}
-	return action, nil
-}
-
-// UserScope names a user action.
-type UserScope string
-
-// Scopes not related to a specific namespace.
+// UserScope names.
+//
+// They (and their definitions below) should be kept in the same order as in the spec.
+// Related operations (those using the same path) should be grouped together, with a blank line between them.
+// Their formatting is kept similar to the [server.NewServer] route definitions.
 const (
-	ScopeImpersonate       UserScope = "impersonate"
-	ScopeSetPassword       UserScope = "set_password"
-	ScopeGetUserInfo       UserScope = "get_user_info"
-	ScopeCreateUser        UserScope = "create_user"
-	ScopeDeleteUser        UserScope = "delete_user"
-	ScopeListUsers         UserScope = "list_users"
-	ScopeAutocompleteUsers UserScope = "autocomplete_users"
-	ScopeListOwnKeys       UserScope = "list_own_keys"
-	ScopeIssueKey          UserScope = "issue_key"
-	ScopeRevokeKey         UserScope = "revoke_key"
-	ScopeUpdateUser        UserScope = "update_user"
-	ScopeListUserRoles     UserScope = "list_user_roles"
-	ScopeGetMount          UserScope = "get_mount"
-	ScopeListMounts        UserScope = "list_mounts"
-	ScopeSetMount          UserScope = "set_mount"
-	ScopeDeleteMount       UserScope = "delete_mount"
-	ScopeListNamespaces    UserScope = "list_namespaces"
-	ScopeCountAllResources UserScope = "count_all_resources"
-	ScopeCreateNamespace   UserScope = "create_namespace"
+	ScopeListNamespaces  UserScope = "listNamespaces"
+	ScopeCreateNamespace UserScope = "createNamespace"
+
+	ScopeCountAllResources UserScope = "countAllResources"
+
+	ScopeListMounts UserScope = "listMounts"
+
+	ScopeResolveMountByBaseUri UserScope = "resolveMountResource"
+	ScopeSetMount              UserScope = "setMount"
+	ScopeDeleteMount           UserScope = "deleteMount"
+
+	ScopeGetMount UserScope = "getMount"
+
+	ScopeGetUserInfo UserScope = "getUserInfo"
+	ScopeUpdateUser  UserScope = "updateUser"
+	ScopeCreateUser  UserScope = "createUser"
+	ScopeDeleteUser  UserScope = "deleteUser"
+
+	ScopeAutocompleteUsers UserScope = "autocompleteUsers"
+
+	ScopeListUsers UserScope = "listUsers"
+
+	ScopeGetUserRoles UserScope = "listUserRoles"
+
+	ScopeListUserKeys UserScope = "listOwnKeys"
+	ScopeIssueUserKey UserScope = "issueKey"
+
+	ScopeSetUserPassword UserScope = "setPassword"
+
+	ScopeRevokeUserKey UserScope = "revokeKey"
+
+	// The impersonate scope is special because it does not correspond to a specific operation in the spec.
+	// But can be used on any route to impersonate another user.
+	// When impersonating another user, the call implicitly inherits all scopes of the impersonated user.
+	ScopeImpersonate UserScope = "impersonate"
 )
 
-var userActions = func(actions ...userActionDefinition) map[UserScope]userActionDefinition {
-	m := make(map[UserScope]userActionDefinition, len(actions))
+// user definitions keyed by their scope.
+var userDefs = func(actions ...UserScopeDefinition) map[UserScope]UserScopeDefinition {
+	m := make(map[UserScope]UserScopeDefinition, len(actions))
 	for _, action := range actions {
+		if _, ok := m[action.Scope]; ok {
+			panic(fmt.Sprintf("duplicate scope definition: %s", action.Scope))
+		}
 		m[action.Scope] = action
 	}
 	return m
 }(
-	userActionDefinition{
-		Scope:                ScopeImpersonate,
-		Description:          "Impersonate another user",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
-	},
-	userActionDefinition{
-		Scope:                ScopeSetPassword,
-		Description:          "Set or clear own password",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     false,
-	},
-	userActionDefinition{
-		Scope:                ScopeGetUserInfo,
-		Description:          "Get current user info",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     false,
-	},
-	userActionDefinition{
-		Scope:                ScopeCreateUser,
-		Description:          "Create a new user",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
-	},
-	userActionDefinition{
-		Scope:                ScopeDeleteUser,
-		Description:          "Delete a user",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
-	},
-	userActionDefinition{
-		Scope:                ScopeListUsers,
-		Description:          "List all users",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
-	},
-	userActionDefinition{
-		Scope:                ScopeAutocompleteUsers,
-		Description:          "Autocomplete usernames",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     false,
-	},
-	userActionDefinition{
-		Scope:                ScopeListOwnKeys,
-		Description:          "List own API keys",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     false,
-	},
-	userActionDefinition{
-		Scope:                ScopeIssueKey,
-		Description:          "Issue a new API key for oneself",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     false,
-	},
-	userActionDefinition{
-		Scope:                ScopeRevokeKey,
-		Description:          "Revoke an API key for oneself",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     false,
-	},
-	userActionDefinition{
-		Scope:                ScopeUpdateUser,
-		Description:          "Update another user",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
-	},
-	userActionDefinition{
-		Scope:                ScopeListUserRoles,
-		Description:          "List own roles across all namespaces",
-		AnonymousMode:        false,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     false,
-	},
-	userActionDefinition{
-		Scope:                ScopeGetMount,
-		Description:          "Resolve a mount by base URI",
-		AnonymousMode:        true,
-		AllowUnauthenticated: true,
-		RequireSuperuser:     false,
-	},
-	userActionDefinition{
-		Scope:                ScopeListMounts,
-		Description:          "List all mounts",
-		AnonymousMode:        true,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
-	},
-	userActionDefinition{
-		Scope:                ScopeSetMount,
-		Description:          "Set a mount by base URI",
-		AnonymousMode:        true,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
-	},
-	userActionDefinition{
-		Scope:                ScopeDeleteMount,
-		Description:          "Delete a mount by base URI",
-		AnonymousMode:        true,
-		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
-	},
-	userActionDefinition{
+	UserScopeDefinition{
 		Scope:                ScopeListNamespaces,
-		Description:          "List namespaces",
+		Description:          "List namespaces available on the resolver.",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
 		RequireSuperuser:     false,
 	},
-	userActionDefinition{
+	UserScopeDefinition{
+		Scope:                ScopeCreateNamespace,
+		Description:          "Creates a new namespace.",
+		AnonymousMode:        true,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
+	},
+
+	UserScopeDefinition{
 		Scope:                ScopeCountAllResources,
-		Description:          "Count all resources across all namespaces",
+		Description:          "Return the total number of resources (issued PIDs) stored across all namespaces.",
 		AnonymousMode:        true,
 		AllowUnauthenticated: true,
 		RequireSuperuser:     false,
 	},
-	userActionDefinition{
-		Scope:                ScopeCreateNamespace,
-		Description:          "Create a namespace",
+
+	UserScopeDefinition{
+		Scope:                ScopeListMounts,
+		Description:          "List all namespace mounts.",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
+		RequireSuperuser:     true,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeResolveMountByBaseUri,
+		Description:          "Resolve a namespace mount by base URI.",
+		AnonymousMode:        true,
+		AllowUnauthenticated: true,
 		RequireSuperuser:     false,
+	},
+	UserScopeDefinition{
+		Scope:                ScopeSetMount,
+		Description:          "Create or replace a namespace mount.",
+		AnonymousMode:        true,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     true,
+	},
+	UserScopeDefinition{
+		Scope:                ScopeDeleteMount,
+		Description:          "Delete a namespace mount.",
+		AnonymousMode:        true,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     true,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeGetMount,
+		Description:          "Resolve a resource using a mounted base URI and PID.",
+		AnonymousMode:        true,
+		AllowUnauthenticated: true,
+		RequireSuperuser:     false,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeGetUserInfo,
+		Description:          "Return information about a user account.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
+	},
+	UserScopeDefinition{
+		Scope:                ScopeUpdateUser,
+		Description:          "Update a user account.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     true,
+	},
+	UserScopeDefinition{
+		Scope:                ScopeCreateUser,
+		Description:          "Create a new user account.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     true,
+	},
+	UserScopeDefinition{
+		Scope:                ScopeDeleteUser,
+		Description:          "Delete a user account.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     true,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeAutocompleteUsers,
+		Description:          "Autocomplete usernames by prefix.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeListUsers,
+		Description:          "List all user accounts.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     true,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeGetUserRoles,
+		Description:          "List explicit namespace roles for a user.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeListUserKeys,
+		Description:          "List API keys for a user account.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
+	},
+	UserScopeDefinition{
+		Scope:                ScopeIssueUserKey,
+		Description:          "Issue a new API key.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeSetUserPassword,
+		Description:          "Set or clear a user password.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeRevokeUserKey,
+		Description:          "Revoke an API key for a user account.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeImpersonate,
+		Description:          "Impersonate another user.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     true,
 	},
 )
+
+// GetUserScopes returns an array of all defined scopes.
+// The scopes are sorted alphabetically.
+//
+// The returned slice is safe for manipulation.
+func GetUserScopes() []UserScope {
+	return slices.Clone(scopesInternal())
+}
+
+var scopesInternal = sync.OnceValue(func() []UserScope {
+	scopes := make([]UserScope, 0, len(userDefs))
+	for _, def := range userDefs {
+		scopes = append(scopes, def.Scope)
+	}
+	slices.Sort(scopes)
+	return scopes
+})

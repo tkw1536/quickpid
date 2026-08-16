@@ -58,6 +58,9 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	// 3. keep an empty line between different paths, but no space between handlers for the same path but different method.
 	// 4. keep the api codes any 'Error*' spec type, in the same order.
 	// 5. name the internal the same as the 'operationId' in the spec.
+	//
+	// When updating routes, don't forget to also update the [api.UserScope] and [api.NamespaceScope] constants, along with their definitions.
+	// They should also retain the same order as here, and as in the spec.
 
 	h.mux.Handle("GET /resolver", h.lowlevel.Public(
 		h.getResolverInfo,
@@ -123,7 +126,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/mounts/{baseUri}", h.lowlevel.UserScope(
-		api.ScopeGetMount,
+		api.ScopeResolveMountByBaseUri,
 		h.resolveMountByBaseUri,
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -178,7 +181,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/namespaces/{namespace}", h.lowlevel.NamespaceScope(
-		api.ScopeReadMetadata,
+		api.ScopeGetNamespace,
 		h.getNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -190,7 +193,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("PATCH /resolver/namespaces/{namespace}", h.lowlevel.NamespaceScope(
-		api.ScopePatchMetadata,
+		api.ScopeUpdateNamespace,
 		h.updateNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -266,7 +269,6 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.DatabaseError,
 		},
 	))
-
 	h.mux.Handle("DELETE /resolver/namespaces/{namespace}/roles/{username}", h.lowlevel.DynamicNamespaceScope(
 		h.removeNamespaceRoleScope,
 		h.removeNamespaceRole,
@@ -316,7 +318,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources/batch", h.lowlevel.NamespaceScope(
-		api.ScopeCreateResource,
+		api.ScopeCreateResourceBatch,
 		h.createResourceBatch,
 		lowlevel.FixedStatusCode[[]api.ResourceResponse](http.StatusCreated),
 		[]api.ErrorCode{
@@ -457,7 +459,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /user/roles", h.lowlevel.UserScope(
-		api.ScopeListUserRoles,
+		api.ScopeGetUserRoles,
 		h.getUserRoles,
 		lowlevel.FixedStatusCode[*api.PaginatedUserRolesResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -469,7 +471,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /user/key", h.lowlevel.UserScope(
-		api.ScopeListOwnKeys,
+		api.ScopeListUserKeys,
 		h.listUserKeys,
 		lowlevel.FixedStatusCode[*api.PaginatedAPIKeysResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -480,7 +482,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("POST /user/key", h.lowlevel.UserScope(
-		api.ScopeIssueKey,
+		api.ScopeIssueUserKey,
 		h.issueUserKey,
 		lowlevel.FixedStatusCode[*api.IssueKeyResponse](http.StatusCreated),
 		[]api.ErrorCode{
@@ -498,7 +500,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("POST /user/password", h.lowlevel.UserScope(
-		api.ScopeSetPassword,
+		api.ScopeSetUserPassword,
 		h.setUserPassword,
 		lowlevel.FixedStatusCode[*api.SetPasswordResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -514,7 +516,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("POST /user/key/revoke", h.lowlevel.UserScope(
-		api.ScopeRevokeKey,
+		api.ScopeRevokeUserKey,
 		h.revokeUserKey,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorCode{

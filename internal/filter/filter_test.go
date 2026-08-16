@@ -143,10 +143,7 @@ func sliceGetter[V any](all []V) filter.PaginatedGetterFunc[V] {
 		if offset >= len(all) {
 			return nil, nil
 		}
-		end := offset + limit
-		if end > len(all) {
-			end = len(all)
-		}
+		end := min(offset+limit, len(all))
 		page := make([]V, end-offset)
 		copy(page, all[offset:end])
 		return page, nil

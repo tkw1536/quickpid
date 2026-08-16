@@ -14,9 +14,9 @@ func (h *Server) getNamespaceRoleScope(r *http.Request, caller *api.Caller) (api
 	if err != nil {
 		return api.ValidUsername{}, "", err
 	}
-	scope := api.ScopeGetOtherNamespaceRole
+	scope := api.ScopeGetNamespaceRoleOther
 	if caller != nil && username == caller.Username() {
-		scope = api.ScopeGetOwnNamespaceRole
+		scope = api.ScopeGetNamespaceRoleSelf
 	}
 	return username, scope, nil
 }
@@ -50,9 +50,9 @@ func (h *Server) setNamespaceRoleScope(r *http.Request, caller *api.Caller) (api
 	if err != nil {
 		return api.ValidUsername{}, "", err
 	}
-	scope := api.ScopeSetOtherNamespaceRole
+	scope := api.ScopeSetNamespaceRoleOther
 	if caller != nil && username == caller.Username() {
-		scope = api.ScopeSetOwnNamespaceRole
+		scope = api.ScopeSetNamespaceRoleSelf
 	}
 	return username, scope, nil
 }
@@ -75,9 +75,9 @@ func (h *Server) removeNamespaceRoleScope(r *http.Request, caller *api.Caller) (
 	if err != nil {
 		return api.ValidUsername{}, "", err
 	}
-	scope := api.ScopeClearOtherNamespaceRole
+	scope := api.ScopeRemoveNamespaceRoleOther
 	if caller != nil && username == caller.Username() {
-		scope = api.ScopeClearOwnNamespaceRole
+		scope = api.ScopeRemoveNamespaceRoleSelf
 	}
 	return username, scope, nil
 }

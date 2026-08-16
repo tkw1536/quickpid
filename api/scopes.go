@@ -19,7 +19,7 @@ var (
 //
 // When the action is not available, an error with code [UnavailableInAnonymousMode] is returned.
 func EvaluateAnonymousModeUserScope(scope UserScope) error {
-	definition, err := getUserActionDefinition(scope)
+	definition, err := scope.Definition()
 	if err != nil {
 		// This is technically an internal error, but let's not do that.
 		return WithErrorCode(err, UnavailableInAnonymousMode)
@@ -39,7 +39,7 @@ func EvaluateAnonymousModeUserScope(scope UserScope) error {
 // - [Unauthorized]
 // - [Forbidden].
 func EvaluateUserScope(caller *Caller, scope UserScope) error {
-	definition, err := getUserActionDefinition(scope)
+	definition, err := scope.Definition()
 	if err != nil {
 		return WithErrorCode(err, Unauthorized)
 	}
@@ -69,7 +69,7 @@ func EvaluateUserScope(caller *Caller, scope UserScope) error {
 //
 // When the action is not available, an error with code [UnavailableInAnonymousMode] is returned.
 func EvaluateAnonymousModeNamespaceScope(namespace ValidNamespaceID, scope NamespaceScope) error {
-	definition, err := getNamespaceScopeDefinition(scope)
+	definition, err := scope.Definition()
 	if err != nil {
 		return WithErrorCode(err, UnavailableInAnonymousMode)
 	}
@@ -89,7 +89,7 @@ func EvaluateAnonymousModeNamespaceScope(namespace ValidNamespaceID, scope Names
 //
 // It should only be created using [NewNamespace].
 func EvaluateNamespaceScope(namespace ValidNamespaceID, explicitRole Role, caller *Caller, scope NamespaceScope) error {
-	action, err := getNamespaceScopeDefinition(scope)
+	action, err := scope.Definition()
 	if err != nil {
 		return WithErrorCode(err, Unauthorized)
 	}
@@ -113,11 +113,7 @@ func EvaluateNamespaceScope(namespace ValidNamespaceID, explicitRole Role, calle
 		return errRequireSuperuser
 	}
 
-	if action.MinRole != RoleNone && roleAtLeast(explicitRole, action.MinRole) {
-		return nil
-	}
-
-	if action.MinRole == RoleNone {
+	if action.MinRole.LessThan(explicitRole) {
 		return nil
 	}
 

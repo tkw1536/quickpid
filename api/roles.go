@@ -32,6 +32,26 @@ func (role Role) Validate() error {
 	}
 }
 
+// rank returns the rank of the role, which can be used to compare roles.
+func (role Role) rank() int {
+	switch role {
+	case RoleContributor:
+		return 1
+	case RoleEditor:
+		return 2
+	case RoleManager:
+		return 3
+	case RoleNone:
+		return 0
+	}
+	return -1
+}
+
+// LessThan reports if this role is less than or equal to the other role.
+func (role Role) LessThan(other Role) bool {
+	return role.rank() <= other.rank()
+}
+
 // NamespaceRole describes a user's role in a namespace.
 type NamespaceRole struct {
 	Username string `json:"username"`

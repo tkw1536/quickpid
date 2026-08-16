@@ -1,6 +1,6 @@
 package api
 
-//spellchecker:words encoding json errors
+//spellchecker:words encoding json
 import (
 	"encoding/json/v2"
 	"fmt"

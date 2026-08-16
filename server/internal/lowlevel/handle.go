@@ -96,6 +96,24 @@ func (h *Handler) dynamicUserScope[T, S any](
 	)
 }
 
+// FailedUserScopeCheckError is an error returned by [CheckUserScope].
+type FailedUserScopeCheckError struct {
+	Username *api.ValidUsername
+	Scope    api.UserScope
+	Reason   error
+}
+
+func (err FailedUserScopeCheckError) Unwrap() error {
+	return err.Reason
+}
+
+func (err FailedUserScopeCheckError) Error() string {
+	if err.Username == nil {
+		return fmt.Sprintf("scope %q not fulfilled: %v", err.Scope, err.Reason)
+	}
+	return fmt.Sprintf("scope %q not fulfilled for user %q: %v", err.Scope, err.Username.String(), err.Reason)
+}
+
 // CheckUserScope evaluates if the given action is available for the given user.
 //
 // When the action is not available, an error of one of the following [api.ErrorCode]s is returned:
@@ -103,16 +121,29 @@ func (h *Handler) dynamicUserScope[T, S any](
 // - [api.Unauthorized]
 // - [api.Forbidden]
 // - [api.UnavailableInAnonymousMode]
-// - [api.DatabaseError].
+// - [api.DatabaseError]
+//
+// The error will be of type [FailedUserScopeCheckError].
 func (h *Handler) CheckUserScope(r *http.Request, user *api.Caller, scope api.UserScope) error {
 	if h.auth.AnonymousMode() {
 		if err := api.EvaluateAnonymousModeUserScope(scope); err != nil {
-			return fmt.Errorf("scope %q not fulfilled in anonymous mode: %w", scope, err)
+			return FailedUserScopeCheckError{
+				Scope:  scope,
+				Reason: err,
+			}
 		}
 		return nil
 	}
 	if err := api.EvaluateUserScope(user, scope); err != nil {
-		return fmt.Errorf("scope %q not fulfilled for user %q: %w", scope, user.Username(), err)
+		var username *api.ValidUsername
+		if user != nil {
+			username = new(user.Username())
+		}
+		return FailedUserScopeCheckError{
+			Username: username,
+			Scope:    scope,
+			Reason:   err,
+		}
 	}
 	return nil
 }
@@ -200,6 +231,25 @@ func readNamespaceParam(r *http.Request) (api.ValidNamespaceID, error) {
 	return namespace, nil
 }
 
+// FailedNamespaceScopeCheckError is an error returned by [CheckNamespaceScope].
+type FailedNamespaceScopeCheckError struct {
+	Username  *api.ValidUsername
+	Namespace api.ValidNamespaceID
+	Scope     api.NamespaceScope
+	Reason    error
+}
+
+func (err FailedNamespaceScopeCheckError) Unwrap() error {
+	return err.Reason
+}
+
+func (err FailedNamespaceScopeCheckError) Error() string {
+	if err.Username == nil {
+		return fmt.Sprintf("scope %q not fulfilled for namespace %q: %v", err.Scope, err.Namespace.String(), err.Reason)
+	}
+	return fmt.Sprintf("scope %q not fulfilled for namespace %q for user %q: %v", err.Scope, err.Namespace.String(), err.Username.String(), err.Reason)
+}
+
 // CheckNamespaceScope evaluates if the given action is available for the given namespace.
 //
 // When the action is not available, an error of one of the following [api.ErrorCode]s is returned:
@@ -208,11 +258,17 @@ func readNamespaceParam(r *http.Request) (api.ValidNamespaceID, error) {
 // - [api.Forbidden]
 // - [api.UnavailableInAnonymousMode]
 // - [api.NamespaceNotFound]
-// - [api.DatabaseError].
+// - [api.DatabaseError]
+//
+// The error will be of type [FailedNamespaceScopeCheckError].
 func (h *Handler) CheckNamespaceScope(r *http.Request, namespace api.ValidNamespaceID, caller *api.Caller, scope api.NamespaceScope) error {
 	if h.auth.AnonymousMode() {
 		if err := api.EvaluateAnonymousModeNamespaceScope(namespace, scope); err != nil {
-			return fmt.Errorf("scope %q not fulfilled for namespace %q: %w", scope, namespace.String(), err)
+			return FailedNamespaceScopeCheckError{
+				Namespace: namespace,
+				Scope:     scope,
+				Reason:    err,
+			}
 		}
 		return nil
 	}
@@ -222,12 +278,20 @@ func (h *Handler) CheckNamespaceScope(r *http.Request, namespace api.ValidNamesp
 		var err error
 		role, err = h.auth.ExplicitNamespaceRole(r.Context(), namespace, caller.Username())
 		if err != nil {
-			return fmt.Errorf("scope %q not fulfilled for namespace %q: %w", scope, namespace.String(), err)
+			return FailedNamespaceScopeCheckError{
+				Namespace: namespace,
+				Scope:     scope,
+				Reason:    err,
+			}
 		}
 	}
 
 	if err := api.EvaluateNamespaceScope(namespace, role, caller, scope); err != nil {
-		return fmt.Errorf("scope %q not fulfilled for namespace %q: %w", scope, namespace.String(), err)
+		return FailedNamespaceScopeCheckError{
+			Namespace: namespace,
+			Scope:     scope,
+			Reason:    err,
+		}
 	}
 	return nil
 }
