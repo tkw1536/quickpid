@@ -25,6 +25,11 @@ func TestAuthenticationMethod_MarshalJSON(t *testing.T) {
 		want   string
 	}{
 		{
+			name:   "none",
+			method: api.NoAuthentication{},
+			want:   `{"type":"none"}`,
+		},
+		{
 			name:   "basic",
 			method: api.BasicAuthentication{},
 			want:   `{"type":"basic"}`,

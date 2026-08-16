@@ -1,8 +1,7 @@
 package api
 
-import (
-	"fmt"
-)
+//spellchecker:words errors
+import "errors"
 
 type NamespaceScope string
 
@@ -25,7 +24,7 @@ const (
 	ScopeClearOwnNamespaceRole   NamespaceScope = "clear_own_namespace_role"
 )
 
-type namespaceAction struct {
+type namespaceActionDefinition struct {
 	Scope       NamespaceScope
 	Description string
 
@@ -43,14 +42,14 @@ type namespaceAction struct {
 	RequireSuperuser bool
 }
 
-var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]namespaceAction {
-	m := make(map[NamespaceScope]namespaceAction, len(actions))
+var namespaceActions = func(actions ...namespaceActionDefinition) map[NamespaceScope]namespaceActionDefinition {
+	m := make(map[NamespaceScope]namespaceActionDefinition, len(actions))
 	for _, action := range actions {
 		m[action.Scope] = action
 	}
 	return m
 }(
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeReadMetadata,
 		Description:          "Read namespace metadata and have it appear in the list of namespaces",
 		AnonymousMode:        true,
@@ -58,7 +57,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleContributor,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeListNamespaceMounts,
 		Description:          "List mounts for a namespace",
 		AnonymousMode:        true,
@@ -66,7 +65,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleContributor,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopePatchMetadata,
 		Description:          "Patch namespace metadata",
 		AnonymousMode:        true,
@@ -74,7 +73,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleManager,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeListResources,
 		Description:          "List resources in a namespace",
 		AnonymousMode:        true,
@@ -82,7 +81,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleEditor,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeCreateResource,
 		Description:          "Create a resource in a namespace",
 		AnonymousMode:        true,
@@ -90,7 +89,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleContributor,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeGetResource,
 		Description:          "Get a resource by namespace and pid",
 		AnonymousMode:        true,
@@ -98,7 +97,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleNone,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeSeeDeletedResource,
 		Description:          "See an un-redacted deleted resource",
 		AnonymousMode:        true,
@@ -106,7 +105,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleEditor,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeUpdateResource,
 		Description:          "Update a resource by namespace and pid",
 		AnonymousMode:        true,
@@ -114,7 +113,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleEditor,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeGetOwnNamespaceRole,
 		Description:          "Get own role in a namespace",
 		AnonymousMode:        false,
@@ -122,7 +121,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleNone,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeGetOtherNamespaceRole,
 		Description:          "Get another user's role in a namespace",
 		AnonymousMode:        false,
@@ -130,7 +129,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleManager,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeListNamespaceRoles,
 		Description:          "List all roles in a namespace",
 		AnonymousMode:        false,
@@ -138,7 +137,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleManager,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeSetOtherNamespaceRole,
 		Description:          "Set another user's role in a namespace",
 		AnonymousMode:        false,
@@ -146,7 +145,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleManager,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeSetOwnNamespaceRole,
 		Description:          "Set own role in a namespace",
 		AnonymousMode:        false,
@@ -154,7 +153,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleNone,
 		RequireSuperuser:     true,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeClearOtherNamespaceRole,
 		Description:          "Clear another user's role in a namespace",
 		AnonymousMode:        false,
@@ -162,7 +161,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		MinRole:              RoleManager,
 		RequireSuperuser:     false,
 	},
-	namespaceAction{
+	namespaceActionDefinition{
 		Scope:                ScopeClearOwnNamespaceRole,
 		Description:          "Clear own role in a namespace",
 		AnonymousMode:        false,
@@ -172,14 +171,16 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 	},
 )
 
-// getNamespace returns the namespace action with the given scope.
+var errUnknownNamespaceScope error = errors.New("unknown namespace scope")
+
+// getNamespaceScopeDefinition returns the namespace action with the given scope.
 // If the action does not exist, it panics.
-func getNamespace(name NamespaceScope) namespaceAction {
+func getNamespaceScopeDefinition(name NamespaceScope) (namespaceActionDefinition, error) {
 	action, ok := namespaceActions[name]
 	if !ok {
-		panic(fmt.Sprintf("namespace action %q not found", name))
+		return namespaceActionDefinition{}, errUnknownNamespaceScope
 	}
-	return action
+	return action, nil
 }
 
 // roleAtLeast reports whether have is at least as privileged as want.

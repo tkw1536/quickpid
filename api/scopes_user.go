@@ -1,6 +1,7 @@
 package api
 
-import "fmt"
+//spellchecker:words errors
+import "errors"
 
 type userActionDefinition struct {
 	Scope       UserScope
@@ -16,14 +17,16 @@ type userActionDefinition struct {
 	RequireSuperuser bool
 }
 
+var errUnknownUserScope error = errors.New("unknown user scope")
+
 // getUserActionDefinition returns the action with the given scope.
 // If the action does not exist, it panics.
-func getUserActionDefinition(scope UserScope) userActionDefinition {
+func getUserActionDefinition(scope UserScope) (userActionDefinition, error) {
 	action, ok := userActions[scope]
 	if !ok {
-		panic(fmt.Sprintf("action %q not found", scope))
+		return userActionDefinition{}, errUnknownUserScope
 	}
-	return action
+	return action, nil
 }
 
 // UserScope names a user action.

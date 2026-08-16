@@ -19,7 +19,11 @@ var (
 //
 // When the action is not available, an error with code [UnavailableInAnonymousMode] is returned.
 func EvaluateAnonymousModeUserScope(scope UserScope) error {
-	definition := getUserActionDefinition(scope)
+	definition, err := getUserActionDefinition(scope)
+	if err != nil {
+		// This is technically an internal error, but let's not do that.
+		return WithErrorCode(err, UnavailableInAnonymousMode)
+	}
 	if definition.AnonymousMode {
 		return nil
 	}
@@ -34,17 +38,24 @@ func EvaluateAnonymousModeUserScope(scope UserScope) error {
 //
 // - [Unauthorized]
 // - [Forbidden].
-func EvaluateUserScope(user *Caller, scope UserScope) error {
-	definition := getUserActionDefinition(scope)
+func EvaluateUserScope(caller *Caller, scope UserScope) error {
+	definition, err := getUserActionDefinition(scope)
+	if err != nil {
+		return WithErrorCode(err, Unauthorized)
+	}
 
-	if user == nil {
+	if err := caller.Method().AllowsUserScope(scope); err != nil {
+		return WithErrorCode(fmt.Errorf("authentication method does not allow scope: %w", err), Unauthorized)
+	}
+
+	if caller == nil {
 		if definition.AllowUnauthenticated {
 			return nil
 		}
 		return errRequireUser
 	}
 
-	if !user.Superuser() {
+	if !caller.Superuser() {
 		if !definition.RequireSuperuser {
 			return nil
 		}
@@ -58,7 +69,10 @@ func EvaluateUserScope(user *Caller, scope UserScope) error {
 //
 // When the action is not available, an error with code [UnavailableInAnonymousMode] is returned.
 func EvaluateAnonymousModeNamespaceScope(namespace ValidNamespaceID, scope NamespaceScope) error {
-	definition := getNamespace(scope)
+	definition, err := getNamespaceScopeDefinition(scope)
+	if err != nil {
+		return WithErrorCode(err, UnavailableInAnonymousMode)
+	}
 	if definition.AnonymousMode {
 		return nil
 	}
@@ -75,7 +89,14 @@ func EvaluateAnonymousModeNamespaceScope(namespace ValidNamespaceID, scope Names
 //
 // It should only be created using [NewNamespace].
 func EvaluateNamespaceScope(namespace ValidNamespaceID, explicitRole Role, caller *Caller, scope NamespaceScope) error {
-	action := getNamespace(scope)
+	action, err := getNamespaceScopeDefinition(scope)
+	if err != nil {
+		return WithErrorCode(err, Unauthorized)
+	}
+
+	if err := caller.Method().AllowsNamespaceScope(namespace, scope); err != nil {
+		return WithErrorCode(fmt.Errorf("authentication method does not allow scope: %w", err), Unauthorized)
+	}
 
 	if caller == nil {
 		if action.AllowUnauthenticated {
