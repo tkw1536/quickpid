@@ -45,8 +45,8 @@ func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api
 // - [api.DatabaseError].
 func (s *Service) CreateUser(ctx context.Context, caller api.Caller, req api.ValidUserCreateRequest) (*api.UserInfo, error) {
 	user, err := s.backend.CreateUser(ctx, req, s.runtime.Now)
-	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, mapped
+	if errors.Is(err, backend.ErrDuplicateUsername) {
+		return nil, api.WithErrorCode(fmt.Errorf("duplicate username: %w", err), api.DuplicateUsername)
 	}
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to create user: %w", err), api.DatabaseError)
@@ -67,8 +67,8 @@ func (s *Service) DeleteUser(ctx context.Context, caller api.Caller, target api.
 	}
 
 	err := s.backend.DeleteUser(ctx, target)
-	if mapped, ok := mapAuthBackendError(err); ok {
-		return mapped
+	if errors.Is(err, backend.ErrUserNotFound) {
+		return api.WithErrorCode(fmt.Errorf("user not found: %w", err), api.UserNotFound)
 	}
 	if err != nil {
 		return api.WithErrorCode(fmt.Errorf("backend failed to delete user: %w", err), api.DatabaseError)
@@ -119,8 +119,8 @@ func (s *Service) UpdateUser(ctx context.Context, caller api.Caller, target api.
 	}
 
 	user, err := s.backend.UpdateUser(ctx, target, req)
-	if mapped, ok := mapAuthBackendError(err); ok {
-		return nil, mapped
+	if errors.Is(err, backend.ErrUserNotFound) {
+		return nil, api.WithErrorCode(fmt.Errorf("user not found: %w", err), api.UserNotFound)
 	}
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to update user: %w", err), api.DatabaseError)

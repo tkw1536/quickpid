@@ -11,18 +11,6 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 )
 
-// mapAuthorizationBackendError translates backend errors to API-annotated errors.
-// TODO: Inline this where appropriate.
-func mapAuthorizationBackendError(err error) (error, bool) {
-	if errors.Is(err, backend.ErrInvalidRole) {
-		return api.WithErrorCode(fmt.Errorf("invalid role: %w", err), api.InvalidRole), true
-	}
-	if errors.Is(err, backend.ErrRoleNotFound) {
-		return api.WithErrorCode(fmt.Errorf("role not found: %w", err), api.RoleNotFound), true
-	}
-	return nil, false
-}
-
 // GetNamespaceRole returns a user's role in a namespace.
 //
 // It can return the following errors:
@@ -83,11 +71,8 @@ func (s *Service) SetNamespaceRole(ctx context.Context, caller api.Caller, names
 	}
 
 	if err := s.backend.SetNamespaceRole(ctx, namespace, username, req.Role); err != nil {
-		if mapped, ok := mapAuthorizationBackendError(err); ok {
-			return nil, mapped
-		}
-		if errors.Is(err, backend.ErrNamespaceNotFound) {
-			return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+		if errors.Is(err, backend.ErrInvalidRole) {
+			return nil, api.WithErrorCode(fmt.Errorf("invalid role: %w", err), api.InvalidRole)
 		}
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to set namespace role: %w", err), api.DatabaseError)
 	}
@@ -117,8 +102,8 @@ func (s *Service) DeleteNamespaceRole(ctx context.Context, caller api.Caller, na
 	}
 
 	if err := s.backend.DeleteNamespaceRole(ctx, namespace, username); err != nil {
-		if mapped, ok := mapAuthorizationBackendError(err); ok {
-			return mapped
+		if errors.Is(err, backend.ErrRoleNotFound) {
+			return api.WithErrorCode(fmt.Errorf("role not found: %w", err), api.RoleNotFound)
 		}
 		return api.WithErrorCode(fmt.Errorf("backend failed to delete namespace role: %w", err), api.DatabaseError)
 	}
