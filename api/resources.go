@@ -1,129 +1,84 @@
-// Package api holds type definitions for the PID Resolver API.
 package api
 
-//spellchecker:words encoding json errors http time github quickpid internal strict embed
+//spellchecker:words encoding json errors http github quickpid internal strict regexp nolint recvcheck
 import (
 	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
+	"net/url"
+	"regexp"
 
 	"github.com/tkw1536/quickpid/internal/strict"
-	"github.com/tkw1536/quickpid/pid"
-
-	_ "embed"
 )
 
-// NamespaceCreateRequest is the JSON body for createNamespace.
-type NamespaceCreateRequest struct {
-	Tags      []string
-	PIDFormat pid.Format
+// ValidPID represents a valid pid.
+//
+// Use [NewPID] to create a new pid.
+type ValidPID struct {
+	valid bool
+	value string
+}
+
+func (pid ValidPID) String() string {
+	if !pid.valid {
+		panic("invalid pid")
+	}
+	return pid.value
 }
 
 var (
-	errInvalidPIDFormat = errors.New("invalid PID format")
+	pidRE         = regexp.MustCompile(`^[a-z0-9_-]+$`)
+	errInvalidPID = errors.New("invalid pid")
 )
 
-func (r *NamespaceCreateRequest) UnmarshalJSON(data []byte) error {
-	type internal struct {
-		Tags      strict.Optional[strict.StringSlice] `json:"tags"`
-		PIDFormat strict.Optional[pid.Format]         `json:"pidFormat"`
+// NewPID creates a new PID.
+func NewPID(value string) (ValidPID, error) {
+	if !pidRE.MatchString(value) {
+		return ValidPID{}, errInvalidPID
 	}
-	decoded, err := strict.UnmarshalStrict[internal](data)
-	if err != nil {
-		return fmt.Errorf("%w: %w", errFailedToUnmarshalFields, err)
-	}
-	if !decoded.Tags.Present {
-		return missingRequiredFieldError("tags")
-	}
-	r.Tags = decoded.Tags.Value.Strings()
-	if !decoded.PIDFormat.Present {
-		return missingRequiredFieldError("pidFormat")
-	}
-	r.PIDFormat = decoded.PIDFormat.Value
-	if err := r.PIDFormat.Validate(); err != nil {
-		return fmt.Errorf("%w: %w", errInvalidPIDFormat, err)
-	}
-
-	return nil
+	return ValidPID{valid: true, value: value}, nil
 }
 
-// NamespaceUpdateRequest is the JSON body for updateNamespace.
+// ValidResourceURL represents a valid absolute URI for a resource target URL.
+// The zero value is not valid.
 //
-// A nil Tags slice indicates that no update should be performed on that field.
-// When Tags is non-nil, it replaces the namespace tags (which might be empty).
-type NamespaceUpdateRequest struct {
-	Tags []string
+// Use [NewResourceURL] to create a new resource URL.
+//
+//nolint:recvcheck // StringPtr method is intentionally used with a pointer.
+type ValidResourceURL struct {
+	valid bool
+	value string
 }
 
-func (r *NamespaceUpdateRequest) UnmarshalJSON(data []byte) error {
-	type internal struct {
-		Tags strict.Optional[strict.StringSlice] `json:"tags"`
+// String returns the resource URL as a string.
+func (u ValidResourceURL) String() string {
+	if !u.valid {
+		panic("invalid resource url")
 	}
-	decoded, err := strict.UnmarshalStrict[internal](data)
+	return u.value
+}
+
+// StringPtr returns the resource URL as a pointer to a string.
+func (u *ValidResourceURL) StringPtr() *string {
+	if u == nil {
+		return nil
+	}
+	return new(u.value)
+}
+
+// NewResourceURL creates a new resource URL.
+// The value must be a valid absolute URI with a non-empty scheme.
+// Unlike [NewBaseURI], query strings and fragments are allowed.
+func NewResourceURL(value string) (ValidResourceURL, error) {
+	parsed, err := url.Parse(value)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal namespace update request: %w", err)
+		return ValidResourceURL{}, fmt.Errorf("failed to parse as url: %w", err)
 	}
-	if decoded.Tags.Present {
-		r.Tags = decoded.Tags.Value.Strings()
-	} else {
-		r.Tags = nil
+	if !parsed.IsAbs() {
+		return ValidResourceURL{}, errNotAbsoluteURI
 	}
-	return nil
-}
-
-// Validate checks if the given request is valid.
-func (r *NamespaceUpdateRequest) Validate() (ValidNamespaceUpdateRequest, error) {
-	return ValidNamespaceUpdateRequest{
-		Tags: r.Tags,
-	}, nil
-}
-
-// ValidNamespaceUpdateRequest is like a [NamespaceUpdateRequest].
-type ValidNamespaceUpdateRequest struct {
-	Tags []string
-}
-
-// NamespaceResponse is returned for namespace operations.
-type NamespaceResponse struct {
-	ID          string
-	Tags        []string
-	PIDFormat   pid.Format
-	DateCreated time.Time
-	DateUpdated time.Time
-}
-
-func (n NamespaceResponse) MarshalJSON() ([]byte, error) {
-	type out struct {
-		ID          string     `json:"id"`
-		Tags        []string   `json:"tags"`
-		PIDFormat   pid.Format `json:"pidFormat"`
-		DateCreated time.Time  `json:"dateCreated"`
-		DateUpdated time.Time  `json:"dateUpdated"`
-	}
-	tags := n.Tags
-	if tags == nil {
-		tags = []string{}
-	}
-	bytes, err := json.Marshal(out{
-		ID:          n.ID,
-		Tags:        tags,
-		PIDFormat:   n.PIDFormat,
-		DateCreated: n.DateCreated,
-		DateUpdated: n.DateUpdated,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal namespace response: %w", err)
-	}
-	return bytes, nil
-}
-
-type PaginatedNamespacesResponse struct {
-	Total  int `json:"total"`
-	Offset int `json:"offset"`
-
-	Items []NamespaceResponse `json:"items"`
+	return ValidResourceURL{valid: true, value: value}, nil
 }
 
 // ResourceCreateRequest is the JSON body for createResource and batchCreateResources items.
@@ -363,30 +318,4 @@ type ListResourcesParams struct {
 
 	Limit  int
 	Offset int
-}
-
-type ListNamespacesParams struct {
-	Tag *string // optionally filter by tag
-
-	Limit  int
-	Offset int
-}
-
-// InfoResponse provides information about the resolver.
-type InfoResponse struct {
-	MaxBodyBytes         int64 `json:"maxBodyBytes"`
-	DefaultPageLimit     int64 `json:"defaultPageLimit"`
-	MaxPageLimit         int64 `json:"maxPageLimit"`
-	MaxBatchItems        int64 `json:"maxBatchItems"`
-	MaxAutocompleteUsers int64 `json:"maxAutocompleteUsers,omitzero"`
-	Authentication       bool  `json:"authentication,omitzero"`
-}
-
-// MetaResponse provides optional public meta information about the server.
-// All fields are optional; when present they must be non-empty.
-type MetaResponse struct {
-	About    string `json:"about,omitempty"`
-	Comment  string `json:"comment,omitempty"`
-	Software string `json:"software,omitempty"`
-	Version  string `json:"version,omitempty"`
 }

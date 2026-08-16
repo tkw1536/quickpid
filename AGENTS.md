@@ -143,7 +143,7 @@ Before finishing a change, prefer the narrowest relevant validation first, then 
 - Keep service interfaces in the established style: validated values in, validated behavior and JSON-ready API outputs out.
 Error mapping conventions:
 
-- `api.ErrorString` in [`api/errors.go`](api/errors.go) is the stable API error identifier exposed to clients.
+- `api.ErrorString` in [`api/code.go`](api/code.go) is the stable API error identifier exposed to clients.
 - When returning an API-level failure, preserve the appropriate `api.ErrorString` using `api.WithErrorString(...)`.
 - Wrapped underlying errors are for logging and diagnostics; the stable `ErrorString` is what the API exposes and what HTTP status mapping is based on.
 - Server code should translate annotated errors using the existing `api.ErrorString` machinery instead of inventing ad hoc response formats.

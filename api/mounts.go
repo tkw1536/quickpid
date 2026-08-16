@@ -1,11 +1,55 @@
 package api
 
-//spellchecker:words github quickpid internal strict
+//spellchecker:words errors github quickpid internal strict
 import (
+	"errors"
 	"fmt"
+	"net/url"
 
 	"github.com/tkw1536/quickpid/internal/strict"
 )
+
+// ValidBaseURI represents a valid absolute base URI for a namespace mount.
+// The zero value is not valid.
+//
+// Use [NewBaseURI] to create a new base URI.
+type ValidBaseURI struct {
+	valid bool
+	value string
+}
+
+// String returns the base URI as a string.
+func (u ValidBaseURI) String() string {
+	if !u.valid {
+		panic("invalid base uri")
+	}
+	return u.value
+}
+
+var (
+	errNotAbsoluteURI   = errors.New("not an absolute URI")
+	errFragmentNotEmpty = errors.New("fragment is not empty")
+	errRawQueryNotEmpty = errors.New("raw query is not empty")
+)
+
+// NewBaseURI creates a new BaseURI.
+// The value must be a valid absolute URI as accepted by [url.ParseRequestURI] with a non-empty scheme.
+func NewBaseURI(value string) (ValidBaseURI, error) {
+	parsed, err := url.Parse(value)
+	if err != nil {
+		return ValidBaseURI{}, fmt.Errorf("failed to parse as url: %w", err)
+	}
+	if !parsed.IsAbs() {
+		return ValidBaseURI{}, errNotAbsoluteURI
+	}
+	if parsed.Fragment != "" {
+		return ValidBaseURI{}, errFragmentNotEmpty
+	}
+	if parsed.RawQuery != "" {
+		return ValidBaseURI{}, errRawQueryNotEmpty
+	}
+	return ValidBaseURI{valid: true, value: value}, nil
+}
 
 // MountResponse is returned for mount operations.
 type MountResponse struct {
