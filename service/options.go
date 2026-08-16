@@ -37,6 +37,15 @@ type Limits struct {
 	MaxAPIKeyAttempts      int // maximum number of attempts to issue an API key, must be at least 1.
 }
 
+// InternalPageLimit returns a page limit that can be used for internal operations.
+// It is guaranteed to be at least 1 and at most the maximum page limit.
+func (limit Limits) InternalPageLimit() int {
+	if limit.MaxPageLimit > 0 && limit.DefaultPageLimit > limit.MaxPageLimit {
+		return limit.MaxPageLimit
+	}
+	return limit.DefaultPageLimit
+}
+
 const (
 	defaultMaxBodyBytes           = 1 << 20 // 1 MiB
 	defaultDefaultPageLimit       = 100

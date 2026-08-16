@@ -102,7 +102,6 @@ Examples:
 ## Future Technical Work
 <!-- spellchecker:word staticcheck -->
 - update to `go1.27` final & re-enable `staticcheck` linter on CI
-- cleanup for expired api keys
 
 ## LICENSE
 

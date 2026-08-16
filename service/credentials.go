@@ -1,12 +1,13 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors sync github quickpid backend internal apikey filter
+//spellchecker:words context errors sync time github quickpid backend internal apikey filter
 import (
 	"context"
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
@@ -117,12 +118,7 @@ func (s *Service) ListKeys(ctx context.Context, caller api.Caller, params api.Li
 
 // listValidKeys is like [s.backend.ListKeys], but only contains keys that are still valid according to the runtime.
 func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
-	// Determine the effective page limit to call the backend with.
-	options := s.Options().Limits
-	pageLimit := options.DefaultPageLimit
-	if options.MaxPageLimit > 0 && pageLimit > options.MaxPageLimit {
-		pageLimit = options.MaxPageLimit
-	}
+	pageLimit := s.Options().Limits.InternalPageLimit()
 
 	// We want to check for all keys at a consistent time.
 	// We also don't get the time if we don't need it.
@@ -274,6 +270,92 @@ func (s *Service) RevokeKey(ctx context.Context, caller api.Caller, req api.KeyR
 		return api.WithErrorCode(fmt.Errorf("backend failed to revoke key: %w", err), api.DatabaseError)
 	}
 	return nil
+}
+
+// CleanupExpiredAPIKeys lists every user's API keys and revokes those that are no longer valid.
+// Revocation deletes the key from the backend.
+//
+// In anonymous mode this is a no-op.
+func (s *Service) CleanupExpiredAPIKeys(ctx context.Context) error {
+	if s.AnonymousMode() {
+		return nil
+	}
+
+	now := sync.OnceValue(s.runtime.Now)
+	format := s.apiKeyFormat()
+	pageLimit := s.Options().Limits.InternalPageLimit()
+
+	for userOffset := 0; ; {
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("context cancelled: %w", err)
+		}
+
+		users, err := s.backend.ListUsers(ctx, api.ListUsersParams{
+			Limit:  pageLimit,
+			Offset: userOffset,
+		})
+		if err != nil {
+			return fmt.Errorf("backend failed to list users: %w", err)
+		}
+		if len(users.Items) == 0 {
+			return nil
+		}
+
+		for _, u := range users.Items {
+			username, err := api.NewUsername(u.Username)
+			if err != nil {
+				return fmt.Errorf("backend returned invalid username %q: %w", u.Username, err)
+			}
+			if err := s.cleanupExpiredKeysForUser(ctx, format, username, now, pageLimit); err != nil {
+				return err
+			}
+		}
+
+		userOffset += len(users.Items)
+		if userOffset >= users.Total || len(users.Items) < pageLimit {
+			return nil
+		}
+	}
+}
+
+// cleanupExpiredKeysForUser revokes invalid API keys for a single user.
+// Offset advances only past keys that remain (are still valid) so deletions do not skip entries.
+func (s *Service) cleanupExpiredKeysForUser(ctx context.Context, format apikey.Format, username api.ValidUsername, now func() time.Time, pageLimit int) error {
+	for keyOffset := 0; ; {
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("context cancelled: %w", err)
+		}
+
+		keys, err := s.backend.ListKeys(ctx, format, username, api.ListKeysParams{
+			Limit:  pageLimit,
+			Offset: keyOffset,
+		})
+		if err != nil {
+			return fmt.Errorf("backend failed to list keys for %q: %w", username.String(), err)
+		}
+		if len(keys.Items) == 0 {
+			return nil
+		}
+
+		advanced := 0
+		for _, key := range keys.Items {
+			if err := ctx.Err(); err != nil {
+				return fmt.Errorf("context cancelled: %w", err)
+			}
+			if key.Valid(now) {
+				advanced++
+				continue
+			}
+			if err := s.backend.RevokeKey(ctx, format, username, key.ID); err != nil {
+				return fmt.Errorf("backend failed to revoke key %q for %q: %w", key.ID, username.String(), err)
+			}
+		}
+
+		keyOffset += advanced
+		if len(keys.Items) < pageLimit && advanced == len(keys.Items) {
+			return nil
+		}
+	}
 }
 
 func (s *Service) apiKeyFormat() apikey.Format {

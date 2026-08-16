@@ -1,8 +1,9 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words slog http sync github swaggest swgui quickpid internal openapi server lowlevel service
+//spellchecker:words context slog http sync github swaggest swgui quickpid internal openapi server lowlevel service
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"sync"
@@ -18,6 +19,10 @@ import (
 
 // Server implements [http.Handler] for the PID resolver API and Swagger UI.
 // The zero value is not ready to use; use [NewServer] instead.
+//
+// The server can optionally run regular background goroutines to clean the backends
+// of invalid data.
+// These should be started with [Server.StartBackground].
 type Server struct {
 	m sync.RWMutex // m allows options to be updated without having to stop requests
 
@@ -30,6 +35,10 @@ type Server struct {
 	lowlevel *lowlevel.Handler
 
 	createdViaNew bool
+
+	backgroundStart  sync.Once          // used to start background processes
+	cancelBackground context.CancelFunc // call to cancel the background process
+	backgroundDone   chan struct{}      // closed when background process is done
 }
 
 // NewServer returns an [Server for the PID Resolver API and Swagger UI.
@@ -603,7 +612,7 @@ func (h *Server) SetOptions(options Options) {
 // ServeHTTP implements [http.Handler].
 func (h *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !h.createdViaNew {
-		panic("not initialized via NewHandler")
+		panic("not initialized via New")
 	}
 
 	h.m.RLock()

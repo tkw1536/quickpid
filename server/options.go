@@ -1,8 +1,10 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words github quickpid service
+//spellchecker:words time github quickpid service
 import (
+	"time"
+
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/service"
 )
@@ -27,6 +29,10 @@ type Options struct {
 
 	// Meta is returned by GET /resolver/info.
 	Meta api.MetaResponse
+
+	// BackgroundInterval is the interval for background processes at.
+	// If 0, no background processes are run.
+	BackgroundInterval time.Duration
 }
 
 func (o Options) withValidValues() Options {

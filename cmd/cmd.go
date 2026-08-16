@@ -49,8 +49,9 @@ type mainCmd struct {
 	noCreateRoot    bool
 	createSuperUser string
 
-	readHeaderTimeout time.Duration
-	shutdownTimeout   time.Duration
+	backgroundInterval time.Duration
+	readHeaderTimeout  time.Duration
+	shutdownTimeout    time.Duration
 
 	addr   string
 	logger *slog.Logger
@@ -85,8 +86,9 @@ func Main(name string, preamble func(*slog.Logger) error, backendFactory func(lo
 
 			legal: false,
 
-			readHeaderTimeout: time.Minute,
-			shutdownTimeout:   time.Minute,
+			backgroundInterval: time.Hour,
+			readHeaderTimeout:  time.Minute,
+			shutdownTimeout:    time.Minute,
 		}).run(),
 	)
 }
@@ -160,7 +162,26 @@ func (main *mainCmd) run() int {
 	}
 
 	h := main.newServerHandler(svc)
+	defer main.runBackgroundProcesses(h)()
+
 	return main.serve(h)
+}
+
+func (main *mainCmd) runBackgroundProcesses(server *server.Server) func() {
+	if main.backgroundInterval <= 0 {
+		return func() {}
+	}
+	main.logger.Info("starting background processes", slog.Duration("interval", main.backgroundInterval))
+	stopBackground := server.StartBackground()
+	return func() {
+		main.logger.Info("stopping background processes")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), main.shutdownTimeout)
+		defer cancel()
+		if err := stopBackground(shutdownCtx); err != nil {
+			main.logger.Error("background shutdown failed", slog.Any("error", err))
+		}
+		main.logger.Info("background process shutdown complete")
+	}
 }
 
 func (main *mainCmd) newServerHandler(svc *service.Service) *server.Server {
@@ -175,6 +196,7 @@ func (main *mainCmd) newServerHandler(svc *service.Service) *server.Server {
 				Software: "quickpid",
 				Version:  quickpid.Version(),
 			},
+			BackgroundInterval: main.backgroundInterval,
 		},
 		svc,
 		main.logger,
@@ -215,8 +237,9 @@ func (main *mainCmd) parseFlags() {
 	flag.BoolVar(&main.noCreateRoot, "no-create-root", main.noCreateRoot, "do not automatically create a root superuser when no accounts exist")
 	flag.StringVar(&main.createSuperUser, "create-superuser", main.createSuperUser, "create a superuser account with the given username, generate a new api key without expiry, and exit")
 
+	flag.DurationVar(&main.backgroundInterval, "background-interval", main.backgroundInterval, "interval for running background cleanup jobs")
 	flag.DurationVar(&main.readHeaderTimeout, "read-header-timeout", main.readHeaderTimeout, "timeout applied to reading request headers")
-	flag.DurationVar(&main.shutdownTimeout, "shutdown-timeout", main.shutdownTimeout, "timeout applied to backend and HTTP server shutdowns")
+	flag.DurationVar(&main.shutdownTimeout, "shutdown-timeout", main.shutdownTimeout, "timeout applied individually to backend and server shutdowns")
 
 	flag.Parse()
 }
