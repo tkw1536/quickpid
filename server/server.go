@@ -85,6 +85,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		[]api.ErrorCode{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
+			api.Forbidden,
 			api.DatabaseError,
 		},
 	))
@@ -97,6 +98,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.Unauthorized,
+			api.Forbidden,
 			api.BodySizeExceeded,
 			api.DatabaseError,
 			api.BadIDGeneration,
@@ -109,6 +111,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		h.countAllResources,
 		lowlevel.FixedStatusCode[*api.ResourceCountResponse](http.StatusOK),
 		[]api.ErrorCode{
+			api.Unauthorized,
+			api.Forbidden,
 			api.DatabaseError,
 		},
 	))
@@ -131,6 +135,8 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorCode{
 			api.InvalidBaseURI,
+			api.Unauthorized,
+			api.Forbidden,
 			api.MountNotFound,
 			api.DatabaseError,
 		},
@@ -173,6 +179,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.InvalidBaseURI,
 			api.InvalidPID,
 			api.Unauthorized,
+			api.Forbidden,
 			api.MountNotFound,
 			api.NamespaceNotFound,
 			api.ResourceNotFound,
@@ -350,6 +357,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.InvalidNamespaceID,
 			api.InvalidPID,
 			api.Unauthorized,
+			api.Forbidden,
 			api.NamespaceNotFound,
 			api.ResourceNotFound,
 			api.DatabaseError,
@@ -380,6 +388,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
 		[]api.ErrorCode{
 			api.Unauthorized,
+			api.Forbidden,
 			api.UnavailableInAnonymousMode,
 			api.DatabaseError,
 		},
@@ -440,6 +449,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.InvalidQueryParameter,
 			api.InvalidAutocompleteQuery,
 			api.Unauthorized,
+			api.Forbidden,
 			api.UnavailableInAnonymousMode,
 			api.DatabaseError,
 		},
@@ -465,6 +475,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		[]api.ErrorCode{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
+			api.Forbidden,
 			api.UnavailableInAnonymousMode,
 			api.DatabaseError,
 		},
@@ -477,6 +488,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		[]api.ErrorCode{
 			api.InvalidQueryParameter,
 			api.Unauthorized,
+			api.Forbidden,
 			api.UnavailableInAnonymousMode,
 			api.DatabaseError,
 		},
@@ -523,6 +535,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.BodyMissing,
 			api.BodyInvalidJSON,
 			api.Unauthorized,
+			api.Forbidden,
 			api.KeyNotFound,
 			api.UnavailableInAnonymousMode,
 			api.BodySizeExceeded,

@@ -188,6 +188,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to list namespaces.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '500':
           description: Internal server error while listing namespaces.
           content:
@@ -243,6 +250,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to create a namespace.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '413':
           description: Request body for creating a namespace exceeds the configured maximum size.
           content:
@@ -288,6 +302,20 @@ paths:
               example: { total: 42 }
               schema:
                 $ref: '#/components/schemas/ResourceCountResponse'
+        '401':
+          description: Authentication is required or the credentials are incorrect when counting resources.
+          content:
+            application/json:
+              example: { error: "unauthorized" }
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to count all resources.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '500':
           description: Internal server error while counting resources.
           content:
@@ -406,6 +434,20 @@ paths:
               example: { error: "invalidBaseUri" }
               schema:
                 $ref: '#/components/schemas/ErrorInvalidBaseUri'
+        '401':
+          description: Authentication is required or the credentials are incorrect when resolving a mount by base URI.
+          content:
+            application/json:
+              example: { error: "unauthorized" }
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to resolve a mount by base URI.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Mount does not exist when resolving by base URI.
           content:
@@ -641,6 +683,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to resolve a resource via mount and PID.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Mount, namespace, or resource does not exist.
           content:
@@ -1651,6 +1700,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to retrieve a resource by PID.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Namespace or resource does not exist when retrieving by PID.
           content:
@@ -1813,6 +1869,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to retrieve user information.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode when retrieving user information.
           content:
@@ -2154,6 +2217,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to autocomplete usernames.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: Username autocomplete is unavailable because the server is in anonymous mode.
           content:
@@ -2351,6 +2421,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to list user roles.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode when listing user roles.
           content:
@@ -2432,6 +2509,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to list API keys.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The server is in anonymous mode when listing API keys.
           content:
@@ -2675,6 +2759,13 @@ paths:
               example: { error: "unauthorized" }
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to revoke an API key.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
         '404':
           description: The API key does not exist, has already been revoked, or does not belong to the authenticated user, or the server is in anonymous mode.
           content:
