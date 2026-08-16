@@ -10,7 +10,7 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 )
 
-func (s *Store) GetNamespaceRole(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error) {
+func (s *MemoryBackend) GetNamespaceRole(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -27,7 +27,7 @@ func (s *Store) GetNamespaceRole(_ context.Context, namespace api.ValidNamespace
 	return api.RoleNone, nil
 }
 
-func (s *Store) SetNamespaceRole(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, role api.Role) error {
+func (s *MemoryBackend) SetNamespaceRole(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, role api.Role) error {
 	if role.Validate() != nil {
 		return backend.ErrInvalidRole
 	}
@@ -59,7 +59,7 @@ func (s *Store) SetNamespaceRole(_ context.Context, namespace api.ValidNamespace
 	return nil
 }
 
-func (s *Store) DeleteNamespaceRole(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
+func (s *MemoryBackend) DeleteNamespaceRole(_ context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -80,7 +80,7 @@ func (s *Store) DeleteNamespaceRole(_ context.Context, namespace api.ValidNamesp
 	return nil
 }
 
-func (s *Store) ListNamespaceRoles(_ context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
+func (s *MemoryBackend) ListNamespaceRoles(_ context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -115,7 +115,7 @@ func (s *Store) ListNamespaceRoles(_ context.Context, namespace api.ValidNamespa
 	return &api.PaginatedNamespaceRolesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) ListUserRoles(_ context.Context, username api.ValidUsername, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
+func (s *MemoryBackend) ListUserRoles(_ context.Context, username api.ValidUsername, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

@@ -26,7 +26,7 @@ func (u userRecord) toSpec(username string) *api.UserInfo {
 	}
 }
 
-func (s *Store) CreateUser(_ context.Context, req api.ValidUserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
+func (s *MemoryBackend) CreateUser(_ context.Context, req api.ValidUserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -42,7 +42,7 @@ func (s *Store) CreateUser(_ context.Context, req api.ValidUserCreateRequest, _ 
 	return s.users[username].toSpec(username), nil
 }
 
-func (s *Store) GetUser(_ context.Context, username api.ValidUsername) (*api.UserInfo, error) {
+func (s *MemoryBackend) GetUser(_ context.Context, username api.ValidUsername) (*api.UserInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -54,7 +54,7 @@ func (s *Store) GetUser(_ context.Context, username api.ValidUsername) (*api.Use
 	return s.users[usernameString].toSpec(usernameString), nil
 }
 
-func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
+func (s *MemoryBackend) ListUsers(_ context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -85,7 +85,7 @@ func (s *Store) ListUsers(_ context.Context, params api.ListUsersParams) (*api.P
 	return &api.PaginatedUsersResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) AutocompleteUsers(_ context.Context, query api.ValidAutocompleteQuery, limit int) ([]string, error) {
+func (s *MemoryBackend) AutocompleteUsers(_ context.Context, query api.ValidAutocompleteQuery, limit int) ([]string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -106,7 +106,7 @@ func (s *Store) AutocompleteUsers(_ context.Context, query api.ValidAutocomplete
 	return matches, nil
 }
 
-func (s *Store) DeleteUser(_ context.Context, username api.ValidUsername) error {
+func (s *MemoryBackend) DeleteUser(_ context.Context, username api.ValidUsername) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -124,7 +124,7 @@ func (s *Store) DeleteUser(_ context.Context, username api.ValidUsername) error 
 	return nil
 }
 
-func (s *Store) UpdateUser(_ context.Context, username api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
+func (s *MemoryBackend) UpdateUser(_ context.Context, username api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

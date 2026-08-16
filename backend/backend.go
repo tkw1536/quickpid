@@ -1,4 +1,4 @@
-// Package backend provides the [Store] interface.
+// Package backend provides the [Backend] interface.
 //
 //spellchecker:words backend
 package backend
@@ -8,10 +8,10 @@ import (
 	"context"
 )
 
-// Store represents a backend for the quickpid application.
+// Backend represents a backend for the quickpid application.
 //
 // See the [memory] and [gorm] packages for implementations.
-type Store interface {
+type Backend interface {
 	UserBackend
 	CredentialsBackend
 	NamespaceBackend

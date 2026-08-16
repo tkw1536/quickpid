@@ -1,7 +1,7 @@
 //spellchecker:words gorm
 package gorm_test
 
-//spellchecker:words slog testing github quickpid backend gorm gormstore internal pidtest servertest driver postgres logger Logger
+//spellchecker:words slog testing github quickpid backend gorm gormbackend internal pidtest servertest driver postgres logger Logger
 import (
 	"fmt"
 	"log/slog"
@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/tkw1536/quickpid/backend"
-	gormstore "github.com/tkw1536/quickpid/backend/gorm"
+	gormbackend "github.com/tkw1536/quickpid/backend/gorm"
 	servertest "github.com/tkw1536/quickpid/internal/pidtest"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -27,7 +27,7 @@ import (
 
 var postgresDSN string = os.Getenv("TEST_POSTGRES_DSN")
 
-func newPostgresStore(t *testing.T, l *slog.Logger) backend.Store {
+func newPostgresBackend(t *testing.T, l *slog.Logger) backend.Backend {
 	t.Helper()
 
 	db, err := gorm.Open(postgres.Open(postgresDSN), &gorm.Config{
@@ -40,14 +40,14 @@ func newPostgresStore(t *testing.T, l *slog.Logger) backend.Store {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := gormstore.Migrate(db); err != nil {
+	if err := gormbackend.Migrate(db); err != nil {
 		t.Fatal(err)
 	}
-	return gormstore.NewStore(db, 0)
+	return gormbackend.NewGormBackend(db, 0)
 }
 
-// resetPostgresStore resets the postgres store by dropping all tables.
-func resetPostgresStore(t *testing.T) error {
+// resetPostgresBackend resets the postgres backend by dropping all tables.
+func resetPostgresBackend(t *testing.T) error {
 	t.Helper()
 
 	db, err := gorm.Open(postgres.Open(postgresDSN), &gorm.Config{
@@ -76,19 +76,19 @@ func resetPostgresStore(t *testing.T) error {
 }
 
 //nolint:paralleltest // we need a single running postgres database for these tests
-func TestStore_postgres(t *testing.T) {
+func TestGormBackend_postgres(t *testing.T) {
 	if postgresDSN == "" {
 		t.Skip("Set TEST_POSTGRES_DSN to test postgres functionality")
 	}
 
-	servertest.RunStoreTests(t, newPostgresStore, resetPostgresStore)
+	servertest.RunBackendTests(t, newPostgresBackend, resetPostgresBackend)
 }
 
 //nolint:paralleltest // we need a single running postgres database for these tests
-func TestStore_Flows_postgres(t *testing.T) {
+func TestGormBackend_Flows_postgres(t *testing.T) {
 	if postgresDSN == "" {
 		t.Skip("Set TEST_POSTGRES_DSN to test postgres functionality")
 	}
 
-	servertest.RunFlowTests(t, newPostgresStore, resetPostgresStore)
+	servertest.RunFlowTests(t, newPostgresBackend, resetPostgresBackend)
 }

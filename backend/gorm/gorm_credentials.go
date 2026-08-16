@@ -42,7 +42,7 @@ func (k apiKeyRow) toSpec() api.APIKeyInfo {
 	}
 }
 
-func (s *Store) SetPassword(ctx context.Context, username api.ValidUsername, newPassword *api.ValidPassword) (bool, error) {
+func (s *GormBackend) SetPassword(ctx context.Context, username api.ValidUsername, newPassword *api.ValidPassword) (bool, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (bool, error) {
 		row, err := findUser(tx, username)
 		if err != nil {
@@ -64,7 +64,7 @@ func (s *Store) SetPassword(ctx context.Context, username api.ValidUsername, new
 	})
 }
 
-func (s *Store) CheckPassword(ctx context.Context, username api.ValidUsername, candidate api.ValidPassword) (bool, error) {
+func (s *GormBackend) CheckPassword(ctx context.Context, username api.ValidUsername, candidate api.ValidPassword) (bool, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (bool, error) {
 		row, err := findUser(tx, username)
 		if err != nil {
@@ -77,7 +77,7 @@ func (s *Store) CheckPassword(ctx context.Context, username api.ValidUsername, c
 	})
 }
 
-func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error) {
+func (s *GormBackend) CreateKey(ctx context.Context, format apikey.Format, username api.ValidUsername, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.APIKeyInfo, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
@@ -109,7 +109,7 @@ func (s *Store) CreateKey(ctx context.Context, format apikey.Format, username ap
 	})
 }
 
-func (s *Store) ListKeys(ctx context.Context, _ apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+func (s *GormBackend) ListKeys(ctx context.Context, _ apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedAPIKeysResponse, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err
@@ -147,7 +147,7 @@ func (s *Store) ListKeys(ctx context.Context, _ apikey.Format, username api.Vali
 	})
 }
 
-func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username api.ValidUsername, keyID string) error {
+func (s *GormBackend) RevokeKey(ctx context.Context, _ apikey.Format, username api.ValidUsername, keyID string) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}
 		if err := ensureUserExists(tx, username); err != nil {
@@ -165,7 +165,7 @@ func (s *Store) RevokeKey(ctx context.Context, _ apikey.Format, username api.Val
 	return err
 }
 
-func (s *Store) LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error) {
+func (s *GormBackend) LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error) {
 	return withTx2(s.db.WithContext(ctx), func(tx *gorm.DB) (string, *api.APIKeyInfo, error) {
 		lookupPrefix, err := format.Prefix(key)
 		if err != nil {

@@ -23,7 +23,7 @@ var (
 // - [api.UserNotFound]
 // - [api.DatabaseError].
 func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api.ValidUserInfo, error) {
-	user, err := s.store.GetUser(ctx, username)
+	user, err := s.backend.GetUser(ctx, username)
 	if errors.Is(err, backend.ErrUserNotFound) {
 		return api.ValidUserInfo{}, api.WithErrorCode(fmt.Errorf("user not found: %w", err), api.UserNotFound)
 	}
@@ -44,7 +44,7 @@ func (s *Service) LoadUser(ctx context.Context, username api.ValidUsername) (api
 // - [api.DuplicateUsername]
 // - [api.DatabaseError].
 func (s *Service) CreateUser(ctx context.Context, caller api.Caller, req api.ValidUserCreateRequest) (*api.UserInfo, error) {
-	user, err := s.store.CreateUser(ctx, req, s.runtime.Now)
+	user, err := s.backend.CreateUser(ctx, req, s.runtime.Now)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, mapped
 	}
@@ -66,7 +66,7 @@ func (s *Service) DeleteUser(ctx context.Context, caller api.Caller, target api.
 		return api.WithErrorCode(fmt.Errorf("cannot delete own account: %w", errForbidden), api.Forbidden)
 	}
 
-	err := s.store.DeleteUser(ctx, target)
+	err := s.backend.DeleteUser(ctx, target)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return mapped
 	}
@@ -82,7 +82,7 @@ func (s *Service) DeleteUser(ctx context.Context, caller api.Caller, target api.
 //
 // - [api.DatabaseError].
 func (s *Service) ListUsers(ctx context.Context, caller api.Caller, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
-	page, err := s.store.ListUsers(ctx, params)
+	page, err := s.backend.ListUsers(ctx, params)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list users: %w", err), api.DatabaseError)
 	}
@@ -99,7 +99,7 @@ func (s *Service) AutocompleteUsers(ctx context.Context, caller api.Caller, quer
 	limit := s.opts.Limits.MaxAutocompleteUsers
 	s.mu.RUnlock()
 
-	usernames, err := s.store.AutocompleteUsers(ctx, query, limit)
+	usernames, err := s.backend.AutocompleteUsers(ctx, query, limit)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to autocomplete users: %w", err), api.DatabaseError)
 	}
@@ -118,7 +118,7 @@ func (s *Service) UpdateUser(ctx context.Context, caller api.Caller, target api.
 		return nil, api.WithErrorCode(errForbidden, api.Forbidden)
 	}
 
-	user, err := s.store.UpdateUser(ctx, target, req)
+	user, err := s.backend.UpdateUser(ctx, target, req)
 	if mapped, ok := mapAuthBackendError(err); ok {
 		return nil, mapped
 	}
@@ -144,7 +144,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 	if s.AnonymousMode() {
 		return nil
 	}
-	page, err := s.store.ListUsers(ctx, api.ListUsersParams{Limit: 1})
+	page, err := s.backend.ListUsers(ctx, api.ListUsersParams{Limit: 1})
 	if err != nil {
 		return fmt.Errorf("failed to list users: %w", err)
 	}
@@ -152,7 +152,7 @@ func (s *Service) EnsureRootUser(ctx context.Context, logger *slog.Logger) error
 		return nil
 	}
 
-	_, err = s.store.CreateUser(ctx, api.ValidUserCreateRequest{
+	_, err = s.backend.CreateUser(ctx, api.ValidUserCreateRequest{
 		Username:  rootUsername,
 		Superuser: true,
 	}, s.runtime.Now)
@@ -195,7 +195,7 @@ func (s *Service) CreateSuperuser(ctx context.Context, logger *slog.Logger, user
 		return fmt.Errorf("failed to parse username: %w", err)
 	}
 
-	_, err = s.store.CreateUser(ctx, api.ValidUserCreateRequest{
+	_, err = s.backend.CreateUser(ctx, api.ValidUserCreateRequest{
 		Username:  validUsername,
 		Superuser: true,
 	}, s.runtime.Now)

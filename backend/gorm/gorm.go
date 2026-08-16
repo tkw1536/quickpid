@@ -1,4 +1,4 @@
-// Package gorm provides a GORM-backed [backend.Store].
+// Package gorm provides a GORM-backed [backend.Backend].
 //
 //spellchecker:words gorm
 package gorm
@@ -15,30 +15,30 @@ import (
 	"gorm.io/gorm"
 )
 
-// NewStore returns a GORM-backed store.
+// NewGormBackend returns a GORM-backed backend.
 //
 // batchSize is used during batch resource creation. If <= 0, [DefaultBatchSize] is used.
-func NewStore(db *gorm.DB, batchSize int) *Store {
+func NewGormBackend(db *gorm.DB, batchSize int) *GormBackend {
 	if batchSize <= 0 {
 		batchSize = DefaultBatchSize
 	}
-	return &Store{
+	return &GormBackend{
 		db:        db,
 		batchSize: batchSize,
 		keyFormat: apikey.Default,
 	}
 }
 
-// Store implements [backend.Store] using GORM.
-type Store struct {
+// GormBackend implements [backend.Backend] using GORM.
+type GormBackend struct {
 	db        *gorm.DB
 	batchSize int
 	keyFormat apikey.Format
 }
 
-var errShutdownGormStore = errors.New("stopped waiting for shutdown to complete")
+var errShutdownGormBackend = errors.New("stopped waiting for shutdown to complete")
 
-func (s *Store) Shutdown(ctx context.Context) error {
+func (s *GormBackend) Shutdown(ctx context.Context) error {
 	result := make(chan error, 1)
 	go func() {
 		defer close(result)
@@ -56,7 +56,7 @@ func (s *Store) Shutdown(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("%w: %w", errShutdownGormStore, ctx.Err())
+		return fmt.Errorf("%w: %w", errShutdownGormBackend, ctx.Err())
 	case err := <-result:
 		return err
 	}
@@ -65,7 +65,7 @@ func (s *Store) Shutdown(ctx context.Context) error {
 // DefaultBatchSize is the default batch size for batch create operations.
 const DefaultBatchSize = 100
 
-// Migrate migrates all tables used by [NewStore].
+// Migrate migrates all tables used by [NewGormBackend].
 func Migrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(
 		&namespaceRow{},

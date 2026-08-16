@@ -26,8 +26,8 @@ import (
 type mainCmd struct {
 	name string
 
-	preamble     func(*slog.Logger) error
-	storeFactory func(*slog.Logger) (backend.Store, error)
+	preamble       func(*slog.Logger) error
+	backendFactory func(*slog.Logger) (backend.Backend, error)
 
 	listenHost string
 	listenPort int
@@ -58,18 +58,18 @@ type mainCmd struct {
 
 //go:generate go tool gogenlicense -skip-no-license -m -n notices
 
-// Main is the main entry point using the given store factory.
+// Main is the main entry point using the given backend factory.
 //
-// The store is initialized once using storeFactory.
+// The backend is initialized once using backendFactory.
 //
 // To add additional flags, callers should add to [flag.CommandLine] prior to the call to Main
 // and access variables in the factory function.
-func Main(name string, preamble func(*slog.Logger) error, storeFactory func(logger *slog.Logger) (backend.Store, error)) {
+func Main(name string, preamble func(*slog.Logger) error, backendFactory func(logger *slog.Logger) (backend.Backend, error)) {
 	os.Exit(
 		new(mainCmd{
-			name:         name,
-			preamble:     preamble,
-			storeFactory: storeFactory,
+			name:           name,
+			preamble:       preamble,
+			backendFactory: backendFactory,
 
 			listenHost: "127.0.0.1",
 			listenPort: 8080,
@@ -117,25 +117,25 @@ func (main *mainCmd) run() int {
 		}
 	}
 
-	store, err := main.storeFactory(main.logger)
+	backend, err := main.backendFactory(main.logger)
 	if err != nil {
-		main.logger.Error("store initialization failed", slog.Any("error", err))
+		main.logger.Error("backend initialization failed", slog.Any("error", err))
 		return 1
 	}
 
 	defer func() {
-		main.logger.Info("shutting down store")
+		main.logger.Info("shutting down backend")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), main.shutdownTimeout)
 		defer cancel()
-		if err := store.Shutdown(shutdownCtx); err != nil {
-			main.logger.Error("store shutdown failed", slog.Any("error", err))
+		if err := backend.Shutdown(shutdownCtx); err != nil {
+			main.logger.Error("backend shutdown failed", slog.Any("error", err))
 			return
 		}
-		main.logger.Info("store shutdown complete")
+		main.logger.Info("backend shutdown complete")
 	}()
 
 	svc := service.New(
-		store,
+		backend,
 		service.NewRuntime(),
 		service.Options{
 			Limits:      main.limits,

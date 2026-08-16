@@ -11,7 +11,8 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 )
 
-// mapAuthorizationBackendError translates backend store errors to API-annotated errors.
+// mapAuthorizationBackendError translates backend errors to API-annotated errors.
+// TODO: Inline this where appropriate.
 func mapAuthorizationBackendError(err error) (error, bool) {
 	if errors.Is(err, backend.ErrInvalidRole) {
 		return api.WithErrorCode(fmt.Errorf("invalid role: %w", err), api.InvalidRole), true
@@ -29,7 +30,7 @@ func mapAuthorizationBackendError(err error) (error, bool) {
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) GetNamespaceRole(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, username api.ValidUsername) (*api.NamespaceRole, error) {
-	role, err := s.store.GetNamespaceRole(ctx, namespace, username)
+	role, err := s.backend.GetNamespaceRole(ctx, namespace, username)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
@@ -46,7 +47,7 @@ func (s *Service) GetNamespaceRole(ctx context.Context, caller *api.Caller, name
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) ListNamespaceRoles(ctx context.Context, caller api.Caller, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
-	page, err := s.store.ListNamespaceRoles(ctx, namespace, params)
+	page, err := s.backend.ListNamespaceRoles(ctx, namespace, params)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
@@ -62,7 +63,7 @@ func (s *Service) ListNamespaceRoles(ctx context.Context, caller api.Caller, nam
 //
 // - [api.DatabaseError].
 func (s *Service) ListUserRoles(ctx context.Context, caller api.Caller, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
-	page, err := s.store.ListUserRoles(ctx, caller.Username(), params)
+	page, err := s.backend.ListUserRoles(ctx, caller.Username(), params)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list user roles: %w", err), api.DatabaseError)
 	}
@@ -81,7 +82,7 @@ func (s *Service) SetNamespaceRole(ctx context.Context, caller api.Caller, names
 		return nil, api.WithErrorCode(backend.ErrInvalidRole, api.InvalidRole)
 	}
 
-	if err := s.store.SetNamespaceRole(ctx, namespace, username, req.Role); err != nil {
+	if err := s.backend.SetNamespaceRole(ctx, namespace, username, req.Role); err != nil {
 		if mapped, ok := mapAuthorizationBackendError(err); ok {
 			return nil, mapped
 		}
@@ -91,7 +92,7 @@ func (s *Service) SetNamespaceRole(ctx context.Context, caller api.Caller, names
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to set namespace role: %w", err), api.DatabaseError)
 	}
 
-	role, err := s.store.GetNamespaceRole(ctx, namespace, username)
+	role, err := s.backend.GetNamespaceRole(ctx, namespace, username)
 	if err != nil {
 		if errors.Is(err, backend.ErrNamespaceNotFound) {
 			return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
@@ -109,13 +110,13 @@ func (s *Service) SetNamespaceRole(ctx context.Context, caller api.Caller, names
 // - [api.RoleNotFound]
 // - [api.DatabaseError].
 func (s *Service) DeleteNamespaceRole(ctx context.Context, caller api.Caller, namespace api.ValidNamespaceID, username api.ValidUsername) error {
-	if _, err := s.store.GetNamespace(ctx, namespace); errors.Is(err, backend.ErrNamespaceNotFound) {
+	if _, err := s.backend.GetNamespace(ctx, namespace); errors.Is(err, backend.ErrNamespaceNotFound) {
 		return api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	} else if err != nil {
 		return api.WithErrorCode(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
 	}
 
-	if err := s.store.DeleteNamespaceRole(ctx, namespace, username); err != nil {
+	if err := s.backend.DeleteNamespaceRole(ctx, namespace, username); err != nil {
 		if mapped, ok := mapAuthorizationBackendError(err); ok {
 			return mapped
 		}
@@ -132,7 +133,7 @@ func (s *Service) DeleteNamespaceRole(ctx context.Context, caller api.Caller, na
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) ExplicitNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error) {
-	role, err := s.store.GetNamespaceRole(ctx, namespace, username)
+	role, err := s.backend.GetNamespaceRole(ctx, namespace, username)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return api.RoleNone, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}

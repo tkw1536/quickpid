@@ -33,7 +33,7 @@ func (p namespaceRoleRow) toUserRole() api.UserRole {
 	}
 }
 
-func (s *Store) GetNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error) {
+func (s *GormBackend) GetNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error) {
 	role, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (api.Role, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return "", err
@@ -51,7 +51,7 @@ func (s *Store) GetNamespaceRole(ctx context.Context, namespace api.ValidNamespa
 	return role, err
 }
 
-func (s *Store) SetNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, role api.Role) error {
+func (s *GormBackend) SetNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername, role api.Role) error {
 	if role.Validate() != nil {
 		return backend.ErrInvalidRole
 	}
@@ -83,7 +83,7 @@ func (s *Store) SetNamespaceRole(ctx context.Context, namespace api.ValidNamespa
 	return err
 }
 
-func (s *Store) DeleteNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
+func (s *GormBackend) DeleteNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}
 		result := tx.Where("namespace = ? AND username = ?", namespace.String(), username.String()).Delete(&namespaceRoleRow{})
@@ -98,7 +98,7 @@ func (s *Store) DeleteNamespaceRole(ctx context.Context, namespace api.ValidName
 	return err
 }
 
-func (s *Store) ListNamespaceRoles(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
+func (s *GormBackend) ListNamespaceRoles(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceRolesParams) (*api.PaginatedNamespaceRolesResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespaceRolesResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err
@@ -136,7 +136,7 @@ func (s *Store) ListNamespaceRoles(ctx context.Context, namespace api.ValidNames
 	})
 }
 
-func (s *Store) ListUserRoles(ctx context.Context, username api.ValidUsername, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
+func (s *GormBackend) ListUserRoles(ctx context.Context, username api.ValidUsername, params api.ListUserRolesParams) (*api.PaginatedUserRolesResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedUserRolesResponse, error) {
 		if err := ensureUserExists(tx, username); err != nil {
 			return nil, err

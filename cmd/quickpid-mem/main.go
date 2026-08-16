@@ -13,10 +13,10 @@ import (
 func main() {
 	cmd.Main("quickpid-mem",
 		nil,
-		func(log *slog.Logger) (backend.Store, error) {
+		func(log *slog.Logger) (backend.Backend, error) {
 			log.Info("starting in-memory backend")
 			log.Info("this backend is not suitable for production use, as any changes will be lost on process exit")
-			return memory.NewStore(), nil
+			return memory.NewMemoryBackend(), nil
 		},
 	)
 }

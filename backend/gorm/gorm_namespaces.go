@@ -99,7 +99,7 @@ func ensureNamespaceExists(tx *gorm.DB, id api.ValidNamespaceID) error {
 	return nil
 }
 
-func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+func (s *GormBackend) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
 		q := tx.Model(&namespaceRow{})
 		if params.Tag != nil {
@@ -141,7 +141,7 @@ func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesPar
 	})
 }
 
-func (s *Store) CreateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *GormBackend) CreateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		if owner != nil {
 			if err := ensureUserExists(tx, *owner); err != nil {
@@ -188,7 +188,7 @@ func (s *Store) CreateNamespace(ctx context.Context, namespace api.ValidNamespac
 	})
 }
 
-func (s *Store) GetNamespace(ctx context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
+func (s *GormBackend) GetNamespace(ctx context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		var ns namespaceRow
 		if err := tx.Preload("TagRows", preloadNamespaceTags).First(&ns, "id = ?", namespace.String()).Error; err != nil {
@@ -202,7 +202,7 @@ func (s *Store) GetNamespace(ctx context.Context, namespace api.ValidNamespaceID
 	})
 }
 
-func (s *Store) UpdateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *GormBackend) UpdateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
 		var ns namespaceRow
 		if err := tx.Preload("TagRows", preloadNamespaceTags).First(&ns, "id = ?", namespace.String()).Error; err != nil {

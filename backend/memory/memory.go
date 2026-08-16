@@ -1,4 +1,4 @@
-// Package memory provides an in-memory [backend.Store].
+// Package memory provides an in-memory [backend.Backend].
 //
 //spellchecker:words memory
 package memory
@@ -13,8 +13,8 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-// Store is an in-memory implementation of [backend.Store].
-type Store struct {
+// MemoryBackend is an in-memory implementation of [backend.Backend].
+type MemoryBackend struct {
 	mu sync.RWMutex
 
 	users      map[string]userRecord
@@ -24,9 +24,9 @@ type Store struct {
 	mounts     map[string]string // baseURI -> namespaceID
 }
 
-// NewStore returns a new in-memory backend store.
-func NewStore() *Store {
-	return &Store{
+// NewMemoryBackend returns a new in-memory backend.
+func NewMemoryBackend() *MemoryBackend {
+	return &MemoryBackend{
 		users:      make(map[string]userRecord),
 		namespaces: make(map[string]api.NamespaceResponse),
 		resources:  make(map[string]map[string]api.ResourceResponse),
@@ -35,9 +35,9 @@ func NewStore() *Store {
 	}
 }
 
-var errShutdownMemoryStore = errors.New("stopped waiting for shutdown to complete")
+var errShutdownMemoryBackend = errors.New("stopped waiting for shutdown to complete")
 
-func (s *Store) Shutdown(ctx context.Context) error {
+func (s *MemoryBackend) Shutdown(ctx context.Context) error {
 	done := make(chan struct{}, 1)
 	go func() {
 		defer close(done)
@@ -60,6 +60,6 @@ func (s *Store) Shutdown(ctx context.Context) error {
 	case <-done:
 		return nil
 	case <-ctx.Done():
-		return fmt.Errorf("%w: %w", errShutdownMemoryStore, ctx.Err())
+		return fmt.Errorf("%w: %w", errShutdownMemoryBackend, ctx.Err())
 	}
 }

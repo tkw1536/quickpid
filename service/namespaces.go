@@ -44,7 +44,7 @@ func (s *Service) ListNamespaces(ctx context.Context, caller *api.Caller, params
 func (s *Service) listVisibleNamespaces(ctx context.Context, caller *api.Caller, params api.ListNamespacesParams, checkAccess func(ctx context.Context, namespace api.ValidNamespaceID) bool) (*api.PaginatedNamespacesResponse, error) {
 	// No filtering to apply: just directly call the backend.
 	if caller == nil {
-		namespaces, err := s.store.ListNamespaces(ctx, params)
+		namespaces, err := s.backend.ListNamespaces(ctx, params)
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("backend failed to list namespaces: %w", err), api.DatabaseError)
 		}
@@ -63,7 +63,7 @@ func (s *Service) listVisibleNamespaces(ctx context.Context, caller *api.Caller,
 		params.Limit = limit
 		params.Offset = offset
 
-		namespaces, err := s.store.ListNamespaces(ctx, params)
+		namespaces, err := s.backend.ListNamespaces(ctx, params)
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("backend failed to list namespaces: %w", err), api.DatabaseError)
 		}
@@ -93,7 +93,7 @@ func (s *Service) listVisibleNamespaces(ctx context.Context, caller *api.Caller,
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) GetNamespace(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
-	out, err := s.store.GetNamespace(ctx, namespace)
+	out, err := s.backend.GetNamespace(ctx, namespace)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
@@ -110,7 +110,7 @@ func (s *Service) GetNamespace(ctx context.Context, caller *api.Caller, namespac
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
 func (s *Service) UpdateNamespace(ctx context.Context, caller *api.Caller, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest) (*api.NamespaceResponse, error) {
-	out, err := s.store.UpdateNamespace(ctx, namespace, req, s.runtime.Now)
+	out, err := s.backend.UpdateNamespace(ctx, namespace, req, s.runtime.Now)
 	if errors.Is(err, backend.ErrNamespaceNotFound) {
 		return nil, api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
 	}
@@ -145,7 +145,7 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.Caller, req a
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("%w: %q is not a valid namespace id", errBadNamespaceID, name), api.BadIDGeneration)
 		}
-		out, err := s.store.CreateNamespace(ctx, namespace, req, owner, s.runtime.Now)
+		out, err := s.backend.CreateNamespace(ctx, namespace, req, owner, s.runtime.Now)
 		if err == nil {
 			return out, nil
 		}

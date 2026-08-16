@@ -10,7 +10,7 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 )
 
-func (s *Store) GetMount(_ context.Context, baseURI api.ValidBaseURI) (string, error) {
+func (s *MemoryBackend) GetMount(_ context.Context, baseURI api.ValidBaseURI) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -21,7 +21,7 @@ func (s *Store) GetMount(_ context.Context, baseURI api.ValidBaseURI) (string, e
 	return namespaceID, nil
 }
 
-func (s *Store) SetMount(_ context.Context, baseURI api.ValidBaseURI, namespace api.ValidNamespaceID) error {
+func (s *MemoryBackend) SetMount(_ context.Context, baseURI api.ValidBaseURI, namespace api.ValidNamespaceID) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -34,7 +34,7 @@ func (s *Store) SetMount(_ context.Context, baseURI api.ValidBaseURI, namespace 
 	return nil
 }
 
-func (s *Store) DeleteMount(_ context.Context, baseURI api.ValidBaseURI) error {
+func (s *MemoryBackend) DeleteMount(_ context.Context, baseURI api.ValidBaseURI) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -47,7 +47,7 @@ func (s *Store) DeleteMount(_ context.Context, baseURI api.ValidBaseURI) error {
 	return nil
 }
 
-func (s *Store) ListMounts(_ context.Context, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
+func (s *MemoryBackend) ListMounts(_ context.Context, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -79,7 +79,7 @@ func (s *Store) ListMounts(_ context.Context, params api.ListMountsParams) (*api
 	return &api.PaginatedMountsResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) ListNamespaceMounts(_ context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
+func (s *MemoryBackend) ListNamespaceMounts(_ context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

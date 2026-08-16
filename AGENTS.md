@@ -15,8 +15,8 @@ If you change routes, request or response shapes, validation rules, or error beh
 ## Repository Layout
 
 - `api/`: API-facing types, JSON models, error codes, validation helpers, typed validated values, and the declarative scope model (`scopes.go`, `scopes_user.go`, `scopes_namespace.go`) plus pure evaluation helpers. Domain files follow OpenAPI tags (`user.go`, `credentials.go`, `namespaces.go`, `resources.go`, `mounts.go`, `roles.go`, `quickpid.go`).
-- `backend/`: Storage interfaces and backend contracts, split the same way (`user.go`, `credentials.go`, `namespaces.go`, `resources.go`, `mounts.go`, `roles.go`, plus `store.go`). Implementations live in `backend/memory` and `backend/gorm` as matching `memory_*` / `gorm_*` files. `Store` embeds the domain backends; `AuthenticationBackend` and `ResolverBackend` remain as thin composites for callers that still use those names.
-- `service/`: Business logic over a `backend.Store`, including limits and higher-level operations, also split by OpenAPI tag (`user.go`, `credentials.go`, `namespaces.go`, `resources.go`, `mounts.go`, `roles.go`, `quickpid.go`) with shared pieces in `service.go`, `options.go`, `runtime.go`, and `errors.go`. Scope checks for HTTP routes are not performed here (see Permission Handling below).
+- `backend/`: Storage interfaces and backend contracts, split the same way (`user.go`, `credentials.go`, `namespaces.go`, `resources.go`, `mounts.go`, `roles.go`, plus `backend.go`). Implementations live in `backend/memory` and `backend/gorm` as matching `memory_*` / `gorm_*` files. `Backend` embeds the domain backends (`UserBackend`, `CredentialsBackend`, and so on).
+- `service/`: Business logic over a `backend.Backend`, including limits and higher-level operations, also split by OpenAPI tag (`user.go`, `credentials.go`, `namespaces.go`, `resources.go`, `mounts.go`, `roles.go`, `quickpid.go`) with shared pieces in `service.go`, `options.go`, `runtime.go`, and `errors.go`. Scope checks for HTTP routes are not performed here (see Permission Handling below).
 - `server/`: HTTP routing, request parsing, Swagger/OpenAPI serving, and HTTP-to-service translation. Route wiring lives in `server/server.go`; handlers are split by OpenAPI tag (`user.go`, `credentials.go`, `namespaces.go`, `resources.go`, `mounts.go`, `roles.go`, `quickpid.go`) with shared parsing in `parse.go`. Auth, logging, serialization, and permission checks live in `server/internal/lowlevel`.
 - `cmd/`: Runnable binaries and shared CLI/bootstrap logic.
 - `spec/`: OpenAPI spec, narrative documentation, and JSON flow tests.
@@ -229,7 +229,7 @@ The Docker publish workflow builds and pushes images for all three entrypoints.
 - When editing the documented resolver routes in [`server/server.go`](server/server.go), follow the route-sync guidance in that file's comment block near the route declarations.
 - When changing who may call an endpoint, update the scope in `api/scopes_*.go` and the lowlevel wiring in `server/server.go`; do not push permission checks back into `service`.
 - Before changing validation or identifiers, inspect the relevant `api.Valid*` type and keep parser, handler, service, and backend behavior consistent with it.
-- Backend changes should preserve the `backend.Store` contract and shared behavior expected by `internal/pidtest`.
+- Backend changes should preserve the `backend.Backend` contract and shared behavior expected by `internal/pidtest`.
 - If you change user-visible API behavior, update code, tests, and spec artifacts together.
 
 ## OpenAPI Description Conventions

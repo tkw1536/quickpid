@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words errors flag slog github glebarez sqlite quickpid backend gorm gormstore internal gormflag logger Logger
+//spellchecker:words errors flag slog github glebarez sqlite quickpid backend gorm gormbackend internal gormflag logger Logger
 import (
 	"cmp"
 	"errors"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"github.com/tkw1536/quickpid/backend"
-	gormstore "github.com/tkw1536/quickpid/backend/gorm"
+	gormbackend "github.com/tkw1536/quickpid/backend/gorm"
 	"github.com/tkw1536/quickpid/cmd"
 	"github.com/tkw1536/quickpid/cmd/internal/gormflag"
 	"gorm.io/gorm"
@@ -35,7 +35,7 @@ func main() {
 			if err != nil {
 				return fmt.Errorf("failed to open database: %w", err)
 			}
-			enabled, err := gormstore.SQLiteForeignKeysEnabled(db)
+			enabled, err := gormbackend.SQLiteForeignKeysEnabled(db)
 			if err != nil {
 				return fmt.Errorf("failed to check sqlite foreign keys: %w", err)
 			}
@@ -44,13 +44,13 @@ func main() {
 			}
 			return nil
 		},
-		func(logger *slog.Logger) (backend.Store, error) {
+		func(logger *slog.Logger) (backend.Backend, error) {
 			if !disableAutoMigrate {
-				if err := gormstore.Migrate(db); err != nil {
+				if err := gormbackend.Migrate(db); err != nil {
 					return nil, fmt.Errorf("failed to migrate database: %w", err)
 				}
 			}
-			return gormstore.NewStore(db, 0), nil
+			return gormbackend.NewGormBackend(db, 0), nil
 		},
 	)
 }

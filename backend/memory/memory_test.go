@@ -11,19 +11,19 @@ import (
 	servertest "github.com/tkw1536/quickpid/internal/pidtest"
 )
 
-func newStore(t *testing.T, l *slog.Logger) backend.Store {
+func newMemoryBackend(t *testing.T, l *slog.Logger) backend.Backend {
 	t.Helper()
-	return memory.NewStore()
+	return memory.NewMemoryBackend()
 }
 
-func TestStore(t *testing.T) {
+func TestMemoryBackend(t *testing.T) {
 	t.Parallel()
 
-	servertest.RunStoreTests(t, newStore, nil)
+	servertest.RunBackendTests(t, newMemoryBackend, nil)
 }
 
-func TestStore_Flows(t *testing.T) {
+func TestMemoryBackend_Flows(t *testing.T) {
 	t.Parallel()
 
-	servertest.RunFlowTests(t, newStore, nil)
+	servertest.RunFlowTests(t, newMemoryBackend, nil)
 }

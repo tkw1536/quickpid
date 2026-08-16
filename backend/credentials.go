@@ -12,8 +12,6 @@ import (
 )
 
 // CredentialsBackend represents the backend for passwords and API keys.
-//
-// See [memory.NewStore] and [gorm.NewStore] for implementations.
 type CredentialsBackend interface {
 	// SetPassword sets or clears a password for the given user.
 	//

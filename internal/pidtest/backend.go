@@ -20,14 +20,14 @@ import (
 //
 // If reset is not nil, then it is called before any flow test is run,
 // as well as after each flow test.
-// This is useful for testing in stores that use a single backend for testing.
+// This is useful for testing in backends that require a single instance for testing.
 // When reset is not nil, tests are run sequentially.
 // Otherwise, tests are run in parallel.
 //
 // If the server behaves as expected, then the test succeeds.
 // If the server behaves differently, the test fails and debug output from the
 // logger is printed to test output.
-func RunFlowTests(t *testing.T, factory StoreFactory, reset StoreResetter) {
+func RunFlowTests(t *testing.T, factory BackendFactory, reset BackendResetter) {
 	t.Helper()
 
 	flows, err := loadTestData()

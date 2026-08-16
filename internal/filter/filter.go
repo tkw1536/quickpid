@@ -64,7 +64,7 @@ type FilterResult[V any] struct {
 	Offset int
 }
 
-// PaginatedGetterFunc fetches one page of items from an underlying store.
+// PaginatedGetterFunc fetches one page of items from an underlying backend.
 //
 // limit is the maximum number of items to return; offset is how many items to skip
 // from the start of the full unfiltered sequence. An empty slice (and a nil error)

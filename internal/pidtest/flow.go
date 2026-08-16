@@ -30,7 +30,7 @@ type stepConfig struct {
 	Anonymous    bool             `json:"anonymous,omitzero"`
 	Meta         api.MetaResponse `json:"meta,omitzero"`
 
-	// EnsureRootUser runs [service.Service.EnsureRootUser] before this step when the store is empty.
+	// EnsureRootUser runs [service.Service.EnsureRootUser] before this step when the backend is empty.
 	// Use with apiKeyIDs/apiKeys/now so the bootstrap key is deterministic.
 	EnsureRootUser bool `json:"ensureRootUser,omitzero"`
 }
@@ -54,7 +54,7 @@ type flow struct {
 	} `json:"steps"`
 }
 
-func (f flow) Run(t *testing.T, factory StoreFactory) {
+func (f flow) Run(t *testing.T, factory BackendFactory) {
 	t.Helper()
 
 	// Buffer all log output, and dump it to the console if the test fails.
@@ -74,7 +74,7 @@ func (f flow) Run(t *testing.T, factory StoreFactory) {
 	s := factory(t, logger)
 	t.Cleanup(func() {
 		if err := s.Shutdown(context.Background()); err != nil {
-			t.Fatalf("failed to close store: %s", err)
+			t.Fatalf("failed to close backend: %s", err)
 		}
 	})
 

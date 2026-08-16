@@ -50,7 +50,7 @@ func findUser(tx *gorm.DB, username api.ValidUsername) (userRow, error) {
 	return row, nil
 }
 
-func (s *Store) CreateUser(ctx context.Context, req api.ValidUserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
+func (s *GormBackend) CreateUser(ctx context.Context, req api.ValidUserCreateRequest, _ func() time.Time) (*api.UserInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.UserInfo, error) {
 		row := userRow{Username: req.Username.String(), Superuser: req.Superuser}
 		if err := tx.Create(&row).Error; err != nil {
@@ -64,7 +64,7 @@ func (s *Store) CreateUser(ctx context.Context, req api.ValidUserCreateRequest, 
 	})
 }
 
-func (s *Store) GetUser(ctx context.Context, username api.ValidUsername) (*api.UserInfo, error) {
+func (s *GormBackend) GetUser(ctx context.Context, username api.ValidUsername) (*api.UserInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.UserInfo, error) {
 		row, err := findUser(tx, username)
 		if err != nil {
@@ -75,7 +75,7 @@ func (s *Store) GetUser(ctx context.Context, username api.ValidUsername) (*api.U
 	})
 }
 
-func (s *Store) ListUsers(ctx context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
+func (s *GormBackend) ListUsers(ctx context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedUsersResponse, error) {
 		q := tx.Model(&userRow{})
 		if params.Superuser != nil {
@@ -119,7 +119,7 @@ func (s *Store) ListUsers(ctx context.Context, params api.ListUsersParams) (*api
 	})
 }
 
-func (s *Store) AutocompleteUsers(ctx context.Context, query api.ValidAutocompleteQuery, limit int) ([]string, error) {
+func (s *GormBackend) AutocompleteUsers(ctx context.Context, query api.ValidAutocompleteQuery, limit int) ([]string, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) ([]string, error) {
 		var rows []userRow
 		if err := tx.Where("username LIKE ?", query.String()+"%").Order("username ASC").Limit(limit).Find(&rows).Error; err != nil {
@@ -133,7 +133,7 @@ func (s *Store) AutocompleteUsers(ctx context.Context, query api.ValidAutocomple
 	})
 }
 
-func (s *Store) DeleteUser(ctx context.Context, username api.ValidUsername) error {
+func (s *GormBackend) DeleteUser(ctx context.Context, username api.ValidUsername) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}
 		if err := ensureUserExists(tx, username); err != nil {
@@ -157,7 +157,7 @@ func (s *Store) DeleteUser(ctx context.Context, username api.ValidUsername) erro
 	return err
 }
 
-func (s *Store) UpdateUser(ctx context.Context, username api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
+func (s *GormBackend) UpdateUser(ctx context.Context, username api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.UserInfo, error) {
 		row, err := findUser(tx, username)
 		if err != nil {

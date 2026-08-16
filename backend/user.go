@@ -11,8 +11,6 @@ import (
 )
 
 // UserBackend represents the backend for user accounts.
-//
-// See [memory.NewStore] and [gorm.NewStore] for implementations.
 type UserBackend interface {
 	// CreateUser creates a new user account.
 	//

@@ -215,7 +215,7 @@ Fields may be omitted in case they are not relevant for the test case.
     - **`infoEnabled`** (boolean): If the general endpoint `/resolver` should be enabled or not.
     - **`meta`** (object, optional): Meta information returned by `GET /resolver/info` (`about`, `comment`, `software`, `version`).
     - **`anonymous`** (boolean, optional): If anonymous resolver mode should be enabled for this step. Default is false.
-    - **`ensureRootUser`** (boolean): If set, runs the same root-user bootstrap as server startup before this step (empty store only). Pair with **`apiKeyIDs`**, **`apiKeys`**, and **`now`** so the issued root key is deterministic.
+    - **`ensureRootUser`** (boolean): If set, runs the same root-user bootstrap as server startup before this step (empty backend only). Pair with **`apiKeyIDs`**, **`apiKeys`**, and **`now`** so the issued root key is deterministic.
   - **`limits`** (object, optional): Determines limits to be set by the server.
     Each field is numeric, and an omitted field implies no limit should be applied, or a suitable default may be used.
     - **`MaxBodyBytes`**

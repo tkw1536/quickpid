@@ -100,20 +100,20 @@ func TestFilter_scansBeyondFirstPage(t *testing.T) {
 	assertResult(t, got, []int{1, 2, 3}, 7, 0)
 }
 
-var errStoreWantError = errors.New("store failed")
+var errBackendWantError = errors.New("backend failed")
 
 func TestFilter_getterError(t *testing.T) {
 	t.Parallel()
 
 	get := func(context.Context, int, int) ([]int, error) {
-		return nil, errStoreWantError
+		return nil, errBackendWantError
 	}
 	_, err := filter.Filter(context.Background(), get, alwaysTrue[int], 5, 5, 0)
 	if err == nil {
 		t.Fatal("Filter() error = nil, want wrapped getter error")
 	}
-	if !errors.Is(err, errStoreWantError) {
-		t.Fatalf("Filter() error = %v, want %v", err, errStoreWantError)
+	if !errors.Is(err, errBackendWantError) {
+		t.Fatalf("Filter() error = %v, want %v", err, errBackendWantError)
 	}
 }
 

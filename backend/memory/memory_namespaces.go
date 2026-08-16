@@ -12,7 +12,7 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 )
 
-func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
+func (s *MemoryBackend) ListNamespaces(_ context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -40,7 +40,7 @@ func (s *Store) ListNamespaces(_ context.Context, params api.ListNamespacesParam
 	return &api.PaginatedNamespacesResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) CreateNamespace(_ context.Context, namespace api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *MemoryBackend) CreateNamespace(_ context.Context, namespace api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -74,7 +74,7 @@ func (s *Store) CreateNamespace(_ context.Context, namespace api.ValidNamespaceI
 	return &ns, nil
 }
 
-func (s *Store) GetNamespace(_ context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
+func (s *MemoryBackend) GetNamespace(_ context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	ns, ok := s.namespaces[namespace.String()]
@@ -84,7 +84,7 @@ func (s *Store) GetNamespace(_ context.Context, namespace api.ValidNamespaceID) 
 	return &ns, nil
 }
 
-func (s *Store) UpdateNamespace(_ context.Context, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
+func (s *MemoryBackend) UpdateNamespace(_ context.Context, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

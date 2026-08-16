@@ -25,7 +25,7 @@ func (s *Service) AuthenticateAPIKey(ctx context.Context, apiKey string) (api.Va
 		return api.ValidUsername{}, api.APIKeyInfo{}, errUnauthorized
 	}
 
-	username, key, err := s.store.LookupUserByKey(ctx, s.apiKeyFormat(), apiKey)
+	username, key, err := s.backend.LookupUserByKey(ctx, s.apiKeyFormat(), apiKey)
 	if errors.Is(err, backend.ErrInvalidKey) {
 		return api.ValidUsername{}, api.APIKeyInfo{}, fmt.Errorf("database found no key associated with the given user: %w", err)
 	}
@@ -60,7 +60,7 @@ func (s *Service) AuthenticatePassword(ctx context.Context, username string, pas
 		return api.ValidUsername{}, api.WithErrorCode(fmt.Errorf("failed to parse username: %w", err), api.Unauthorized)
 	}
 
-	ok, err := s.store.CheckPassword(ctx, validUsername, validPassword)
+	ok, err := s.backend.CheckPassword(ctx, validUsername, validPassword)
 	if errors.Is(err, backend.ErrUserNotFound) {
 		return api.ValidUsername{}, api.WithErrorCode(fmt.Errorf("user not found: %w", err), api.Unauthorized)
 	}
@@ -75,7 +75,7 @@ func (s *Service) AuthenticatePassword(ctx context.Context, username string, pas
 
 // CheckPassword reports whether password matches the stored password for username.
 func (s *Service) CheckPassword(ctx context.Context, username api.ValidUsername, password api.ValidPassword) (bool, error) {
-	ok, err := s.store.CheckPassword(ctx, username, password)
+	ok, err := s.backend.CheckPassword(ctx, username, password)
 	if mapped, handled := mapAuthBackendError(err); handled {
 		return false, mapped
 	}
@@ -91,7 +91,7 @@ func (s *Service) CheckPassword(ctx context.Context, username api.ValidUsername,
 //
 // - [api.DatabaseError].
 func (s *Service) SetUserPassword(ctx context.Context, caller api.Caller, req api.ValidSetPasswordRequest) (*api.SetPasswordResponse, error) {
-	hasPassword, err := s.store.SetPassword(ctx, caller.Username(), req.Password)
+	hasPassword, err := s.backend.SetPassword(ctx, caller.Username(), req.Password)
 	if err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to set password: %w", err), api.DatabaseError)
 	}
@@ -115,7 +115,7 @@ func (s *Service) ListKeys(ctx context.Context, caller api.Caller, params api.Li
 	return page, nil
 }
 
-// listValidKeys is like [s.store.ListKeys], but only contains keys that are still valid according to the runtime.
+// listValidKeys is like [s.backend.ListKeys], but only contains keys that are still valid according to the runtime.
 func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	// Determine the effective page limit to call the backend with.
 	options := s.Options().Limits
@@ -144,7 +144,7 @@ func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, usern
 			params.Offset = offset
 
 			// List the actual keys, and return only the items.
-			result, err := s.store.ListKeys(ctx, format, username, params)
+			result, err := s.backend.ListKeys(ctx, format, username, params)
 			if err != nil {
 				return nil, fmt.Errorf("backend failed to list keys: %w", err)
 			}
@@ -218,7 +218,7 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 			return nil, api.WithErrorCode(fmt.Errorf("failed to generate new api key: %w", err), api.BadIDGeneration)
 		}
 
-		info, err := s.store.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
+		info, err := s.backend.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
 		if err == nil {
 			return &api.IssueKeyResponse{APIKeyInfo: *info, Key: rawKey}, nil
 		}
@@ -239,7 +239,7 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 // - [api.KeyNotFound]
 // - [api.DatabaseError].
 func (s *Service) RevokeKey(ctx context.Context, caller api.Caller, req api.KeyRevokeRequest) error {
-	err := s.store.RevokeKey(ctx, s.apiKeyFormat(), caller.Username(), req.ID)
+	err := s.backend.RevokeKey(ctx, s.apiKeyFormat(), caller.Username(), req.ID)
 	if errors.Is(err, backend.ErrKeyNotFound) {
 		return api.WithErrorCode(fmt.Errorf("key not found: %w", err), api.KeyNotFound)
 	}
@@ -254,6 +254,7 @@ func (s *Service) apiKeyFormat() apikey.Format {
 }
 
 // mapAuthBackendError translates backend store errors to API-annotated errors.
+// TODO: Inline this where appropriate.
 func mapAuthBackendError(err error) (error, bool) {
 	switch {
 	case errors.Is(err, backend.ErrDuplicateUsername):

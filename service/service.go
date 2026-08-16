@@ -18,15 +18,15 @@ type Service struct {
 	mu      sync.RWMutex
 	opts    Options
 	runtime Runtime
-	store   backend.Store
+	backend backend.Backend
 }
 
 // New returns a new Service.
-func New(store backend.Store, runtime Runtime, opts Options) *Service {
+func New(backend backend.Backend, runtime Runtime, opts Options) *Service {
 	return &Service{
 		opts:    opts.withValidValues(),
 		runtime: runtime,
-		store:   store,
+		backend: backend,
 	}
 }
 

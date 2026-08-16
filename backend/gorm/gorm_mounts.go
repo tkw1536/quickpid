@@ -18,7 +18,7 @@ type mountRow struct {
 
 func (mountRow) TableName() string { return "mounts" }
 
-func (s *Store) GetMount(ctx context.Context, baseURI api.ValidBaseURI) (string, error) {
+func (s *GormBackend) GetMount(ctx context.Context, baseURI api.ValidBaseURI) (string, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (string, error) {
 		var row mountRow
 		if err := tx.First(&row, "base_uri = ?", baseURI.String()).Error; err != nil {
@@ -31,7 +31,7 @@ func (s *Store) GetMount(ctx context.Context, baseURI api.ValidBaseURI) (string,
 	})
 }
 
-func (s *Store) SetMount(ctx context.Context, baseURI api.ValidBaseURI, namespace api.ValidNamespaceID) error {
+func (s *GormBackend) SetMount(ctx context.Context, baseURI api.ValidBaseURI, namespace api.ValidNamespaceID) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
@@ -49,7 +49,7 @@ func (s *Store) SetMount(ctx context.Context, baseURI api.ValidBaseURI, namespac
 	return err
 }
 
-func (s *Store) DeleteMount(ctx context.Context, baseURI api.ValidBaseURI) error {
+func (s *GormBackend) DeleteMount(ctx context.Context, baseURI api.ValidBaseURI) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}
 		result := tx.Where("base_uri = ?", baseURI.String()).Delete(&mountRow{})
@@ -64,7 +64,7 @@ func (s *Store) DeleteMount(ctx context.Context, baseURI api.ValidBaseURI) error
 	return err
 }
 
-func (s *Store) ListMounts(ctx context.Context, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
+func (s *GormBackend) ListMounts(ctx context.Context, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedMountsResponse, error) {
 		q := tx.Model(&mountRow{})
 		var total int64
@@ -101,7 +101,7 @@ func (s *Store) ListMounts(ctx context.Context, params api.ListMountsParams) (*a
 	})
 }
 
-func (s *Store) ListNamespaceMounts(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
+func (s *GormBackend) ListNamespaceMounts(ctx context.Context, namespace api.ValidNamespaceID, params api.ListNamespaceMountsParams) (*api.PaginatedBaseURIResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedBaseURIResponse, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {
 			return nil, err

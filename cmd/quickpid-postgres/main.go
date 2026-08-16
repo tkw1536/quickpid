@@ -1,7 +1,7 @@
 //spellchecker:words main
 package main
 
-//spellchecker:words flag slog github quickpid backend gorm gormstore internal gormflag driver postgres logger Logger
+//spellchecker:words flag slog github quickpid backend gorm gormbackend internal gormflag driver postgres logger Logger
 import (
 	"cmp"
 	"flag"
@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/tkw1536/quickpid/backend"
-	gormstore "github.com/tkw1536/quickpid/backend/gorm"
+	gormbackend "github.com/tkw1536/quickpid/backend/gorm"
 	"github.com/tkw1536/quickpid/cmd"
 	"github.com/tkw1536/quickpid/cmd/internal/gormflag"
 	"gorm.io/driver/postgres"
@@ -35,13 +35,13 @@ func main() {
 			}
 			return nil
 		},
-		func(logger *slog.Logger) (backend.Store, error) {
+		func(logger *slog.Logger) (backend.Backend, error) {
 			if !disableAutoMigrate {
-				if err := gormstore.Migrate(db); err != nil {
+				if err := gormbackend.Migrate(db); err != nil {
 					return nil, fmt.Errorf("failed to migrate database: %w", err)
 				}
 			}
-			return gormstore.NewStore(db, 0), nil
+			return gormbackend.NewGormBackend(db, 0), nil
 		},
 	)
 }

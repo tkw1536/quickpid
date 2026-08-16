@@ -21,7 +21,7 @@ type keyRecord struct {
 	digest []byte
 }
 
-func (s *Store) SetPassword(_ context.Context, username api.ValidUsername, newPassword *api.ValidPassword) (bool, error) {
+func (s *MemoryBackend) SetPassword(_ context.Context, username api.ValidUsername, newPassword *api.ValidPassword) (bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -48,7 +48,7 @@ func (s *Store) SetPassword(_ context.Context, username api.ValidUsername, newPa
 	return true, nil
 }
 
-func (s *Store) CheckPassword(_ context.Context, username api.ValidUsername, candidate api.ValidPassword) (bool, error) {
+func (s *MemoryBackend) CheckPassword(_ context.Context, username api.ValidUsername, candidate api.ValidPassword) (bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -64,7 +64,7 @@ func (s *Store) CheckPassword(_ context.Context, username api.ValidUsername, can
 	return password.Verify(candidate.String(), user.passwordHash), nil
 }
 
-func (s *Store) CreateKey(_ context.Context, format apikey.Format, username api.ValidUsername, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error) {
+func (s *MemoryBackend) CreateKey(_ context.Context, format apikey.Format, username api.ValidUsername, keyID string, key string, req api.KeyIssueRequest, now func() time.Time) (*api.APIKeyInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -108,7 +108,7 @@ func (s *Store) CreateKey(_ context.Context, format apikey.Format, username api.
 	return &info, nil
 }
 
-func (s *Store) ListKeys(_ context.Context, _ apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+func (s *MemoryBackend) ListKeys(_ context.Context, _ apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -140,7 +140,7 @@ func (s *Store) ListKeys(_ context.Context, _ apikey.Format, username api.ValidU
 	return &api.PaginatedAPIKeysResponse{Total: total, Offset: offset, Items: items}, nil
 }
 
-func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username api.ValidUsername, keyID string) error {
+func (s *MemoryBackend) RevokeKey(_ context.Context, _ apikey.Format, username api.ValidUsername, keyID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -157,7 +157,7 @@ func (s *Store) RevokeKey(_ context.Context, _ apikey.Format, username api.Valid
 	return nil
 }
 
-func (s *Store) LookupUserByKey(_ context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error) {
+func (s *MemoryBackend) LookupUserByKey(_ context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
