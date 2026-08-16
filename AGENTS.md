@@ -14,9 +14,8 @@ If you change routes, request or response shapes, validation rules, or error beh
 
 ## Repository Layout
 
-- `api/`: API-facing types, JSON models, error strings, validation helpers, and typed validated values.
+- `api/`: API-facing types, JSON models, error codes, validation helpers, typed validated values, and the declarative scope model (`scopes.go`, `scopes_user.go`, `scopes_namespace.go`) plus pure evaluation helpers.
 - `backend/`: Storage interfaces and backend contracts, with implementations in `backend/memory` and `backend/gorm`.
-- `scopes/`: Declarative permission definitions for user-level and namespace-level actions, plus pure evaluation helpers.
 - `service/`: Business logic over a `backend.Store`, including limits and higher-level operations. Scope checks for HTTP routes are not performed here (see Permission Handling below).
 - `server/`: HTTP routing, request parsing, Swagger/OpenAPI serving, and HTTP-to-service translation. Route wiring lives in `server/server.go`; auth, logging, serialization, and permission checks live in `server/internal/lowlevel`.
 - `cmd/`: Runnable binaries and shared CLI/bootstrap logic.
@@ -27,20 +26,55 @@ If you change routes, request or response shapes, validation rules, or error beh
 
 Authorization for HTTP routes is owned by [`server/internal/lowlevel`](server/internal/lowlevel), not by ad-hoc checks in `service`.
 
-Split of responsibility:
+### Scope model
 
-- [`scopes/`](scopes/) defines what each action requires (anonymous-mode availability, unauthenticated access, superuser, minimum namespace role) and exposes pure evaluators such as `EvaluateUserScope` and `EvaluateNamespaceScope`.
-- [`server/internal/lowlevel`](server/internal/lowlevel) authenticates the caller, evaluates the required scope, and only then invokes the server handler. Wire routes in [`server/server.go`](server/server.go) with:
-  - `UserScope` for actions that are not namespace-specific
-  - `NamespaceScope` for a fixed scope on a `{namespace}` path (also parses and passes `api.ValidNamespaceID`)
-  - `DynamicNamespaceScope` when the scope depends on request data (for example own vs other role endpoints)
-  - `Public` only for endpoints that intentionally ignore authentication
-- `service` implements business logic and assumes the HTTP layer already enforced the route scope. Do not re-check the same scope in service methods.
-- Exception: `Service.GetResource` still evaluates `api.ScopeSeeDeletedResource` after fetch, because that check is conditional on the resource being deleted and does not fit the single upfront lowlevel check.
+There are two kinds of scopes, both defined in the `api` package:
+
+- [`api.UserScope`](api/scopes_user.go): global actions (not tied to a `{namespace}` path). Examples: list mounts, create users, issue keys.
+- [`api.NamespaceScope`](api/scopes_namespace.go): actions on a specific namespace. Examples: get/update namespace, create resources, manage roles.
+
+Each scope constant has a matching definition (`UserScopeDefinition` / `NamespaceScopeDefinition`) that declares:
+
+| Flag | Meaning |
+| --- | --- |
+| `AnonymousMode` | Whether the action is available when the server runs with `-anon`. |
+| `AllowUnauthenticated` | Whether a missing caller is allowed (authenticated mode only). |
+| `RequireSuperuser` | Whether only superusers may perform the action. |
+| `MinRole` (namespace only) | Minimum explicit namespace role that grants access (`none` < `contributor` < `editor` < `manager`). `RoleNone` means no role alone is enough (superuser or a dedicated definition path is required). |
+
+Special scopes that do not map 1:1 to a single OpenAPI operation:
+
+- `api.ScopeImpersonate` (user): may impersonate another user via `X-Impersonate-User`; the call then inherits that user's permissions.
+- `api.ScopeSeeDeletedResource` (namespace): gates whether a deleted resource is returned un-redacted.
+
+Pure evaluators live in [`api/scopes.go`](api/scopes.go):
+
+- `EvaluateAnonymousModeUserScope` / `EvaluateAnonymousModeNamespaceScope`
+- `EvaluateUserScope` / `EvaluateNamespaceScope`
+
+Evaluation also consults `caller.Method().AllowsUserScope` / `AllowsNamespaceScope` so an authentication method can impose extra restrictions (for example a future namespace-limited token). Today the built-in methods allow all scopes.
+
+### HTTP wiring
+
+[`server/internal/lowlevel`](server/internal/lowlevel) authenticates the caller, evaluates the required scope, and only then invokes the server handler. Wire routes in [`server/server.go`](server/server.go) with:
+
+- `UserScope` for actions that are not namespace-specific
+- `NamespaceScope` for a fixed scope on a `{namespace}` path (also parses and passes `api.ValidNamespaceID`)
+- `DynamicNamespaceScope` when the scope depends on request data (for example own vs other role endpoints)
+- `Public` only for endpoints that intentionally ignore authentication
+
+In anonymous mode, lowlevel short-circuits to the anonymous-mode evaluators and does not load namespace roles. In authenticated mode, namespace checks load the caller's explicit role for that namespace, then call `EvaluateNamespaceScope` (superusers bypass role requirements).
+
+`service` implements business logic and assumes the HTTP layer already enforced the route scope. Do not re-check the same scope in service methods.
+
+Exceptions where a second, conditional scope check is needed after the route scope:
+
+- Listing namespaces: the handler filters each item with `ScopeGetNamespace` via a callback into `Service.ListNamespaces`.
+- Reading a deleted resource: the handler passes a `shouldRedact` callback into `Service.GetResource` that evaluates `ScopeSeeDeletedResource` through lowlevel. Service does not evaluate the scope itself.
 
 When adding or changing a protected route:
 
-1. Add or update the scope constant and action definition in [`scopes/user.go`](scopes/user.go) or [`scopes/namespace.go`](scopes/namespace.go).
+1. Add or update the scope constant and definition in [`api/scopes_user.go`](api/scopes_user.go) or [`api/scopes_namespace.go`](api/scopes_namespace.go) (keep order aligned with `server/server.go` and the OpenAPI operation list).
 2. Wire the route with the matching lowlevel helper in [`server/server.go`](server/server.go).
 3. Keep service free of duplicate scope checks for that route.
 4. List every error code the lowlevel helper or handler can return in the route's `allowedErrors` slice.
@@ -62,17 +96,18 @@ Construct these via their `New*` helpers, such as `api.NewNamespaceID(...)` and 
 Do not bypass this pattern by threading unvalidated strings through `service`, `server`, or `backend` code.
 Backend interfaces generally take validated values as input and return simple, non-validated, storage-friendly or JSON-ready values as output.
 Service-layer code should also accept validated inputs, call the backend interface methods, and perform the appropriate validation and business logic, and return API-facing values that are directly JSON-marshalable or the appropriate wrapped errors for the server layer to translate.
-The Server layer is responsible for validating input logic. 
+The Server layer is responsible for validating input logic.
 
 ## Setup And Dependencies
 
-- Required Go version is declared in [`go.mod`](go.mod), currently `1.26.5` but might have changed since the last update of this document. 
+- Required Go version is declared in [`go.mod`](go.mod), currently `1.27rc3` but might have changed since the last update of this document.
 - This repository is a single Go module; use standard Go tooling from the repo root.
 - Main external tooling referenced by the repo:
   - `golangci-lint`
   - `go-check-spellchecker`
   - `gogenlicense`
   - `cspell` in CI
+  - `vacuum` in CI (OpenAPI lint)
 
 If a tool is missing locally, prefer `go tool ...` for Go-based tools that are already declared in `go.mod`.
 
@@ -137,16 +172,17 @@ Before finishing a change, prefer the narrowest relevant validation first, then 
 - Respect the strict lint configuration in [`.golangci.yml`](.golangci.yml).
 - Preserve existing error-handling patterns, especially API error mapping in `api`, request parsing in `server`, and business-rule enforcement in `service`.
 - Keep pagination and validation aligned with existing helper patterns rather than reimplementing them ad hoc.
-- Keep authorization aligned with lowlevel scope helpers and `scopes` definitions; do not add ad-hoc permission checks in handlers or service for routes already covered by `UserScope` / `NamespaceScope`.
+- Keep authorization aligned with lowlevel scope helpers and `api` scope definitions; do not add ad-hoc permission checks in handlers or service for routes already covered by `UserScope` / `NamespaceScope`.
 - Use the `api.Valid*` types and constructors for validated identifiers and credentials.
 - Keep backend interfaces in the established style: validated values in, simple values out.
 - Keep service interfaces in the established style: validated values in, validated behavior and JSON-ready API outputs out.
+
 Error mapping conventions:
 
-- `api.ErrorString` in [`api/code.go`](api/code.go) is the stable API error identifier exposed to clients.
-- When returning an API-level failure, preserve the appropriate `api.ErrorString` using `api.WithErrorString(...)`.
-- Wrapped underlying errors are for logging and diagnostics; the stable `ErrorString` is what the API exposes and what HTTP status mapping is based on.
-- Server code should translate annotated errors using the existing `api.ErrorString` machinery instead of inventing ad hoc response formats.
+- `api.ErrorCode` in [`api/code.go`](api/code.go) is the stable API error identifier exposed to clients.
+- When returning an API-level failure, preserve the appropriate `api.ErrorCode` using `api.WithErrorCode(...)`.
+- Wrapped underlying errors are for logging and diagnostics; the stable `ErrorCode` is what the API exposes and what HTTP status mapping is based on.
+- Server code should translate annotated errors using the existing `api.ErrorCode` machinery instead of inventing ad hoc response formats.
 
 Spelling conventions matter in this repo:
 
@@ -162,6 +198,7 @@ CI workflows are in [`.github/workflows/`](.github/workflows/):
 
 - `go.yaml`: tests and lint
 - `cspell.yaml`: spelling checks
+- `vacuum.yaml`: OpenAPI lint via vacuum
 - `docker.yaml`: publishes container images on pushes to `main`
 
 Container build files:
@@ -177,7 +214,7 @@ The Docker publish workflow builds and pushes images for all three entrypoints.
 - `-anon` disables authentication and authorization checks for resolver operations according to each scope's `AnonymousMode` flag (evaluated in lowlevel). Be explicit about whether a change is intended for anonymous mode, authenticated mode, or both.
 - The default startup path bootstraps a root superuser if no accounts exist. Avoid breaking this flow unintentionally.
 - Do not commit real secrets, production DSNs, or private credentials.
-- The repository code is intentionally unlicensed for reuse, while `spec/` is licensed separately. Preserve that distinction when editing docs.
+- Repository code is licensed under AGPL-3.0 ([`LICENSE`](LICENSE)). Content under `spec/` is dual-licensed AGPL-3.0 and CC BY-SA 4.0 ([`spec/LICENSE`](spec/LICENSE)). Preserve that distinction when editing docs.
 
 ## Change Guidance For Agents
 
@@ -188,9 +225,9 @@ The Docker publish workflow builds and pushes images for all three entrypoints.
   - relevant handlers in `server/`
   - relevant logic in `service/`
   - relevant request/response types in `api/`
-  - relevant scope definitions in `scopes/` when permissions change
+  - relevant scope definitions in `api/scopes_*.go` when permissions change
 - When editing the documented resolver routes in [`server/server.go`](server/server.go), follow the route-sync guidance in that file's comment block near the route declarations.
-- When changing who may call an endpoint, update the scope in `scopes/` and the lowlevel wiring in `server/server.go`; do not push permission checks back into `service`.
+- When changing who may call an endpoint, update the scope in `api/scopes_*.go` and the lowlevel wiring in `server/server.go`; do not push permission checks back into `service`.
 - Before changing validation or identifiers, inspect the relevant `api.Valid*` type and keep parser, handler, service, and backend behavior consistent with it.
 - Backend changes should preserve the `backend.Store` contract and shared behavior expected by `internal/pidtest`.
 - If you change user-visible API behavior, update code, tests, and spec artifacts together.
