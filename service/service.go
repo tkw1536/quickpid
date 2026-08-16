@@ -5,7 +5,6 @@ package service
 import (
 	"sync"
 
-	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 )
 
@@ -51,28 +50,4 @@ func (s *Service) Options() Options {
 // AnonymousMode reports whether the service runs without authentication.
 func (s *Service) AnonymousMode() bool {
 	return s.Options().Anonymous
-}
-
-// GetResolverInfo returns information about the resolver.
-//
-// It can return the following errors:
-//
-// - [api.InfoUnavailable].
-func (s *Service) GetResolverInfo() (*api.InfoResponse, error) {
-	opts := s.Options()
-
-	if !opts.InfoEnabled {
-		return nil, api.WithErrorCode(errSpecInfoPrivate, api.InfoUnavailable)
-	}
-	resp := &api.InfoResponse{
-		MaxBodyBytes:     opts.Limits.MaxBodyBytes,
-		DefaultPageLimit: int64(opts.Limits.DefaultPageLimit),
-		MaxPageLimit:     int64(opts.Limits.MaxPageLimit),
-		MaxBatchItems:    int64(opts.Limits.MaxBatchItems),
-		Authentication:   !opts.Anonymous,
-	}
-	if !opts.Anonymous {
-		resp.MaxAutocompleteUsers = int64(opts.Limits.MaxAutocompleteUsers)
-	}
-	return resp, nil
 }

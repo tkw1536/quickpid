@@ -14,10 +14,10 @@ If you change routes, request or response shapes, validation rules, or error beh
 
 ## Repository Layout
 
-- `api/`: API-facing types, JSON models, error codes, validation helpers, typed validated values, and the declarative scope model (`scopes.go`, `scopes_user.go`, `scopes_namespace.go`) plus pure evaluation helpers.
-- `backend/`: Storage interfaces and backend contracts, with implementations in `backend/memory` and `backend/gorm`.
-- `service/`: Business logic over a `backend.Store`, including limits and higher-level operations. Scope checks for HTTP routes are not performed here (see Permission Handling below).
-- `server/`: HTTP routing, request parsing, Swagger/OpenAPI serving, and HTTP-to-service translation. Route wiring lives in `server/server.go`; auth, logging, serialization, and permission checks live in `server/internal/lowlevel`.
+- `api/`: API-facing types, JSON models, error codes, validation helpers, typed validated values, and the declarative scope model (`scopes.go`, `scopes_user.go`, `scopes_namespace.go`) plus pure evaluation helpers. Domain files follow OpenAPI tags (`user.go`, `credentials.go`, `namespaces.go`, `resources.go`, `mounts.go`, `roles.go`, `quickpid.go`).
+- `backend/`: Storage interfaces and backend contracts, split the same way (`user.go`, `credentials.go`, `namespaces.go`, `resources.go`, `mounts.go`, `roles.go`, plus `store.go`). Implementations live in `backend/memory` and `backend/gorm` as matching `memory_*` / `gorm_*` files. `Store` embeds the domain backends; `AuthenticationBackend` and `ResolverBackend` remain as thin composites for callers that still use those names.
+- `service/`: Business logic over a `backend.Store`, including limits and higher-level operations, also split by OpenAPI tag (`user.go`, `credentials.go`, `namespaces.go`, `resources.go`, `mounts.go`, `roles.go`, `quickpid.go`) with shared pieces in `service.go`, `options.go`, `runtime.go`, and `errors.go`. Scope checks for HTTP routes are not performed here (see Permission Handling below).
+- `server/`: HTTP routing, request parsing, Swagger/OpenAPI serving, and HTTP-to-service translation. Route wiring lives in `server/server.go`; handlers are split by OpenAPI tag (`user.go`, `credentials.go`, `namespaces.go`, `resources.go`, `mounts.go`, `roles.go`, `quickpid.go`) with shared parsing in `parse.go`. Auth, logging, serialization, and permission checks live in `server/internal/lowlevel`.
 - `cmd/`: Runnable binaries and shared CLI/bootstrap logic.
 - `spec/`: OpenAPI spec, narrative documentation, and JSON flow tests.
 - `internal/`: Internal helpers and shared test support such as `internal/pidtest`.

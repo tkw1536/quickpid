@@ -66,7 +66,7 @@ type AuthenticationMethod interface {
 	isAuthenticationMethod()
 
 	// The following two methods check if this AuthenticationMethod is valid for the given scope.
-	// These do not determine eligibileity to perform the action, but are only intended to perform an additional retriction.
+	// These do not determine eligibility to perform the action in the first place, but are only intended to perform an additional restrictions.
 	// For example, a token might only be valid for a specific namespace.
 
 	AllowsUserScope(scope UserScope) error

@@ -13,8 +13,6 @@ import (
 //
 // A mount is a unidirectional mapping from a base URI to a namespace id.
 // There may only be one mapping per base URI; multiple base URIs may map to the same namespace.
-//
-// See [memory.NewStore] and [gorm.NewStore] for implementations.
 type MountBackend interface {
 	// Gets the namespace id mapped from the given base URI.
 	//

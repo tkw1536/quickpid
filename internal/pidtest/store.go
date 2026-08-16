@@ -783,7 +783,7 @@ func testDeleteUserCascadesRoles(t *testing.T, l *slog.Logger, newStore StoreFac
 }
 
 // SeedNamespaceOwner creates the standard test owner user on a store.
-func SeedNamespaceOwner(t *testing.T, s backend.AuthenticationBackend) {
+func SeedNamespaceOwner(t *testing.T, s backend.UserBackend) {
 	t.Helper()
 	ctx := context.Background()
 	if _, err := s.CreateUser(ctx, userReq(testNamespaceOwner), fixedNow()); err != nil {

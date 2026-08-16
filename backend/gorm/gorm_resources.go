@@ -1,10 +1,11 @@
 //spellchecker:words gorm
 package gorm
 
-//spellchecker:words context errors time github quickpid backend gorm
+//spellchecker:words context errors sort time github quickpid backend gorm
 import (
 	"context"
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
@@ -12,131 +13,82 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Store) ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedNamespacesResponse, error) {
-		q := tx.Model(&namespaceRow{})
-		if params.Tag != nil {
-			q = q.Where(`EXISTS (
-				SELECT 1 FROM namespace_tags
-				WHERE namespace_tags.namespace_id = namespaces.id
-					AND namespace_tags.tag = ?
-			)`, *params.Tag)
-		}
+type resourceRow struct {
+	NamespaceID string `gorm:"column:namespace_id;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:1"`
+	PID         string `gorm:"column:pid;type:text;not null;primaryKey;index:idx_resources_namespace_pid,priority:2"`
 
-		var total int64
-		if err := q.Count(&total).Error; err != nil {
-			return nil, err
-		}
+	URL      *string `gorm:"column:url;type:text"`
+	Metadata *string `gorm:"column:metadata;type:text"`
 
-		limit := params.Limit
-		offset := params.Offset
-		if limit == 0 || int64(offset) >= total {
-			return &api.PaginatedNamespacesResponse{
-				Total:  int(total),
-				Offset: offset,
-				Items:  []api.NamespaceResponse{},
-			}, nil
-		}
+	DateCreated time.Time `gorm:"column:date_created;not null"`
+	DateUpdated time.Time `gorm:"column:date_updated;not null"`
 
-		var rows []namespaceRow
-		if err := q.Preload("TagRows", preloadNamespaceTags).Order("namespaces.id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
-			return nil, err
-		}
-		items := make([]api.NamespaceResponse, len(rows))
-		for i := range rows {
-			items[i] = rows[i].toSpec()
-		}
-		return &api.PaginatedNamespacesResponse{
-			Total:  int(total),
-			Offset: offset,
-			Items:  items,
-		}, nil
-	})
+	Deleted bool `gorm:"column:deleted;not null;default:false;index"`
+
+	TagRows []resourceTagRow `gorm:"foreignKey:NamespaceID,PID;references:NamespaceID,PID;constraint:OnDelete:CASCADE"`
 }
 
-func (s *Store) CreateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
-		if owner != nil {
-			if err := ensureUserExists(tx, *owner); err != nil {
-				return nil, err
-			}
-		}
+func (resourceRow) TableName() string { return "resources" }
 
-		ts := now().UTC()
-		ns := namespaceRow{
-			ID:          namespace.String(),
-			PIDPattern:  req.PIDFormat.Pattern,
-			PIDChars:    req.PIDFormat.Characters,
-			DateCreated: ts,
-			DateUpdated: ts,
-		}
-		if err := tx.Create(&ns).Error; err != nil {
-			if isUniqueConstraintError(err) {
-				return nil, backend.ErrDuplicateNamespaceID
-			}
-			return nil, err
-		}
-
-		tagRows := namespaceTagRowsFor(namespace.String(), req.Tags)
-		if len(tagRows) > 0 {
-			if err := tx.Create(tagRows).Error; err != nil {
-				return nil, err
-			}
-		}
-		ns.TagRows = tagRows
-
-		if owner != nil {
-			perm := namespaceRoleRow{
-				Namespace: namespace.String(),
-				Username:  owner.String(),
-				Role:      string(api.RoleManager),
-			}
-			if err := tx.Create(&perm).Error; err != nil {
-				return nil, err
-			}
-		}
-
-		resp := ns.toSpec()
-		return &resp, nil
-	})
+type resourceTagRow struct {
+	NamespaceID string `gorm:"column:namespace_id;type:text;not null;primaryKey;index:idx_resource_tags_ns_tag,priority:1"`
+	PID         string `gorm:"column:pid;type:text;not null;primaryKey"`
+	Pos         int    `gorm:"column:pos;not null;primaryKey"`
+	Tag         string `gorm:"column:tag;type:text;not null;index:idx_resource_tags_ns_tag,priority:2"`
 }
 
-func (s *Store) GetNamespace(ctx context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
-		var ns namespaceRow
-		if err := tx.Preload("TagRows", preloadNamespaceTags).First(&ns, "id = ?", namespace.String()).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, backend.ErrNamespaceNotFound
-			}
-			return nil, err
-		}
-		out := ns.toSpec()
-		return &out, nil
-	})
+func (resourceTagRow) TableName() string { return "resource_tags" }
+
+func (r resourceRow) toSpec() api.ResourceResponse {
+	return api.ResourceResponse{
+		PID:         r.PID,
+		URL:         r.URL,
+		Metadata:    r.Metadata,
+		DateCreated: r.DateCreated.UTC().Format(time.RFC3339),
+		DateUpdated: r.DateUpdated.UTC().Format(time.RFC3339),
+		Tags:        tagsFromRows(r.TagRows),
+		Deleted:     r.Deleted,
+	}
 }
 
-func (s *Store) UpdateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest, now func() time.Time) (*api.NamespaceResponse, error) {
-	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.NamespaceResponse, error) {
-		var ns namespaceRow
-		if err := tx.Preload("TagRows", preloadNamespaceTags).First(&ns, "id = ?", namespace.String()).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, backend.ErrNamespaceNotFound
-			}
-			return nil, err
+func tagRowsFor(namespaceID, pid string, tags []string) []resourceTagRow {
+	rows := make([]resourceTagRow, len(tags))
+	for i, tag := range tags {
+		rows[i] = resourceTagRow{
+			NamespaceID: namespaceID,
+			PID:         pid,
+			Pos:         i,
+			Tag:         tag,
 		}
-		if req.Tags != nil {
-			if err := replaceNamespaceTags(tx, namespace.String(), req.Tags); err != nil {
-				return nil, err
-			}
-			ns.TagRows = namespaceTagRowsFor(namespace.String(), req.Tags)
-		}
-		ns.DateUpdated = now().UTC()
-		if err := tx.Save(&ns).Error; err != nil {
-			return nil, err
-		}
-		out := ns.toSpec()
-		return &out, nil
-	})
+	}
+	return rows
+}
+
+func tagsFromRows(rows []resourceTagRow) []string {
+	if len(rows) == 0 {
+		return nil
+	}
+	sorted := append([]resourceTagRow(nil), rows...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Pos < sorted[j].Pos })
+	tags := make([]string, len(sorted))
+	for i := range sorted {
+		tags[i] = sorted[i].Tag
+	}
+	return tags
+}
+
+func replaceResourceTags(tx *gorm.DB, namespaceID, pid string, tags []string) error {
+	if err := tx.Where("namespace_id = ? AND pid = ?", namespaceID, pid).Delete(&resourceTagRow{}).Error; err != nil {
+		return err
+	}
+	if len(tags) == 0 {
+		return nil
+	}
+	return tx.Create(tagRowsFor(namespaceID, pid, tags)).Error
+}
+
+func preloadResourceTags(db *gorm.DB) *gorm.DB {
+	return db.Order("pos ASC")
 }
 
 func (s *Store) ListResources(ctx context.Context, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {

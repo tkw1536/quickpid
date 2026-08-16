@@ -11,40 +11,10 @@ import (
 	"github.com/tkw1536/quickpid/internal/apikey"
 )
 
-// AuthenticationBackend represents the backend for user accounts and API keys.
+// CredentialsBackend represents the backend for passwords and API keys.
 //
-// See [authentication.NewInMemoryBackend] and [authentication.NewGormBackend] for implementations.
-type AuthenticationBackend interface {
-	// CreateUser creates a new user account.
-	//
-	// Should return [ErrDuplicateUsername] if the username is already in use.
-	CreateUser(ctx context.Context, req api.ValidUserCreateRequest, now func() time.Time) (*api.UserInfo, error)
-
-	// Gets a user account.
-	//
-	// Should return [ErrUserNotFound] if the user does not exist.
-	GetUser(ctx context.Context, username api.ValidUsername) (*api.UserInfo, error)
-
-	// ListUsers lists all user accounts, ordered ascending by username.
-	//
-	// Has no specific error conditions.
-	ListUsers(ctx context.Context, params api.ListUsersParams) (*api.PaginatedUsersResponse, error)
-
-	// AutocompleteUsers returns usernames with the given prefix, ordered ascending by username.
-	//
-	// Has no specific error conditions.
-	AutocompleteUsers(ctx context.Context, query api.ValidAutocompleteQuery, limit int) ([]string, error)
-
-	// DeleteUser removes a user and all associated API keys.
-	//
-	// Should return [ErrUserNotFound] if the user does not exist.
-	DeleteUser(ctx context.Context, username api.ValidUsername) error
-
-	// UpdateUser updates fields on an existing user account.
-	//
-	// Should return [ErrUserNotFound] if the user does not exist.
-	UpdateUser(ctx context.Context, username api.ValidUsername, req api.UserUpdateRequest) (*api.UserInfo, error)
-
+// See [memory.NewStore] and [gorm.NewStore] for implementations.
+type CredentialsBackend interface {
 	// SetPassword sets or clears a password for the given user.
 	//
 	// A nil password clears the stored password.
@@ -84,11 +54,9 @@ type AuthenticationBackend interface {
 	LookupUserByKey(ctx context.Context, format apikey.Format, key string) (string, *api.APIKeyInfo, error)
 }
 
-// Sentinel errors to be returned by [AuthenticationBackend] implementations.
+// Sentinel errors to be returned by [CredentialsBackend] implementations.
 var (
-	ErrDuplicateUsername = errors.New("duplicate username")
-	ErrUserNotFound      = errors.New("user not found")
-	ErrKeyNotFound       = errors.New("key not found")
-	ErrInvalidKey        = errors.New("invalid key")
-	ErrKeyCollision      = errors.New("api key collides with existing key")
+	ErrKeyNotFound  = errors.New("key not found")
+	ErrInvalidKey   = errors.New("invalid key")
+	ErrKeyCollision = errors.New("api key collides with existing key")
 )

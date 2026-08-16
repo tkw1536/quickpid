@@ -11,6 +11,13 @@ import (
 	"gorm.io/gorm"
 )
 
+type mountRow struct {
+	BaseURI     string `gorm:"column:base_uri;type:text;primaryKey"`
+	NamespaceID string `gorm:"column:namespace_id;type:text;not null;index"`
+}
+
+func (mountRow) TableName() string { return "mounts" }
+
 func (s *Store) GetMount(ctx context.Context, baseURI api.ValidBaseURI) (string, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (string, error) {
 		var row mountRow

@@ -9,9 +9,13 @@ import (
 )
 
 // Store represents a backend for the quickpid application.
+//
+// See the [memory] and [gorm] packages for implementations.
 type Store interface {
-	ResolverBackend
-	AuthenticationBackend
+	UserBackend
+	CredentialsBackend
+	NamespaceBackend
+	ResourceBackend
 	AuthorizationBackend
 	MountBackend
 

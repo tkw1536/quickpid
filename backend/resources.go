@@ -10,28 +10,8 @@ import (
 	"github.com/tkw1536/quickpid/api"
 )
 
-// ResolverBackend represents storage for the low-level PID resolver.
-//
-//spellchecker:words context errors time github quickpid
-type ResolverBackend interface {
-	// Lists all available namespaces ordered ascending by namespace id.
-	ListNamespaces(ctx context.Context, params api.ListNamespacesParams) (*api.PaginatedNamespacesResponse, error)
-
-	// Creates a new namespace and grants the manager role to the owner.
-	// If owner is nil, no manager role is granted.
-	//
-	// Should return [ErrDuplicateNamespaceID] if the namespace id is already in use.
-	// Should return [ErrUserNotFound] if owner does not exist.
-	CreateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.NamespaceCreateRequest, owner *api.ValidUsername, now func() time.Time) (*api.NamespaceResponse, error)
-
-	// Gets a namespace by its identifier.
-	// Should return [ErrNamespaceNotFound] if the namespace is not found.
-	GetNamespace(ctx context.Context, namespace api.ValidNamespaceID) (*api.NamespaceResponse, error)
-
-	// Updates a namespace by its identifier.
-	// Should return [ErrNamespaceNotFound] if the namespace is not found.
-	UpdateNamespace(ctx context.Context, namespace api.ValidNamespaceID, req api.ValidNamespaceUpdateRequest, now func() time.Time) (*api.NamespaceResponse, error)
-
+// ResourceBackend represents storage for resources.
+type ResourceBackend interface {
 	// Lists all resources in a namespace, ordered ascending by pid.
 	// Should return [ErrNamespaceNotFound] if the namespace is not found.
 	ListResources(ctx context.Context, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error)
@@ -66,12 +46,8 @@ type ResolverBackend interface {
 	UpdateResource(ctx context.Context, namespace api.ValidNamespaceID, pid api.ValidPID, req api.ValidResourceUpdateRequest, now func() time.Time) (*api.ResourceResponse, error)
 }
 
-// Sentinel errors to be returned by [ResolverBackend] implementations.
+// Sentinel errors to be returned by [ResourceBackend] implementations.
 var (
-	ErrDuplicateNamespaceID = errors.New("duplicate namespace id")
-
-	ErrNamespaceNotFound = errors.New("namespace not found")
-	ErrResourceNotFound  = errors.New("resource not found")
-
+	ErrResourceNotFound    = errors.New("resource not found")
 	ErrPIDAllocationFailed = errors.New("could not allocate unique pid")
 )

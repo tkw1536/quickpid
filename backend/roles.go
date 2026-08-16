@@ -10,8 +10,6 @@ import (
 )
 
 // AuthorizationBackend represents the backend for per-namespace roles.
-//
-// See [memory.NewStore] and [gorm.NewStore] for implementations.
 type AuthorizationBackend interface {
 	// Gets the role for a user with the specified username in a namespace.
 	//

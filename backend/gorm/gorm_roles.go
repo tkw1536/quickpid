@@ -11,6 +11,28 @@ import (
 	"gorm.io/gorm"
 )
 
+type namespaceRoleRow struct {
+	Namespace string `gorm:"column:namespace;type:text;not null;primaryKey"`
+	Username  string `gorm:"column:username;type:text;not null;primaryKey"`
+	Role      string `gorm:"column:role;type:text;not null"`
+}
+
+func (namespaceRoleRow) TableName() string { return "authz_namespace_roles" }
+
+func (p namespaceRoleRow) toSpec() api.NamespaceRole {
+	return api.NamespaceRole{
+		Username: p.Username,
+		Role:     api.Role(p.Role),
+	}
+}
+
+func (p namespaceRoleRow) toUserRole() api.UserRole {
+	return api.UserRole{
+		Namespace: p.Namespace,
+		Role:      api.Role(p.Role),
+	}
+}
+
 func (s *Store) GetNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) (api.Role, error) {
 	role, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (api.Role, error) {
 		if err := ensureNamespaceExists(tx, namespace); err != nil {

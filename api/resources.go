@@ -12,6 +12,8 @@ import (
 	"github.com/tkw1536/quickpid/internal/strict"
 )
 
+//spellchecker:words nolint recvcheck
+
 // ValidPID represents a valid pid.
 //
 // Use [NewPID] to create a new pid.

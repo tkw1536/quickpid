@@ -35,26 +35,6 @@ func NewStore() *Store {
 	}
 }
 
-type userRecord struct {
-	superuser    bool
-	passwordHash []byte
-	keys         map[string]keyRecord
-}
-
-func (u userRecord) toSpec(username string) *api.UserInfo {
-	return &api.UserInfo{
-		Username:  username,
-		Superuser: u.superuser,
-		Password:  len(u.passwordHash) > 0,
-	}
-}
-
-type keyRecord struct {
-	info   api.APIKeyInfo
-	prefix string
-	digest []byte
-}
-
 var errShutdownMemoryStore = errors.New("stopped waiting for shutdown to complete")
 
 func (s *Store) Shutdown(ctx context.Context) error {
