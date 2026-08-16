@@ -20,27 +20,27 @@ var (
 )
 
 // AuthenticateAPIKey looks up the username for a valid API key.
-func (s *Service) AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, api.APIKeyInfo, error) {
+func (s *Service) AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, *api.APIKeyInfo, error) {
 	if s.AnonymousMode() || apiKey == "" {
-		return api.ValidUsername{}, api.APIKeyInfo{}, errUnauthorized
+		return api.ValidUsername{}, nil, errUnauthorized
 	}
 
 	username, key, err := s.backend.LookupUserByKey(ctx, s.apiKeyFormat(), apiKey)
 	if errors.Is(err, backend.ErrInvalidKey) {
-		return api.ValidUsername{}, api.APIKeyInfo{}, fmt.Errorf("database found no key associated with the given user: %w", err)
+		return api.ValidUsername{}, nil, fmt.Errorf("database found no key associated with the given user: %w", err)
 	}
 	if err != nil {
-		return api.ValidUsername{}, api.APIKeyInfo{}, fmt.Errorf("unknown error while looking up key: %w", err)
+		return api.ValidUsername{}, nil, fmt.Errorf("unknown error while looking up key: %w", err)
 	}
 	if !key.Valid(s.runtime.Now) {
-		return api.ValidUsername{}, api.APIKeyInfo{}, fmt.Errorf("key is expired: %w", errUnauthorized)
+		return api.ValidUsername{}, nil, fmt.Errorf("key is expired: %w", errUnauthorized)
 	}
 
 	name, err := api.NewUsername(username)
 	if err != nil {
-		return api.ValidUsername{}, api.APIKeyInfo{}, fmt.Errorf("backend returned invalid username: %w", err)
+		return api.ValidUsername{}, nil, fmt.Errorf("backend returned invalid username: %w", err)
 	}
-	return name, *key, nil
+	return name, key, nil
 }
 
 // AuthenticatePassword authenticates a username/password pair and returns the username.
@@ -136,7 +136,7 @@ func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, usern
 	// and even then is not expected to be able to reduce this to a database query.
 	keys, err := filter.Filter(
 		ctx,
-		func(ctx context.Context, limit, offset int) ([]api.APIKeyInfo, error) {
+		func(ctx context.Context, limit, offset int) ([]*api.APIKeyInfo, error) {
 			// Create new params for each page by shadowing the original params.
 			// We could create a new struct, but this includes any future parameters for listing.
 			params := params
@@ -150,7 +150,7 @@ func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, usern
 			}
 			return result.Items, nil
 		},
-		func(ctx context.Context, key api.APIKeyInfo) (bool, error) {
+		func(ctx context.Context, key *api.APIKeyInfo) (bool, error) {
 			if err := ctx.Err(); err != nil {
 				return false, fmt.Errorf("context cancelled: %w", err)
 			}
@@ -247,7 +247,7 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 
 		info, err := s.backend.CreateKey(ctx, format, username, keyID, rawKey, req, s.runtime.Now)
 		if err == nil {
-			return &api.IssueKeyResponse{APIKeyInfo: *info, Key: rawKey}, nil
+			return &api.IssueKeyResponse{APIKeyInfo: info, Key: rawKey}, nil
 		}
 		if errors.Is(err, backend.ErrUserNotFound) {
 			return nil, api.WithErrorCode(fmt.Errorf("user not found: %w", err), api.UserNotFound)

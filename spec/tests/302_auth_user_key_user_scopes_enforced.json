@@ -1,0 +1,137 @@
+{
+  "name": "auth_user_key_user_scopes_enforced",
+  "comment": "A non-empty userScopes list is enforced at runtime: granted scopes succeed, missing scopes return 401 unauthorized (even for a superuser).",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "issue_user_scoped_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "scoped-user-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaascope"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\":\"user-scoped\",\"expiresAt\":null,\"userScopes\":[\"getUserInfo\"],\"namespaceScopes\":[]}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "user-scoped",
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
+          "id": "scoped-user-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaascope",
+          "userScopes": [
+            "getUserInfo"
+          ],
+          "namespaceScopes": []
+        }
+      }
+    },
+    {
+      "name": "granted_get_user_info",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaascope"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "missing_list_own_keys_unauthorized",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user/key",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaascope"
+          ]
+        ]
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    },
+    {
+      "name": "missing_create_namespace_unauthorized",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tags\":[],\"pidFormat\":{\"pattern\":\"***\",\"characters\":\"full\"}}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaascope"
+          ]
+        ]
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    }
+  ]
+}

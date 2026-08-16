@@ -1,7 +1,7 @@
 //spellchecker:words memory
 package memory
 
-//spellchecker:words bytes context sort time github quickpid backend internal apikey password
+//spellchecker:words bytes context slices sort time github quickpid backend internal apikey password
 import (
 	"bytes"
 	"context"
@@ -17,7 +17,7 @@ import (
 )
 
 type keyRecord struct {
-	info   api.APIKeyInfo
+	info   *api.APIKeyInfo
 	prefix string
 	digest []byte
 }
@@ -76,7 +76,7 @@ func (s *MemoryBackend) CreateKey(_ context.Context, format apikey.Format, usern
 
 	user := s.users[usernameString]
 
-	info := api.APIKeyInfo{
+	info := &api.APIKeyInfo{
 		ID:              keyID,
 		Comment:         req.Comment,
 		CreatedAt:       now().UTC(),
@@ -109,7 +109,7 @@ func (s *MemoryBackend) CreateKey(_ context.Context, format apikey.Format, usern
 
 	s.users[usernameString] = user
 
-	return &info, nil
+	return info, nil
 }
 
 func (s *MemoryBackend) ListKeys(_ context.Context, _ apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
@@ -123,7 +123,7 @@ func (s *MemoryBackend) ListKeys(_ context.Context, _ apikey.Format, username ap
 
 	user := s.users[usernameString]
 
-	all := make([]api.APIKeyInfo, 0, len(user.keys))
+	all := make([]*api.APIKeyInfo, 0, len(user.keys))
 	for _, key := range user.keys {
 		info := key.info
 		info.NormalizeScopes()
@@ -136,12 +136,12 @@ func (s *MemoryBackend) ListKeys(_ context.Context, _ apikey.Format, username ap
 	offset := params.Offset
 
 	if offset >= total {
-		return &api.PaginatedAPIKeysResponse{Total: total, Offset: offset, Items: []api.APIKeyInfo{}}, nil
+		return &api.PaginatedAPIKeysResponse{Total: total, Offset: offset, Items: []*api.APIKeyInfo{}}, nil
 	}
 	end := min(offset+limit, total)
-	items := append([]api.APIKeyInfo(nil), all[offset:end]...)
+	items := append([]*api.APIKeyInfo(nil), all[offset:end]...)
 	if items == nil {
-		items = []api.APIKeyInfo{}
+		items = []*api.APIKeyInfo{}
 	}
 	return &api.PaginatedAPIKeysResponse{Total: total, Offset: offset, Items: items}, nil
 }
@@ -180,7 +180,7 @@ func (s *MemoryBackend) LookupUserByKey(_ context.Context, format apikey.Format,
 			if format.Verify(key, apikey.Stored{Prefix: record.prefix, Digest: record.digest}) {
 				info := record.info
 				info.NormalizeScopes()
-				return username, &info, nil
+				return username, info, nil
 			}
 		}
 	}

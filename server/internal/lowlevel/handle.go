@@ -362,12 +362,12 @@ func (h *Handler) resolveCaller(r *http.Request) (*api.Caller, error) {
 	case credentials.KindEmpty:
 		return nil, nil
 	case credentials.KindBearer:
-		var key api.APIKeyInfo
+		var key *api.APIKeyInfo
 		username, key, err = h.auth.AuthenticateAPIKey(r.Context(), creds.BearerToken())
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("invalid api key: %w", err), api.Unauthorized)
 		}
-		method = api.TokenAuthentication{
+		method = &api.TokenAuthentication{
 			Token: key,
 		}
 	case credentials.KindBasic:

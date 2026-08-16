@@ -55,7 +55,7 @@ type AuthService interface {
 	// It returns the username, and the key used to authenticate it.
 	//
 	// Any non-nil error is considered to be an unauthorized user.
-	AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, api.APIKeyInfo, error)
+	AuthenticateAPIKey(ctx context.Context, apiKey string) (api.ValidUsername, *api.APIKeyInfo, error)
 
 	// AuthenticatePassword resolves a username from a username / password pair.
 	//

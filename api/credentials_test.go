@@ -444,3 +444,112 @@ func TestNewPassword(t *testing.T) {
 	}
 }
 
+func TestAPIKeyInfo_HasUserScope(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		scopes []api.UserScope
+		query  api.UserScope
+		want   bool
+	}{
+		{
+			name:   "nil_allows_all",
+			scopes: nil,
+			query:  api.ScopeGetUserInfo,
+			want:   true,
+		},
+		{
+			name:   "empty_allows_all",
+			scopes: []api.UserScope{},
+			query:  api.ScopeListUserKeys,
+			want:   true,
+		},
+		{
+			name:   "present",
+			scopes: []api.UserScope{api.ScopeListUserKeys, api.ScopeGetUserInfo},
+			query:  api.ScopeGetUserInfo,
+			want:   true,
+		},
+		{
+			name:   "absent",
+			scopes: []api.UserScope{api.ScopeListUserKeys},
+			query:  api.ScopeGetUserInfo,
+			want:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			key := &api.APIKeyInfo{UserScopes: tt.scopes}
+			if got := key.HasUserScope(tt.query); got != tt.want {
+				t.Fatalf("HasUserScope(%q) = %v, want %v", tt.query, got, tt.want)
+			}
+			// Second call exercises the cached index.
+			if got := key.HasUserScope(tt.query); got != tt.want {
+				t.Fatalf("HasUserScope(%q) cached = %v, want %v", tt.query, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAPIKeyInfo_HasNamespaceScope(t *testing.T) {
+	t.Parallel()
+
+	grant := api.APIKeyNamespaceScope{Namespace: "ns1", Scope: api.ScopeGetResource}
+
+	tests := []struct {
+		name   string
+		scopes []api.APIKeyNamespaceScope
+		query  api.APIKeyNamespaceScope
+		want   bool
+	}{
+		{
+			name:   "nil_allows_all",
+			scopes: nil,
+			query:  grant,
+			want:   true,
+		},
+		{
+			name:   "empty_allows_all",
+			scopes: []api.APIKeyNamespaceScope{},
+			query:  grant,
+			want:   true,
+		},
+		{
+			name:   "exact_match",
+			scopes: []api.APIKeyNamespaceScope{grant},
+			query:  grant,
+			want:   true,
+		},
+		{
+			name:   "wrong_namespace",
+			scopes: []api.APIKeyNamespaceScope{grant},
+			query:  api.APIKeyNamespaceScope{Namespace: "ns2", Scope: api.ScopeGetResource},
+			want:   false,
+		},
+		{
+			name:   "wrong_scope",
+			scopes: []api.APIKeyNamespaceScope{grant},
+			query:  api.APIKeyNamespaceScope{Namespace: "ns1", Scope: api.ScopeListResources},
+			want:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			key := &api.APIKeyInfo{NamespaceScopes: tt.scopes}
+			if got := key.HasNamespaceScope(tt.query); got != tt.want {
+				t.Fatalf("HasNamespaceScope(%+v) = %v, want %v", tt.query, got, tt.want)
+			}
+			if got := key.HasNamespaceScope(tt.query); got != tt.want {
+				t.Fatalf("HasNamespaceScope(%+v) cached = %v, want %v", tt.query, got, tt.want)
+			}
+		})
+	}
+}
+

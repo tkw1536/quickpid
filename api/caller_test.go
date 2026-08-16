@@ -37,7 +37,7 @@ func TestAuthenticationMethod_MarshalJSON(t *testing.T) {
 		{
 			name: "token",
 			method: api.TokenAuthentication{
-				Token: api.APIKeyInfo{
+				Token: &api.APIKeyInfo{
 					ID:        "key-123",
 					Comment:   "test key",
 					CreatedAt: time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC),
@@ -51,7 +51,7 @@ func TestAuthenticationMethod_MarshalJSON(t *testing.T) {
 			method: api.Impersonation{
 				User: alice,
 				Reason: api.TokenAuthentication{
-					Token: api.APIKeyInfo{ID: "key-123"},
+					Token: &api.APIKeyInfo{ID: "key-123"},
 				},
 			},
 			want: `{"type":"impersonate","user":"alice","reason":{"type":"token"}}`,

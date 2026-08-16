@@ -52,13 +52,13 @@ type apiKeyNamespaceScopeRow struct {
 
 func (apiKeyNamespaceScopeRow) TableName() string { return "user_api_key_namespace_scopes" }
 
-func (k apiKeyRow) toSpec() api.APIKeyInfo {
+func (k apiKeyRow) toSpec() *api.APIKeyInfo {
 	expiresAt := k.ExpiresAt
 	if expiresAt != nil {
 		utc := expiresAt.UTC()
 		expiresAt = &utc
 	}
-	info := api.APIKeyInfo{
+	info := &api.APIKeyInfo{
 		ID:              k.KeyID,
 		Comment:         k.Comment,
 		CreatedAt:       k.DateCreated.UTC(),
@@ -196,8 +196,7 @@ func (s *GormBackend) CreateKey(ctx context.Context, format apikey.Format, usern
 			return nil, err
 		}
 
-		info := row.toSpec()
-		return &info, nil
+		return row.toSpec(), nil
 	})
 }
 
@@ -219,7 +218,7 @@ func (s *GormBackend) ListKeys(ctx context.Context, _ apikey.Format, username ap
 			return &api.PaginatedAPIKeysResponse{
 				Total:  int(total),
 				Offset: offset,
-				Items:  []api.APIKeyInfo{},
+				Items:  []*api.APIKeyInfo{},
 			}, nil
 		}
 
@@ -229,7 +228,7 @@ func (s *GormBackend) ListKeys(ctx context.Context, _ apikey.Format, username ap
 			Order("key_id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
-		items := make([]api.APIKeyInfo, len(rows))
+		items := make([]*api.APIKeyInfo, len(rows))
 		for i := range rows {
 			items[i] = rows[i].toSpec()
 		}
@@ -278,7 +277,7 @@ func (s *GormBackend) LookupUserByKey(ctx context.Context, format apikey.Format,
 		for _, row := range rows {
 			if format.Verify(key, apikey.Stored{Prefix: row.Prefix, Digest: row.Digest}) {
 				info := row.toSpec()
-				return row.Username, &info, nil
+				return row.Username, info, nil
 			}
 		}
 		return "", nil, fmt.Errorf("%w: no valid key found", backend.ErrInvalidKey)

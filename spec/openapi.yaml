@@ -24,6 +24,7 @@ info:
 
     In authenticated mode, clients authenticate with either an API key (Bearer token) or HTTP Basic credentials.
     Either can be created via appropriate API calls.
+    API keys can contain a list of user scopes and namespace scopes; these restrict what the API key is allowed to do.
     Sending both at once is not permitted and results in an unauthorized response.
 
     Superusers may optionally impersonate another user by also sending the `X-Impersonate-User` header with the target username.

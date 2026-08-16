@@ -1,8 +1,9 @@
 package api
 
-//spellchecker:words encoding json
+//spellchecker:words encoding json errors
 import (
 	"encoding/json/v2"
+	"errors"
 	"fmt"
 )
 
@@ -151,7 +152,7 @@ func (BasicAuthentication) AllowsNamespaceScope(namespace ValidNamespaceID, scop
 
 // TokenAuthentication implies that a user is authenticated because they provided a token.
 type TokenAuthentication struct {
-	Token APIKeyInfo
+	Token *APIKeyInfo
 }
 
 func (TokenAuthentication) isAuthenticationMethod() {}
@@ -160,11 +161,25 @@ func (TokenAuthentication) MarshalJSON() ([]byte, error) {
 	return []byte(`{"type":"token"}`), nil
 }
 
-func (TokenAuthentication) AllowsUserScope(scope UserScope) error {
+var errScopeNotGranted = errors.New("scope not granted")
+
+func (t TokenAuthentication) AllowsUserScope(scope UserScope) error {
+	if t.Token == nil {
+		return nil
+	}
+	if !t.Token.HasUserScope(scope) {
+		return errScopeNotGranted
+	}
 	return nil
 }
 
-func (TokenAuthentication) AllowsNamespaceScope(namespace ValidNamespaceID, scope NamespaceScope) error {
+func (t TokenAuthentication) AllowsNamespaceScope(namespace ValidNamespaceID, scope NamespaceScope) error {
+	if t.Token == nil {
+		return nil
+	}
+	if !t.Token.HasNamespaceScope(APIKeyNamespaceScope{Namespace: namespace.String(), Scope: scope}) {
+		return errScopeNotGranted
+	}
 	return nil
 }
 

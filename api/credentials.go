@@ -1,6 +1,6 @@
 package api
 
-//spellchecker:words bytes encoding json jsontext errors time github quickpid internal strict
+//spellchecker:words bytes encoding json jsontext errors time github quickpid internal lazy strict
 import (
 	"bytes"
 	"encoding/json/jsontext"
@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/tkw1536/quickpid/internal/lazy"
 	"github.com/tkw1536/quickpid/internal/strict"
 )
 
@@ -85,9 +86,9 @@ type ListKeysParams struct {
 }
 
 type PaginatedAPIKeysResponse struct {
-	Total  int          `json:"total"`
-	Offset int          `json:"offset"`
-	Items  []APIKeyInfo `json:"items"`
+	Total  int           `json:"total"`
+	Offset int           `json:"offset"`
+	Items  []*APIKeyInfo `json:"items"`
 }
 
 // APIKeyNamespaceScope is a single (namespace, NamespaceScope) grant on an API key.
@@ -166,7 +167,7 @@ func (r *KeyIssueRequest) Validate() error {
 
 // IssueKeyResponse is returned when a new API key is issued.
 type IssueKeyResponse struct {
-	APIKeyInfo
+	*APIKeyInfo
 	Key string `json:"key"`
 }
 
@@ -208,6 +209,9 @@ type APIKeyInfo struct {
 	// NamespaceScopes lists (namespace, scope) pairs granted to this key.
 	// An empty array means all namespace scopes are granted for all namespaces.
 	NamespaceScopes []APIKeyNamespaceScope `json:"namespaceScopes"`
+
+	userScopeIndex      lazy.Lazy[scopeIndex[UserScope]]
+	namespaceScopeIndex lazy.Lazy[scopeIndex[APIKeyNamespaceScope]]
 }
 
 // NormalizeScopes ensures UserScopes and NamespaceScopes are non-nil empty slices.
@@ -220,11 +224,53 @@ func (k *APIKeyInfo) NormalizeScopes() {
 	}
 }
 
+// HasUserScope reports whether this key grants the given user scope.
+// An empty UserScopes list grants all user scopes.
+func (k *APIKeyInfo) HasUserScope(scope UserScope) bool {
+	return k.userScopeIndex.Get(func() scopeIndex[UserScope] {
+		return newScopeIndex(k.UserScopes)
+	}).has(scope)
+}
+
+// HasNamespaceScope reports whether this key grants the given namespace scope pair.
+// An empty NamespaceScopes list grants all namespace scopes for all namespaces.
+func (k *APIKeyInfo) HasNamespaceScope(scope APIKeyNamespaceScope) bool {
+	return k.namespaceScopeIndex.Get(func() scopeIndex[APIKeyNamespaceScope] {
+		return newScopeIndex(k.NamespaceScopes)
+	}).has(scope)
+}
+
 // Valid checks if this key is valid for the given time.
 //
 // The time function is only called when ExpiresAt is not nil and not the zero time.
 func (k *APIKeyInfo) Valid(now func() time.Time) bool {
 	return k.ExpiresAt == nil || (!k.ExpiresAt.IsZero() && k.ExpiresAt.After(now()))
+}
+
+// scopeIndex is a membership set for API key scope grants.
+// When all is true, every key is considered granted.
+type scopeIndex[K comparable] struct {
+	all bool
+	set map[K]struct{}
+}
+
+func newScopeIndex[K comparable](items []K) scopeIndex[K] {
+	if len(items) == 0 {
+		return scopeIndex[K]{all: true}
+	}
+	set := make(map[K]struct{}, len(items))
+	for _, item := range items {
+		set[item] = struct{}{}
+	}
+	return scopeIndex[K]{set: set}
+}
+
+func (s scopeIndex[K]) has(k K) bool {
+	if s.all {
+		return true
+	}
+	_, ok := s.set[k]
+	return ok
 }
 
 // apiKeyNamespaceScopeSlice rejects JSON null and non-arrays.
