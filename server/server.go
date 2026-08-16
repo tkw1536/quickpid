@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words slog http sync github swaggest swgui quickpid internal openapi scopes server lowlevel service
+//spellchecker:words slog http sync github swaggest swgui quickpid internal openapi server lowlevel service
 import (
 	"log/slog"
 	"net/http"
@@ -12,7 +12,6 @@ import (
 	quickpid "github.com/tkw1536/quickpid"
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/internal/openapi"
-	"github.com/tkw1536/quickpid/scopes"
 	"github.com/tkw1536/quickpid/server/internal/lowlevel"
 	"github.com/tkw1536/quickpid/service"
 )
@@ -75,7 +74,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/namespaces", h.lowlevel.UserScope(
-		scopes.ScopeListNamespaces,
+		api.ScopeListNamespaces,
 		h.listNamespaces,
 		func(result *api.PaginatedNamespacesResponse) int {
 			return http.StatusOK
@@ -88,7 +87,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("POST /resolver/namespaces", h.lowlevel.UserScope(
-		scopes.ScopeCreateNamespace,
+		api.ScopeCreateNamespace,
 		h.createNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusCreated),
 		[]api.ErrorCode{
@@ -103,7 +102,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/resources/count", h.lowlevel.UserScope(
-		scopes.ScopeCountAllResources,
+		api.ScopeCountAllResources,
 		h.countAllResources,
 		lowlevel.FixedStatusCode[*api.ResourceCountResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -112,7 +111,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/mounts", h.lowlevel.UserScope(
-		scopes.ScopeListMounts,
+		api.ScopeListMounts,
 		h.listMounts,
 		lowlevel.FixedStatusCode[*api.PaginatedMountsResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -124,7 +123,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/mounts/{baseUri}", h.lowlevel.UserScope(
-		scopes.ScopeGetMount,
+		api.ScopeGetMount,
 		h.resolveMountByBaseUri,
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -134,7 +133,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("PUT /resolver/mounts/{baseUri}", h.lowlevel.UserScope(
-		scopes.ScopeSetMount,
+		api.ScopeSetMount,
 		h.upsertNamespaceMount,
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -151,7 +150,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("DELETE /resolver/mounts/{baseUri}", h.lowlevel.UserScope(
-		scopes.ScopeDeleteMount,
+		api.ScopeDeleteMount,
 		h.deleteNamespaceMount,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorCode{
@@ -164,7 +163,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/mounts/{baseUri}/{pid}", h.lowlevel.UserScope(
-		scopes.ScopeGetMount,
+		api.ScopeGetMount,
 		h.resolveResourceByMountAndPID,
 		lowlevel.FixedStatusCode[api.ResourceGetResult](http.StatusFound),
 		[]api.ErrorCode{
@@ -179,7 +178,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/namespaces/{namespace}", h.lowlevel.NamespaceScope(
-		scopes.ScopeReadMetadata,
+		api.ScopeReadMetadata,
 		h.getNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -191,7 +190,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("PATCH /resolver/namespaces/{namespace}", h.lowlevel.NamespaceScope(
-		scopes.ScopePatchMetadata,
+		api.ScopePatchMetadata,
 		h.updateNamespace,
 		lowlevel.FixedStatusCode[*api.NamespaceResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -207,7 +206,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/mounts", h.lowlevel.NamespaceScope(
-		scopes.ScopeListNamespaceMounts,
+		api.ScopeListNamespaceMounts,
 		h.listNamespaceMounts,
 		lowlevel.FixedStatusCode[*api.PaginatedBaseURIResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -221,7 +220,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/roles", h.lowlevel.NamespaceScope(
-		scopes.ScopeListNamespaceRoles,
+		api.ScopeListNamespaceRoles,
 		h.listNamespaceRoles,
 		lowlevel.FixedStatusCode[*api.PaginatedNamespaceRolesResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -285,7 +284,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources", h.lowlevel.NamespaceScope(
-		scopes.ScopeListResources,
+		api.ScopeListResources,
 		h.listResources,
 		lowlevel.FixedStatusCode[*api.PaginatedResourcesResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -298,7 +297,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources", h.lowlevel.NamespaceScope(
-		scopes.ScopeCreateResource,
+		api.ScopeCreateResource,
 		h.createResource,
 		lowlevel.FixedStatusCode[*api.ResourceResponse](http.StatusCreated),
 		[]api.ErrorCode{
@@ -317,7 +316,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("POST /resolver/namespaces/{namespace}/resources/batch", h.lowlevel.NamespaceScope(
-		scopes.ScopeCreateResource,
+		api.ScopeCreateResource,
 		h.createResourceBatch,
 		lowlevel.FixedStatusCode[[]api.ResourceResponse](http.StatusCreated),
 		[]api.ErrorCode{
@@ -337,7 +336,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /resolver/namespaces/{namespace}/resources/{pid}", h.lowlevel.NamespaceScope(
-		scopes.ScopeGetResource,
+		api.ScopeGetResource,
 		h.getResource,
 		func(result api.ResourceGetResult) int {
 			if redacted, ok := result.(api.RedactedResourceResponse); ok {
@@ -355,7 +354,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("PATCH /resolver/namespaces/{namespace}/resources/{pid}", h.lowlevel.NamespaceScope(
-		scopes.ScopeUpdateResource,
+		api.ScopeUpdateResource,
 		h.updateResource,
 		lowlevel.FixedStatusCode[*api.ResourceResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -374,7 +373,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /user", h.lowlevel.UserScope(
-		scopes.ScopeGetUserInfo,
+		api.ScopeGetUserInfo,
 		h.getUserInfo,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
 		[]api.ErrorCode{
@@ -384,7 +383,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("PATCH /user", h.lowlevel.UserScope(
-		scopes.ScopeUpdateUser,
+		api.ScopeUpdateUser,
 		h.updateUser,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusOK),
 		[]api.ErrorCode{
@@ -401,7 +400,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("POST /user", h.lowlevel.UserScope(
-		scopes.ScopeCreateUser,
+		api.ScopeCreateUser,
 		h.createUser,
 		lowlevel.FixedStatusCode[*api.UserInfo](http.StatusCreated),
 		[]api.ErrorCode{
@@ -417,7 +416,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("DELETE /user", h.lowlevel.UserScope(
-		scopes.ScopeDeleteUser,
+		api.ScopeDeleteUser,
 		h.deleteUser,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorCode{
@@ -432,7 +431,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /users/autocomplete", h.lowlevel.UserScope(
-		scopes.ScopeAutocompleteUsers,
+		api.ScopeAutocompleteUsers,
 		h.autocompleteUsers,
 		lowlevel.FixedStatusCode[[]string](http.StatusOK),
 		[]api.ErrorCode{
@@ -445,7 +444,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /users", h.lowlevel.UserScope(
-		scopes.ScopeListUsers,
+		api.ScopeListUsers,
 		h.listUsers,
 		lowlevel.FixedStatusCode[*api.PaginatedUsersResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -458,7 +457,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /user/roles", h.lowlevel.UserScope(
-		scopes.ScopeListUserRoles,
+		api.ScopeListUserRoles,
 		h.getUserRoles,
 		lowlevel.FixedStatusCode[*api.PaginatedUserRolesResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -470,7 +469,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("GET /user/key", h.lowlevel.UserScope(
-		scopes.ScopeListOwnKeys,
+		api.ScopeListOwnKeys,
 		h.listUserKeys,
 		lowlevel.FixedStatusCode[*api.PaginatedAPIKeysResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -481,7 +480,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		},
 	))
 	h.mux.Handle("POST /user/key", h.lowlevel.UserScope(
-		scopes.ScopeIssueKey,
+		api.ScopeIssueKey,
 		h.issueUserKey,
 		lowlevel.FixedStatusCode[*api.IssueKeyResponse](http.StatusCreated),
 		[]api.ErrorCode{
@@ -499,7 +498,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("POST /user/password", h.lowlevel.UserScope(
-		scopes.ScopeSetPassword,
+		api.ScopeSetPassword,
 		h.setUserPassword,
 		lowlevel.FixedStatusCode[*api.SetPasswordResponse](http.StatusOK),
 		[]api.ErrorCode{
@@ -515,7 +514,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 
 	h.mux.Handle("POST /user/key/revoke", h.lowlevel.UserScope(
-		scopes.ScopeRevokeKey,
+		api.ScopeRevokeKey,
 		h.revokeUserKey,
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorCode{

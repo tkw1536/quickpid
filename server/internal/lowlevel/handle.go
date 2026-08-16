@@ -1,7 +1,7 @@
 //spellchecker:words lowlevel
 package lowlevel
 
-//spellchecker:words errors slog http strings time github quickpid scopes server internal credentials
+//spellchecker:words errors slog http strings time github quickpid server internal credentials
 import (
 	"errors"
 	"fmt"
@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/scopes"
 	"github.com/tkw1536/quickpid/server/internal/credentials"
 )
 
@@ -48,13 +47,13 @@ func (h *Handler) Public[T any](
 // successCode is a function that converts the result of the implementation into a HTTP status code.
 // allowedErrors is a list of error codes that are allowed to be returned by the implementation; if an error is returned that is not in this list, the handler will panic.
 func (h *Handler) UserScope[T any](
-	scope scopes.UserScope,
+	scope api.UserScope,
 	impl func(http.ResponseWriter, *http.Request, *api.Caller) (T, error),
 	successCode func(T) int,
 	allowedErrors []api.ErrorCode,
 ) http.HandlerFunc {
 	return h.dynamicUserScope(
-		func(r *http.Request, user *api.Caller) (struct{}, scopes.UserScope, error) {
+		func(r *http.Request, user *api.Caller) (struct{}, api.UserScope, error) {
 			return struct{}{}, scope, nil
 		},
 		func(w http.ResponseWriter, r *http.Request, user *api.Caller, _ struct{}) (T, error) {
@@ -65,7 +64,7 @@ func (h *Handler) UserScope[T any](
 // dynamicUserScope is like [UserScope], except that the scope may be dynamically determined by impl.
 // impl *must* call the provided check function exactly once per invocation, or the handler will panic.
 func (h *Handler) dynamicUserScope[T, S any](
-	scope func(r *http.Request, user *api.Caller) (S, scopes.UserScope, error),
+	scope func(r *http.Request, user *api.Caller) (S, api.UserScope, error),
 	impl func(http.ResponseWriter, *http.Request, *api.Caller, S) (T, error),
 	successCode func(T) int,
 	allowedErrors []api.ErrorCode,
@@ -105,14 +104,14 @@ func (h *Handler) dynamicUserScope[T, S any](
 // - [api.Forbidden]
 // - [api.UnavailableInAnonymousMode]
 // - [api.DatabaseError].
-func (h *Handler) CheckUserScope(r *http.Request, user *api.Caller, scope scopes.UserScope) error {
+func (h *Handler) CheckUserScope(r *http.Request, user *api.Caller, scope api.UserScope) error {
 	if h.auth.AnonymousMode() {
-		if err := scopes.EvaluateAnonymousModeUserScope(scope); err != nil {
+		if err := api.EvaluateAnonymousModeUserScope(scope); err != nil {
 			return fmt.Errorf("scope %q not fulfilled in anonymous mode: %w", scope, err)
 		}
 		return nil
 	}
-	if err := scopes.EvaluateUserScope(user, scope); err != nil {
+	if err := api.EvaluateUserScope(user, scope); err != nil {
 		return fmt.Errorf("scope %q not fulfilled for user %q: %w", scope, user.Username(), err)
 	}
 	return nil
@@ -130,13 +129,13 @@ func (h *Handler) CheckUserScope(r *http.Request, user *api.Caller, scope scopes
 // successCode is a function that converts the result of the implementation into a HTTP status code.
 // allowedErrors is a list of error codes that are allowed to be returned by the implementation; if an error is returned that is not in this list, the handler will panic.
 func (h *Handler) NamespaceScope[T any](
-	scope scopes.NamespaceScope,
+	scope api.NamespaceScope,
 	impl func(http.ResponseWriter, *http.Request, *api.Caller, api.ValidNamespaceID) (T, error),
 	successCode func(T) int,
 	allowedErrors []api.ErrorCode,
 ) http.HandlerFunc {
 	return h.DynamicNamespaceScope(
-		func(r *http.Request, user *api.Caller) (struct{}, scopes.NamespaceScope, error) {
+		func(r *http.Request, user *api.Caller) (struct{}, api.NamespaceScope, error) {
 			return struct{}{}, scope, nil
 		},
 		func(w http.ResponseWriter, r *http.Request, user *api.Caller, namespace api.ValidNamespaceID, _ struct{}) (T, error) {
@@ -150,7 +149,7 @@ func (h *Handler) NamespaceScope[T any](
 // Returning an error before calling check (for example path-parameter validation) is allowed;
 // returning successfully without calling check, or calling check more than once, panics.
 func (h *Handler) DynamicNamespaceScope[T, S any](
-	scope func(r *http.Request, user *api.Caller) (S, scopes.NamespaceScope, error),
+	scope func(r *http.Request, user *api.Caller) (S, api.NamespaceScope, error),
 	impl func(http.ResponseWriter, *http.Request, *api.Caller, api.ValidNamespaceID, S) (T, error),
 	successCode func(T) int,
 	allowedErrors []api.ErrorCode,
@@ -210,9 +209,9 @@ func readNamespaceParam(r *http.Request) (api.ValidNamespaceID, error) {
 // - [api.UnavailableInAnonymousMode]
 // - [api.NamespaceNotFound]
 // - [api.DatabaseError].
-func (h *Handler) CheckNamespaceScope(r *http.Request, namespace api.ValidNamespaceID, caller *api.Caller, scope scopes.NamespaceScope) error {
+func (h *Handler) CheckNamespaceScope(r *http.Request, namespace api.ValidNamespaceID, caller *api.Caller, scope api.NamespaceScope) error {
 	if h.auth.AnonymousMode() {
-		if err := scopes.EvaluateAnonymousModeNamespaceScope(namespace, scope); err != nil {
+		if err := api.EvaluateAnonymousModeNamespaceScope(namespace, scope); err != nil {
 			return fmt.Errorf("scope %q not fulfilled for namespace %q: %w", scope, namespace.String(), err)
 		}
 		return nil
@@ -227,7 +226,7 @@ func (h *Handler) CheckNamespaceScope(r *http.Request, namespace api.ValidNamesp
 		}
 	}
 
-	if err := scopes.EvaluateNamespaceScope(namespace, role, caller, scope); err != nil {
+	if err := api.EvaluateNamespaceScope(namespace, role, caller, scope); err != nil {
 		return fmt.Errorf("scope %q not fulfilled for namespace %q: %w", scope, namespace.String(), err)
 	}
 	return nil
@@ -351,7 +350,7 @@ func (h *Handler) resolveImpersonatedUser(r *http.Request, caller api.Caller) (*
 		return nil, api.WithErrorCode(errMultipleImpersonateHeaders, api.Unauthorized)
 	}
 
-	if err := scopes.EvaluateUserScope(&caller, scopes.ScopeImpersonate); err != nil {
+	if err := api.EvaluateUserScope(&caller, api.ScopeImpersonate); err != nil {
 		return nil, api.WithErrorCode(fmt.Errorf("%w: %w", errNotAllowedToImpersonate, err), api.Unauthorized)
 	}
 

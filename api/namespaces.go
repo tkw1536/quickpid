@@ -1,6 +1,6 @@
 package api
 
-//spellchecker:words encoding json errors time github quickpid internal strict regexp
+//spellchecker:words encoding json errors regexp time github quickpid internal strict
 import (
 	"encoding/json/v2"
 	"errors"
@@ -11,13 +11,6 @@ import (
 	"github.com/tkw1536/quickpid/internal/strict"
 	"github.com/tkw1536/quickpid/pid"
 )
-
-// This file defines several seemingly useless structs,
-// which at first glance look worse than a typedef string.
-//
-// However, defining them as structs has two benefits:
-// 1. Creation (and validation with a regexp) has to be performed once, and only once.
-// 2. Accidental casting from a string to an ID type cannot occur, and is guarded by the compiler.
 
 // ValidNamespaceID represents a valid namespace id.
 // The zero value is not valid.

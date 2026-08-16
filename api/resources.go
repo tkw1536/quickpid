@@ -1,6 +1,6 @@
 package api
 
-//spellchecker:words encoding json errors http github quickpid internal strict regexp nolint recvcheck
+//spellchecker:words encoding json errors http regexp github quickpid internal strict
 import (
 	"encoding/json/v2"
 	"errors"

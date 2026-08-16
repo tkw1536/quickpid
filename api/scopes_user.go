@@ -1,5 +1,4 @@
-//spellchecker:words scopes
-package scopes
+package api
 
 import "fmt"
 

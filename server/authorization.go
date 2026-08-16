@@ -1,23 +1,22 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words http github quickpid scopes
+//spellchecker:words http github quickpid
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/scopes"
 )
 
-func (h *Server) getNamespaceRoleScope(r *http.Request, caller *api.Caller) (api.ValidUsername, scopes.NamespaceScope, error) {
+func (h *Server) getNamespaceRoleScope(r *http.Request, caller *api.Caller) (api.ValidUsername, api.NamespaceScope, error) {
 	username, err := h.readUsernameParam(r)
 	if err != nil {
 		return api.ValidUsername{}, "", err
 	}
-	scope := scopes.ScopeGetOtherNamespaceRole
+	scope := api.ScopeGetOtherNamespaceRole
 	if caller != nil && username == caller.Username() {
-		scope = scopes.ScopeGetOwnNamespaceRole
+		scope = api.ScopeGetOwnNamespaceRole
 	}
 	return username, scope, nil
 }
@@ -46,14 +45,14 @@ func (h *Server) listNamespaceRoles(w http.ResponseWriter, r *http.Request, call
 	return roles, nil
 }
 
-func (h *Server) setNamespaceRoleScope(r *http.Request, caller *api.Caller) (api.ValidUsername, scopes.NamespaceScope, error) {
+func (h *Server) setNamespaceRoleScope(r *http.Request, caller *api.Caller) (api.ValidUsername, api.NamespaceScope, error) {
 	username, err := h.readUsernameParam(r)
 	if err != nil {
 		return api.ValidUsername{}, "", err
 	}
-	scope := scopes.ScopeSetOtherNamespaceRole
+	scope := api.ScopeSetOtherNamespaceRole
 	if caller != nil && username == caller.Username() {
-		scope = scopes.ScopeSetOwnNamespaceRole
+		scope = api.ScopeSetOwnNamespaceRole
 	}
 	return username, scope, nil
 }
@@ -71,14 +70,14 @@ func (h *Server) setNamespaceRole(w http.ResponseWriter, r *http.Request, caller
 	return role, nil
 }
 
-func (h *Server) removeNamespaceRoleScope(r *http.Request, caller *api.Caller) (api.ValidUsername, scopes.NamespaceScope, error) {
+func (h *Server) removeNamespaceRoleScope(r *http.Request, caller *api.Caller) (api.ValidUsername, api.NamespaceScope, error) {
 	username, err := h.readUsernameParam(r)
 	if err != nil {
 		return api.ValidUsername{}, "", err
 	}
-	scope := scopes.ScopeClearOtherNamespaceRole
+	scope := api.ScopeClearOtherNamespaceRole
 	if caller != nil && username == caller.Username() {
-		scope = scopes.ScopeClearOwnNamespaceRole
+		scope = api.ScopeClearOwnNamespaceRole
 	}
 	return username, scope, nil
 }

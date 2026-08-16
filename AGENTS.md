@@ -36,7 +36,7 @@ Split of responsibility:
   - `DynamicNamespaceScope` when the scope depends on request data (for example own vs other role endpoints)
   - `Public` only for endpoints that intentionally ignore authentication
 - `service` implements business logic and assumes the HTTP layer already enforced the route scope. Do not re-check the same scope in service methods.
-- Exception: `Service.GetResource` still evaluates `scopes.ScopeSeeDeletedResource` after fetch, because that check is conditional on the resource being deleted and does not fit the single upfront lowlevel check.
+- Exception: `Service.GetResource` still evaluates `api.ScopeSeeDeletedResource` after fetch, because that check is conditional on the resource being deleted and does not fit the single upfront lowlevel check.
 
 When adding or changing a protected route:
 

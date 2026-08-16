@@ -33,7 +33,7 @@ import (
 // If the error is not nil, it should wrap an [api.ErrorCode] value, which will be returned to the client.
 // If there is no ErrorString, or it is not explicitly listed in the allowedErrors slice, this is considered an implementation error.
 //
-// Methods additionally may check specific [scopes.UserScope] or [scopes.NamespaceScope] values.
+// Methods additionally may check specific [api.UserScope] or [api.NamespaceScope] values.
 // If using a method that supports these scopes, they will be checked before the handler is ever called.
 // If they fail, the return appropriate [api.ErrorCode] values.
 type Handler struct {

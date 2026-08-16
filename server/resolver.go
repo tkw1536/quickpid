@@ -1,7 +1,7 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words errors http strconv github quickpid scopes
+//spellchecker:words context errors http strconv github quickpid
 import (
 	"context"
 	"errors"
@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/tkw1536/quickpid/api"
-	"github.com/tkw1536/quickpid/scopes"
 )
 
 func (h *Server) getResolverInfo(w http.ResponseWriter, r *http.Request) (*api.InfoResponse, error) {
@@ -44,7 +43,7 @@ func (h *Server) listNamespaces(w http.ResponseWriter, r *http.Request, caller *
 		Limit:  limit,
 		Offset: offset,
 	}, func(ctx context.Context, namespace api.ValidNamespaceID) bool {
-		return h.lowlevel.CheckNamespaceScope(r, namespace, caller, scopes.ScopeReadMetadata) == nil
+		return h.lowlevel.CheckNamespaceScope(r, namespace, caller, api.ScopeReadMetadata) == nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list namespaces: %w", err)
@@ -176,7 +175,7 @@ func (h *Server) createResourceBatch(w http.ResponseWriter, r *http.Request, cal
 // shouldRedactResource returns a function that can check if the caller should see a redacted resource in the given namespace.
 func (h *Server) shouldRedactResource(r *http.Request, caller *api.Caller, namespace api.ValidNamespaceID) func() bool {
 	return func() bool {
-		return h.lowlevel.CheckNamespaceScope(r, namespace, caller, scopes.ScopeSeeDeletedResource) != nil
+		return h.lowlevel.CheckNamespaceScope(r, namespace, caller, api.ScopeSeeDeletedResource) != nil
 	}
 }
 

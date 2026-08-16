@@ -1,11 +1,7 @@
-//spellchecker:words scopes
-package scopes
+package api
 
-//spellchecker:words github quickpid
 import (
 	"fmt"
-
-	"github.com/tkw1536/quickpid/api"
 )
 
 type NamespaceScope string
@@ -40,8 +36,8 @@ type namespaceAction struct {
 	AllowUnauthenticated bool
 
 	// MinRole is the minimum explicit namespace role that grants access.
-	// [api.RoleNone] means no role grants access by itself.
-	MinRole api.Role
+	// [RoleNone] means no role grants access by itself.
+	MinRole Role
 
 	// RequireSuperuser indicates if only a superuser may perform the action.
 	RequireSuperuser bool
@@ -59,7 +55,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Read namespace metadata and have it appear in the list of namespaces",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleContributor,
+		MinRole:              RoleContributor,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -67,7 +63,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "List mounts for a namespace",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleContributor,
+		MinRole:              RoleContributor,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -75,7 +71,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Patch namespace metadata",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleManager,
+		MinRole:              RoleManager,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -83,7 +79,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "List resources in a namespace",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleEditor,
+		MinRole:              RoleEditor,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -91,7 +87,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Create a resource in a namespace",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleContributor,
+		MinRole:              RoleContributor,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -99,7 +95,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Get a resource by namespace and pid",
 		AnonymousMode:        true,
 		AllowUnauthenticated: true,
-		MinRole:              api.RoleNone,
+		MinRole:              RoleNone,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -107,7 +103,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "See an un-redacted deleted resource",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleEditor,
+		MinRole:              RoleEditor,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -115,7 +111,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Update a resource by namespace and pid",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleEditor,
+		MinRole:              RoleEditor,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -123,7 +119,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Get own role in a namespace",
 		AnonymousMode:        false,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleNone,
+		MinRole:              RoleNone,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -131,7 +127,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Get another user's role in a namespace",
 		AnonymousMode:        false,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleManager,
+		MinRole:              RoleManager,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -139,7 +135,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "List all roles in a namespace",
 		AnonymousMode:        false,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleManager,
+		MinRole:              RoleManager,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -147,7 +143,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Set another user's role in a namespace",
 		AnonymousMode:        false,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleManager,
+		MinRole:              RoleManager,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -155,7 +151,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Set own role in a namespace",
 		AnonymousMode:        false,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleNone,
+		MinRole:              RoleNone,
 		RequireSuperuser:     true,
 	},
 	namespaceAction{
@@ -163,7 +159,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Clear another user's role in a namespace",
 		AnonymousMode:        false,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleManager,
+		MinRole:              RoleManager,
 		RequireSuperuser:     false,
 	},
 	namespaceAction{
@@ -171,7 +167,7 @@ var namespaceActions = func(actions ...namespaceAction) map[NamespaceScope]names
 		Description:          "Clear own role in a namespace",
 		AnonymousMode:        false,
 		AllowUnauthenticated: false,
-		MinRole:              api.RoleNone,
+		MinRole:              RoleNone,
 		RequireSuperuser:     true,
 	},
 )
@@ -187,23 +183,23 @@ func getNamespace(name NamespaceScope) namespaceAction {
 }
 
 // roleAtLeast reports whether have is at least as privileged as want.
-// [api.RoleNone] never meets any minimum.
-func roleAtLeast(have, want api.Role) bool {
-	if want == api.RoleNone {
+// [RoleNone] never meets any minimum.
+func roleAtLeast(have, want Role) bool {
+	if want == RoleNone {
 		return false
 	}
 	return roleRank(have) >= roleRank(want)
 }
 
-func roleRank(role api.Role) int {
+func roleRank(role Role) int {
 	switch role {
-	case api.RoleContributor:
+	case RoleContributor:
 		return 1
-	case api.RoleEditor:
+	case RoleEditor:
 		return 2
-	case api.RoleManager:
+	case RoleManager:
 		return 3
-	case api.RoleNone:
+	case RoleNone:
 		return 0
 	}
 	panic("never reached")

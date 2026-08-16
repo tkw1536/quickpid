@@ -1,6 +1,6 @@
 package api
 
-//spellchecker:words errors github quickpid internal strict regexp
+//spellchecker:words errors regexp github quickpid internal strict
 import (
 	"errors"
 	"fmt"
