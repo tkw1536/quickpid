@@ -12,12 +12,12 @@ import (
 )
 
 type namespaceRoleRow struct {
-	Namespace string `gorm:"column:namespace;type:text;not null;primaryKey"`
-	Username  string `gorm:"column:username;type:text;not null;primaryKey"`
-	Role      string `gorm:"column:role;type:text;not null"`
+	NamespaceID string `gorm:"column:namespace_id;type:text;not null;primaryKey"`
+	Username    string `gorm:"column:username;type:text;not null;primaryKey"`
+	Role        string `gorm:"column:role;type:text;not null"`
 }
 
-func (namespaceRoleRow) TableName() string { return "authz_namespace_roles" }
+func (namespaceRoleRow) TableName() string { return "namespace_roles" }
 
 func (p namespaceRoleRow) toSpec() api.NamespaceRole {
 	return api.NamespaceRole{
@@ -28,7 +28,7 @@ func (p namespaceRoleRow) toSpec() api.NamespaceRole {
 
 func (p namespaceRoleRow) toUserRole() api.UserRole {
 	return api.UserRole{
-		Namespace: p.Namespace,
+		Namespace: p.NamespaceID,
 		Role:      api.Role(p.Role),
 	}
 }
@@ -40,7 +40,7 @@ func (s *GormBackend) GetNamespaceRole(ctx context.Context, namespace api.ValidN
 		}
 
 		var row namespaceRoleRow
-		if err := tx.First(&row, "namespace = ? AND username = ?", namespace.String(), username.String()).Error; err != nil {
+		if err := tx.First(&row, "namespace_id = ? AND username = ?", namespace.String(), username.String()).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return api.RoleNone, nil
 			}
@@ -63,7 +63,7 @@ func (s *GormBackend) SetNamespaceRole(ctx context.Context, namespace api.ValidN
 		}
 
 		if role == api.RoleNone {
-			result := tx.Where("namespace = ? AND username = ?", namespace.String(), username.String()).Delete(&namespaceRoleRow{})
+			result := tx.Where("namespace_id = ? AND username = ?", namespace.String(), username.String()).Delete(&namespaceRoleRow{})
 			if result.Error != nil {
 				return zero, result.Error
 			}
@@ -71,9 +71,9 @@ func (s *GormBackend) SetNamespaceRole(ctx context.Context, namespace api.ValidN
 		}
 
 		row := namespaceRoleRow{
-			Namespace: namespace.String(),
-			Username:  username.String(),
-			Role:      string(role),
+			NamespaceID: namespace.String(),
+			Username:    username.String(),
+			Role:        string(role),
 		}
 		if err := tx.Save(&row).Error; err != nil {
 			return zero, err
@@ -86,7 +86,7 @@ func (s *GormBackend) SetNamespaceRole(ctx context.Context, namespace api.ValidN
 func (s *GormBackend) DeleteNamespaceRole(ctx context.Context, namespace api.ValidNamespaceID, username api.ValidUsername) error {
 	_, err := withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (struct{}, error) {
 		var zero struct{}
-		result := tx.Where("namespace = ? AND username = ?", namespace.String(), username.String()).Delete(&namespaceRoleRow{})
+		result := tx.Where("namespace_id = ? AND username = ?", namespace.String(), username.String()).Delete(&namespaceRoleRow{})
 		if result.Error != nil {
 			return zero, result.Error
 		}
@@ -104,7 +104,7 @@ func (s *GormBackend) ListNamespaceRoles(ctx context.Context, namespace api.Vali
 			return nil, err
 		}
 
-		q := tx.Model(&namespaceRoleRow{}).Where("namespace = ?", namespace.String())
+		q := tx.Model(&namespaceRoleRow{}).Where("namespace_id = ?", namespace.String())
 		var total int64
 		if err := q.Count(&total).Error; err != nil {
 			return nil, err
@@ -159,7 +159,7 @@ func (s *GormBackend) ListUserRoles(ctx context.Context, username api.ValidUsern
 		}
 
 		var rows []namespaceRoleRow
-		if err := q.Order("namespace ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
+		if err := q.Order("namespace_id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		items := make([]api.UserRole, len(rows))

@@ -3,7 +3,7 @@
 //spellchecker:words gorm
 package gorm
 
-//spellchecker:words context errors strings github quickpid backend internal apikey gorm
+//spellchecker:words context errors strings github quickpid backend internal apikey gorm clause
 import (
 	"context"
 	"errors"
@@ -13,6 +13,7 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/apikey"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // NewGormBackend returns a GORM-backed backend.
@@ -68,16 +69,17 @@ const DefaultBatchSize = 100
 // Migrate migrates all tables used by [NewGormBackend].
 func Migrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(
-		&namespaceRow{},
-		&namespaceTagRow{},
-		&resourceRow{},
-		&resourceTagRow{},
 		&userRow{},
+		&userPasswordRow{},
 		&apiKeyRow{},
 		&apiKeyUserScopeRow{},
 		&apiKeyNamespaceScopeRow{},
+		&namespaceRow{},
+		&namespaceTagRow{},
 		&namespaceRoleRow{},
 		&mountRow{},
+		&resourceRow{},
+		&resourceTagRow{},
 	); err != nil {
 		return fmt.Errorf("failed to auto-migrate database: %w", err)
 	}
@@ -98,6 +100,10 @@ var (
 	errNamespaceNotFound = backend.ErrNamespaceNotFound
 	errUserNotFound      = backend.ErrUserNotFound
 )
+
+func cascadingDelete(tx *gorm.DB, value any) error {
+	return tx.Select(clause.Associations).Delete(value).Error
+}
 
 func withTx[V any](db *gorm.DB, fn func(*gorm.DB) (V, error)) (V, error) {
 	v, _, err := withTx2(db, func(d *gorm.DB) (V, struct{}, error) {

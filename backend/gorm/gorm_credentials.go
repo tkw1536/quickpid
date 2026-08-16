@@ -1,11 +1,11 @@
 //spellchecker:words gorm
 package gorm
 
-//spellchecker:words context sort time github quickpid backend internal apikey password gorm
+//spellchecker:words context errors time github quickpid backend internal apikey password gorm
 import (
 	"context"
+	"errors"
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
@@ -16,21 +16,22 @@ import (
 )
 
 type apiKeyRow struct {
-	Username string `gorm:"column:username;type:text;not null;primaryKey;index:idx_auth_api_keys_user_id,priority:1"`
-	ID       string `gorm:"column:id;type:text;not null;primaryKey;index:idx_auth_api_keys_user_id,priority:2"`
+	Username string `gorm:"column:username;type:text;not null;primaryKey"`
+	KeyID    string `gorm:"column:key_id;type:text;not null;primaryKey"`
 
-	Comment   string     `gorm:"column:comment;type:text;not null"`
-	CreatedAt time.Time  `gorm:"column:created_at;not null"`
-	ExpiresAt *time.Time `gorm:"column:expires_at"`
-
-	UserScopeRows      []apiKeyUserScopeRow      `gorm:"foreignKey:Username,KeyID;references:Username,ID;constraint:OnDelete:CASCADE"`
-	NamespaceScopeRows []apiKeyNamespaceScopeRow `gorm:"foreignKey:Username,KeyID;references:Username,ID;constraint:OnDelete:CASCADE"`
+	Comment string `gorm:"column:comment;type:text;not null"`
+	// Named DateCreated (not CreatedAt) so GORM does not auto-stamp wall clock.
+	DateCreated time.Time  `gorm:"column:created_at;not null"`
+	ExpiresAt   *time.Time `gorm:"column:expires_at"`
 
 	Prefix string `gorm:"column:prefix;type:text;not null;index"`
 	Digest []byte `gorm:"column:digest;not null"`
+
+	UserScopeRows      []apiKeyUserScopeRow      `gorm:"foreignKey:Username,KeyID;references:Username,KeyID;constraint:OnDelete:CASCADE"`
+	NamespaceScopeRows []apiKeyNamespaceScopeRow `gorm:"foreignKey:Username,KeyID;references:Username,KeyID;constraint:OnDelete:CASCADE"`
 }
 
-func (apiKeyRow) TableName() string { return "auth_api_keys" }
+func (apiKeyRow) TableName() string { return "user_api_keys" }
 
 type apiKeyUserScopeRow struct {
 	Username string `gorm:"column:username;type:text;not null;primaryKey"`
@@ -39,17 +40,17 @@ type apiKeyUserScopeRow struct {
 	Scope    string `gorm:"column:scope;type:text;not null"`
 }
 
-func (apiKeyUserScopeRow) TableName() string { return "auth_api_key_user_scopes" }
+func (apiKeyUserScopeRow) TableName() string { return "user_api_key_user_scopes" }
 
 type apiKeyNamespaceScopeRow struct {
-	Username  string `gorm:"column:username;type:text;not null;primaryKey"`
-	KeyID     string `gorm:"column:key_id;type:text;not null;primaryKey"`
-	Pos       int    `gorm:"column:pos;not null;primaryKey"`
-	Namespace string `gorm:"column:namespace;type:text;not null"`
-	Scope     string `gorm:"column:scope;type:text;not null"`
+	Username    string `gorm:"column:username;type:text;not null;primaryKey"`
+	KeyID       string `gorm:"column:key_id;type:text;not null;primaryKey"`
+	Pos         int    `gorm:"column:pos;not null;primaryKey"`
+	NamespaceID string `gorm:"column:namespace_id;type:text;not null"`
+	Scope       string `gorm:"column:scope;type:text;not null"`
 }
 
-func (apiKeyNamespaceScopeRow) TableName() string { return "auth_api_key_namespace_scopes" }
+func (apiKeyNamespaceScopeRow) TableName() string { return "user_api_key_namespace_scopes" }
 
 func (k apiKeyRow) toSpec() api.APIKeyInfo {
 	expiresAt := k.ExpiresAt
@@ -58,9 +59,9 @@ func (k apiKeyRow) toSpec() api.APIKeyInfo {
 		expiresAt = &utc
 	}
 	info := api.APIKeyInfo{
-		ID:              k.ID,
+		ID:              k.KeyID,
 		Comment:         k.Comment,
-		CreatedAt:       k.CreatedAt.UTC(),
+		CreatedAt:       k.DateCreated.UTC(),
 		ExpiresAt:       expiresAt,
 		UserScopes:      userScopesFromRows(k.UserScopeRows),
 		NamespaceScopes: namespaceScopesFromRows(k.NamespaceScopeRows),
@@ -86,11 +87,11 @@ func namespaceScopeRowsFor(username, keyID string, scopes []api.APIKeyNamespaceS
 	rows := make([]apiKeyNamespaceScopeRow, len(scopes))
 	for i, grant := range scopes {
 		rows[i] = apiKeyNamespaceScopeRow{
-			Username:  username,
-			KeyID:     keyID,
-			Pos:       i,
-			Namespace: grant.Namespace,
-			Scope:     string(grant.Scope),
+			Username:    username,
+			KeyID:       keyID,
+			Pos:         i,
+			NamespaceID: grant.Namespace,
+			Scope:       string(grant.Scope),
 		}
 	}
 	return rows
@@ -100,11 +101,9 @@ func userScopesFromRows(rows []apiKeyUserScopeRow) []api.UserScope {
 	if len(rows) == 0 {
 		return []api.UserScope{}
 	}
-	sorted := append([]apiKeyUserScopeRow(nil), rows...)
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Pos < sorted[j].Pos })
-	scopes := make([]api.UserScope, len(sorted))
-	for i := range sorted {
-		scopes[i] = api.UserScope(sorted[i].Scope)
+	scopes := make([]api.UserScope, len(rows))
+	for i := range rows {
+		scopes[i] = api.UserScope(rows[i].Scope)
 	}
 	return scopes
 }
@@ -113,68 +112,57 @@ func namespaceScopesFromRows(rows []apiKeyNamespaceScopeRow) []api.APIKeyNamespa
 	if len(rows) == 0 {
 		return []api.APIKeyNamespaceScope{}
 	}
-	sorted := append([]apiKeyNamespaceScopeRow(nil), rows...)
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Pos < sorted[j].Pos })
-	scopes := make([]api.APIKeyNamespaceScope, len(sorted))
-	for i := range sorted {
+	scopes := make([]api.APIKeyNamespaceScope, len(rows))
+	for i := range rows {
 		scopes[i] = api.APIKeyNamespaceScope{
-			Namespace: sorted[i].Namespace,
-			Scope:     api.NamespaceScope(sorted[i].Scope),
+			Namespace: rows[i].NamespaceID,
+			Scope:     api.NamespaceScope(rows[i].Scope),
 		}
 	}
 	return scopes
 }
 
-func preloadAPIKeyUserScopes(db *gorm.DB) *gorm.DB {
+func orderByPos(db *gorm.DB) *gorm.DB {
 	return db.Order("pos ASC")
-}
-
-func preloadAPIKeyNamespaceScopes(db *gorm.DB) *gorm.DB {
-	return db.Order("pos ASC")
-}
-
-func deleteAPIKeyScopes(tx *gorm.DB, username, keyID string) error {
-	if err := tx.Where("username = ? AND key_id = ?", username, keyID).Delete(&apiKeyUserScopeRow{}).Error; err != nil {
-		return err
-	}
-	if err := tx.Where("username = ? AND key_id = ?", username, keyID).Delete(&apiKeyNamespaceScopeRow{}).Error; err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s *GormBackend) SetPassword(ctx context.Context, username api.ValidUsername, newPassword *api.ValidPassword) (bool, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (bool, error) {
-		row, err := findUser(tx, username)
-		if err != nil {
+		if err := ensureUserExists(tx, username); err != nil {
 			return false, err
 		}
+		usernameString := username.String()
 		if newPassword == nil {
-			row.PasswordHash = nil
-		} else {
-			hash, hashErr := password.Hash(newPassword.String())
-			if hashErr != nil {
-				return false, fmt.Errorf("failed to hash password: %w", hashErr)
+			if err := tx.Where("username = ?", usernameString).Delete(&userPasswordRow{}).Error; err != nil {
+				return false, err
 			}
-			row.PasswordHash = hash
+			return false, nil
 		}
+		hash, hashErr := password.Hash(newPassword.String())
+		if hashErr != nil {
+			return false, fmt.Errorf("failed to hash password: %w", hashErr)
+		}
+		row := userPasswordRow{Username: usernameString, Hash: hash}
 		if err := tx.Save(&row).Error; err != nil {
 			return false, err
 		}
-		return len(row.PasswordHash) > 0, nil
+		return true, nil
 	})
 }
 
 func (s *GormBackend) CheckPassword(ctx context.Context, username api.ValidUsername, candidate api.ValidPassword) (bool, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (bool, error) {
-		row, err := findUser(tx, username)
-		if err != nil {
+		if err := ensureUserExists(tx, username); err != nil {
 			return false, err
 		}
-		if len(row.PasswordHash) == 0 {
-			return false, nil
+		var row userPasswordRow
+		if err := tx.First(&row, "username = ?", username.String()).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return false, nil
+			}
+			return false, err
 		}
-		return password.Verify(candidate.String(), row.PasswordHash), nil
+		return password.Verify(candidate.String(), row.Hash), nil
 	})
 }
 
@@ -190,15 +178,16 @@ func (s *GormBackend) CreateKey(ctx context.Context, format apikey.Format, usern
 		}
 
 		usernameString := username.String()
-		createdAt := now().UTC()
 		row := apiKeyRow{
-			Username:  usernameString,
-			ID:        keyID,
-			Comment:   req.Comment,
-			CreatedAt: createdAt,
-			ExpiresAt: req.ExpiresAt,
-			Prefix:    hashed.Prefix,
-			Digest:    hashed.Digest,
+			Username:           usernameString,
+			KeyID:              keyID,
+			Comment:            req.Comment,
+			DateCreated:        now().UTC(),
+			ExpiresAt:          req.ExpiresAt,
+			Prefix:             hashed.Prefix,
+			Digest:             hashed.Digest,
+			UserScopeRows:      userScopeRowsFor(usernameString, keyID, req.UserScopes),
+			NamespaceScopeRows: namespaceScopeRowsFor(usernameString, keyID, req.NamespaceScopes),
 		}
 		if err := tx.Create(&row).Error; err != nil {
 			if isUniqueConstraintError(err) {
@@ -207,21 +196,6 @@ func (s *GormBackend) CreateKey(ctx context.Context, format apikey.Format, usern
 			return nil, err
 		}
 
-		userScopeRows := userScopeRowsFor(usernameString, keyID, req.UserScopes)
-		if len(userScopeRows) > 0 {
-			if err := tx.Create(&userScopeRows).Error; err != nil {
-				return nil, err
-			}
-		}
-		namespaceScopeRows := namespaceScopeRowsFor(usernameString, keyID, req.NamespaceScopes)
-		if len(namespaceScopeRows) > 0 {
-			if err := tx.Create(&namespaceScopeRows).Error; err != nil {
-				return nil, err
-			}
-		}
-
-		row.UserScopeRows = userScopeRows
-		row.NamespaceScopeRows = namespaceScopeRows
 		info := row.toSpec()
 		return &info, nil
 	})
@@ -250,9 +224,9 @@ func (s *GormBackend) ListKeys(ctx context.Context, _ apikey.Format, username ap
 		}
 
 		var rows []apiKeyRow
-		if err := q.Preload("UserScopeRows", preloadAPIKeyUserScopes).
-			Preload("NamespaceScopeRows", preloadAPIKeyNamespaceScopes).
-			Order("id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
+		if err := q.Preload("UserScopeRows", orderByPos).
+			Preload("NamespaceScopeRows", orderByPos).
+			Order("key_id ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		items := make([]api.APIKeyInfo, len(rows))
@@ -273,15 +247,15 @@ func (s *GormBackend) RevokeKey(ctx context.Context, _ apikey.Format, username a
 		if err := ensureUserExists(tx, username); err != nil {
 			return zero, err
 		}
-		if err := deleteAPIKeyScopes(tx, username.String(), keyID); err != nil {
+		var n int64
+		if err := tx.Model(&apiKeyRow{}).Where("username = ? AND key_id = ?", username.String(), keyID).Count(&n).Error; err != nil {
 			return zero, err
 		}
-		deleteQuery := tx.Where("username = ? AND id = ?", username.String(), keyID).Delete(&apiKeyRow{})
-		if err := deleteQuery.Error; err != nil {
-			return zero, err
-		}
-		if deleteQuery.RowsAffected == 0 {
+		if n == 0 {
 			return zero, backend.ErrKeyNotFound
+		}
+		if err := cascadingDelete(tx, &apiKeyRow{Username: username.String(), KeyID: keyID}); err != nil {
+			return zero, err
 		}
 		return zero, nil
 	})
@@ -296,8 +270,8 @@ func (s *GormBackend) LookupUserByKey(ctx context.Context, format apikey.Format,
 		}
 
 		var rows []apiKeyRow
-		if err := tx.Preload("UserScopeRows", preloadAPIKeyUserScopes).
-			Preload("NamespaceScopeRows", preloadAPIKeyNamespaceScopes).
+		if err := tx.Preload("UserScopeRows", orderByPos).
+			Preload("NamespaceScopeRows", orderByPos).
 			Where("prefix = ?", lookupPrefix).Find(&rows).Error; err != nil {
 			return "", nil, err
 		}

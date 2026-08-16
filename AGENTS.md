@@ -22,6 +22,37 @@ If you change routes, request or response shapes, validation rules, or error beh
 - `spec/`: OpenAPI spec, narrative documentation, and JSON flow tests.
 - `internal/`: Internal helpers and shared test support such as `internal/pidtest`.
 
+## GORM Backend Conventions
+
+The SQLite/Postgres storage implementation lives in [`backend/gorm`](backend/gorm). Keep it aligned with these rules when changing models or CRUD:
+
+### Tables
+
+- Plural entity names for top-level tables (`users`, `namespaces`, `resources`, `mounts`).
+- Dependent tables use `{parent}_{child}` (`user_passwords`, `user_api_keys`, `user_api_key_user_scopes`, `namespace_tags`, `namespace_roles`, `resource_tags`).
+
+### Columns
+
+- User foreign keys are always `username`.
+- Namespace foreign keys are always `namespace_id`.
+- API key identifiers are always `key_id` (parent PK and child FK).
+- Timestamps are `created_at`, `updated_at`, and `expires_at` (store UTC). Use Go field names other than `CreatedAt` / `UpdatedAt` (for example `DateCreated` / `DateUpdated`) so GORM does not overwrite them with wall-clock time; the service-injected `now` owns those values.
+- Ordered children include a `pos` integer in the composite primary key.
+
+### Storage shape
+
+- Store only plain column types (`string`, `bool`, `[]byte`, `time.Time`, and pointers thereof). Do not JSON/gob/serializer-encode values into a column, and do not use custom `driver.Valuer` / `sql.Scanner` wrappers to pack data.
+- Collections live in junction tables (one value per row). Optional 1:1 data (passwords) uses a separate table; absence of a row means unset.
+- Scalar fields stay on the parent row. Row ↔ API mapping is field assignment only (`toSpec` / building rows from request fields).
+
+### Foreign keys and deletes
+
+- Declare associations with `foreignKey` / `references` and `constraint:OnDelete:CASCADE`.
+- Parent models expose association fields for their children.
+- Cascading parent deletes use the shared `cascadingDelete` helper (`Select(clause.Associations).Delete`); do not hand-roll per-table delete lists for association-backed children. Exception: `namespace_roles` are deleted by `username` on user delete without a DB FK to `users`, because roles may reference usernames that do not (yet) have a user row.
+- Replace ordered children with `Delete` of existing child rows then `Create` of the new set. Do not use `Association.Replace` for NOT NULL foreign keys — GORM nulls removed FKs instead of deleting rows.
+- Prefer nested `Create` (or `CreateInBatches`) so associations are written with the parent. When updating a parent that was loaded with `Preload`, `Omit` association fields on `Save` so preloaded children are not rewritten.
+
 ## Permission Handling
 
 Authorization for HTTP routes is owned by [`server/internal/lowlevel`](server/internal/lowlevel), not by ad-hoc checks in `service`.

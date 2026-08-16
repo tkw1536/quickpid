@@ -1,11 +1,10 @@
 //spellchecker:words gorm
 package gorm
 
-//spellchecker:words context errors sort time github quickpid backend gorm
+//spellchecker:words context errors time github quickpid backend gorm
 import (
 	"context"
 	"errors"
-	"sort"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
@@ -20,8 +19,9 @@ type resourceRow struct {
 	URL      *string `gorm:"column:url;type:text"`
 	Metadata *string `gorm:"column:metadata;type:text"`
 
-	DateCreated time.Time `gorm:"column:date_created;not null"`
-	DateUpdated time.Time `gorm:"column:date_updated;not null"`
+	// Named Date* (not CreatedAt/UpdatedAt) so GORM does not auto-stamp wall clock.
+	DateCreated time.Time `gorm:"column:created_at;not null"`
+	DateUpdated time.Time `gorm:"column:updated_at;not null"`
 
 	Deleted bool `gorm:"column:deleted;not null;default:false;index"`
 
@@ -46,12 +46,12 @@ func (r resourceRow) toSpec() api.ResourceResponse {
 		Metadata:    r.Metadata,
 		DateCreated: r.DateCreated.UTC().Format(time.RFC3339),
 		DateUpdated: r.DateUpdated.UTC().Format(time.RFC3339),
-		Tags:        tagsFromRows(r.TagRows),
+		Tags:        resourceTagsFromRows(r.TagRows),
 		Deleted:     r.Deleted,
 	}
 }
 
-func tagRowsFor(namespaceID, pid string, tags []string) []resourceTagRow {
+func resourceTagRowsFor(namespaceID, pid string, tags []string) []resourceTagRow {
 	rows := make([]resourceTagRow, len(tags))
 	for i, tag := range tags {
 		rows[i] = resourceTagRow{
@@ -64,31 +64,15 @@ func tagRowsFor(namespaceID, pid string, tags []string) []resourceTagRow {
 	return rows
 }
 
-func tagsFromRows(rows []resourceTagRow) []string {
+func resourceTagsFromRows(rows []resourceTagRow) []string {
 	if len(rows) == 0 {
 		return nil
 	}
-	sorted := append([]resourceTagRow(nil), rows...)
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Pos < sorted[j].Pos })
-	tags := make([]string, len(sorted))
-	for i := range sorted {
-		tags[i] = sorted[i].Tag
+	tags := make([]string, len(rows))
+	for i := range rows {
+		tags[i] = rows[i].Tag
 	}
 	return tags
-}
-
-func replaceResourceTags(tx *gorm.DB, namespaceID, pid string, tags []string) error {
-	if err := tx.Where("namespace_id = ? AND pid = ?", namespaceID, pid).Delete(&resourceTagRow{}).Error; err != nil {
-		return err
-	}
-	if len(tags) == 0 {
-		return nil
-	}
-	return tx.Create(tagRowsFor(namespaceID, pid, tags)).Error
-}
-
-func preloadResourceTags(db *gorm.DB) *gorm.DB {
-	return db.Order("pos ASC")
 }
 
 func (s *GormBackend) ListResources(ctx context.Context, namespace api.ValidNamespaceID, params api.ListResourcesParams) (*api.PaginatedResourcesResponse, error) {
@@ -126,7 +110,7 @@ func (s *GormBackend) ListResources(ctx context.Context, namespace api.ValidName
 		}
 
 		var rows []resourceRow
-		if err := q.Preload("TagRows", preloadResourceTags).Order("pid ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
+		if err := q.Preload("TagRows", orderByPos).Order("pid ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		items := make([]api.ResourceResponse, len(rows))
@@ -165,6 +149,7 @@ func (s *GormBackend) CreateResource(ctx context.Context, namespace api.ValidNam
 			Deleted:     false,
 			DateCreated: ts,
 			DateUpdated: ts,
+			TagRows:      resourceTagRowsFor(namespace.String(), pid.String(), req.Tags),
 		}
 		if err := tx.Create(&row).Error; err != nil {
 			if isUniqueConstraintError(err) {
@@ -172,13 +157,6 @@ func (s *GormBackend) CreateResource(ctx context.Context, namespace api.ValidNam
 			}
 			return nil, err
 		}
-		tagRows := tagRowsFor(namespace.String(), pid.String(), req.Tags)
-		if len(tagRows) > 0 {
-			if err := tx.Create(&tagRows).Error; err != nil {
-				return nil, err
-			}
-		}
-		row.TagRows = tagRows
 		r := row.toSpec()
 		return &r, nil
 	})
@@ -198,7 +176,6 @@ func (s *GormBackend) BatchCreateResources(ctx context.Context, namespace api.Va
 		}
 		ts := now().UTC()
 		rows := make([]resourceRow, len(reqs))
-		var allTags []resourceTagRow
 		for i, req := range reqs {
 			rows[i] = resourceRow{
 				NamespaceID: namespace.String(),
@@ -208,8 +185,8 @@ func (s *GormBackend) BatchCreateResources(ctx context.Context, namespace api.Va
 				Deleted:     false,
 				DateCreated: ts,
 				DateUpdated: ts,
+				TagRows:     resourceTagRowsFor(namespace.String(), pids[i].String(), reqs[i].Tags),
 			}
-			allTags = append(allTags, tagRowsFor(namespace.String(), pids[i].String(), req.Tags)...)
 		}
 
 		if err := tx.CreateInBatches(&rows, s.batchSize).Error; err != nil {
@@ -218,15 +195,9 @@ func (s *GormBackend) BatchCreateResources(ctx context.Context, namespace api.Va
 			}
 			return nil, err
 		}
-		if len(allTags) > 0 {
-			if err := tx.CreateInBatches(&allTags, s.batchSize).Error; err != nil {
-				return nil, err
-			}
-		}
 
 		out := make([]api.ResourceResponse, len(rows))
 		for i := range rows {
-			rows[i].TagRows = tagRowsFor(namespace.String(), pids[i].String(), reqs[i].Tags)
 			out[i] = rows[i].toSpec()
 		}
 		return out, nil
@@ -240,7 +211,7 @@ func (s *GormBackend) GetResource(ctx context.Context, namespace api.ValidNamesp
 		}
 
 		var row resourceRow
-		if err := tx.Preload("TagRows", preloadResourceTags).First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Error; err != nil {
+		if err := tx.Preload("TagRows", orderByPos).First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, backend.ErrResourceNotFound
 			}
@@ -258,7 +229,7 @@ func (s *GormBackend) UpdateResource(ctx context.Context, namespace api.ValidNam
 		}
 
 		var row resourceRow
-		if err := tx.Preload("TagRows", preloadResourceTags).First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Error; err != nil {
+		if err := tx.Preload("TagRows", orderByPos).First(&row, "namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, backend.ErrResourceNotFound
 			}
@@ -275,14 +246,19 @@ func (s *GormBackend) UpdateResource(ctx context.Context, namespace api.ValidNam
 			row.Metadata = *req.Metadata
 		}
 		row.DateUpdated = now().UTC()
-		if err := tx.Save(&row).Error; err != nil {
+		if err := tx.Omit("TagRows").Save(&row).Error; err != nil {
 			return nil, err
 		}
 		if req.Tags != nil {
-			if err := replaceResourceTags(tx, namespace.String(), pid.String(), req.Tags); err != nil {
+			if err := tx.Where("namespace_id = ? AND pid = ?", namespace.String(), pid.String()).Delete(&resourceTagRow{}).Error; err != nil {
 				return nil, err
 			}
-			row.TagRows = tagRowsFor(namespace.String(), pid.String(), req.Tags)
+			row.TagRows = resourceTagRowsFor(namespace.String(), pid.String(), req.Tags)
+			if len(row.TagRows) > 0 {
+				if err := tx.Create(&row.TagRows).Error; err != nil {
+					return nil, err
+				}
+			}
 		}
 		r := row.toSpec()
 		return &r, nil

@@ -13,18 +13,27 @@ import (
 )
 
 type userRow struct {
-	Username     string `gorm:"column:username;type:text;primaryKey"`
-	Superuser    bool   `gorm:"column:superuser;not null;default:false"`
-	PasswordHash []byte `gorm:"column:password_hash"`
+	Username  string `gorm:"column:username;type:text;primaryKey"`
+	Superuser bool   `gorm:"column:superuser;not null;default:false"`
+
+	Password *userPasswordRow `gorm:"foreignKey:Username;references:Username;constraint:OnDelete:CASCADE"`
+	Keys     []apiKeyRow      `gorm:"foreignKey:Username;references:Username;constraint:OnDelete:CASCADE"`
 }
 
-func (userRow) TableName() string { return "auth_users" }
+func (userRow) TableName() string { return "users" }
+
+type userPasswordRow struct {
+	Username string `gorm:"column:username;type:text;primaryKey"`
+	Hash     []byte `gorm:"column:hash;not null"`
+}
+
+func (userPasswordRow) TableName() string { return "user_passwords" }
 
 func (u userRow) toSpec() api.UserInfo {
 	return api.UserInfo{
 		Username:  u.Username,
 		Superuser: u.Superuser,
-		Password:  len(u.PasswordHash) > 0,
+		Password:  u.Password != nil && len(u.Password.Hash) > 0,
 	}
 }
 
@@ -41,7 +50,7 @@ func ensureUserExists(tx *gorm.DB, user api.ValidUsername) error {
 
 func findUser(tx *gorm.DB, username api.ValidUsername) (userRow, error) {
 	var row userRow
-	if err := tx.First(&row, "username = ?", username.String()).Error; err != nil {
+	if err := tx.Preload("Password").First(&row, "username = ?", username.String()).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return userRow{}, errUserNotFound
 		}
@@ -83,9 +92,15 @@ func (s *GormBackend) ListUsers(ctx context.Context, params api.ListUsersParams)
 		}
 		if params.Password != nil {
 			if *params.Password {
-				q = q.Where("password_hash IS NOT NULL AND length(password_hash) > 0")
+				q = q.Where(`EXISTS (
+					SELECT 1 FROM user_passwords
+					WHERE user_passwords.username = users.username
+				)`)
 			} else {
-				q = q.Where("password_hash IS NULL OR length(password_hash) = 0")
+				q = q.Where(`NOT EXISTS (
+					SELECT 1 FROM user_passwords
+					WHERE user_passwords.username = users.username
+				)`)
 			}
 		}
 		var total int64
@@ -104,7 +119,7 @@ func (s *GormBackend) ListUsers(ctx context.Context, params api.ListUsersParams)
 		}
 
 		var rows []userRow
-		if err := q.Order("username ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
+		if err := q.Preload("Password").Order("username ASC").Limit(limit).Offset(offset).Find(&rows).Error; err != nil {
 			return nil, err
 		}
 		items := make([]api.UserInfo, len(rows))
@@ -139,18 +154,12 @@ func (s *GormBackend) DeleteUser(ctx context.Context, username api.ValidUsername
 		if err := ensureUserExists(tx, username); err != nil {
 			return zero, err
 		}
-		if err := tx.Where("username = ?", username.String()).Delete(&apiKeyRow{}).Error; err != nil {
-			return zero, err
-		}
+		// Roles are not FK-linked to users (usernames may appear before a user row exists).
 		if err := tx.Where("username = ?", username.String()).Delete(&namespaceRoleRow{}).Error; err != nil {
 			return zero, err
 		}
-		result := tx.Delete(&userRow{Username: username.String()})
-		if result.Error != nil {
-			return zero, result.Error
-		}
-		if result.RowsAffected == 0 {
-			return zero, backend.ErrUserNotFound
+		if err := cascadingDelete(tx, &userRow{Username: username.String()}); err != nil {
+			return zero, err
 		}
 		return zero, nil
 	})
@@ -165,7 +174,7 @@ func (s *GormBackend) UpdateUser(ctx context.Context, username api.ValidUsername
 		}
 		if req.Superuser != nil {
 			row.Superuser = *req.Superuser
-			if err := tx.Save(&row).Error; err != nil {
+			if err := tx.Model(&userRow{}).Where("username = ?", username.String()).Update("superuser", *req.Superuser).Error; err != nil {
 				return nil, err
 			}
 		}
