@@ -176,6 +176,7 @@ func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, usern
 // It can return the following errors:
 //
 // - [api.InvalidQueryParameter]
+// - [api.NamespaceNotFound]
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
@@ -186,11 +187,37 @@ func (s *Service) IssueKey(ctx context.Context, caller api.Caller, req api.KeyIs
 		}
 	}
 
+	if err := s.ensureKeyNamespaceScopesExist(ctx, req.NamespaceScopes); err != nil {
+		return nil, err
+	}
+
 	issued, err := s.issueAPIKey(ctx, caller.Username(), req)
 	if err != nil {
 		return nil, err
 	}
 	return issued, nil
+}
+
+// ensureKeyNamespaceScopesExist verifies that every namespace referenced by namespaceScopes exists.
+func (s *Service) ensureKeyNamespaceScopesExist(ctx context.Context, grants []api.APIKeyNamespaceScope) error {
+	seen := make(map[string]struct{}, len(grants))
+	for _, grant := range grants {
+		if _, ok := seen[grant.Namespace]; ok {
+			continue
+		}
+		seen[grant.Namespace] = struct{}{}
+
+		namespace, err := api.NewNamespaceID(grant.Namespace)
+		if err != nil {
+			return api.WithErrorCode(fmt.Errorf("invalid namespace id in namespaceScopes: %w", err), api.InvalidNamespaceID)
+		}
+		if _, err := s.backend.GetNamespace(ctx, namespace); errors.Is(err, backend.ErrNamespaceNotFound) {
+			return api.WithErrorCode(fmt.Errorf("namespace not found: %w", err), api.NamespaceNotFound)
+		} else if err != nil {
+			return api.WithErrorCode(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
+		}
+	}
+	return nil
 }
 
 // issueAPIKey issues a new API key, retrying when storage reports [backend.ErrKeyCollision].

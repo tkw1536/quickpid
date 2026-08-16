@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_get_userNotFound",
-  "comment": "A superuser requesting GET /user?username=... for a non-existent user receives 401 unauthorized.",
+  "name": "auth_user_key_post_user_scopes_roundtrip",
+  "comment": "Issuing a key with non-empty userScopes stores and returns those scopes on issue and list.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -34,20 +34,20 @@
       }
     },
     {
-      "name": "issue_root_key2",
+      "name": "issue_scoped_key",
       "config": {
         "now": "2026-07-05T12:00:00Z",
         "apiKeyIDs": [
-          "root-key-2"
+          "scoped-user-key"
         ],
         "apiKeys": [
-          "aaaaaaaaaaaaaaaaaaaaaaaaaaaroot2"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaascope"
         ]
       },
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"root\", \"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
+        "body": "{\"comment\":\"user-scoped\",\"expiresAt\":null,\"userScopes\":[\"listOwnKeys\",\"getUserInfo\"],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -58,37 +58,58 @@
       "response": {
         "code": 201,
         "body": {
-          "comment": "root",
+          "comment": "user-scoped",
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
-          "id": "root-key-2",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaroot2",
-          "userScopes": [],
+          "id": "scoped-user-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaascope",
+          "userScopes": [
+            "listOwnKeys",
+            "getUserInfo"
+          ],
           "namespaceScopes": []
         }
       }
     },
     {
-      "name": "userNotFound",
+      "name": "list_keys",
       "config": {},
       "request": {
         "method": "GET",
-        "path": "/user",
+        "path": "/user/key",
         "headers": [
           [
             "Authorization",
-            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
-          ],
-          [
-            "X-Impersonate-User",
-            "nobody"
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaascope"
           ]
         ]
       },
       "response": {
-        "code": 401,
+        "code": 200,
         "body": {
-          "error": "unauthorized"
+          "offset": 0,
+          "total": 2,
+          "items": [
+            {
+              "comment": "bootstrap",
+              "createdAt": "2026-07-05T12:00:00Z",
+              "expiresAt": null,
+              "id": "bootstrap",
+              "userScopes": [],
+              "namespaceScopes": []
+            },
+            {
+              "comment": "user-scoped",
+              "createdAt": "2026-07-05T12:00:00Z",
+              "expiresAt": null,
+              "id": "scoped-user-key",
+              "userScopes": [
+                "listOwnKeys",
+                "getUserInfo"
+              ],
+              "namespaceScopes": []
+            }
+          ]
         }
       }
     }

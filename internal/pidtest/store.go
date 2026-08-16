@@ -3,11 +3,12 @@
 //spellchecker:words pidtest
 package pidtest
 
-//spellchecker:words context errors slog strings testing time github quickpid backend internal apikey
+//spellchecker:words context errors slog reflect strings testing time github quickpid backend internal apikey
 import (
 	"context"
 	"errors"
 	"log/slog"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -204,6 +205,14 @@ func testAuthKeyLifecycle(t *testing.T, l *slog.Logger, newBackend BackendFactor
 	created, err := b.CreateKey(ctx, apikey.Default, user("alice"), "key-1", rawKey, api.KeyIssueRequest{
 		Comment:   "laptop",
 		ExpiresAt: &expires,
+		UserScopes: []api.UserScope{
+			api.ScopeListUserKeys,
+			api.ScopeGetUserInfo,
+		},
+		NamespaceScopes: []api.APIKeyNamespaceScope{
+			{Namespace: "ns-a", Scope: api.ScopeGetResource},
+			{Namespace: "ns-b", Scope: api.ScopeUpdateResource},
+		},
 	}, now)
 	if err != nil {
 		t.Fatalf("CreateKey() error = %v", err)
@@ -214,6 +223,15 @@ func testAuthKeyLifecycle(t *testing.T, l *slog.Logger, newBackend BackendFactor
 	if created.ExpiresAt == nil || !created.ExpiresAt.Equal(expires) {
 		t.Fatalf("CreateKey() expires_at = %+v", created.ExpiresAt)
 	}
+	if !reflect.DeepEqual(created.UserScopes, []api.UserScope{api.ScopeListUserKeys, api.ScopeGetUserInfo}) {
+		t.Fatalf("CreateKey() userScopes = %+v", created.UserScopes)
+	}
+	if !reflect.DeepEqual(created.NamespaceScopes, []api.APIKeyNamespaceScope{
+		{Namespace: "ns-a", Scope: api.ScopeGetResource},
+		{Namespace: "ns-b", Scope: api.ScopeUpdateResource},
+	}) {
+		t.Fatalf("CreateKey() namespaceScopes = %+v", created.NamespaceScopes)
+	}
 
 	page, err := b.ListKeys(ctx, apikey.Default, user("alice"), api.ListKeysParams{Limit: 100})
 	if err != nil {
@@ -221,6 +239,12 @@ func testAuthKeyLifecycle(t *testing.T, l *slog.Logger, newBackend BackendFactor
 	}
 	if len(page.Items) != 1 || page.Items[0].ID != "key-1" {
 		t.Fatalf("ListKeys() = %+v", page)
+	}
+	if !reflect.DeepEqual(page.Items[0].UserScopes, created.UserScopes) {
+		t.Fatalf("ListKeys() userScopes = %+v", page.Items[0].UserScopes)
+	}
+	if !reflect.DeepEqual(page.Items[0].NamespaceScopes, created.NamespaceScopes) {
+		t.Fatalf("ListKeys() namespaceScopes = %+v", page.Items[0].NamespaceScopes)
 	}
 
 	username, key, err := b.LookupUserByKey(ctx, apikey.Default, rawKey)
@@ -233,6 +257,9 @@ func testAuthKeyLifecycle(t *testing.T, l *slog.Logger, newBackend BackendFactor
 	if key == nil || key.ID != "key-1" || key.Comment != "laptop" || !key.CreatedAt.Equal(now()) {
 		t.Fatalf("LookupUserByKey() = %+v", key)
 	}
+	if !reflect.DeepEqual(key.UserScopes, created.UserScopes) || !reflect.DeepEqual(key.NamespaceScopes, created.NamespaceScopes) {
+		t.Fatalf("LookupUserByKey() scopes = %+v", key)
+	}
 
 	if err := b.RevokeKey(ctx, apikey.Default, user("alice"), "key-1"); err != nil {
 		t.Fatalf("RevokeKey() error = %v", err)
@@ -240,6 +267,23 @@ func testAuthKeyLifecycle(t *testing.T, l *slog.Logger, newBackend BackendFactor
 
 	if _, _, err := b.LookupUserByKey(ctx, apikey.Default, rawKey); !errors.Is(err, backend.ErrInvalidKey) {
 		t.Fatalf("LookupUserByKey() after revoke error = %v, want ErrInvalidKey", err)
+	}
+
+	// Empty scope arrays mean unrestricted and must round-trip as empty JSON arrays.
+	rawKey2 := testAPIKey("lifecyclekeyempty00000000000")
+	createdEmpty, err := b.CreateKey(ctx, apikey.Default, user("alice"), "key-empty", rawKey2, api.KeyIssueRequest{
+		Comment:         "empty-scopes",
+		UserScopes:      nil,
+		NamespaceScopes: nil,
+	}, now)
+	if err != nil {
+		t.Fatalf("CreateKey(empty scopes) error = %v", err)
+	}
+	if createdEmpty.UserScopes == nil || len(createdEmpty.UserScopes) != 0 {
+		t.Fatalf("CreateKey(empty scopes) userScopes = %#v, want empty non-nil", createdEmpty.UserScopes)
+	}
+	if createdEmpty.NamespaceScopes == nil || len(createdEmpty.NamespaceScopes) != 0 {
+		t.Fatalf("CreateKey(empty scopes) namespaceScopes = %#v, want empty non-nil", createdEmpty.NamespaceScopes)
 	}
 }
 

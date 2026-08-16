@@ -78,7 +78,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\":\"owner\",\"expiresAt\":null}",
+        "body": "{\"comment\":\"owner\",\"expiresAt\":null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -108,7 +108,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\":\"editor\",\"expiresAt\":null}",
+        "body": "{\"comment\":\"editor\",\"expiresAt\":null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",

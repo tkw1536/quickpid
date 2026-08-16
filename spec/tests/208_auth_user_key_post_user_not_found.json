@@ -39,7 +39,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\":\"k\",\"expiresAt\":null}",
+        "body": "{\"comment\":\"k\",\"expiresAt\":null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"time"
 
@@ -76,11 +77,14 @@ func (s *MemoryBackend) CreateKey(_ context.Context, format apikey.Format, usern
 	user := s.users[usernameString]
 
 	info := api.APIKeyInfo{
-		ID:        keyID,
-		Comment:   req.Comment,
-		CreatedAt: now().UTC(),
-		ExpiresAt: req.ExpiresAt,
+		ID:              keyID,
+		Comment:         req.Comment,
+		CreatedAt:       now().UTC(),
+		ExpiresAt:       req.ExpiresAt,
+		UserScopes:      slices.Clone(req.UserScopes),
+		NamespaceScopes: slices.Clone(req.NamespaceScopes),
 	}
+	info.NormalizeScopes()
 
 	hashed, err := format.Hash(key)
 	if err != nil {
@@ -121,7 +125,9 @@ func (s *MemoryBackend) ListKeys(_ context.Context, _ apikey.Format, username ap
 
 	all := make([]api.APIKeyInfo, 0, len(user.keys))
 	for _, key := range user.keys {
-		all = append(all, key.info)
+		info := key.info
+		info.NormalizeScopes()
+		all = append(all, info)
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i].ID < all[j].ID })
 
@@ -172,7 +178,9 @@ func (s *MemoryBackend) LookupUserByKey(_ context.Context, format apikey.Format,
 				continue
 			}
 			if format.Verify(key, apikey.Stored{Prefix: record.prefix, Digest: record.digest}) {
-				return username, new(record.info), nil
+				info := record.info
+				info.NormalizeScopes()
+				return username, &info, nil
 			}
 		}
 	}

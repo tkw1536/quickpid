@@ -1,8 +1,9 @@
 package api_test
 
-//spellchecker:words encoding json reflect strings testing time github quickpid
+//spellchecker:words encoding json errors reflect strings testing time github quickpid
 import (
 	"encoding/json/v2"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -115,22 +116,24 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 	}{
 		{
 			name:      "fail_missingExpiresAt",
-			body:      `{"comment":"dev key"}`,
+			body:      `{"comment":"dev key","userScopes":[],"namespaceScopes":[]}`,
 			wantErr:   true,
 			wantErrIn: []string{"missing required field", "expiresAt"},
 		},
 		{
 			name:    "ok_expiresAtSet",
-			body:    `{"comment":"dev key","expiresAt":"2026-12-31T00:00:00Z"}`,
+			body:    `{"comment":"dev key","expiresAt":"2026-12-31T00:00:00Z","userScopes":[],"namespaceScopes":[]}`,
 			wantErr: false,
 			want: api.KeyIssueRequest{
-				Comment:   "dev key",
-				ExpiresAt: new(time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC)),
+				Comment:         "dev key",
+				ExpiresAt:       new(time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC)),
+				UserScopes:      []api.UserScope{},
+				NamespaceScopes: []api.APIKeyNamespaceScope{},
 			},
 		},
 		{
 			name:      "fail_usernameInBody",
-			body:      `{"comment":"dev key","expiresAt":"2026-12-31T00:00:00Z","username":"alice"}`,
+			body:      `{"comment":"dev key","expiresAt":"2026-12-31T00:00:00Z","userScopes":[],"namespaceScopes":[],"username":"alice"}`,
 			wantErr:   true,
 			wantErrIn: []string{"unknown object member name", "username"},
 		},
@@ -148,34 +151,73 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			name:      "fail_unknownField",
-			body:      `{"comment":"dev key","expiresAt":null,"unknown":123}`,
+			body:      `{"comment":"dev key","expiresAt":null,"userScopes":[],"namespaceScopes":[],"unknown":123}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields", "unknown object member name", "unknown"},
 		},
 		{
 			name:      "fail_commentNull",
-			body:      `{"comment":null,"expiresAt":null}`,
+			body:      `{"comment":null,"expiresAt":null,"userScopes":[],"namespaceScopes":[]}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields"},
 		},
 		{
 			name:    "ok_expiresAtNull",
-			body:    `{"comment":"dev key","expiresAt":null}`,
+			body:    `{"comment":"dev key","expiresAt":null,"userScopes":[],"namespaceScopes":[]}`,
 			wantErr: false,
 			want: api.KeyIssueRequest{
-				Comment:   "dev key",
-				ExpiresAt: nil,
+				Comment:         "dev key",
+				ExpiresAt:       nil,
+				UserScopes:      []api.UserScope{},
+				NamespaceScopes: []api.APIKeyNamespaceScope{},
 			},
 		},
 		{
+			name:    "ok_withScopes",
+			body:    `{"comment":"dev key","expiresAt":null,"userScopes":["listOwnKeys","getUserInfo"],"namespaceScopes":[{"namespace":"ns1","scope":"getResource"}]}`,
+			wantErr: false,
+			want: api.KeyIssueRequest{
+				Comment:    "dev key",
+				ExpiresAt:  nil,
+				UserScopes: []api.UserScope{api.ScopeListUserKeys, api.ScopeGetUserInfo},
+				NamespaceScopes: []api.APIKeyNamespaceScope{
+					{Namespace: "ns1", Scope: api.ScopeGetResource},
+				},
+			},
+		},
+		{
+			name:      "fail_missingUserScopes",
+			body:      `{"comment":"dev key","expiresAt":null,"namespaceScopes":[]}`,
+			wantErr:   true,
+			wantErrIn: []string{"missing required field", "userScopes"},
+		},
+		{
+			name:      "fail_missingNamespaceScopes",
+			body:      `{"comment":"dev key","expiresAt":null,"userScopes":[]}`,
+			wantErr:   true,
+			wantErrIn: []string{"missing required field", "namespaceScopes"},
+		},
+		{
+			name:      "fail_userScopesNull",
+			body:      `{"comment":"dev key","expiresAt":null,"userScopes":null,"namespaceScopes":[]}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal fields"},
+		},
+		{
+			name:      "fail_namespaceScopesNull",
+			body:      `{"comment":"dev key","expiresAt":null,"userScopes":[],"namespaceScopes":null}`,
+			wantErr:   true,
+			wantErrIn: []string{"failed to unmarshal fields"},
+		},
+		{
 			name:      "fail_expiresAtMalformed",
-			body:      `{"comment":"dev key","expiresAt":"not-a-time"}`,
+			body:      `{"comment":"dev key","expiresAt":"not-a-time","userScopes":[],"namespaceScopes":[]}`,
 			wantErr:   true,
 			wantErrIn: []string{"failed to unmarshal fields"},
 		},
 		{
 			name:      "fail_usernameNull",
-			body:      `{"comment":"dev key","expiresAt":null,"username":null}`,
+			body:      `{"comment":"dev key","expiresAt":null,"userScopes":[],"namespaceScopes":[],"username":null}`,
 			wantErr:   true,
 			wantErrIn: []string{"unknown object member name", "username"},
 		},
@@ -199,6 +241,90 @@ func TestKeyIssueRequest_UnmarshalJSON(t *testing.T) {
 			}
 			if err == nil && !tt.wantErr && !reflect.DeepEqual(req, tt.want) {
 				t.Fatalf("req: got %+v want %+v", req, tt.want)
+			}
+		})
+	}
+}
+
+func TestKeyIssueRequest_Validate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		req       api.KeyIssueRequest
+		wantErrIn []string
+		wantIs    error
+	}{
+		{
+			name: "ok_empty",
+			req: api.KeyIssueRequest{
+				UserScopes:      []api.UserScope{},
+				NamespaceScopes: []api.APIKeyNamespaceScope{},
+			},
+		},
+		{
+			name: "ok_known",
+			req: api.KeyIssueRequest{
+				UserScopes: []api.UserScope{api.ScopeListUserKeys},
+				NamespaceScopes: []api.APIKeyNamespaceScope{
+					{Namespace: "ns1", Scope: api.ScopeGetResource},
+				},
+			},
+		},
+		{
+			name: "fail_unknownUserScope",
+			req: api.KeyIssueRequest{
+				UserScopes:      []api.UserScope{"notARealScope"},
+				NamespaceScopes: []api.APIKeyNamespaceScope{},
+			},
+			wantErrIn: []string{"unknown scope", "notARealScope"},
+			wantIs:    api.ErrUnknownScope,
+		},
+		{
+			name: "fail_unknownNamespaceScope",
+			req: api.KeyIssueRequest{
+				UserScopes: []api.UserScope{},
+				NamespaceScopes: []api.APIKeyNamespaceScope{
+					{Namespace: "ns1", Scope: "notARealScope"},
+				},
+			},
+			wantErrIn: []string{"unknown scope", "notARealScope"},
+			wantIs:    api.ErrUnknownScope,
+		},
+		{
+			name: "fail_invalidNamespace",
+			req: api.KeyIssueRequest{
+				UserScopes: []api.UserScope{},
+				NamespaceScopes: []api.APIKeyNamespaceScope{
+					{Namespace: "BAD!", Scope: api.ScopeGetResource},
+				},
+			},
+			wantErrIn: []string{"invalid namespace id"},
+			wantIs:    api.ErrInvalidNamespaceID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			err := tt.req.Validate()
+			if len(tt.wantErrIn) == 0 {
+				if err != nil {
+					t.Fatalf("Validate() error = %v, want nil", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatal("Validate() error = nil, want error")
+			}
+			es := err.Error()
+			for _, wantIn := range tt.wantErrIn {
+				if !strings.Contains(es, wantIn) {
+					t.Fatalf("Validate() error = %q, want substring %q", es, wantIn)
+				}
+			}
+			if tt.wantIs != nil && !errors.Is(err, tt.wantIs) {
+				t.Fatalf("Validate() error = %v, want errors.Is(..., %v)", err, tt.wantIs)
 			}
 		})
 	}

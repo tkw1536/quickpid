@@ -70,7 +70,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"expiring\", \"expiresAt\": \"2026-07-06T12:00:00Z\"}",
+        "body": "{\"comment\": \"expiring\", \"expiresAt\": \"2026-07-06T12:00:00Z\",\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -89,7 +89,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": "2026-07-06T12:00:00Z",
           "id": "expiring-key",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaexpire"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaexpire",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },

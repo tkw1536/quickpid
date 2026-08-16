@@ -93,7 +93,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"owner\",\"expiresAt\": null}",
+        "body": "{\"comment\": \"owner\",\"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -112,7 +112,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
           "id": "owner-key",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaowner"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaowner",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },
@@ -130,7 +132,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"reader\",\"expiresAt\": null}",
+        "body": "{\"comment\": \"reader\",\"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -149,7 +151,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
           "id": "reader-key",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaareader"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaareader",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },

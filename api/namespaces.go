@@ -31,14 +31,16 @@ func (ns ValidNamespaceID) String() string {
 
 // regular expressions to validate various identifiers.
 var (
-	namespaceIDRE         = regexp.MustCompile(`^[a-z0-9_-]+$`)
-	errInvalidNamespaceID = errors.New("invalid namespace id")
+	namespaceIDRE = regexp.MustCompile(`^[a-z0-9_-]+$`)
+
+	// ErrInvalidNamespaceID is returned when a namespace id fails format validation.
+	ErrInvalidNamespaceID = errors.New("invalid namespace id")
 )
 
 // NewNamespaceID creates a new NamespaceID.
 func NewNamespaceID(value string) (ValidNamespaceID, error) {
 	if !namespaceIDRE.MatchString(value) {
-		return ValidNamespaceID{}, errInvalidNamespaceID
+		return ValidNamespaceID{}, ErrInvalidNamespaceID
 	}
 	return ValidNamespaceID{valid: true, value: value}, nil
 }

@@ -70,7 +70,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"alice\",\"expiresAt\": null}",
+        "body": "{\"comment\": \"alice\",\"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -89,7 +89,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
           "id": "alice-key",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     }

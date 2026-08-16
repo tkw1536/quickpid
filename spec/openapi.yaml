@@ -2516,7 +2516,7 @@ paths:
             A paginated list of API keys, sorted by id in increasing order.
           content:
             application/json:
-              example: { total: 1, offset: 0, items: [ { id: "key_123", comment: "CI deploy key", createdAt: "2026-07-30T10:00:00Z", expiresAt: "2026-12-31T23:59:59Z" } ] }
+              example: { total: 1, offset: 0, items: [ { id: "key_123", comment: "CI deploy key", createdAt: "2026-07-30T10:00:00Z", expiresAt: "2026-12-31T23:59:59Z", userScopes: [], namespaceScopes: [] } ] }
               schema:
                 $ref: '#/components/schemas/PaginatedAPIKeysResponse'
         '400':
@@ -2569,6 +2569,8 @@ paths:
           "Impersonate User": []
       description: |
         Issues a new API key for the currently authenticated user.
+        Each entry in userScopes and namespaceScopes must be a known scope name.
+        Each namespace listed in namespaceScopes must already exist.
 
         In anonymous mode, the route returns HTTP 404.
       tags:
@@ -2580,7 +2582,7 @@ paths:
           If the configured maximum request body size is exceeded, a 413 response is returned.
         content:
           application/json:
-            example: { comment: "CI deploy key", expiresAt: "2026-12-31T23:59:59Z" }
+            example: { comment: "CI deploy key", expiresAt: "2026-12-31T23:59:59Z", userScopes: [], namespaceScopes: [] }
             schema:
               $ref: '#/components/schemas/IssueKeyRequest'
       responses:
@@ -2590,11 +2592,11 @@ paths:
             The raw key value is returned only once in this response.
           content:
             application/json:
-              example: { id: "key_123", comment: "CI deploy key", createdAt: "2026-07-30T10:00:00Z", expiresAt: "2026-12-31T23:59:59Z", key: "qp_live_123" }
+              example: { id: "key_123", comment: "CI deploy key", createdAt: "2026-07-30T10:00:00Z", expiresAt: "2026-12-31T23:59:59Z", userScopes: [], namespaceScopes: [], key: "qp_live_123" }
               schema:
                 $ref: '#/components/schemas/IssueKeyResponse'
         '400':
-          description: Invalid request body or expiresAt value in the past when issuing an API key.
+          description: Invalid request body, unknown scope, invalid namespace id, or expiresAt value in the past when issuing an API key.
           content:
             application/json:
               example: { error: "bodyMissing" }
@@ -2603,6 +2605,8 @@ paths:
                   - $ref: '#/components/schemas/ErrorBodyMissing'
                   - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
                   - $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+                  - $ref: '#/components/schemas/ErrorInvalidNamespaceID'
+                  - $ref: '#/components/schemas/ErrorUnknownScope'
         '401':
           description: Authentication is required or the credentials are incorrect when issuing an API key.
           content:
@@ -2618,14 +2622,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorForbidden'
         '404':
-          description: The server is in anonymous mode when issuing an API key.
+          description: |
+            The server is in anonymous mode when issuing an API key, or a namespace listed in namespaceScopes does not exist.
           content:
             application/json:
               example: {
                 error: "unavailableInAnonymousMode"
               }
               schema:
-                $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
+                  - $ref: '#/components/schemas/ErrorNamespaceNotFound'
         '413':
           description: Request body for issuing an API key exceeds the configured maximum size.
           content:
@@ -3921,6 +3928,8 @@ components:
       required:
         - comment
         - expiresAt
+        - userScopes
+        - namespaceScopes
       properties:
         comment:
           example: "CI deploy key"
@@ -3935,6 +3944,28 @@ components:
           type: string
           format: date-time
           nullable: true
+        userScopes:
+          type: array
+          example: []
+          description: |
+            User-level scopes granted to the key being issued.
+            Must be a JSON array (never omitted or null).
+            An empty array grants all user scopes.
+            A non-empty array restricts the key to exactly the listed user scopes (intersected with the caller's own permissions).
+            Each entry must be a known user scope.
+          items:
+            $ref: '#/components/schemas/UserScope'
+        namespaceScopes:
+          type: array
+          example: []
+          description: |
+            Namespace-scoped grants for the key being issued, as (namespace, scope) pairs.
+            Must be a JSON array (never omitted or null).
+            An empty array grants all namespace scopes for all namespaces.
+            A non-empty array restricts the key to exactly the listed pairs (intersected with the caller's own permissions).
+            Each namespace id must be valid and refer to an existing namespace; each scope must be a known namespace scope.
+          items:
+            $ref: '#/components/schemas/APIKeyNamespaceScope'
     IssueKeyResponse:
       description: |
         A newly issued API key.
@@ -3973,6 +4004,8 @@ components:
         - comment
         - createdAt
         - expiresAt
+        - userScopes
+        - namespaceScopes
       properties:
         id:
           example: "key_123"
@@ -3994,6 +4027,92 @@ components:
           type: string
           format: date-time
           nullable: true
+        userScopes:
+          type: array
+          example: []
+          description: |
+            User-level scopes stored on this existing API key.
+            An empty array means all user scopes are granted.
+            A non-empty array means the key is restricted to exactly those user scopes (intersected with the caller's own permissions).
+          items:
+            $ref: '#/components/schemas/UserScope'
+        namespaceScopes:
+          type: array
+          example: []
+          description: |
+            Namespace-scoped grants stored on this existing API key as (namespace, scope) pairs.
+            An empty array means all namespace scopes are granted for all namespaces.
+            A non-empty array means the key is restricted to exactly those pairs (intersected with the caller's own permissions).
+          items:
+            $ref: '#/components/schemas/APIKeyNamespaceScope'
+    UserScope:
+      description: |
+        Identifier of a user-level permission scope.
+        Typically matches an OpenAPI operationId, plus special scopes such as impersonate.
+      type: string
+      enum:
+        - listNamespaces
+        - createNamespace
+        - countAllResources
+        - listMounts
+        - resolveMountResource
+        - setMount
+        - deleteMount
+        - getMount
+        - getUserInfo
+        - updateUser
+        - createUser
+        - deleteUser
+        - autocompleteUsers
+        - listUsers
+        - listUserRoles
+        - listOwnKeys
+        - issueKey
+        - setPassword
+        - revokeKey
+        - impersonate
+      example: "listOwnKeys"
+    NamespaceScope:
+      description: |
+        Identifier of a namespace-level permission scope.
+        Typically matches an OpenAPI operationId, plus special scopes such as seeDeletedResource.
+      type: string
+      enum:
+        - getNamespace
+        - updateNamespace
+        - listNamespaceMounts
+        - listNamespaceRoles
+        - getNamespaceRoleSelf
+        - getNamespaceRoleOther
+        - setNamespaceRoleSelf
+        - setNamespaceRoleOther
+        - removeNamespaceRoleSelf
+        - removeNamespaceRoleOther
+        - listResources
+        - createResource
+        - createResourceBatch
+        - getResource
+        - updateResource
+        - seeDeletedResource
+      example: "getResource"
+    APIKeyNamespaceScope:
+      description: |
+        A single namespace-scoped grant on an API key: one namespace id paired with one namespace scope.
+      type: object
+      additionalProperties: false
+      required:
+        - namespace
+        - scope
+      properties:
+        namespace:
+          example: "ns_123"
+          description: Namespace id this API key grant applies to.
+          type: string
+          minLength: 1
+        scope:
+          description: Namespace scope granted for the paired namespace on this API key.
+          allOf:
+            - $ref: '#/components/schemas/NamespaceScope'
     Role:
       description: |
         Role for a user within a namespace.
@@ -4137,3 +4256,14 @@ components:
               enum:
                 - invalidRole
           description: The role is not valid or is not assignable via PUT.
+    ErrorUnknownScope:
+      description: Error response when an API key references an undefined user or namespace scope.
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - unknownScope
+          description: The provided scope name is not a defined user or namespace scope.

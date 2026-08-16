@@ -1,0 +1,203 @@
+{
+  "name": "auth_user_key_post_namespace_scopes_roundtrip",
+  "comment": "Issuing a key with non-empty namespaceScopes stores and returns those (namespace, scope) pairs on issue and list.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "create_ns_a",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "namespaceIDs": [
+          "ns-a"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tags\":[],\"pidFormat\":{\"pattern\":\"***\",\"characters\":\"full\"}}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "dateCreated": "2026-07-05T12:00:00Z",
+          "dateUpdated": "2026-07-05T12:00:00Z",
+          "id": "ns-a",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***"
+          },
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "create_ns_b",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "namespaceIDs": [
+          "ns-b"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tags\":[],\"pidFormat\":{\"pattern\":\"***\",\"characters\":\"full\"}}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "dateCreated": "2026-07-05T12:00:00Z",
+          "dateUpdated": "2026-07-05T12:00:00Z",
+          "id": "ns-b",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***"
+          },
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "issue_ns_scoped_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "scoped-ns-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaanskey"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\":\"ns-scoped\",\"expiresAt\":null,\"userScopes\":[],\"namespaceScopes\":[{\"namespace\":\"ns-a\",\"scope\":\"getResource\"},{\"namespace\":\"ns-b\",\"scope\":\"updateResource\"},{\"namespace\":\"ns-a\",\"scope\":\"listResources\"}]}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "ns-scoped",
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
+          "id": "scoped-ns-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaanskey",
+          "userScopes": [],
+          "namespaceScopes": [
+            {
+              "namespace": "ns-a",
+              "scope": "getResource"
+            },
+            {
+              "namespace": "ns-b",
+              "scope": "updateResource"
+            },
+            {
+              "namespace": "ns-a",
+              "scope": "listResources"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "list_keys",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user/key",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaanskey"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "offset": 0,
+          "total": 2,
+          "items": [
+            {
+              "comment": "bootstrap",
+              "createdAt": "2026-07-05T12:00:00Z",
+              "expiresAt": null,
+              "id": "bootstrap",
+              "userScopes": [],
+              "namespaceScopes": []
+            },
+            {
+              "comment": "ns-scoped",
+              "createdAt": "2026-07-05T12:00:00Z",
+              "expiresAt": null,
+              "id": "scoped-ns-key",
+              "userScopes": [],
+              "namespaceScopes": [
+                {
+                  "namespace": "ns-a",
+                  "scope": "getResource"
+                },
+                {
+                  "namespace": "ns-b",
+                  "scope": "updateResource"
+                },
+                {
+                  "namespace": "ns-a",
+                  "scope": "listResources"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

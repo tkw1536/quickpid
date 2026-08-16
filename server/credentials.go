@@ -1,8 +1,9 @@
 //spellchecker:words server
 package server
 
-//spellchecker:words http github quickpid
+//spellchecker:words errors http github quickpid
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -47,6 +48,17 @@ func (h *Server) issueUserKey(w http.ResponseWriter, r *http.Request, caller *ap
 	var req api.KeyIssueRequest
 	if err := h.decodeJSON(w, r, &req); err != nil {
 		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		switch {
+		case errors.Is(err, api.ErrInvalidNamespaceID):
+			return nil, api.WithErrorCode(fmt.Errorf("failed to validate key issue request: %w", err), api.InvalidNamespaceID)
+		case errors.Is(err, api.ErrUnknownScope):
+			return nil, api.WithErrorCode(fmt.Errorf("failed to validate key issue request: %w", err), api.UnknownScope)
+		default:
+			return nil, api.WithErrorCode(fmt.Errorf("failed to validate key issue request: %w", err), api.InvalidQueryParameter)
+		}
 	}
 
 	response, err := h.svc.IssueKey(r.Context(), *caller, req)

@@ -74,6 +74,8 @@ func Migrate(db *gorm.DB) error {
 		&resourceTagRow{},
 		&userRow{},
 		&apiKeyRow{},
+		&apiKeyUserScopeRow{},
+		&apiKeyNamespaceScopeRow{},
 		&namespaceRoleRow{},
 		&mountRow{},
 	); err != nil {

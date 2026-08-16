@@ -37,6 +37,7 @@ const (
 
 	RoleNotFound ErrorCode = "roleNotFound" // Role record not found
 	InvalidRole  ErrorCode = "invalidRole"  // Role is not allowed for this operation
+	UnknownScope ErrorCode = "unknownScope" // An unknown user or namespace scope was sent
 
 	InfoUnavailable ErrorCode = "infoUnavailable" // Info is unavailable (possibly for security reasons)
 
@@ -84,7 +85,7 @@ func (e ErrorCode) HTTPCode() int {
 		return http.StatusForbidden
 	case InvalidQueryParameter, BodyMissing, BodyInvalidJSON,
 		InvalidNamespaceID, InvalidPID, InvalidUsername, InvalidAutocompleteQuery, InvalidPassword, InvalidBaseURI,
-		InvalidResourceURL, InvalidRole:
+		InvalidResourceURL, InvalidRole, UnknownScope:
 		return http.StatusBadRequest
 	case NamespaceNotFound, ResourceNotFound, MountNotFound,
 		RoleNotFound, InfoUnavailable, UnavailableInAnonymousMode,

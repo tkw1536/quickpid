@@ -70,7 +70,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"alice\", \"expiresAt\": null}",
+        "body": "{\"comment\": \"alice\", \"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -89,7 +89,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
           "id": "alice-key",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },
@@ -107,7 +109,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\":\"k2\",\"expiresAt\":null}",
+        "body": "{\"comment\":\"k2\",\"expiresAt\":null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -122,7 +124,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
           "id": "k2",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa02"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa02",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },

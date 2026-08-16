@@ -93,7 +93,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"admin\",\"expiresAt\": null}",
+        "body": "{\"comment\": \"admin\",\"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -112,7 +112,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
           "id": "admin-key",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaadmin"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaadmin",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },

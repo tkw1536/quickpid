@@ -70,7 +70,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"auth\", \"expiresAt\": null}",
+        "body": "{\"comment\": \"auth\", \"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -89,7 +89,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
           "id": "a-auth",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaauth",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },
@@ -107,7 +109,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"keep-b\", \"expiresAt\": null}",
+        "body": "{\"comment\": \"keep-b\", \"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -122,7 +124,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
           "id": "b-keep",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaabkeep"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaabkeep",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },
@@ -140,7 +144,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"gone-c\", \"expiresAt\": \"2026-07-06T12:00:00Z\"}",
+        "body": "{\"comment\": \"gone-c\", \"expiresAt\": \"2026-07-06T12:00:00Z\",\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -155,7 +159,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": "2026-07-06T12:00:00Z",
           "id": "c-gone",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaacgone"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaacgone",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },
@@ -173,7 +179,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"keep-d\", \"expiresAt\": null}",
+        "body": "{\"comment\": \"keep-d\", \"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -188,7 +194,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
           "id": "d-keep",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaadkeep"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaadkeep",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },
@@ -206,7 +214,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"gone-e\", \"expiresAt\": \"2026-07-06T12:00:00Z\"}",
+        "body": "{\"comment\": \"gone-e\", \"expiresAt\": \"2026-07-06T12:00:00Z\",\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -221,7 +229,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": "2026-07-06T12:00:00Z",
           "id": "e-gone",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaegone"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaegone",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },
@@ -239,7 +249,7 @@
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\": \"keep-f\", \"expiresAt\": null}",
+        "body": "{\"comment\": \"keep-f\", \"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -254,7 +264,9 @@
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
           "id": "f-keep",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaafkeep"
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaafkeep",
+          "userScopes": [],
+          "namespaceScopes": []
         }
       }
     },
@@ -283,13 +295,17 @@
               "comment": "auth",
               "createdAt": "2026-07-05T12:00:00Z",
               "expiresAt": null,
-              "id": "a-auth"
+              "id": "a-auth",
+              "userScopes": [],
+              "namespaceScopes": []
             },
             {
               "comment": "keep-b",
               "createdAt": "2026-07-05T12:00:00Z",
               "expiresAt": null,
-              "id": "b-keep"
+              "id": "b-keep",
+              "userScopes": [],
+              "namespaceScopes": []
             }
           ]
         }
@@ -320,13 +336,17 @@
               "comment": "keep-d",
               "createdAt": "2026-07-05T12:00:00Z",
               "expiresAt": null,
-              "id": "d-keep"
+              "id": "d-keep",
+              "userScopes": [],
+              "namespaceScopes": []
             },
             {
               "comment": "keep-f",
               "createdAt": "2026-07-05T12:00:00Z",
               "expiresAt": null,
-              "id": "f-keep"
+              "id": "f-keep",
+              "userScopes": [],
+              "namespaceScopes": []
             }
           ]
         }
