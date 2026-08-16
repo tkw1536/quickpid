@@ -5,7 +5,6 @@ go 1.27rc3
 require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/swaggest/swgui v1.8.9
-	go.tkw01536.de/pkglib v0.0.0-20260814054005-69569605f915
 	golang.org/x/crypto v0.55.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.6.2
@@ -232,6 +231,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.tkw01536.de/go-check-spellchecker v0.0.0-20260714080545-f80096cce4f2 // indirect
 	go.tkw01536.de/gogenlicense v1.8.0 // indirect
+	go.tkw01536.de/pkglib v0.0.0-20260814054005-69569605f915 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
