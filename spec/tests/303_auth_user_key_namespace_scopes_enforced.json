@@ -1,6 +1,6 @@
 {
   "name": "auth_user_key_namespace_scopes_enforced",
-  "comment": "A non-empty namespaceScopes list is enforced at runtime: the granted (namespace, scope) pair succeeds; other namespaces or scopes return 401 unauthorized (even for a superuser).",
+  "comment": "A non-empty namespaceScopes list is enforced at runtime: the granted (namespace, scope) pair succeeds; other namespaces or scopes return 401 unauthorized (even for a superuser). Empty userScopes with a non-empty namespaceScopes list grants no user scopes; see 304_auth_user_key_empty_other_scopes_denied.",
   "steps": [
     {
       "name": "bootstrap_root",

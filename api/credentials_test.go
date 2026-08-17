@@ -447,35 +447,63 @@ func TestNewPassword(t *testing.T) {
 func TestAPIKeyInfo_HasUserScope(t *testing.T) {
 	t.Parallel()
 
+	nsGrant := []api.APIKeyNamespaceScope{{Namespace: "ns1", Scope: api.ScopeGetResource}}
+
 	tests := []struct {
-		name   string
-		scopes []api.UserScope
-		query  api.UserScope
-		want   bool
+		name            string
+		userScopes      []api.UserScope
+		namespaceScopes []api.APIKeyNamespaceScope
+		query           api.UserScope
+		want            bool
 	}{
 		{
-			name:   "nil_allows_all",
-			scopes: nil,
-			query:  api.ScopeGetUserInfo,
-			want:   true,
+			name:            "nil_both_allows_all",
+			userScopes:      nil,
+			namespaceScopes: nil,
+			query:           api.ScopeGetUserInfo,
+			want:            true,
 		},
 		{
-			name:   "empty_allows_all",
-			scopes: []api.UserScope{},
-			query:  api.ScopeListUserKeys,
-			want:   true,
+			name:            "empty_both_allows_all",
+			userScopes:      []api.UserScope{},
+			namespaceScopes: []api.APIKeyNamespaceScope{},
+			query:           api.ScopeListUserKeys,
+			want:            true,
 		},
 		{
-			name:   "present",
-			scopes: []api.UserScope{api.ScopeListUserKeys, api.ScopeGetUserInfo},
-			query:  api.ScopeGetUserInfo,
-			want:   true,
+			name:            "empty_user_with_namespace_grants_none",
+			userScopes:      []api.UserScope{},
+			namespaceScopes: nsGrant,
+			query:           api.ScopeGetUserInfo,
+			want:            false,
 		},
 		{
-			name:   "absent",
-			scopes: []api.UserScope{api.ScopeListUserKeys},
-			query:  api.ScopeGetUserInfo,
-			want:   false,
+			name:            "nil_user_with_namespace_grants_none",
+			userScopes:      nil,
+			namespaceScopes: nsGrant,
+			query:           api.ScopeGetUserInfo,
+			want:            false,
+		},
+		{
+			name:            "present",
+			userScopes:      []api.UserScope{api.ScopeListUserKeys, api.ScopeGetUserInfo},
+			namespaceScopes: nil,
+			query:           api.ScopeGetUserInfo,
+			want:            true,
+		},
+		{
+			name:            "present_with_namespace_scopes",
+			userScopes:      []api.UserScope{api.ScopeListUserKeys, api.ScopeGetUserInfo},
+			namespaceScopes: nsGrant,
+			query:           api.ScopeGetUserInfo,
+			want:            true,
+		},
+		{
+			name:            "absent",
+			userScopes:      []api.UserScope{api.ScopeListUserKeys},
+			namespaceScopes: nil,
+			query:           api.ScopeGetUserInfo,
+			want:            false,
 		},
 	}
 
@@ -483,7 +511,7 @@ func TestAPIKeyInfo_HasUserScope(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			key := &api.APIKeyInfo{UserScopes: tt.scopes}
+			key := &api.APIKeyInfo{UserScopes: tt.userScopes, NamespaceScopes: tt.namespaceScopes}
 			if got := key.HasUserScope(tt.query); got != tt.want {
 				t.Fatalf("HasUserScope(%q) = %v, want %v", tt.query, got, tt.want)
 			}
@@ -499,42 +527,70 @@ func TestAPIKeyInfo_HasNamespaceScope(t *testing.T) {
 	t.Parallel()
 
 	grant := api.APIKeyNamespaceScope{Namespace: "ns1", Scope: api.ScopeGetResource}
+	userGrant := []api.UserScope{api.ScopeGetUserInfo}
 
 	tests := []struct {
-		name   string
-		scopes []api.APIKeyNamespaceScope
-		query  api.APIKeyNamespaceScope
-		want   bool
+		name            string
+		userScopes      []api.UserScope
+		namespaceScopes []api.APIKeyNamespaceScope
+		query           api.APIKeyNamespaceScope
+		want            bool
 	}{
 		{
-			name:   "nil_allows_all",
-			scopes: nil,
-			query:  grant,
-			want:   true,
+			name:            "nil_both_allows_all",
+			userScopes:      nil,
+			namespaceScopes: nil,
+			query:           grant,
+			want:            true,
 		},
 		{
-			name:   "empty_allows_all",
-			scopes: []api.APIKeyNamespaceScope{},
-			query:  grant,
-			want:   true,
+			name:            "empty_both_allows_all",
+			userScopes:      []api.UserScope{},
+			namespaceScopes: []api.APIKeyNamespaceScope{},
+			query:           grant,
+			want:            true,
 		},
 		{
-			name:   "exact_match",
-			scopes: []api.APIKeyNamespaceScope{grant},
-			query:  grant,
-			want:   true,
+			name:            "empty_namespace_with_user_grants_none",
+			userScopes:      userGrant,
+			namespaceScopes: []api.APIKeyNamespaceScope{},
+			query:           grant,
+			want:            false,
 		},
 		{
-			name:   "wrong_namespace",
-			scopes: []api.APIKeyNamespaceScope{grant},
-			query:  api.APIKeyNamespaceScope{Namespace: "ns2", Scope: api.ScopeGetResource},
-			want:   false,
+			name:            "nil_namespace_with_user_grants_none",
+			userScopes:      userGrant,
+			namespaceScopes: nil,
+			query:           grant,
+			want:            false,
 		},
 		{
-			name:   "wrong_scope",
-			scopes: []api.APIKeyNamespaceScope{grant},
-			query:  api.APIKeyNamespaceScope{Namespace: "ns1", Scope: api.ScopeListResources},
-			want:   false,
+			name:            "exact_match",
+			userScopes:      nil,
+			namespaceScopes: []api.APIKeyNamespaceScope{grant},
+			query:           grant,
+			want:            true,
+		},
+		{
+			name:            "exact_match_with_user_scopes",
+			userScopes:      userGrant,
+			namespaceScopes: []api.APIKeyNamespaceScope{grant},
+			query:           grant,
+			want:            true,
+		},
+		{
+			name:            "wrong_namespace",
+			userScopes:      nil,
+			namespaceScopes: []api.APIKeyNamespaceScope{grant},
+			query:           api.APIKeyNamespaceScope{Namespace: "ns2", Scope: api.ScopeGetResource},
+			want:            false,
+		},
+		{
+			name:            "wrong_scope",
+			userScopes:      nil,
+			namespaceScopes: []api.APIKeyNamespaceScope{grant},
+			query:           api.APIKeyNamespaceScope{Namespace: "ns1", Scope: api.ScopeListResources},
+			want:            false,
 		},
 	}
 
@@ -542,7 +598,7 @@ func TestAPIKeyInfo_HasNamespaceScope(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			key := &api.APIKeyInfo{NamespaceScopes: tt.scopes}
+			key := &api.APIKeyInfo{UserScopes: tt.userScopes, NamespaceScopes: tt.namespaceScopes}
 			if got := key.HasNamespaceScope(tt.query); got != tt.want {
 				t.Fatalf("HasNamespaceScope(%+v) = %v, want %v", tt.query, got, tt.want)
 			}

@@ -24,7 +24,10 @@ info:
 
     In authenticated mode, clients authenticate with either an API key (Bearer token) or HTTP Basic credentials.
     Either can be created via appropriate API calls.
+    Sending both at once is not permitted and results in an unauthorized response.
     API keys can contain a list of user scopes and namespace scopes; these restrict what the API key is allowed to do.
+    When both lists are empty, the key is unrestricted and inherits the caller's full permissions.
+    When either list is non-empty, that list is an allowlist, and an empty list of the other type grants no scopes of that type.
     Sending both at once is not permitted and results in an unauthorized response.
 
     Superusers may optionally impersonate another user by also sending the `X-Impersonate-User` header with the target username.
@@ -2572,6 +2575,8 @@ paths:
         Issues a new API key for the currently authenticated user.
         Each entry in userScopes and namespaceScopes must be a known scope name.
         Each namespace listed in namespaceScopes must already exist.
+        If both userScopes and namespaceScopes are empty, the issued key is unrestricted.
+        If either list is non-empty, an empty list of the other type grants no scopes of that type.
 
         In anonymous mode, the route returns HTTP 404.
       tags:
@@ -3951,7 +3956,8 @@ components:
           description: |
             User-level scopes granted to the key being issued.
             Must be a JSON array (never omitted or null).
-            An empty array grants all user scopes.
+            When both this array and namespaceScopes are empty, all user scopes are granted.
+            When this array is empty and namespaceScopes is non-empty, no user scopes are granted.
             A non-empty array restricts the key to exactly the listed user scopes (intersected with the caller's own permissions).
             Each entry must be a known user scope.
           items:
@@ -3962,7 +3968,8 @@ components:
           description: |
             Namespace-scoped grants for the key being issued, as (namespace, scope) pairs.
             Must be a JSON array (never omitted or null).
-            An empty array grants all namespace scopes for all namespaces.
+            When both this array and userScopes are empty, all namespace scopes are granted for all namespaces.
+            When this array is empty and userScopes is non-empty, no namespace scopes are granted.
             A non-empty array restricts the key to exactly the listed pairs (intersected with the caller's own permissions).
             Each namespace id must be valid and refer to an existing namespace; each scope must be a known namespace scope.
           items:
@@ -4033,7 +4040,8 @@ components:
           example: []
           description: |
             User-level scopes stored on this existing API key.
-            An empty array means all user scopes are granted.
+            When both this array and namespaceScopes are empty, this key grants all user scopes.
+            When this array is empty and namespaceScopes is non-empty, this key grants no user scopes.
             A non-empty array means the key is restricted to exactly those user scopes (intersected with the caller's own permissions).
           items:
             $ref: '#/components/schemas/UserScope'
@@ -4042,7 +4050,8 @@ components:
           example: []
           description: |
             Namespace-scoped grants stored on this existing API key as (namespace, scope) pairs.
-            An empty array means all namespace scopes are granted for all namespaces.
+            When both this array and userScopes are empty, this key grants all namespace scopes for all namespaces.
+            When this array is empty and userScopes is non-empty, this key grants no namespace scopes.
             A non-empty array means the key is restricted to exactly those pairs (intersected with the caller's own permissions).
           items:
             $ref: '#/components/schemas/APIKeyNamespaceScope'

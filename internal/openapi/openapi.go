@@ -3,7 +3,7 @@
 //spellchecker:words openapi
 package openapi
 
-//spellchecker:words bytes gopkg yaml
+//spellchecker:words bytes errors gopkg yaml
 import (
 	"bytes"
 	"errors"

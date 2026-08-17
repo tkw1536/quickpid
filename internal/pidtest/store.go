@@ -269,7 +269,7 @@ func testAuthKeyLifecycle(t *testing.T, l *slog.Logger, newBackend BackendFactor
 		t.Fatalf("LookupUserByKey() after revoke error = %v, want ErrInvalidKey", err)
 	}
 
-	// Empty scope arrays mean unrestricted and must round-trip as empty JSON arrays.
+	// Both empty scope arrays mean unrestricted and must round-trip as empty JSON arrays.
 	//spellchecker:words lifecyclekeyempty
 	rawKey2 := testAPIKey("lifecyclekeyempty00000000000")
 	createdEmpty, err := b.CreateKey(ctx, apikey.Default, user("alice"), "key-empty", rawKey2, api.KeyIssueRequest{

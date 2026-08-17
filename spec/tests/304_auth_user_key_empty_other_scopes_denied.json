@@ -1,6 +1,6 @@
 {
-  "name": "auth_user_key_post_namespace_scopes_roundtrip",
-  "comment": "Issuing a key with non-empty namespaceScopes stores and returns those (namespace, scope) pairs on issue and list.",
+  "name": "auth_user_key_empty_other_scopes_denied",
+  "comment": "When one of userScopes or namespaceScopes is non-empty, an empty list of the other type grants no scopes of that type: a user-only key cannot get a resource, and a namespace-only key cannot get user info.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -67,17 +67,17 @@
       }
     },
     {
-      "name": "create_ns_b",
+      "name": "create_resource_ns_a",
       "config": {
         "now": "2026-07-05T12:00:00Z",
-        "namespaceIDs": [
-          "ns-b"
+        "pids": [
+          "aaa"
         ]
       },
       "request": {
         "method": "POST",
-        "path": "/resolver/namespaces",
-        "body": "{\"tags\":[],\"pidFormat\":{\"pattern\":\"***\",\"characters\":\"full\"}}",
+        "path": "/resolver/namespaces/ns-a/resources",
+        "body": "{\"url\":\"https://example.com/a\",\"metadata\":null,\"tags\":[]}",
         "headers": [
           [
             "Authorization",
@@ -90,30 +90,29 @@
         "body": {
           "dateCreated": "2026-07-05T12:00:00Z",
           "dateUpdated": "2026-07-05T12:00:00Z",
-          "id": "ns-b",
-          "pidFormat": {
-            "characters": "full",
-            "pattern": "***"
-          },
+          "deleted": false,
+          "metadata": null,
+          "pid": "aaa",
+          "url": "https://example.com/a",
           "tags": []
         }
       }
     },
     {
-      "name": "issue_ns_scoped_key",
+      "name": "issue_user_only_key",
       "config": {
         "now": "2026-07-05T12:00:00Z",
         "apiKeyIDs": [
-          "scoped-ns-key"
+          "scoped-user-only"
         ],
         "apiKeys": [
-          "aaaaaaaaaaaaaaaaaaaaaaaaaaanskey"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaauser"
         ]
       },
       "request": {
         "method": "POST",
         "path": "/user/key",
-        "body": "{\"comment\":\"ns-scoped\",\"expiresAt\":null,\"userScopes\":[],\"namespaceScopes\":[{\"namespace\":\"ns-a\",\"scope\":\"getResource\"},{\"namespace\":\"ns-b\",\"scope\":\"updateResource\"},{\"namespace\":\"ns-a\",\"scope\":\"listResources\"}]}",
+        "body": "{\"comment\":\"user-only\",\"expiresAt\":null,\"userScopes\":[\"getUserInfo\"],\"namespaceScopes\":[]}",
         "headers": [
           [
             "Authorization",
@@ -124,35 +123,53 @@
       "response": {
         "code": 201,
         "body": {
-          "comment": "ns-scoped",
+          "comment": "user-only",
           "createdAt": "2026-07-05T12:00:00Z",
           "expiresAt": null,
-          "id": "scoped-ns-key",
-          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaanskey",
-          "userScopes": [],
-          "namespaceScopes": [
-            {
-              "namespace": "ns-a",
-              "scope": "getResource"
-            },
-            {
-              "namespace": "ns-b",
-              "scope": "updateResource"
-            },
-            {
-              "namespace": "ns-a",
-              "scope": "listResources"
-            }
-          ]
+          "id": "scoped-user-only",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaauser",
+          "userScopes": [
+            "getUserInfo"
+          ],
+          "namespaceScopes": []
         }
       }
     },
     {
-      "name": "list_keys",
+      "name": "user_only_get_resource_unauthorized",
       "config": {},
       "request": {
         "method": "GET",
+        "path": "/resolver/namespaces/ns-a/resources/aaa",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaauser"
+          ]
+        ]
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
+        }
+      }
+    },
+    {
+      "name": "issue_namespace_only_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "scoped-ns-only"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaansone"
+        ]
+      },
+      "request": {
+        "method": "POST",
         "path": "/user/key",
+        "body": "{\"comment\":\"ns-only\",\"expiresAt\":null,\"userScopes\":[],\"namespaceScopes\":[{\"namespace\":\"ns-a\",\"scope\":\"getResource\"}]}",
         "headers": [
           [
             "Authorization",
@@ -161,41 +178,40 @@
         ]
       },
       "response": {
-        "code": 200,
+        "code": 201,
         "body": {
-          "offset": 0,
-          "total": 2,
-          "items": [
+          "comment": "ns-only",
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
+          "id": "scoped-ns-only",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaansone",
+          "userScopes": [],
+          "namespaceScopes": [
             {
-              "comment": "bootstrap",
-              "createdAt": "2026-07-05T12:00:00Z",
-              "expiresAt": null,
-              "id": "bootstrap",
-              "userScopes": [],
-              "namespaceScopes": []
-            },
-            {
-              "comment": "ns-scoped",
-              "createdAt": "2026-07-05T12:00:00Z",
-              "expiresAt": null,
-              "id": "scoped-ns-key",
-              "userScopes": [],
-              "namespaceScopes": [
-                {
-                  "namespace": "ns-a",
-                  "scope": "getResource"
-                },
-                {
-                  "namespace": "ns-b",
-                  "scope": "updateResource"
-                },
-                {
-                  "namespace": "ns-a",
-                  "scope": "listResources"
-                }
-              ]
+              "namespace": "ns-a",
+              "scope": "getResource"
             }
           ]
+        }
+      }
+    },
+    {
+      "name": "namespace_only_get_user_unauthorized",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaansone"
+          ]
+        ]
+      },
+      "response": {
+        "code": 401,
+        "body": {
+          "error": "unauthorized"
         }
       }
     }

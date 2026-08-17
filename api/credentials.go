@@ -203,11 +203,13 @@ type APIKeyInfo struct {
 	ExpiresAt *time.Time `json:"expiresAt"`
 
 	// UserScopes lists user-level scopes granted to this key.
-	// An empty array means all user scopes are granted.
+	// When both UserScopes and NamespaceScopes are empty, all user scopes are granted.
+	// When UserScopes is empty and NamespaceScopes is non-empty, no user scopes are granted.
 	UserScopes []UserScope `json:"userScopes"`
 
 	// NamespaceScopes lists (namespace, scope) pairs granted to this key.
-	// An empty array means all namespace scopes are granted for all namespaces.
+	// When both NamespaceScopes and UserScopes are empty, all namespace scopes are granted for all namespaces.
+	// When NamespaceScopes is empty and UserScopes is non-empty, no namespace scopes are granted.
 	NamespaceScopes []APIKeyNamespaceScope `json:"namespaceScopes"`
 
 	userScopeIndex      lazy.Lazy[scopeIndex[UserScope]]
@@ -225,18 +227,20 @@ func (k *APIKeyInfo) NormalizeScopes() {
 }
 
 // HasUserScope reports whether this key grants the given user scope.
-// An empty UserScopes list grants all user scopes.
+// If both UserScopes and NamespaceScopes are empty, all user scopes are granted.
+// If UserScopes is empty and NamespaceScopes is non-empty, no user scopes are granted.
 func (k *APIKeyInfo) HasUserScope(scope UserScope) bool {
 	return k.userScopeIndex.Get(func() scopeIndex[UserScope] {
-		return newScopeIndex(k.UserScopes)
+		return newScopeIndex(k.UserScopes, len(k.NamespaceScopes) == 0)
 	}).has(scope)
 }
 
 // HasNamespaceScope reports whether this key grants the given namespace scope pair.
-// An empty NamespaceScopes list grants all namespace scopes for all namespaces.
+// If both NamespaceScopes and UserScopes are empty, all namespace scopes are granted.
+// If NamespaceScopes is empty and UserScopes is non-empty, no namespace scopes are granted.
 func (k *APIKeyInfo) HasNamespaceScope(scope APIKeyNamespaceScope) bool {
 	return k.namespaceScopeIndex.Get(func() scopeIndex[APIKeyNamespaceScope] {
-		return newScopeIndex(k.NamespaceScopes)
+		return newScopeIndex(k.NamespaceScopes, len(k.UserScopes) == 0)
 	}).has(scope)
 }
 
@@ -254,9 +258,11 @@ type scopeIndex[K comparable] struct {
 	set map[K]struct{}
 }
 
-func newScopeIndex[K comparable](items []K) scopeIndex[K] {
+// newScopeIndex creates a new scope index.
+// emptyIsAll indicates whether an empty items list should grant all scopes.
+func newScopeIndex[K comparable](items []K, emptyIsAll bool) scopeIndex[K] {
 	if len(items) == 0 {
-		return scopeIndex[K]{all: true}
+		return scopeIndex[K]{all: emptyIsAll}
 	}
 	set := make(map[K]struct{}, len(items))
 	for _, item := range items {

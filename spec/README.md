@@ -154,6 +154,7 @@ Users may set their own password (for HTTP basic auth).
 They may also issue and revoke their own API keys.
 By default each API key has the same permission level as the user itself.
 Alternatively, they may specify a set of scopes, both in general and per-namespace, which restrict what an api key is allowed to do. 
+If the set of specified scopes are empty, all scopes are granted implicitly. 
 
 A user account may be marked as a **superuser**.
 Superusers bypass role checks and may manage global mounts as well as other user accounts.
