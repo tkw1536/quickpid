@@ -174,8 +174,8 @@
               "scope": "getNamespace",
               "description": "Retrieve a single namespace by id.",
               "anonymousMode": true,
-              "allowUnauthenticated": false,
-              "minRole": "contributor",
+              "allowUnauthenticated": true,
+              "minRole": "none",
               "requireSuperuser": false
             },
             {

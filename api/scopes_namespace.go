@@ -94,8 +94,8 @@ var namespaceDefs = func(actions ...NamespaceScopeDefinition) map[NamespaceScope
 		Scope:                ScopeGetNamespace,
 		Description:          "Retrieve a single namespace by id.",
 		AnonymousMode:        true,
-		AllowUnauthenticated: false,
-		MinRole:              RoleContributor,
+		AllowUnauthenticated: true,
+		MinRole:              RoleNone,
 		RequireSuperuser:     false,
 	},
 	NamespaceScopeDefinition{

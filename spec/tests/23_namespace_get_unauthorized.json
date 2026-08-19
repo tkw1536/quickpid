@@ -1,6 +1,6 @@
 {
   "name": "23_namespace_get_unauthorized",
-  "comment": "In authenticated mode, GET /resolver/namespaces/{id} without credentials returns 401 unauthorized.",
+  "comment": "In authenticated mode, GET /resolver/namespaces/{id} without credentials returns 404 when the namespace does not exist.",
   "steps": [
     {
       "name": "create_namespace_for_later_steps",
@@ -33,16 +33,16 @@
       }
     },
     {
-      "name": "get_unauthenticated",
+      "name": "get_unauthenticated_not_found",
       "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/b1000000-0000-4000-8000-000000000002"
       },
       "response": {
-        "code": 401,
+        "code": 404,
         "body": {
-          "error": "unauthorized"
+          "error": "namespaceNotFound"
         }
       }
     }

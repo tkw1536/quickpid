@@ -743,14 +743,9 @@ paths:
       description: |
         This endpoint returns a single namespace by id.
 
-        In anonymous mode, this route is accessible without authentication.
+        This route is accessible without authentication in both anonymous and authenticated mode.
+        Any caller, authenticated or not, may retrieve a namespace directly by id.
 
-        In authenticated mode, authentication is required.
-        Only namespaces the current user has access to can be accessed.
-        This is defined by having a role that is not "none" for a namespace.
-        If the authenticated user is a superuser, all namespaces can be accessed.
-
-        If the namespace exists but the caller lacks required access, a 403 response is returned.
         If the namespace does not exist, a 404 response is returned.
       tags:
         - namespaces

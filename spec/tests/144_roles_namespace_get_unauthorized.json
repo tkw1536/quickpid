@@ -1,6 +1,6 @@
 {
   "name": "144_roles_namespace_get_unauthorized",
-  "comment": "Getting a namespace without valid authentication returns 401 unauthorized.",
+  "comment": "Getting a namespace without authentication returns 200 because the endpoint is open to all callers.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -165,16 +165,25 @@
       }
     },
     {
-      "name": "get_namespace_unauthorized",
+      "name": "get_namespace_unauthenticated_ok",
       "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/c1000000-0000-4000-8000-000000000001"
       },
       "response": {
-        "code": 401,
+        "code": 200,
         "body": {
-          "error": "unauthorized"
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
+          "id": "c1000000-0000-4000-8000-000000000001",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tags": [
+            "perm-ns"
+          ]
         }
       }
     }

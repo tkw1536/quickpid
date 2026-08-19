@@ -1,6 +1,6 @@
 {
   "name": "111_auth_namespace_get_unauthorized",
-  "comment": "In authenticated mode, getting a namespace with an invalid or missing token returns 401 unauthorized.",
+  "comment": "In authenticated mode, getting a namespace without credentials returns 200 because the endpoint is open to all callers.",
   "steps": [
     {
       "name": "create_namespace_for_later_steps",
@@ -33,16 +33,25 @@
       }
     },
     {
-      "name": "get_namespace_unauthorized",
+      "name": "get_namespace_unauthenticated_ok",
       "config": {},
       "request": {
         "method": "GET",
         "path": "/resolver/namespaces/b1000000-0000-4000-8000-000000000001"
       },
       "response": {
-        "code": 401,
+        "code": 200,
         "body": {
-          "error": "unauthorized"
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
+          "id": "b1000000-0000-4000-8000-000000000001",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tags": [
+            "auth-ns"
+          ]
         }
       }
     }

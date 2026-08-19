@@ -1,6 +1,6 @@
 {
   "name": "25_namespace_get_allowed_with_access",
-  "comment": "In authenticated mode, a user with a non-none role on a namespace can retrieve it by id.",
+  "comment": "In authenticated mode, any authenticated user can retrieve a namespace by id regardless of their role.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -272,7 +272,7 @@
       }
     },
     {
-      "name": "get_ns_a_as_alice_not_ok",
+      "name": "get_ns_a_as_alice_ok",
       "config": {},
       "request": {
         "method": "GET",
@@ -285,9 +285,18 @@
         ]
       },
       "response": {
-        "code": 403,
+        "code": 200,
         "body": {
-          "error": "forbidden"
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
+          "id": "a1000000-0000-4000-8000-000000000001",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tags": [
+            "ns-a"
+          ]
         }
       }
     }

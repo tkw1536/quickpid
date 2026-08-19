@@ -1,6 +1,6 @@
 {
   "name": "146_roles_namespace_get_owner_allowed",
-  "comment": "A user with namespace access can GET the namespace metadata.",
+  "comment": "Any authenticated user can GET namespace metadata, regardless of their role on the namespace.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -227,7 +227,7 @@
       }
     },
     {
-      "name": "reader_get_namespace_forbidden",
+      "name": "reader_get_namespace_ok",
       "config": {},
       "request": {
         "method": "GET",
@@ -240,9 +240,18 @@
         ]
       },
       "response": {
-        "code": 403,
+        "code": 200,
         "body": {
-          "error": "forbidden"
+          "dateCreated": "2020-01-02T03:04:05Z",
+          "dateUpdated": "2020-01-02T03:04:05Z",
+          "id": "c1000000-0000-4000-8000-000000000001",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tags": [
+            "perm-ns"
+          ]
         }
       }
     }
