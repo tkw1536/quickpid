@@ -73,7 +73,7 @@ type NamespaceScopeDefinition struct {
 	AllowUnauthenticated bool `json:"allowUnauthenticated"`
 
 	// MinRole is the minimum explicit namespace role that grants access.
-	// [RoleNone] means no role grants access by itself.
+	// [RoleNone] means every authenticated user has access.
 	MinRole Role `json:"minRole"`
 
 	// RequireSuperuser indicates if only a superuser may perform the action.
