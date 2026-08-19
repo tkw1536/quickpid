@@ -172,7 +172,7 @@
             },
             {
               "scope": "getNamespace",
-              "description": "Retrieve a single namespace by id, or see it in the list of namespaces.",
+              "description": "Retrieve a single namespace by id.",
               "anonymousMode": true,
               "allowUnauthenticated": false,
               "minRole": "contributor",
@@ -248,6 +248,14 @@
               "anonymousMode": true,
               "allowUnauthenticated": false,
               "minRole": "editor",
+              "requireSuperuser": false
+            },
+            {
+              "scope": "seeInNamespaceList",
+              "description": "See a namespace in the list of namespaces.",
+              "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "minRole": "contributor",
               "requireSuperuser": false
             },
             {

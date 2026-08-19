@@ -31,8 +31,6 @@ func (scope NamespaceScope) Definition() (NamespaceScopeDefinition, error) {
 // Related operations (those using the same path) should be grouped together, with a blank line between them.
 // Their formatting is kept similar to the [server.NewServer] route definitions.
 const (
-	// ScopeGetNamespace is applied both to GETTING a namespace directly, and to seeing a namespace in the list of namespaces.
-	// Note that listing namespaces additionally requires the [ScopeListNamespaces] user scope.
 	ScopeGetNamespace    NamespaceScope = "getNamespace"
 	ScopeUpdateNamespace NamespaceScope = "updateNamespace"
 
@@ -57,6 +55,10 @@ const (
 	// SeeDeletedResource is special because it does not correspond to a dedicated operation in the spec.
 	// It gates whether a deleted resource is returned un-redacted when reading a resource.
 	ScopeSeeDeletedResource NamespaceScope = "seeDeletedResource"
+
+	// ScopeSeeInNamespaceList is special because it does not correspond to a dedicated operation in the spec.
+	// Instead it gates whether a namespace is returned in the list of namespaces.
+	ScopeSeeInNamespaceList NamespaceScope = "seeInNamespaceList"
 )
 
 // NamespaceScopeDefinition defines a [NamespaceScope] and its associated permissions.
@@ -90,7 +92,7 @@ var namespaceDefs = func(actions ...NamespaceScopeDefinition) map[NamespaceScope
 }(
 	NamespaceScopeDefinition{
 		Scope:                ScopeGetNamespace,
-		Description:          "Retrieve a single namespace by id, or see it in the list of namespaces.",
+		Description:          "Retrieve a single namespace by id.",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
 		MinRole:              RoleContributor,
@@ -220,6 +222,14 @@ var namespaceDefs = func(actions ...NamespaceScopeDefinition) map[NamespaceScope
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
 		MinRole:              RoleEditor,
+		RequireSuperuser:     false,
+	},
+	NamespaceScopeDefinition{
+		Scope:                ScopeSeeInNamespaceList,
+		Description:          "See a namespace in the list of namespaces.",
+		AnonymousMode:        true,
+		AllowUnauthenticated: false,
+		MinRole:              RoleContributor,
 		RequireSuperuser:     false,
 	},
 )

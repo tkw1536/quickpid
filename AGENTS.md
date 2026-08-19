@@ -109,6 +109,7 @@ When adding or changing a protected route:
 2. Wire the route with the matching lowlevel helper in [`server/server.go`](server/server.go).
 3. Keep service free of duplicate scope checks for that route.
 4. List every error code the lowlevel helper or handler can return in the route's `allowedErrors` slice.
+5. Update [`spec/tests/298_resolver_scopes_list.json`](spec/tests/298_resolver_scopes_list.json) to reflect any added, removed, or modified scope entries (the test asserts the exact JSON response of the `/resolver/scopes` endpoint, which lists every defined scope and its definition).
 
 `-anon` (anonymous mode) is modeled per scope via each action's `AnonymousMode` flag; lowlevel evaluates that before calling the handler.
 

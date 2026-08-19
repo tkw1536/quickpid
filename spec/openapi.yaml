@@ -4104,6 +4104,7 @@ components:
         - getResource
         - updateResource
         - seeDeletedResource
+        - seeInNamespaceList
       example: "getResource"
     APIKeyNamespaceScope:
       description: |
