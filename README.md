@@ -99,10 +99,6 @@ Examples:
 
   `docker run --rm -p 8080:8080 -e DSN='host=postgres user=postgres password=postgres dbname=quickpid port=5432 sslmode=disable' ghcr.io/tkw1536/quickpid-postgres:latest`
 
-## Future Technical Work
-<!-- spellchecker:word staticcheck -->
-- update to `go1.27` final & re-enable `staticcheck` linter on CI
-
 ## LICENSE
 
 The code in this repository is &copy; Tom Wiesing and available under the terms of the [GNU Affero General Public License 3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) license, see [the LICENSE file](./LICENSE).

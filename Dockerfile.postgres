@@ -6,7 +6,7 @@ RUN set -x ; \
   adduser -u 82 -D -S -G www-data www-data && exit 0 ; exit 1
 
 # build the server
-FROM golang:1.27-rc AS build
+FROM golang:1.27 AS build
 
 # build the app
 ADD . /app/

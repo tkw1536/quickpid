@@ -3,7 +3,7 @@ name: Go Tests
 on: [push, pull_request]
 
 env:
-  GO_VERSION: '1.27.0-rc.3'
+  GO_VERSION: '1.27.0'
 
 jobs:
   test:
@@ -44,4 +44,4 @@ jobs:
       - name: Download dependencies
         run: 'go mod download'
       - name: Run lint
-        run: go tool golangci-lint run --disable=staticcheck ./...
+        run: go tool golangci-lint run ./...
