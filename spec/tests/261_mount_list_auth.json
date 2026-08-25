@@ -1,6 +1,6 @@
 {
   "name": "261_mount_list_auth",
-  "comment": "In authenticated mode, listing all mounts requires superuser; listing mounts for a namespace requires at least contributor.",
+  "comment": "In authenticated mode, listing all mounts is allowed for any authenticated user (filtered by mount grants for non-superusers); listing mounts for a namespace requires at least contributor.",
   "steps": [
     {
       "name": "bootstrap_root",
@@ -251,7 +251,7 @@
       }
     },
     {
-      "name": "list_all_forbidden",
+      "name": "list_all_no_grants_empty",
       "config": {},
       "request": {
         "method": "GET",
@@ -264,9 +264,11 @@
         ]
       },
       "response": {
-        "code": 403,
+        "code": 200,
         "body": {
-          "error": "forbidden"
+          "total": 0,
+          "offset": 0,
+          "items": []
         }
       }
     },

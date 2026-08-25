@@ -158,7 +158,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 	))
 	h.mux.Handle("PUT /resolver/mounts/{baseUri}", h.lowlevel.UserScope(
 		api.ScopeSetMount,
-		h.upsertNamespaceMount,
+		h.checkBaseUriGrant(h.upsertNamespaceMount),
 		lowlevel.FixedStatusCode[*api.MountResponse](http.StatusOK),
 		[]api.ErrorCode{
 			api.BodyMissing,
@@ -175,7 +175,7 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 
 	h.mux.Handle("DELETE /resolver/mounts/{baseUri}", h.lowlevel.UserScope(
 		api.ScopeDeleteMount,
-		h.deleteNamespaceMount,
+		h.checkBaseUriGrant(h.deleteNamespaceMount),
 		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
 		[]api.ErrorCode{
 			api.InvalidBaseURI,
@@ -198,6 +198,39 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 			api.MountNotFound,
 			api.NamespaceNotFound,
 			api.ResourceNotFound,
+			api.DatabaseError,
+		},
+	))
+
+	h.mux.Handle("PUT /resolver/mount-grants/{username}", h.lowlevel.UserScope(
+		api.ScopeSetMountGrant,
+		h.setMountGrant,
+		lowlevel.FixedStatusCode[*api.MountGrant](http.StatusOK),
+		[]api.ErrorCode{
+			api.BodyMissing,
+			api.BodyInvalidJSON,
+			api.InvalidUsername,
+			api.InvalidMountGrantPattern,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UnavailableInAnonymousMode,
+			api.UserNotFound,
+			api.BodySizeExceeded,
+			api.DatabaseError,
+		},
+	))
+	h.mux.Handle("DELETE /resolver/mount-grants/{username}/{pattern}", h.lowlevel.UserScope(
+		api.ScopeDeleteMountGrant,
+		h.deleteMountGrant,
+		lowlevel.FixedStatusCode[struct{}](http.StatusNoContent),
+		[]api.ErrorCode{
+			api.InvalidUsername,
+			api.InvalidMountGrantPattern,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UnavailableInAnonymousMode,
+			api.UserNotFound,
+			api.MountGrantNotFound,
 			api.DatabaseError,
 		},
 	))
@@ -487,6 +520,19 @@ func NewServer(options Options, svc *service.Service, logger *slog.Logger) *Serv
 		api.ScopeGetUserRoles,
 		h.getUserRoles,
 		lowlevel.FixedStatusCode[*api.PaginatedUserRolesResponse](http.StatusOK),
+		[]api.ErrorCode{
+			api.InvalidQueryParameter,
+			api.Unauthorized,
+			api.Forbidden,
+			api.UnavailableInAnonymousMode,
+			api.DatabaseError,
+		},
+	))
+
+	h.mux.Handle("GET /user/mount-grants", h.lowlevel.UserScope(
+		api.ScopeListOwnMountGrants,
+		h.listOwnMountGrants,
+		lowlevel.FixedStatusCode[*api.PaginatedMountGrantsResponse](http.StatusOK),
 		[]api.ErrorCode{
 			api.InvalidQueryParameter,
 			api.Unauthorized,

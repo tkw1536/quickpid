@@ -143,6 +143,19 @@ func (*Server) readBaseURIParam(r *http.Request) (api.ValidBaseURI, error) {
 	return baseURI, nil
 }
 
+// readMountGrantPatternParam gets the mount grant pattern from the request path.
+//
+// It can return the following errors:
+//
+// - [api.InvalidMountGrantPattern].
+func (*Server) readMountGrantPatternParam(r *http.Request) (api.ValidMountGrantRequest, error) {
+	pattern, err := api.NewMountGrantPattern(r.PathValue("pattern"))
+	if err != nil {
+		return api.ValidMountGrantRequest{}, api.WithErrorCode(fmt.Errorf("failed to parse mount grant pattern: %w", err), api.InvalidMountGrantPattern)
+	}
+	return pattern, nil
+}
+
 // readRequiredUsernameFromQuery parses a required username query parameter.
 //
 // It can return the following errors:

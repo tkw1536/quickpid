@@ -28,12 +28,14 @@ const (
 	InvalidUsername          ErrorCode = "invalidUsername"          // An invalid username was sent
 	InvalidAutocompleteQuery ErrorCode = "invalidAutocompleteQuery" // An invalid query was sent
 	InvalidPassword          ErrorCode = "invalidPassword"          // An invalid password was sent
-	InvalidBaseURI           ErrorCode = "invalidBaseUri"           // An invalid base URI was sent
-	InvalidResourceURL       ErrorCode = "invalidResourceUrl"       // An invalid resource URL was sent
+	InvalidBaseURI            ErrorCode = "invalidBaseUri"            // An invalid base URI was sent
+	InvalidResourceURL        ErrorCode = "invalidResourceUrl"        // An invalid resource URL was sent
+	InvalidMountGrantPattern  ErrorCode = "invalidMountGrantPattern"  // An invalid mount grant regexp pattern was sent
 
 	NamespaceNotFound ErrorCode = "namespaceNotFound" // Namespace not found
 	ResourceNotFound  ErrorCode = "resourceNotFound"  // Resource not found
 	MountNotFound     ErrorCode = "mountNotFound"     // Mount not found
+	MountGrantNotFound ErrorCode = "mountGrantNotFound" // Mount grant record not found
 
 	RoleNotFound ErrorCode = "roleNotFound" // Role record not found
 	InvalidRole  ErrorCode = "invalidRole"  // Role is not allowed for this operation
@@ -85,9 +87,9 @@ func (e ErrorCode) HTTPCode() int {
 		return http.StatusForbidden
 	case InvalidQueryParameter, BodyMissing, BodyInvalidJSON,
 		InvalidNamespaceID, InvalidPID, InvalidUsername, InvalidAutocompleteQuery, InvalidPassword, InvalidBaseURI,
-		InvalidResourceURL, InvalidRole, UnknownScope:
+		InvalidResourceURL, InvalidMountGrantPattern, InvalidRole, UnknownScope:
 		return http.StatusBadRequest
-	case NamespaceNotFound, ResourceNotFound, MountNotFound,
+	case NamespaceNotFound, ResourceNotFound, MountNotFound, MountGrantNotFound,
 		RoleNotFound, InfoUnavailable, UnavailableInAnonymousMode,
 		UserNotFound, KeyNotFound:
 		return http.StatusNotFound

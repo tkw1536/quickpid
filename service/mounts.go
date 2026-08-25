@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend
+//spellchecker:words context errors github quickpid backend internal filter
 import (
 	"context"
 	"errors"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/internal/filter"
 )
 
 // GetMount resolves a base URI to a namespace mount.
@@ -31,20 +32,75 @@ func (s *Service) GetMount(ctx context.Context, caller *api.Caller, baseURI api.
 	}, nil
 }
 
-// ListMounts lists all namespace mounts.
+// ListMounts lists namespace mounts.
 //
-// In authenticated mode, the caller must be a superuser.
-// In anonymous mode, no authentication is required.
+// In anonymous mode, or when the caller is a superuser, all mounts are returned.
+// Otherwise only mounts whose base URI matches at least one of the caller's mount grants are returned.
 //
 // It can return the following errors:
 //
 // - [api.DatabaseError].
 func (s *Service) ListMounts(ctx context.Context, caller *api.Caller, params api.ListMountsParams) (*api.PaginatedMountsResponse, error) {
-	out, err := s.backend.ListMounts(ctx, params)
-	if err != nil {
-		return nil, api.WithErrorCode(fmt.Errorf("backend failed to list mounts: %w", err), api.DatabaseError)
+	// Optimization: If we have a superuser, we don't need to filter by mount grants.
+	if caller == nil || caller.Superuser() {
+		out, err := s.backend.ListMounts(ctx, params)
+		if err != nil {
+			return nil, api.WithErrorCode(fmt.Errorf("backend failed to list mounts: %w", err), api.DatabaseError)
+		}
+		return out, nil
 	}
-	return out, nil
+
+	grants, err := s.getAllCompiledMounts(ctx, caller.Username())
+	if err != nil {
+		return nil, err
+	}
+
+	pageLimit := s.Options().Limits.InternalPageLimit()
+
+	filtered, err := filter.Filter(ctx, func(ctx context.Context, limit, offset int) ([]api.MountResponse, error) {
+		page, err := s.backend.ListMounts(ctx, api.ListMountsParams{
+			Limit:  limit,
+			Offset: offset,
+		})
+		if err != nil {
+			return nil, api.WithErrorCode(fmt.Errorf("backend failed to list mounts: %w", err), api.DatabaseError)
+		}
+		return page.Items, nil
+	}, func(ctx context.Context, mount api.MountResponse) (bool, error) {
+		for _, grant := range grants {
+			if grant.MatchString(mount.BaseURI) {
+				return true, nil
+			}
+		}
+		return false, nil
+	}, pageLimit, params.Limit, params.Offset)
+
+	if err != nil {
+		return nil, api.WithErrorCode(fmt.Errorf("filter returned error: %w", err), api.DatabaseError)
+	}
+	items := filtered.Items
+	if items == nil {
+		items = []api.MountResponse{}
+	}
+	return &api.PaginatedMountsResponse{
+		Total:  filtered.Total,
+		Offset: filtered.Offset,
+		Items:  items,
+	}, nil
+}
+
+func (s *Service) getAllCompiledMounts(loadCtx context.Context, username api.ValidUsername) ([]api.ValidMountGrantRequest, error) {
+	loadCtx, cancel := context.WithCancel(loadCtx)
+	defer cancel()
+
+	grants := make([]api.ValidMountGrantRequest, 0, 100)
+	for res := range s.loadCompiledMountGrants(loadCtx, username) {
+		if res.err != nil {
+			return nil, res.err
+		}
+		grants = append(grants, res.request)
+	}
+	return grants, nil
 }
 
 // ListNamespaceMounts lists base URIs mounted to a namespace.
@@ -69,7 +125,7 @@ func (s *Service) ListNamespaceMounts(ctx context.Context, caller *api.Caller, n
 
 // SetMount creates or replaces a namespace mount.
 //
-// In authenticated mode, the caller must be a superuser.
+// In authenticated mode, the caller must be a superuser or hold a matching mount grant.
 // In anonymous mode, no authentication is required.
 //
 // It can return the following errors:
@@ -92,7 +148,7 @@ func (s *Service) SetMount(ctx context.Context, caller *api.Caller, baseURI api.
 
 // DeleteMount removes a namespace mount.
 //
-// In authenticated mode, the caller must be a superuser.
+// In authenticated mode, the caller must be a superuser or hold a matching mount grant.
 // In anonymous mode, no authentication is required.
 //
 // It can return the following errors:

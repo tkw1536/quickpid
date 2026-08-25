@@ -17,21 +17,23 @@ import (
 type MemoryBackend struct {
 	mu sync.RWMutex
 
-	users      map[string]userRecord
-	namespaces map[string]api.NamespaceResponse
-	resources  map[string]map[string]api.ResourceResponse
-	roles      map[string]map[string]api.Role
-	mounts     map[string]string // baseURI -> namespaceID
+	users       map[string]userRecord
+	namespaces  map[string]api.NamespaceResponse
+	resources   map[string]map[string]api.ResourceResponse
+	roles       map[string]map[string]api.Role
+	mounts      map[string]string              // baseURI -> namespaceID
+	mountGrants map[string]map[string]struct{} // username -> set of patterns
 }
 
 // NewMemoryBackend returns a new in-memory backend.
 func NewMemoryBackend() *MemoryBackend {
 	return &MemoryBackend{
-		users:      make(map[string]userRecord),
-		namespaces: make(map[string]api.NamespaceResponse),
-		resources:  make(map[string]map[string]api.ResourceResponse),
-		roles:      make(map[string]map[string]api.Role),
-		mounts:     make(map[string]string),
+		users:       make(map[string]userRecord),
+		namespaces:  make(map[string]api.NamespaceResponse),
+		resources:   make(map[string]map[string]api.ResourceResponse),
+		roles:       make(map[string]map[string]api.Role),
+		mounts:      make(map[string]string),
+		mountGrants: make(map[string]map[string]struct{}),
 	}
 }
 
@@ -54,6 +56,7 @@ func (s *MemoryBackend) Shutdown(ctx context.Context) error {
 		s.resources = nil
 		s.roles = nil
 		s.mounts = nil
+		s.mountGrants = nil
 	}()
 
 	select {

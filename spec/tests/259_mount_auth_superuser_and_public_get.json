@@ -1,6 +1,6 @@
 {
   "name": "259_mount_auth_superuser_and_public_get",
-  "comment": "In authenticated mode, only superusers may manage mounts; GET remains public without authentication.",
+  "comment": "In authenticated mode, mount set/delete require a superuser or matching mount grant; GET remains public without authentication.",
   "steps": [
     {
       "name": "bootstrap_root",

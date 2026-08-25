@@ -154,8 +154,11 @@ func (s *GormBackend) DeleteUser(ctx context.Context, username api.ValidUsername
 		if err := ensureUserExists(tx, username); err != nil {
 			return zero, err
 		}
-		// Roles are not FK-linked to users (usernames may appear before a user row exists).
+		// Roles and mount grants are not FK-linked to users (usernames may appear before a user row exists).
 		if err := tx.Where("username = ?", username.String()).Delete(&namespaceRoleRow{}).Error; err != nil {
+			return zero, err
+		}
+		if err := tx.Where("username = ?", username.String()).Delete(&userMountGrantRow{}).Error; err != nil {
 			return zero, err
 		}
 		if err := cascadingDelete(tx, &userRow{Username: username.String()}); err != nil {

@@ -84,6 +84,14 @@ func RunBackendTests(t *testing.T, newBackend BackendFactory, reset BackendReset
 			Name: "MountCRUD",
 			Test: testMountCRUD,
 		},
+		{
+			Name: "MountGrantCRUD",
+			Test: testMountGrantCRUD,
+		},
+		{
+			Name: "DeleteUserCascadesMountGrants",
+			Test: testDeleteUserCascadesMountGrants,
+		},
 	} {
 		t.Run(test.Name, func(t *testing.T) {
 			initialReset()
@@ -969,5 +977,123 @@ func testMountCRUD(t *testing.T, l *slog.Logger, newBackend BackendFactory) {
 	}
 	if got != ns1.String() {
 		t.Fatalf("GetMount(otherURI) after delete = %q, want %q", got, ns1.String())
+	}
+}
+
+// testMountGrantCRUD runs per-user mount grant CRUD tests.
+func testMountGrantCRUD(t *testing.T, l *slog.Logger, newBackend BackendFactory) {
+	t.Helper()
+	ctx := context.Background()
+	s := newBackend(t, l)
+	now := fixedNow()
+
+	if _, err := s.CreateUser(ctx, userReq("alice"), now); err != nil {
+		t.Fatalf("CreateUser(alice) error = %v", err)
+	}
+
+	patternA, err := api.NewMountGrantPattern(`^https://a\.example\.com(/.*)?$`)
+	if err != nil {
+		t.Fatalf("NewMountGrantPattern(a) error = %v", err)
+	}
+	patternB, err := api.NewMountGrantPattern(`^https://b\.example\.com(/.*)?$`)
+	if err != nil {
+		t.Fatalf("NewMountGrantPattern(b) error = %v", err)
+	}
+
+	if err := s.SetMountGrant(ctx, user("missing"), patternA); !errors.Is(err, backend.ErrUserNotFound) {
+		t.Fatalf("SetMountGrant(missing) error = %v, want ErrUserNotFound", err)
+	}
+	if err := s.DeleteMountGrant(ctx, user("alice"), patternA); !errors.Is(err, backend.ErrMountGrantNotFound) {
+		t.Fatalf("DeleteMountGrant(empty) error = %v, want ErrMountGrantNotFound", err)
+	}
+
+	if err := s.SetMountGrant(ctx, user("alice"), patternB); err != nil {
+		t.Fatalf("SetMountGrant(b) error = %v", err)
+	}
+	if err := s.SetMountGrant(ctx, user("alice"), patternA); err != nil {
+		t.Fatalf("SetMountGrant(a) error = %v", err)
+	}
+	// upsert is idempotent
+	if err := s.SetMountGrant(ctx, user("alice"), patternA); err != nil {
+		t.Fatalf("SetMountGrant(a upsert) error = %v", err)
+	}
+
+	page, err := s.ListUserMountGrants(ctx, user("alice"), api.ListUserMountGrantsParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUserMountGrants(alice) error = %v", err)
+	}
+	if page.Total != 2 || len(page.Items) != 2 {
+		t.Fatalf("ListUserMountGrants(alice) = %+v, want 2 items", page)
+	}
+	if page.Items[0].Pattern != patternA.String() || page.Items[1].Pattern != patternB.String() {
+		t.Fatalf("ListUserMountGrants(alice) order = %+v", page.Items)
+	}
+
+	page, err = s.ListUserMountGrants(ctx, user("alice"), api.ListUserMountGrantsParams{Limit: 1, Offset: 0})
+	if err != nil {
+		t.Fatalf("ListUserMountGrants(limit=1) error = %v", err)
+	}
+	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Pattern != patternA.String() {
+		t.Fatalf("ListUserMountGrants(limit=1) = %+v", page)
+	}
+
+	page, err = s.ListUserMountGrants(ctx, user("alice"), api.ListUserMountGrantsParams{Limit: 1, Offset: 1})
+	if err != nil {
+		t.Fatalf("ListUserMountGrants(offset=1) error = %v", err)
+	}
+	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Pattern != patternB.String() {
+		t.Fatalf("ListUserMountGrants(offset=1) = %+v", page)
+	}
+
+	if _, err := s.ListUserMountGrants(ctx, user("missing"), api.ListUserMountGrantsParams{Limit: 100}); !errors.Is(err, backend.ErrUserNotFound) {
+		t.Fatalf("ListUserMountGrants(missing) error = %v, want ErrUserNotFound", err)
+	}
+
+	if err := s.DeleteMountGrant(ctx, user("alice"), patternA); err != nil {
+		t.Fatalf("DeleteMountGrant(a) error = %v", err)
+	}
+	page, err = s.ListUserMountGrants(ctx, user("alice"), api.ListUserMountGrantsParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUserMountGrants after delete error = %v", err)
+	}
+	if page.Total != 1 || page.Items[0].Pattern != patternB.String() {
+		t.Fatalf("ListUserMountGrants after delete = %+v", page)
+	}
+	if err := s.DeleteMountGrant(ctx, user("alice"), patternA); !errors.Is(err, backend.ErrMountGrantNotFound) {
+		t.Fatalf("DeleteMountGrant(a again) error = %v, want ErrMountGrantNotFound", err)
+	}
+}
+
+// testDeleteUserCascadesMountGrants runs user deletion cascade for mount grants.
+func testDeleteUserCascadesMountGrants(t *testing.T, l *slog.Logger, newBackend BackendFactory) {
+	t.Helper()
+	ctx := context.Background()
+	s := newBackend(t, l)
+	now := fixedNow()
+
+	if _, err := s.CreateUser(ctx, userReq("alice"), now); err != nil {
+		t.Fatalf("CreateUser(alice) error = %v", err)
+	}
+	pattern, err := api.NewMountGrantPattern(`^https://example\.com(/.*)?$`)
+	if err != nil {
+		t.Fatalf("NewMountGrantPattern() error = %v", err)
+	}
+	if err := s.SetMountGrant(ctx, user("alice"), pattern); err != nil {
+		t.Fatalf("SetMountGrant() error = %v", err)
+	}
+
+	if err := s.DeleteUser(ctx, user("alice")); err != nil {
+		t.Fatalf("DeleteUser() error = %v", err)
+	}
+
+	if _, err := s.CreateUser(ctx, userReq("alice"), now); err != nil {
+		t.Fatalf("CreateUser(alice again) error = %v", err)
+	}
+	page, err := s.ListUserMountGrants(ctx, user("alice"), api.ListUserMountGrantsParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListUserMountGrants after recreate error = %v", err)
+	}
+	if page.Total != 0 {
+		t.Fatalf("ListUserMountGrants after recreate = %+v, want empty", page)
 	}
 }

@@ -361,7 +361,8 @@ paths:
         Results are ordered ascending by namespace id, then by base URI.
 
         In anonymous mode, this route is accessible without authentication.
-        In authenticated mode, only a superuser may list all mounts.
+        In authenticated mode, any authenticated caller may list mounts.
+        Superusers see every mount; other callers only see mounts whose base URI matches at least one of their mount-grant regexp patterns.
       tags:
         - mounts
       parameters:
@@ -411,7 +412,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorUnauthorized'
         '403':
-          description: The authenticated user is not allowed to list all mounts.
+          description: The authenticated user is not allowed to list mounts.
           content:
             application/json:
               example: { error: "forbidden" }
@@ -501,7 +502,7 @@ paths:
         (for example, encode `https://example.com/prefix/` as `https%3A%2F%2Fexample.com%2Fprefix%2F`).
 
         In anonymous mode, this route is accessible without authentication.
-        In authenticated mode, only a superuser may update mounts.
+        In authenticated mode, a superuser may update any mount; other callers may update a mount only when its base URI matches at least one of their mount-grant regexp patterns.
       tags:
         - mounts
       parameters:
@@ -584,7 +585,7 @@ paths:
         (for example, encode `https://example.com/prefix/` as `https%3A%2F%2Fexample.com%2Fprefix%2F`).
 
         In anonymous mode, this route is accessible without authentication.
-        In authenticated mode, only a superuser may delete a mount.
+        In authenticated mode, a superuser may delete any mount; other callers may delete a mount only when its base URI matches at least one of their mount-grant regexp patterns.
       tags:
         - mounts
       parameters:
@@ -730,6 +731,177 @@ paths:
                   - $ref: '#/components/schemas/ErrorResourceNotFound'
         '500':
           description: Internal server error while resolving a resource via mount and PID.
+          content:
+            application/json:
+              example: { error: "databaseError" }
+              schema:
+                $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /resolver/mount-grants/{username}:
+    put:
+      summary: Grant a user permission to manage mounts matching a regexp pattern.
+      operationId: setMountGrant
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
+      description: |
+        Creates or replaces a mount-management grant for the given user.
+        The grant pattern is a Go `regexp` (RE2) pattern matched with `MatchString` against mount base URIs.
+        Patterns are unanchored unless they include anchors such as `^`, `$`, `\A`, or `\z`.
+
+        Only a superuser may assign mount grants.
+        In anonymous mode, the route returns HTTP 404.
+      tags:
+        - mounts
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: |
+            Username that receives the mount-management grant pattern.
+          schema:
+            $ref: '#/components/schemas/Username'
+      requestBody:
+        required: true
+        description: Go regexp pattern that selects which mount base URIs the user may manage.
+        content:
+          application/json:
+            example: { pattern: "^https://base\\.example\\.com(/.*)?$" }
+            schema:
+              $ref: '#/components/schemas/MountGrantRequest'
+      responses:
+        '200':
+          description: Mount grant created or replaced for the user.
+          content:
+            application/json:
+              example: { pattern: "^https://base\\.example\\.com(/.*)?$" }
+              schema:
+                $ref: '#/components/schemas/MountGrant'
+        '400':
+          description: Invalid username or mount grant pattern when assigning a grant.
+          content:
+            application/json:
+              example: { error: "invalidMountGrantPattern" }
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidUsername'
+                  - $ref: '#/components/schemas/ErrorBodyMissing'
+                  - $ref: '#/components/schemas/ErrorBodyInvalidJSON'
+                  - $ref: '#/components/schemas/ErrorInvalidMountGrantPattern'
+        '401':
+          description: Authentication is required or the credentials are incorrect when assigning a mount grant.
+          content:
+            application/json:
+              example: { error: "unauthorized" }
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to assign mount grants.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: Target user does not exist when assigning a mount grant, or the server is in anonymous mode.
+          content:
+            application/json:
+              example: { error: "userNotFound" }
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
+        '413':
+          description: Request body for assigning a mount grant exceeds the configured size limit.
+          content:
+            application/json:
+              example: { error: "bodySizeExceeded" }
+              schema:
+                $ref: '#/components/schemas/ErrorBodySizeExceeded'
+        '500':
+          description: Internal server error while assigning a mount grant.
+          content:
+            application/json:
+              example: { error: "databaseError" }
+              schema:
+                $ref: '#/components/schemas/ErrorDatabaseError'
+
+  /resolver/mount-grants/{username}/{pattern}:
+    delete:
+      summary: Revoke a user's mount-management grant pattern.
+      operationId: deleteMountGrant
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
+      description: |
+        Removes a previously assigned mount-management grant for the given user.
+        The `pattern` path parameter must be a single path segment containing the percent-encoded grant pattern string.
+
+        Only a superuser may revoke mount grants.
+        In anonymous mode, the route returns HTTP 404.
+      tags:
+        - mounts
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: |
+            Username whose mount-management grant pattern should be revoked.
+          schema:
+            $ref: '#/components/schemas/Username'
+        - name: pattern
+          in: path
+          required: true
+          description: |
+            Go regexp grant pattern to revoke, percent-encoded as a single path segment.
+          schema:
+            $ref: '#/components/schemas/MountGrantPattern'
+      responses:
+        '204':
+          description: Mount grant revoked successfully.
+        '400':
+          description: Invalid username or mount grant pattern when revoking a grant.
+          content:
+            application/json:
+              example: { error: "invalidMountGrantPattern" }
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorInvalidUsername'
+                  - $ref: '#/components/schemas/ErrorInvalidMountGrantPattern'
+        '401':
+          description: Authentication is required or the credentials are incorrect when revoking a mount grant.
+          content:
+            application/json:
+              example: { error: "unauthorized" }
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to revoke mount grants.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: User or mount grant does not exist when revoking, or the server is in anonymous mode.
+          content:
+            application/json:
+              example: { error: "mountGrantNotFound" }
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorUserNotFound'
+                  - $ref: '#/components/schemas/ErrorMountGrantNotFound'
+                  - $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
+        '500':
+          description: Internal server error while revoking a mount grant.
           content:
             application/json:
               example: { error: "databaseError" }
@@ -2468,6 +2640,94 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorDatabaseError'
 
+  /user/mount-grants:
+    get:
+      summary: List mount-management grant patterns for a user.
+      operationId: listOwnMountGrants
+      security:
+        - "API Key": []
+        - "Basic Auth": []
+        - "API Key": []
+          "Impersonate User": []
+        - "Basic Auth": []
+          "Impersonate User": []
+      description: |
+        Lists Go regexp patterns that grant the currently authenticated user permission to manage matching mounts.
+        Results are ordered ascending by pattern string.
+
+        In anonymous mode, the route returns HTTP 404.
+      tags:
+        - mounts
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Maximum number of mount grants to return.
+            If omitted, a default value is applied.
+            If the value exceeds the configured maximum, it is clamped to that maximum.
+            A value of 0 returns an empty items array with a valid total.
+            Negative values or non-integers return a 400 response.
+          schema:
+            type: integer
+            minimum: 0
+        - name: offset
+          in: query
+          required: false
+          description: |
+            Number of mount grants to skip before starting to collect the result set.
+            If omitted, the value is treated as 0.
+            Negative values or non-integers return a 400 response.
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: |
+            A paginated list of mount grant patterns, sorted by pattern in increasing order.
+          content:
+            application/json:
+              example: { total: 1, offset: 0, items: [ { pattern: "^https://base\\.example\\.com(/.*)?$" } ] }
+              schema:
+                $ref: '#/components/schemas/PaginatedMountGrantsResponse'
+        '400':
+          description: Invalid query parameter when listing mount grants (e.g. limit or offset).
+          content:
+            application/json:
+              example: { error: "invalidQueryParameter" }
+              schema:
+                $ref: '#/components/schemas/ErrorInvalidQueryParameter'
+        '401':
+          description: Authentication is required or the credentials are incorrect when listing mount grants.
+          content:
+            application/json:
+              example: { error: "unauthorized" }
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        '403':
+          description: The authenticated user is not allowed to list mount grants.
+          content:
+            application/json:
+              example: { error: "forbidden" }
+              schema:
+                $ref: '#/components/schemas/ErrorForbidden'
+        '404':
+          description: The server is in anonymous mode when listing mount grants.
+          content:
+            application/json:
+              example: {
+                error: "unavailableInAnonymousMode"
+              }
+              schema:
+                $ref: '#/components/schemas/ErrorUnavailableInAnonymousMode'
+        '500':
+          description: Internal server error while listing mount grants.
+          content:
+            application/json:
+              example: { error: "databaseError" }
+              schema:
+                $ref: '#/components/schemas/ErrorDatabaseError'
+
   /user/key:
     get:
       summary: List API keys for a user account.
@@ -3068,6 +3328,28 @@ components:
               enum:
                 - mountNotFound
           description: The mount does not exist.
+    ErrorInvalidMountGrantPattern:
+      description: Error response when a mount grant regexp pattern fails validation.
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - invalidMountGrantPattern
+          description: The mount grant pattern was invalid.
+    ErrorMountGrantNotFound:
+      description: Error response when the requested mount grant does not exist.
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+              enum:
+                - mountGrantNotFound
+          description: The mount grant does not exist.
     ErrorInfoUnavailable:
       description: Error response when resolver configuration info is intentionally unavailable.
       allOf:
@@ -3490,6 +3772,61 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Mount'
+    MountGrantPattern:
+      description: |
+        A Go regexp (RE2) pattern used as a mount-management grant.
+        Matched with MatchString against mount base URIs; unanchored unless the pattern includes anchors.
+        When used as a path parameter, the full pattern must be percent-encoded as a single path segment.
+      type: string
+      minLength: 1
+      example: "^https://base\\.example\\.com(/.*)?$"
+    MountGrant:
+      description: A stored mount-management grant identified by its Go regexp pattern.
+      type: object
+      additionalProperties: false
+      required:
+        - pattern
+      properties:
+        pattern:
+          $ref: '#/components/schemas/MountGrantPattern'
+    MountGrantRequest:
+      description: Request body to create or replace a mount-management grant pattern.
+      type: object
+      additionalProperties: false
+      required:
+        - pattern
+      properties:
+        pattern:
+          description: Go regexp pattern string for the mount-management grant being assigned.
+          type: string
+          minLength: 1
+          example: "^https://base\\.example\\.com(/.*)?$"
+    PaginatedMountGrantsResponse:
+      description: |
+        A single page of mount grant responses.
+        The 'total' field is the total number of grants, ignoring 'limit' and 'offset'.
+        The 'offset' field is the effective offset used to produce this response.
+      type: object
+      required:
+        - total
+        - offset
+        - items
+      properties:
+        total:
+          example: 2
+          type: integer
+          minimum: 0
+          description: Total number of mount grants available.
+        offset:
+          example: 0
+          type: integer
+          minimum: 0
+          description: Offset of the current mount grants page.
+        items:
+          example: []
+          type: array
+          items:
+            $ref: '#/components/schemas/MountGrant'
     PaginatedBaseUriResponse:
       description: |
         A single page of base URI strings.
@@ -4064,6 +4401,8 @@ components:
         - setMount
         - deleteMount
         - getMount
+        - setMountGrant
+        - deleteMountGrant
         - getUserInfo
         - updateUser
         - createUser
@@ -4071,6 +4410,7 @@ components:
         - autocompleteUsers
         - listUsers
         - listUserRoles
+        - listOwnMountGrants
         - listOwnKeys
         - issueKey
         - setPassword

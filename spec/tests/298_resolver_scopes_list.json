@@ -45,6 +45,13 @@
               "description": "Delete a namespace mount.",
               "anonymousMode": true,
               "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "deleteMountGrant",
+              "description": "Revoke a user's mount-management grant pattern.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
               "requireSuperuser": true
             },
             {
@@ -87,7 +94,7 @@
               "description": "List all namespace mounts.",
               "anonymousMode": true,
               "allowUnauthenticated": false,
-              "requireSuperuser": true
+              "requireSuperuser": false
             },
             {
               "scope": "listNamespaces",
@@ -99,6 +106,13 @@
             {
               "scope": "listOwnKeys",
               "description": "List API keys for a user account.",
+              "anonymousMode": false,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "listOwnMountGrants",
+              "description": "List mount-management grant patterns for a user.",
               "anonymousMode": false,
               "allowUnauthenticated": false,
               "requireSuperuser": false
@@ -135,6 +149,13 @@
               "scope": "setMount",
               "description": "Create or replace a namespace mount.",
               "anonymousMode": true,
+              "allowUnauthenticated": false,
+              "requireSuperuser": false
+            },
+            {
+              "scope": "setMountGrant",
+              "description": "Grant a user permission to manage mounts matching a regexp pattern.",
+              "anonymousMode": false,
               "allowUnauthenticated": false,
               "requireSuperuser": true
             },

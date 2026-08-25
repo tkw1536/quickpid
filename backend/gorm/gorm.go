@@ -77,6 +77,7 @@ func Migrate(db *gorm.DB) error {
 		&namespaceRow{},
 		&namespaceTagRow{},
 		&namespaceRoleRow{},
+		&userMountGrantRow{},
 		&mountRow{},
 		&resourceRow{},
 		&resourceTagRow{},

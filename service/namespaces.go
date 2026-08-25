@@ -52,11 +52,7 @@ func (s *Service) listVisibleNamespaces(ctx context.Context, caller *api.Caller,
 	}
 
 	// Determine the effective page limit to call the backend with.
-	options := s.Options().Limits
-	pageLimit := options.DefaultPageLimit
-	if options.MaxPageLimit > 0 && pageLimit > options.MaxPageLimit {
-		pageLimit = options.MaxPageLimit
-	}
+	pageLimit := s.Options().Limits.InternalPageLimit()
 
 	filtered, err := filter.Filter(ctx, func(ctx context.Context, limit, offset int) ([]api.NamespaceResponse, error) {
 		params := params

@@ -121,6 +121,7 @@ func (s *MemoryBackend) DeleteUser(_ context.Context, username api.ValidUsername
 			delete(s.roles, namespace)
 		}
 	}
+	delete(s.mountGrants, username.String())
 	return nil
 }
 

@@ -59,6 +59,9 @@ const (
 
 	ScopeGetMount UserScope = "getMount"
 
+	ScopeSetMountGrant    UserScope = "setMountGrant"
+	ScopeDeleteMountGrant UserScope = "deleteMountGrant"
+
 	ScopeGetUserInfo UserScope = "getUserInfo"
 	ScopeUpdateUser  UserScope = "updateUser"
 	ScopeCreateUser  UserScope = "createUser"
@@ -69,6 +72,8 @@ const (
 	ScopeListUsers UserScope = "listUsers"
 
 	ScopeGetUserRoles UserScope = "listUserRoles"
+
+	ScopeListOwnMountGrants UserScope = "listOwnMountGrants"
 
 	ScopeListUserKeys UserScope = "listOwnKeys"
 	ScopeIssueUserKey UserScope = "issueKey"
@@ -122,7 +127,7 @@ var userDefs = func(actions ...UserScopeDefinition) map[UserScope]UserScopeDefin
 		Description:          "List all namespace mounts.",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
+		RequireSuperuser:     false,
 	},
 
 	UserScopeDefinition{
@@ -137,14 +142,14 @@ var userDefs = func(actions ...UserScopeDefinition) map[UserScope]UserScopeDefin
 		Description:          "Create or replace a namespace mount.",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
+		RequireSuperuser:     false,
 	},
 	UserScopeDefinition{
 		Scope:                ScopeDeleteMount,
 		Description:          "Delete a namespace mount.",
 		AnonymousMode:        true,
 		AllowUnauthenticated: false,
-		RequireSuperuser:     true,
+		RequireSuperuser:     false,
 	},
 
 	UserScopeDefinition{
@@ -153,6 +158,21 @@ var userDefs = func(actions ...UserScopeDefinition) map[UserScope]UserScopeDefin
 		AnonymousMode:        true,
 		AllowUnauthenticated: true,
 		RequireSuperuser:     false,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeSetMountGrant,
+		Description:          "Grant a user permission to manage mounts matching a regexp pattern.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     true,
+	},
+	UserScopeDefinition{
+		Scope:                ScopeDeleteMountGrant,
+		Description:          "Revoke a user's mount-management grant pattern.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     true,
 	},
 
 	UserScopeDefinition{
@@ -203,6 +223,14 @@ var userDefs = func(actions ...UserScopeDefinition) map[UserScope]UserScopeDefin
 	UserScopeDefinition{
 		Scope:                ScopeGetUserRoles,
 		Description:          "List explicit namespace roles for a user.",
+		AnonymousMode:        false,
+		AllowUnauthenticated: false,
+		RequireSuperuser:     false,
+	},
+
+	UserScopeDefinition{
+		Scope:                ScopeListOwnMountGrants,
+		Description:          "List mount-management grant patterns for a user.",
 		AnonymousMode:        false,
 		AllowUnauthenticated: false,
 		RequireSuperuser:     false,

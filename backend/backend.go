@@ -18,6 +18,7 @@ type Backend interface {
 	ResourceBackend
 	AuthorizationBackend
 	MountBackend
+	MountGrantBackend
 
 	// Shutdown instructs to stop any in-fight operations, and permanently closes any internal resources.
 	// No other methods may be called after Shutdown.

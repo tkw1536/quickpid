@@ -1,0 +1,405 @@
+{
+  "name": "262_mount_grant_auth",
+  "comment": "Superusers assign Go-regexp mount grants; grantees may manage and list matching mounts only. Resolve and namespace mount list permissions stay unchanged.",
+  "steps": [
+    {
+      "name": "bootstrap_root",
+      "config": {
+        "ensureRootUser": true,
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+        ],
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "bootstrap"
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/user",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "superuser": true,
+          "username": "root",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "create_alice",
+      "config": {},
+      "request": {
+        "method": "POST",
+        "path": "/user",
+        "body": "{\"username\":\"alice\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "superuser": false,
+          "username": "alice",
+          "password": false
+        }
+      }
+    },
+    {
+      "name": "issue_alice_key",
+      "config": {
+        "now": "2026-07-05T12:00:00Z",
+        "apiKeyIDs": [
+          "alice-key"
+        ],
+        "apiKeys": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "path": "/user/key",
+        "body": "{\"comment\": \"alice\",\"expiresAt\": null,\"userScopes\":[],\"namespaceScopes\":[]}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ],
+          [
+            "X-Impersonate-User",
+            "alice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "comment": "alice",
+          "createdAt": "2026-07-05T12:00:00Z",
+          "expiresAt": null,
+          "id": "alice-key",
+          "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaalice",
+          "userScopes": [],
+          "namespaceScopes": []
+        }
+      }
+    },
+    {
+      "name": "create_namespace",
+      "config": {
+        "namespaceIDs": [
+          "ns-mount-grant"
+        ],
+        "now": "2026-07-05T12:00:00Z"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/resolver/namespaces",
+        "body": "{\"tags\":[\"mount-grant\"],\"pidFormat\":{\"pattern\":\"***-***\",\"characters\":\"full\"}}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 201,
+        "body": {
+          "dateCreated": "2026-07-05T12:00:00Z",
+          "dateUpdated": "2026-07-05T12:00:00Z",
+          "id": "ns-mount-grant",
+          "pidFormat": {
+            "characters": "full",
+            "pattern": "***-***"
+          },
+          "tags": [
+            "mount-grant"
+          ]
+        }
+      }
+    },
+    {
+      "name": "grant_forbidden_non_superuser",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mount-grants/alice",
+        "body": "{\"pattern\":\"^https://base\\\\.example\\\\.com(/.*)?$\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "grant_invalid_pattern",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mount-grants/alice",
+        "body": "{\"pattern\":\"(\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 400,
+        "body": {
+          "error": "invalidMountGrantPattern"
+        }
+      }
+    },
+    {
+      "name": "grant_alice_pattern",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mount-grants/alice",
+        "body": "{\"pattern\":\"^https://base\\\\.example\\\\.com(/.*)?$\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "pattern": "^https://base\\.example\\.com(/.*)?$"
+        }
+      }
+    },
+    {
+      "name": "list_own_grants",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/user/mount-grants?limit=100",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 1,
+          "offset": 0,
+          "items": [
+            {
+              "pattern": "^https://base\\.example\\.com(/.*)?$"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "alice_put_matching_mount",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fbase.example.com%2Fhello",
+        "body": "{\"namespace\":\"ns-mount-grant\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "baseUri": "https://base.example.com/hello",
+          "namespace": "ns-mount-grant"
+        }
+      }
+    },
+    {
+      "name": "alice_put_non_matching_forbidden",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fother.example.com%2F",
+        "body": "{\"namespace\":\"ns-mount-grant\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "root_put_other_mount",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fother.example.com%2F",
+        "body": "{\"namespace\":\"ns-mount-grant\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "baseUri": "https://other.example.com/",
+          "namespace": "ns-mount-grant"
+        }
+      }
+    },
+    {
+      "name": "alice_list_filtered",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts?limit=100",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "total": 1,
+          "offset": 0,
+          "items": [
+            {
+              "baseUri": "https://base.example.com/hello",
+              "namespace": "ns-mount-grant"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "resolve_other_mount_public",
+      "config": {},
+      "request": {
+        "method": "GET",
+        "path": "/resolver/mounts/https%3A%2F%2Fother.example.com%2F"
+      },
+      "response": {
+        "code": 200,
+        "body": {
+          "baseUri": "https://other.example.com/",
+          "namespace": "ns-mount-grant"
+        }
+      }
+    },
+    {
+      "name": "alice_delete_matching",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/mounts/https%3A%2F%2Fbase.example.com%2Fhello",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 204
+      }
+    },
+    {
+      "name": "alice_delete_non_matching_forbidden",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/mounts/https%3A%2F%2Fother.example.com%2F",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    },
+    {
+      "name": "revoke_grant",
+      "config": {},
+      "request": {
+        "method": "DELETE",
+        "path": "/resolver/mount-grants/alice/%5Ehttps%3A%2F%2Fbase%5C.example%5C.com%28%2F.%2A%29%3F%24",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaroot"
+          ]
+        ]
+      },
+      "response": {
+        "code": 204
+      }
+    },
+    {
+      "name": "alice_put_after_revoke_forbidden",
+      "config": {},
+      "request": {
+        "method": "PUT",
+        "path": "/resolver/mounts/https%3A%2F%2Fbase.example.com%2Fhello",
+        "body": "{\"namespace\":\"ns-mount-grant\"}",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaalice"
+          ]
+        ]
+      },
+      "response": {
+        "code": 403,
+        "body": {
+          "error": "forbidden"
+        }
+      }
+    }
+  ]
+}
