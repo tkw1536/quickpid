@@ -33,10 +33,11 @@ type mainCmd struct {
 	listenPort int
 	mountPath  string
 
-	disableSwagger bool
-	disableInfo    bool
-	anonymous      bool
-	limits         service.Limits
+	disableSwagger      bool
+	disableRootRedirect bool
+	disableInfo         bool
+	anonymous           bool
+	limits              service.Limits
 
 	about   string
 	comment string
@@ -216,6 +217,7 @@ func (main *mainCmd) parseFlags() {
 	flag.BoolVar(&main.disableSwagger, "disable-swagger", main.disableSwagger, "disable swagger UI and spec file being served")
 	flag.BoolVar(&main.disableInfo, "disable-info", main.disableInfo, "disable info endpoint")
 	flag.BoolVar(&main.anonymous, "anon", main.anonymous, "enable anonymous resolver mode without user management")
+	flag.BoolVar(&main.disableRootRedirect, "disable-root-redirect", main.disableRootRedirect, "disable root redirect to /api/v2/")
 
 	flag.StringVar(&main.about, "about", main.about, "content of 'about' field returned by GET /resolver/info")
 	flag.StringVar(&main.comment, "comment", main.comment, "content of 'comment' field returned by GET /resolver/info")
@@ -291,6 +293,12 @@ func (main *mainCmd) setupLogger() error {
 
 func (main *mainCmd) serve(h http.Handler) int {
 	http.Handle(main.mountPath+"/", http.StripPrefix(main.mountPath, h))
+
+	if !main.disableRootRedirect {
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, main.mountPath+"/", http.StatusTemporaryRedirect)
+		})
+	}
 
 	srv := &http.Server{
 		Addr:              main.addr,
