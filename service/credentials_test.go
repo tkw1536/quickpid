@@ -1,11 +1,12 @@
 //spellchecker:words service
 package service_test
 
-//spellchecker:words context errors iter testing time github quickpid backend memory internal apikey service
+//spellchecker:words context errors iter sync atomic testing time github quickpid backend memory internal apikey service
 import (
 	"context"
 	"errors"
 	"iter"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -72,7 +73,7 @@ func TestCleanupExpiredAPIKeys(t *testing.T) {
 		t.Fatalf("CleanupExpiredAPIKeys() error = %v", err)
 	}
 
-	page, err := b.ListKeys(ctx, apikey.Default, alice, api.ListKeysParams{Limit: 100})
+	page, err := b.ListKeys(ctx, apikey.Default, &alice, api.ListKeysParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListKeys() error = %v", err)
 	}
@@ -114,12 +115,12 @@ type fixedRuntime struct {
 	now time.Time
 }
 
-func (r fixedRuntime) NewNamespaceID(uint64) iter.Seq2[string, error] {
+func (r fixedRuntime) NewNamespaceID(*atomic.Int64, uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		yield("ns", nil)
 	}
 }
-func (r fixedRuntime) NewAPIKeyID(uint64) iter.Seq2[string, error] {
+func (r fixedRuntime) NewAPIKeyID(*atomic.Int64, uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		yield("id", nil)
 	}
@@ -129,7 +130,7 @@ func (r fixedRuntime) NewAPIKey(apikey.Format, uint64) iter.Seq2[string, error] 
 		yield("aaaaaaaaaaaaaaaaaaaaaaaaaaaaakey", nil)
 	}
 }
-func (r fixedRuntime) NewPID(pid.Format, *api.ValidNamespaceID, uint64) iter.Seq2[string, error] {
+func (r fixedRuntime) NewPID(pid.Format, *atomic.Int64, uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		yield("pid", nil)
 	}

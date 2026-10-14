@@ -112,22 +112,36 @@ func (s *MemoryBackend) CreateKey(_ context.Context, format apikey.Format, usern
 	return info, nil
 }
 
-func (s *MemoryBackend) ListKeys(_ context.Context, _ apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+func (s *MemoryBackend) ListKeys(_ context.Context, _ apikey.Format, username *api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	usernameString := username.String()
-	if _, exists := s.users[usernameString]; !exists {
-		return nil, backend.ErrUserNotFound
+	var users []userRecord
+	if username == nil {
+		users = make([]userRecord, 0, len(s.users))
+		for _, user := range s.users {
+			users = append(users, user)
+		}
+	} else {
+		usernameString := username.String()
+		user, exists := s.users[usernameString]
+		if !exists {
+			return nil, backend.ErrUserNotFound
+		}
+		users = []userRecord{user}
 	}
 
-	user := s.users[usernameString]
-
-	all := make([]*api.APIKeyInfo, 0, len(user.keys))
-	for _, key := range user.keys {
-		info := key.info
-		info.NormalizeScopes()
-		all = append(all, info)
+	var capacity int
+	for _, user := range users {
+		capacity += len(user.keys)
+	}
+	all := make([]*api.APIKeyInfo, 0, capacity)
+	for _, user := range users {
+		for _, key := range user.keys {
+			info := key.info
+			info.NormalizeScopes()
+			all = append(all, info)
+		}
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i].ID < all[j].ID })
 

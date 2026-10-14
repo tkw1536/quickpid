@@ -1,12 +1,13 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors iter github quickpid backend internal idgen
+//spellchecker:words context errors iter sync atomic github quickpid backend internal idgen
 import (
 	"context"
 	"errors"
 	"fmt"
 	"iter"
+	"sync/atomic"
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
@@ -66,7 +67,17 @@ func (s *Service) CreateResource(ctx context.Context, caller *api.Caller, namesp
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
 	}
 
-	out, err := s.allocatePID(ns.PIDFormat, func(pid api.ValidPID) (*api.ResourceResponse, error) {
+	// Count the total number of resources in the namespace.
+	// if the query fails, then we do not know the total.
+	var total *atomic.Int64
+	if countQuery, err := s.backend.ListResources(ctx, namespace, api.ListResourcesParams{
+		Limit: 0,
+	}); err == nil {
+		total = new(atomic.Int64)
+		total.Store(int64(countQuery.Total))
+	}
+
+	out, err := s.allocatePID(ns.PIDFormat, total, func(pid api.ValidPID) (*api.ResourceResponse, error) {
 		return s.backend.CreateResource(ctx, namespace, pid, req, s.runtime.Now)
 	})
 	if err != nil {
@@ -101,7 +112,17 @@ func (s *Service) BatchCreateResources(ctx context.Context, caller *api.Caller, 
 		return nil, api.WithErrorCode(fmt.Errorf("backend failed to get namespace: %w", err), api.DatabaseError)
 	}
 
-	out, err := s.allocatePIDs(ns.PIDFormat, len(reqs), func(pids []api.ValidPID) ([]api.ResourceResponse, error) {
+	// Count the total number of resources in the namespace.
+	// if the query fails, then we do not know the total.
+	var total *atomic.Int64
+	if countQuery, err := s.backend.ListResources(ctx, namespace, api.ListResourcesParams{
+		Limit: 0,
+	}); err == nil {
+		total = new(atomic.Int64)
+		total.Store(int64(countQuery.Total))
+	}
+
+	out, err := s.allocatePIDs(ns.PIDFormat, total, len(reqs), func(pids []api.ValidPID) ([]api.ResourceResponse, error) {
 		return s.backend.BatchCreateResources(ctx, namespace, pids, reqs, s.runtime.Now)
 	})
 	if err != nil {
@@ -167,7 +188,7 @@ func (s *Service) UpdateResource(ctx context.Context, caller *api.Caller, namesp
 // - [api.BadIDGeneration]
 // - [api.DatabaseError]
 // - [api.InsufficientEntropy].
-func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]api.ValidPID) ([]api.ResourceResponse, error)) ([]api.ResourceResponse, error) {
+func (s *Service) allocatePIDs(format pid.Format, total *atomic.Int64, n int, insert func([]api.ValidPID) ([]api.ResourceResponse, error)) ([]api.ResourceResponse, error) {
 	if n == 0 {
 		return []api.ResourceResponse{}, nil
 	}
@@ -176,8 +197,8 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]api.Valid
 	maxAttempts := s.opts.Limits.MaxPIDAttempts
 	s.mu.RUnlock()
 
-	nextPID, stop := idgen.PullIDs(func(exhausted uint64) iter.Seq2[string, error] {
-		return s.runtime.NewPID(format, nil, exhausted)
+	nextPID, stop := idgen.PullIDs(func(round uint64) iter.Seq2[string, error] {
+		return s.runtime.NewPID(format, total, round)
 	})
 	defer stop()
 
@@ -205,6 +226,11 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]api.Valid
 			if !format.IsValid(pids[i].String()) {
 				return nil, api.WithErrorCode(fmt.Errorf("%w: %q is not a valid pid", errBadPID, pids[i]), api.BadIDGeneration)
 			}
+
+			// we allocated a new PID, so increase the number of known pids by 1.
+			if total != nil {
+				total.Add(1)
+			}
 		}
 
 		out, err := insert(pids)
@@ -219,8 +245,8 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]api.Valid
 }
 
 // allocatePID is like allocatePIDs but for a single PID.
-func (s *Service) allocatePID(format pid.Format, insert func(api.ValidPID) (*api.ResourceResponse, error)) (*api.ResourceResponse, error) {
-	pids, err := s.allocatePIDs(format, 1, func(pids []api.ValidPID) ([]api.ResourceResponse, error) {
+func (s *Service) allocatePID(format pid.Format, total *atomic.Int64, insert func(api.ValidPID) (*api.ResourceResponse, error)) (*api.ResourceResponse, error) {
+	pids, err := s.allocatePIDs(format, total, 1, func(pids []api.ValidPID) ([]api.ResourceResponse, error) {
 		res, err := insert(pids[0])
 		if err != nil {
 			return nil, err

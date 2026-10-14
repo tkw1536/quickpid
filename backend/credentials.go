@@ -34,9 +34,10 @@ type CredentialsBackend interface {
 
 	// ListKeys lists API keys for the given user, ordered ascending by id.
 	// The key list may include keys that are no longer valid.
+	// If username is nil, keys for all users should be returned.
 	//
-	// Should return [ErrUserNotFound] if the user does not exist.
-	ListKeys(ctx context.Context, format apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error)
+	// Should return [ErrUserNotFound] if the user does not exist and username is not nil.
+	ListKeys(ctx context.Context, format apikey.Format, username *api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error)
 
 	// Revokes an API key; revoking a key should delete it from the backend entirely.
 	// Background jobs typically revoke expired API keys in order to trigger deletion.

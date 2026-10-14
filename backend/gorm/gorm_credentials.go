@@ -200,13 +200,18 @@ func (s *GormBackend) CreateKey(ctx context.Context, format apikey.Format, usern
 	})
 }
 
-func (s *GormBackend) ListKeys(ctx context.Context, _ apikey.Format, username api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
+func (s *GormBackend) ListKeys(ctx context.Context, _ apikey.Format, username *api.ValidUsername, params api.ListKeysParams) (*api.PaginatedAPIKeysResponse, error) {
 	return withTx(s.db.WithContext(ctx), func(tx *gorm.DB) (*api.PaginatedAPIKeysResponse, error) {
-		if err := ensureUserExists(tx, username); err != nil {
-			return nil, err
+		if username != nil {
+			if err := ensureUserExists(tx, *username); err != nil {
+				return nil, err
+			}
 		}
 
-		q := tx.Model(&apiKeyRow{}).Where("username = ?", username.String())
+		q := tx.Model(&apiKeyRow{})
+		if username != nil {
+			q = q.Where("username = ?", username.String())
+		}
 		var total int64
 		if err := q.Count(&total).Error; err != nil {
 			return nil, err

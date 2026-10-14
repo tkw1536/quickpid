@@ -49,6 +49,10 @@ func RunBackendTests(t *testing.T, newBackend BackendFactory, reset BackendReset
 			Test: testAuthListKeysSorted,
 		},
 		{
+			Name: "AuthListKeysAllUsers",
+			Test: testAuthListKeysAllUsers,
+		},
+		{
 			Name: "AuthListUsers",
 			Test: testAuthListUsers,
 		},
@@ -241,7 +245,7 @@ func testAuthKeyLifecycle(t *testing.T, l *slog.Logger, newBackend BackendFactor
 		t.Fatalf("CreateKey() namespaceScopes = %+v", created.NamespaceScopes)
 	}
 
-	page, err := b.ListKeys(ctx, apikey.Default, user("alice"), api.ListKeysParams{Limit: 100})
+	page, err := b.ListKeys(ctx, apikey.Default, userPtr("alice"), api.ListKeysParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListKeys() error = %v", err)
 	}
@@ -322,6 +326,9 @@ func testAuthNotFoundErrors(t *testing.T, l *slog.Logger, newBackend BackendFact
 	if err := b.RevokeKey(ctx, apikey.Default, user("alice"), "missing"); !errors.Is(err, backend.ErrKeyNotFound) {
 		t.Fatalf("RevokeKey() error = %v, want ErrKeyNotFound", err)
 	}
+	if _, err := b.ListKeys(ctx, apikey.Default, userPtr("missing"), api.ListKeysParams{Limit: 100}); !errors.Is(err, backend.ErrUserNotFound) {
+		t.Fatalf("ListKeys() error = %v, want ErrUserNotFound", err)
+	}
 	if _, _, err := b.LookupUserByKey(ctx, apikey.Default, testAPIKey("unknown000000000000000000")); !errors.Is(err, backend.ErrInvalidKey) {
 		t.Fatalf("LookupUserByKey() error = %v, want ErrInvalidKey", err)
 	}
@@ -344,7 +351,7 @@ func testAuthListKeysSorted(t *testing.T, l *slog.Logger, newBackend BackendFact
 		}
 	}
 
-	page, err := b.ListKeys(ctx, apikey.Default, user("alice"), api.ListKeysParams{Limit: 100})
+	page, err := b.ListKeys(ctx, apikey.Default, userPtr("alice"), api.ListKeysParams{Limit: 100})
 	if err != nil {
 		t.Fatalf("ListKeys() error = %v", err)
 	}
@@ -355,6 +362,82 @@ func testAuthListKeysSorted(t *testing.T, l *slog.Logger, newBackend BackendFact
 	for i, key := range page.Items {
 		if key.ID != want[i] {
 			t.Fatalf("keys[%d].ID = %q, want %q", i, key.ID, want[i])
+		}
+	}
+}
+
+// testAuthListKeysAllUsers runs list-keys-across-all-users tests.
+func testAuthListKeysAllUsers(t *testing.T, l *slog.Logger, newBackend BackendFactory) {
+	t.Helper()
+	ctx := context.Background()
+	b := newBackend(t, l)
+	now := fixedNow()
+
+	// username == nil must never return ErrUserNotFound, even with no users.
+	empty, err := b.ListKeys(ctx, apikey.Default, nil, api.ListKeysParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListKeys(nil) on empty backend error = %v, want nil", err)
+	}
+	if empty.Total != 0 || len(empty.Items) != 0 {
+		t.Fatalf("ListKeys(nil) on empty backend = %+v, want empty", empty)
+	}
+
+	for _, username := range []string{"alice", "bob"} {
+		if _, err := b.CreateUser(ctx, userReq(username), now); err != nil {
+			t.Fatalf("CreateUser(%q) error = %v", username, err)
+		}
+	}
+	for _, tc := range []struct {
+		username string
+		id       string
+	}{
+		{"alice", "key-b"},
+		{"alice", "key-m"},
+		{"bob", "key-a"},
+		{"bob", "key-z"},
+	} {
+		raw := testAPIKey(strings.ReplaceAll(tc.id, "-", "") + tc.username)
+		if _, err := b.CreateKey(ctx, apikey.Default, user(tc.username), tc.id, raw, api.KeyIssueRequest{Comment: tc.id}, now); err != nil {
+			t.Fatalf("CreateKey(%q, %q) error = %v", tc.username, tc.id, err)
+		}
+	}
+
+	all, err := b.ListKeys(ctx, apikey.Default, nil, api.ListKeysParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListKeys(nil) error = %v", err)
+	}
+	if all.Total != 4 || len(all.Items) != 4 {
+		t.Fatalf("ListKeys(nil) = %+v, want 4 keys", all)
+	}
+	wantAll := []string{"key-a", "key-b", "key-m", "key-z"}
+	for i, key := range all.Items {
+		if key.ID != wantAll[i] {
+			t.Fatalf("ListKeys(nil) keys[%d].ID = %q, want %q", i, key.ID, wantAll[i])
+		}
+	}
+
+	count, err := b.ListKeys(ctx, apikey.Default, nil, api.ListKeysParams{Limit: 0})
+	if err != nil {
+		t.Fatalf("ListKeys(nil, limit=0) error = %v", err)
+	}
+	if count.Total != 4 {
+		t.Fatalf("ListKeys(nil, limit=0) total = %d, want 4", count.Total)
+	}
+	if len(count.Items) != 0 {
+		t.Fatalf("ListKeys(nil, limit=0) items = %+v, want empty", count.Items)
+	}
+
+	aliceOnly, err := b.ListKeys(ctx, apikey.Default, userPtr("alice"), api.ListKeysParams{Limit: 100})
+	if err != nil {
+		t.Fatalf("ListKeys(alice) error = %v", err)
+	}
+	if aliceOnly.Total != 2 || len(aliceOnly.Items) != 2 {
+		t.Fatalf("ListKeys(alice) = %+v, want 2 keys", aliceOnly)
+	}
+	wantAlice := []string{"key-b", "key-m"}
+	for i, key := range aliceOnly.Items {
+		if key.ID != wantAlice[i] {
+			t.Fatalf("ListKeys(alice) keys[%d].ID = %q, want %q", i, key.ID, wantAlice[i])
 		}
 	}
 }

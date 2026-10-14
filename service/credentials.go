@@ -1,13 +1,14 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors iter sync time github quickpid backend internal apikey filter idgen
+//spellchecker:words context errors iter sync atomic time github quickpid backend internal apikey filter idgen
 import (
 	"context"
 	"errors"
 	"fmt"
 	"iter"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/tkw1536/quickpid/api"
@@ -142,7 +143,7 @@ func (s *Service) listValidKeys(ctx context.Context, format apikey.Format, usern
 			params.Offset = offset
 
 			// List the actual keys, and return only the items.
-			result, err := s.backend.ListKeys(ctx, format, username, params)
+			result, err := s.backend.ListKeys(ctx, format, &username, params)
 			if err != nil {
 				return nil, fmt.Errorf("backend failed to list keys: %w", err)
 			}
@@ -231,7 +232,17 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 	maxAttempts := s.opts.Limits.MaxAPIKeyAttempts
 	s.mu.RUnlock()
 
-	nextID, stopIDs := idgen.PullIDs(s.runtime.NewAPIKeyID)
+	// Count the total number of API keys.
+	// if the query fails, then we do not know the total.
+	var total *atomic.Int64
+	if countQuery, err := s.backend.ListKeys(ctx, s.apiKeyFormat(), nil, api.ListKeysParams{
+		Limit: 0,
+	}); err == nil {
+		total = new(atomic.Int64)
+		total.Store(int64(countQuery.Total))
+	}
+
+	nextID, stopIDs := idgen.PullIDs(func(round uint64) iter.Seq2[string, error] { return s.runtime.NewAPIKeyID(total, round) })
 	defer stopIDs()
 
 	format := s.apiKeyFormat()
@@ -334,7 +345,7 @@ func (s *Service) cleanupExpiredKeysForUser(ctx context.Context, format apikey.F
 			return fmt.Errorf("context cancelled: %w", err)
 		}
 
-		keys, err := s.backend.ListKeys(ctx, format, username, api.ListKeysParams{
+		keys, err := s.backend.ListKeys(ctx, format, &username, api.ListKeysParams{
 			Limit:  pageLimit,
 			Offset: keyOffset,
 		})

@@ -43,8 +43,9 @@ func ExamplePullIDs() {
 	// c
 }
 
+var errBoom = errors.New("boom")
+
 func ExamplePullIDs_errorAbandonsSequence() {
-	boom := errors.New("boom")
 	next, stop := idgen.PullIDs(func(round uint64) iter.Seq2[string, error] {
 		switch round {
 		case 0:
@@ -52,7 +53,7 @@ func ExamplePullIDs_errorAbandonsSequence() {
 				if !yield("keep", nil) {
 					return
 				}
-				if !yield("skip-rest", boom) {
+				if !yield("skip-rest", errBoom) {
 					return
 				}
 				yield("not-reached", nil)

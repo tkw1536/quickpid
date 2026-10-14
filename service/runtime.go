@@ -1,15 +1,15 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words crypto rand iter time uuid github quickpid internal apikey idgen
+//spellchecker:words crypto rand iter sync atomic time uuid github quickpid internal apikey idgen
 import (
 	"crypto/rand"
 	"fmt"
 	"iter"
+	"sync/atomic"
 	"time"
 	"uuid"
 
-	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/internal/apikey"
 	"github.com/tkw1536/quickpid/internal/idgen"
 	"github.com/tkw1536/quickpid/pid"
@@ -22,19 +22,28 @@ var _ idgen.IDGenerationFunction = nil
 //
 // Runtime contains several "identifier generator functions" which are used during operations.
 // Each is called New* and has the same semantics as an [idgen.IDGenerationFunction], except that it is passed extra parameters.
+//
+// The parameter total is the approximate total number of identifiers that have been generated thus far, if known.
+// If a single operation allocates multiple identifiers, the total might change during calls to this function,
+// thus using the sync.atomic.Int64 tracks the total.
+// Note that total never switches between nil and non-nil during a single operation.
+//
+// The [NewAPIKey] method intentionally omits this parameter, as API keys *must be* secure, and thus should not be predictable.
 type Runtime interface {
 	// NewNamespaceID is an identifier generator function for a new namespace identifier.
-	NewNamespaceID(exhausted uint64) iter.Seq2[string, error]
+	// total is the approximate total number of namespaces that have been generated so far, if known.
+	NewNamespaceID(total *atomic.Int64, round uint64) iter.Seq2[string, error]
 
 	// NewAPIKeyID is an identifier generator function for a new API key id.
-	NewAPIKeyID(exhausted uint64) iter.Seq2[string, error]
+	// total is the approximate total number of API keys that have been generated so far, if known.
+	NewAPIKeyID(total *atomic.Int64, round uint64) iter.Seq2[string, error]
 
 	// NewAPIKeyID is an identifier generator function for a new API key in the given format.
-	NewAPIKey(format apikey.Format, exhausted uint64) iter.Seq2[string, error]
+	NewAPIKey(format apikey.Format, round uint64) iter.Seq2[string, error]
 
 	// NewPID is an identifier generator function that returns a sequence of possible PIDs for the given format.
-	// It is optionally passed a namespace id, hinting the namespace for which the PID will be used.
-	NewPID(format pid.Format, namespace *api.ValidNamespaceID, exhausted uint64) iter.Seq2[string, error]
+	// counter is the approximate total number of PIDs that have been generated in the namespace so far, if known.
+	NewPID(format pid.Format, total *atomic.Int64, round uint64) iter.Seq2[string, error]
 
 	// Now returns the current time.
 	Now() time.Time
@@ -49,7 +58,7 @@ func NewRuntime() Runtime {
 type runtime struct {
 }
 
-func (r runtime) NewNamespaceID(exhausted uint64) iter.Seq2[string, error] {
+func (r runtime) NewNamespaceID(total *atomic.Int64, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		for {
 			if !yield(uuid.NewV4().String(), nil) {
@@ -59,13 +68,13 @@ func (r runtime) NewNamespaceID(exhausted uint64) iter.Seq2[string, error] {
 	}
 }
 
-func (r runtime) NewAPIKeyID(exhausted uint64) iter.Seq2[string, error] {
+func (r runtime) NewAPIKeyID(total *atomic.Int64, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		yield(uuid.NewV4().String(), nil)
 	}
 }
 
-func (r runtime) NewAPIKey(format apikey.Format, exhausted uint64) iter.Seq2[string, error] {
+func (r runtime) NewAPIKey(format apikey.Format, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		key, err := format.Generate(rand.Reader)
 		if err != nil {
@@ -76,7 +85,7 @@ func (r runtime) NewAPIKey(format apikey.Format, exhausted uint64) iter.Seq2[str
 	}
 }
 
-func (r runtime) NewPID(format pid.Format, namespace *api.ValidNamespaceID, exhausted uint64) iter.Seq2[string, error] {
+func (r runtime) NewPID(format pid.Format, total *atomic.Int64, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		pid, err := format.Generate(rand.Reader)
 		if err != nil {

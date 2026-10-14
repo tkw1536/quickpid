@@ -1,7 +1,7 @@
 //spellchecker:words pidtest
 package pidtest
 
-//spellchecker:words bytes context errors iter slog slices testing time github quickpid internal apikey httpfixture server service
+//spellchecker:words bytes context errors iter slog slices sync atomic testing time github quickpid internal apikey httpfixture server service
 import (
 	"bytes"
 	"context"
@@ -10,6 +10,7 @@ import (
 	"iter"
 	"log/slog"
 	"slices"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -191,7 +192,7 @@ type testRuntime struct {
 
 var errNoMoreNamespaceIDs = errors.New("no more namespace IDs configured")
 
-func (r *testRuntime) NewNamespaceID(exhausted uint64) iter.Seq2[string, error] {
+func (r *testRuntime) NewNamespaceID(total *atomic.Int64, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		r.usedNamespaceIDs = true
 		if r.namespaceIDs == nil {
@@ -209,7 +210,7 @@ func (r *testRuntime) NewNamespaceID(exhausted uint64) iter.Seq2[string, error] 
 
 var errNoMoreAPIKeyIDs = errors.New("no more API key IDs configured")
 
-func (r *testRuntime) NewAPIKeyID(exhausted uint64) iter.Seq2[string, error] {
+func (r *testRuntime) NewAPIKeyID(total *atomic.Int64, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		r.usedAPIKeyIDs = true
 		if r.apiKeyIDs == nil {
@@ -227,7 +228,7 @@ func (r *testRuntime) NewAPIKeyID(exhausted uint64) iter.Seq2[string, error] {
 
 var errNoMoreAPIKeys = errors.New("no more API keys configured")
 
-func (r *testRuntime) NewAPIKey(_ apikey.Format, exhausted uint64) iter.Seq2[string, error] {
+func (r *testRuntime) NewAPIKey(_ apikey.Format, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		r.usedAPIKeys = true
 		if r.apiKeys == nil {
@@ -245,7 +246,7 @@ func (r *testRuntime) NewAPIKey(_ apikey.Format, exhausted uint64) iter.Seq2[str
 
 var errNoMorePIDs = errors.New("no more PIDs configured")
 
-func (r *testRuntime) NewPID(format pid.Format, _ *api.ValidNamespaceID, _ uint64) iter.Seq2[string, error] {
+func (r *testRuntime) NewPID(format pid.Format, total *atomic.Int64, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		r.usedPIDs = true
 		if r.pids == nil {

@@ -1,11 +1,13 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend internal filter idgen
+//spellchecker:words context errors iter sync atomic github quickpid backend internal filter idgen
 import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
+	"sync/atomic"
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
@@ -134,7 +136,17 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.Caller, req a
 		owner = new(caller.Username())
 	}
 
-	nextID, stopIDs := idgen.PullIDs(s.runtime.NewNamespaceID)
+	// Count the total number of namespaces.
+	// if the query fails, then we do not know the total.
+	var total *atomic.Int64
+	if countQuery, err := s.backend.ListNamespaces(ctx, api.ListNamespacesParams{
+		Limit: 0,
+	}); err == nil {
+		total = new(atomic.Int64)
+		total.Store(int64(countQuery.Total))
+	}
+
+	nextID, stopIDs := idgen.PullIDs(func(round uint64) iter.Seq2[string, error] { return s.runtime.NewNamespaceID(total, round) })
 	defer stopIDs()
 
 	for range maxAttempts {
