@@ -1,10 +1,11 @@
 //spellchecker:words service
 package service_test
 
-//spellchecker:words context errors testing time github quickpid backend memory internal apikey service
+//spellchecker:words context errors iter testing time github quickpid backend memory internal apikey service
 import (
 	"context"
 	"errors"
+	"iter"
 	"testing"
 	"time"
 
@@ -113,10 +114,24 @@ type fixedRuntime struct {
 	now time.Time
 }
 
-func (r fixedRuntime) NewNamespaceID() (string, error) { return "ns", nil }
-func (r fixedRuntime) NewAPIKeyID() (string, error)    { return "id", nil }
-func (r fixedRuntime) NewAPIKey(apikey.Format) (string, error) {
-	return "aaaaaaaaaaaaaaaaaaaaaaaaaaaaakey", nil
+func (r fixedRuntime) NewNamespaceID(uint64) iter.Seq2[string, error] {
+	return func(yield func(string, error) bool) {
+		yield("ns", nil)
+	}
 }
-func (r fixedRuntime) NewPID(pid.Format) (string, error) { return "pid", nil }
-func (r fixedRuntime) Now() time.Time                    { return r.now }
+func (r fixedRuntime) NewAPIKeyID(uint64) iter.Seq2[string, error] {
+	return func(yield func(string, error) bool) {
+		yield("id", nil)
+	}
+}
+func (r fixedRuntime) NewAPIKey(apikey.Format, uint64) iter.Seq2[string, error] {
+	return func(yield func(string, error) bool) {
+		yield("aaaaaaaaaaaaaaaaaaaaaaaaaaaaakey", nil)
+	}
+}
+func (r fixedRuntime) NewPID(pid.Format, *api.ValidNamespaceID, uint64) iter.Seq2[string, error] {
+	return func(yield func(string, error) bool) {
+		yield("pid", nil)
+	}
+}
+func (r fixedRuntime) Now() time.Time { return r.now }

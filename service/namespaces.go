@@ -1,7 +1,7 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend internal filter
+//spellchecker:words context errors github quickpid backend internal filter idgen
 import (
 	"context"
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/filter"
+	"github.com/tkw1536/quickpid/internal/idgen"
 )
 
 var (
@@ -132,8 +133,12 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.Caller, req a
 	if caller != nil {
 		owner = new(caller.Username())
 	}
+
+	nextID, stopIDs := idgen.PullIDs(s.runtime.NewNamespaceID)
+	defer stopIDs()
+
 	for range maxAttempts {
-		name, err := s.runtime.NewNamespaceID()
+		name, err := nextID()
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("runtime failed to generate namespace ID: %w", err), api.BadIDGeneration)
 		}

@@ -1,11 +1,12 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors sync time github quickpid backend internal apikey filter
+//spellchecker:words context errors iter sync time github quickpid backend internal apikey filter idgen
 import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/tkw1536/quickpid/backend"
 	"github.com/tkw1536/quickpid/internal/apikey"
 	"github.com/tkw1536/quickpid/internal/filter"
+	"github.com/tkw1536/quickpid/internal/idgen"
 )
 
 var (
@@ -229,14 +231,20 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 	maxAttempts := s.opts.Limits.MaxAPIKeyAttempts
 	s.mu.RUnlock()
 
+	nextID, stopIDs := idgen.PullIDs(s.runtime.NewAPIKeyID)
+	defer stopIDs()
+
 	format := s.apiKeyFormat()
+	nextKey, stopKeys := idgen.PullIDs(func(exhausted uint64) iter.Seq2[string, error] { return s.runtime.NewAPIKey(format, exhausted) })
+	defer stopKeys()
+
 	for range maxAttempts {
-		keyID, err := s.runtime.NewAPIKeyID()
+		keyID, err := nextID()
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("failed to generate new api key id: %w", err), api.BadIDGeneration)
 		}
 
-		rawKey, err := s.runtime.NewAPIKey(format)
+		rawKey, err := nextKey()
 		if err != nil {
 			return nil, api.WithErrorCode(fmt.Errorf("failed to generate new api key: %w", err), api.BadIDGeneration)
 		}

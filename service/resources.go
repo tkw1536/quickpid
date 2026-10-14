@@ -1,14 +1,16 @@
 //spellchecker:words service
 package service
 
-//spellchecker:words context errors github quickpid backend
+//spellchecker:words context errors iter github quickpid backend internal idgen
 import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 
 	"github.com/tkw1536/quickpid/api"
 	"github.com/tkw1536/quickpid/backend"
+	"github.com/tkw1536/quickpid/internal/idgen"
 	"github.com/tkw1536/quickpid/pid"
 )
 
@@ -174,13 +176,18 @@ func (s *Service) allocatePIDs(format pid.Format, n int, insert func([]api.Valid
 	maxAttempts := s.opts.Limits.MaxPIDAttempts
 	s.mu.RUnlock()
 
+	nextPID, stop := idgen.PullIDs(func(exhausted uint64) iter.Seq2[string, error] {
+		return s.runtime.NewPID(format, nil, exhausted)
+	})
+	defer stop()
+
 	for range maxAttempts {
 		pids := make([]api.ValidPID, n)
 		seen := make(map[string]struct{}, n)
 		for i := range n {
 			// Ensure uniqueness within this batch.
 			for range maxAttempts {
-				candidate, err := s.runtime.NewPID(format)
+				candidate, err := nextPID()
 				if err != nil {
 					return nil, api.WithErrorCode(fmt.Errorf("runtime failed to generate PID: %w", err), api.BadIDGeneration)
 				}
