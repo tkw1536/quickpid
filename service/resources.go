@@ -198,7 +198,7 @@ func (s *Service) allocatePIDs(format pid.Format, total *atomic.Int64, n int, in
 	s.mu.RUnlock()
 
 	nextPID, stop := idgen.PullIDs(func(round uint64) iter.Seq2[string, error] {
-		return s.runtime.NewPID(format, total, round)
+		return s.runtime.NewPID(format, total, maxAttempts*n, round)
 	})
 	defer stop()
 

@@ -32,18 +32,22 @@ var _ idgen.IDGenerationFunction = nil
 type Runtime interface {
 	// NewNamespaceID is an identifier generator function for a new namespace identifier.
 	// total is the approximate total number of namespaces that have been generated so far, if known.
-	NewNamespaceID(total *atomic.Int64, round uint64) iter.Seq2[string, error]
+	// maxAttempts is the maximum number of results that will be made by the caller during this operation.
+	NewNamespaceID(total *atomic.Int64, maxAttempts int, round uint64) iter.Seq2[string, error]
 
 	// NewAPIKeyID is an identifier generator function for a new API key id.
 	// total is the approximate total number of API keys that have been generated so far, if known.
-	NewAPIKeyID(total *atomic.Int64, round uint64) iter.Seq2[string, error]
+	// maxAttempts is the maximum number of results that will be made by the caller during this operation.
+	NewAPIKeyID(total *atomic.Int64, maxAttempts int, round uint64) iter.Seq2[string, error]
 
 	// NewAPIKeyID is an identifier generator function for a new API key in the given format.
-	NewAPIKey(format apikey.Format, round uint64) iter.Seq2[string, error]
+	// maxAttempts is the maximum number of results that will be made by the caller during this operation.
+	NewAPIKey(format apikey.Format, maxAttempts int, round uint64) iter.Seq2[string, error]
 
 	// NewPID is an identifier generator function that returns a sequence of possible PIDs for the given format.
 	// counter is the approximate total number of PIDs that have been generated in the namespace so far, if known.
-	NewPID(format pid.Format, total *atomic.Int64, round uint64) iter.Seq2[string, error]
+	// maxAttempts is the maximum number of results that will be made by the caller during this operation.
+	NewPID(format pid.Format, total *atomic.Int64, maxAttempts int, round uint64) iter.Seq2[string, error]
 
 	// Now returns the current time.
 	Now() time.Time
@@ -58,7 +62,7 @@ func NewRuntime() Runtime {
 type runtime struct {
 }
 
-func (r runtime) NewNamespaceID(total *atomic.Int64, round uint64) iter.Seq2[string, error] {
+func (r runtime) NewNamespaceID(total *atomic.Int64, maxAttempts int, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		for {
 			if !yield(uuid.NewV4().String(), nil) {
@@ -68,13 +72,13 @@ func (r runtime) NewNamespaceID(total *atomic.Int64, round uint64) iter.Seq2[str
 	}
 }
 
-func (r runtime) NewAPIKeyID(total *atomic.Int64, round uint64) iter.Seq2[string, error] {
+func (r runtime) NewAPIKeyID(total *atomic.Int64, maxAttempts int, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		yield(uuid.NewV4().String(), nil)
 	}
 }
 
-func (r runtime) NewAPIKey(format apikey.Format, round uint64) iter.Seq2[string, error] {
+func (r runtime) NewAPIKey(format apikey.Format, maxAttempts int, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		key, err := format.Generate(rand.Reader)
 		if err != nil {
@@ -85,7 +89,7 @@ func (r runtime) NewAPIKey(format apikey.Format, round uint64) iter.Seq2[string,
 	}
 }
 
-func (r runtime) NewPID(format pid.Format, total *atomic.Int64, round uint64) iter.Seq2[string, error] {
+func (r runtime) NewPID(format pid.Format, total *atomic.Int64, maxAttempts int, round uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		pid, err := format.Generate(rand.Reader)
 		if err != nil {

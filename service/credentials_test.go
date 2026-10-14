@@ -115,22 +115,22 @@ type fixedRuntime struct {
 	now time.Time
 }
 
-func (r fixedRuntime) NewNamespaceID(*atomic.Int64, uint64) iter.Seq2[string, error] {
+func (r fixedRuntime) NewNamespaceID(*atomic.Int64, int, uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		yield("ns", nil)
 	}
 }
-func (r fixedRuntime) NewAPIKeyID(*atomic.Int64, uint64) iter.Seq2[string, error] {
+func (r fixedRuntime) NewAPIKeyID(*atomic.Int64, int, uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		yield("id", nil)
 	}
 }
-func (r fixedRuntime) NewAPIKey(apikey.Format, uint64) iter.Seq2[string, error] {
+func (r fixedRuntime) NewAPIKey(apikey.Format, int, uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		yield("aaaaaaaaaaaaaaaaaaaaaaaaaaaaakey", nil)
 	}
 }
-func (r fixedRuntime) NewPID(pid.Format, *atomic.Int64, uint64) iter.Seq2[string, error] {
+func (r fixedRuntime) NewPID(pid.Format, *atomic.Int64, int, uint64) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		yield("pid", nil)
 	}

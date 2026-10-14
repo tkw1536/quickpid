@@ -1,7 +1,8 @@
 package pid
 
-//spellchecker:words errors
-//spellchecker:words SplitMix Vigna unimi Knuth Steele Flood splittable congruential
+//spellchecker:words errors math bits strings
+
+//spellchecker:words errors math bits strings
 import (
 	"errors"
 	"fmt"

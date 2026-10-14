@@ -242,11 +242,13 @@ func (s *Service) issueAPIKey(ctx context.Context, username api.ValidUsername, r
 		total.Store(int64(countQuery.Total))
 	}
 
-	nextID, stopIDs := idgen.PullIDs(func(round uint64) iter.Seq2[string, error] { return s.runtime.NewAPIKeyID(total, round) })
+	nextID, stopIDs := idgen.PullIDs(func(round uint64) iter.Seq2[string, error] { return s.runtime.NewAPIKeyID(total, maxAttempts, round) })
 	defer stopIDs()
 
 	format := s.apiKeyFormat()
-	nextKey, stopKeys := idgen.PullIDs(func(exhausted uint64) iter.Seq2[string, error] { return s.runtime.NewAPIKey(format, exhausted) })
+	nextKey, stopKeys := idgen.PullIDs(func(exhausted uint64) iter.Seq2[string, error] {
+		return s.runtime.NewAPIKey(format, maxAttempts, exhausted)
+	})
 	defer stopKeys()
 
 	for range maxAttempts {

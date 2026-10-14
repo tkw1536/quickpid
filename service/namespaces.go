@@ -146,7 +146,9 @@ func (s *Service) CreateNamespace(ctx context.Context, caller *api.Caller, req a
 		total.Store(int64(countQuery.Total))
 	}
 
-	nextID, stopIDs := idgen.PullIDs(func(round uint64) iter.Seq2[string, error] { return s.runtime.NewNamespaceID(total, round) })
+	nextID, stopIDs := idgen.PullIDs(func(round uint64) iter.Seq2[string, error] {
+		return s.runtime.NewNamespaceID(total, maxAttempts, round)
+	})
 	defer stopIDs()
 
 	for range maxAttempts {
