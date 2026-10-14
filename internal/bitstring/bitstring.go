@@ -35,7 +35,7 @@ func (r *reader) nextN() {
 
 	// limit = 2^n
 	r.limit.SetUint64(1)
-	r.limit.Lsh(&r.limit, uint(r.n))
+	r.limit.Lsh(&r.limit, uint(r.n)) /* #nosec G115 -- can only overflow for negative n which are never hit  */
 }
 
 func (r *reader) nextBit() byte {
